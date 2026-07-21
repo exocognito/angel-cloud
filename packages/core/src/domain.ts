@@ -1,0 +1,307 @@
+import { parse as parseYaml } from "yaml";
+import { sha256Hex } from "./crypto";
+import type { ArgGuard } from "./types";
+
+export type DeploymentEnvironment = "staging" | "production";
+export type CredentialKind = "google_oauth" | "service_token" | "bot_token" | "bridge_token";
+
+export interface HostedTool {
+  name: string;
+  provider: string;
+  operation: string;
+  argGuards: ArgGuard[];
+}
+
+export interface AngelVersionChild {
+  name: string;
+  digest: string;
+}
+
+export interface ProviderBindingRequirement {
+  id: string;
+  source: string;
+  provider: string;
+  credential: CredentialKind;
+  tools: string[];
+}
+
+export interface HostedVersionContent {
+  format: "angel.version.v1";
+  name: string;
+  charter: string;
+  children: AngelVersionChild[];
+  bindingRequirements: ProviderBindingRequirement[];
+  tools: HostedTool[];
+}
+
+export interface HostedVersionArtifact extends HostedVersionContent {
+  canonicalSource: string;
+  digest: string;
+}
+
+export interface CompileHostedAngelOptions {
+  loadAngel?: (name: string) => string | undefined | Promise<string | undefined>;
+}
+
+interface AdapterContract {
+  credential: CredentialKind;
+  operations: ReadonlySet<string>;
+}
+
+const ADAPTERS: Readonly<Record<string, AdapterContract>> = {
+  docs: {
+    credential: "google_oauth",
+    operations: new Set(["docs.documents.get"]),
+  },
+  gmail: {
+    credential: "google_oauth",
+    operations: new Set([
+      "gmail.users.drafts.create",
+      "gmail.users.drafts.get",
+      "gmail.users.drafts.list",
+      "gmail.users.drafts.update",
+      "gmail.users.getProfile",
+      "gmail.users.history.list",
+      "gmail.users.labels.create",
+      "gmail.users.labels.delete",
+      "gmail.users.labels.get",
+      "gmail.users.labels.list",
+      "gmail.users.labels.patch",
+      "gmail.users.labels.update",
+      "gmail.users.messages.attachments.get",
+      "gmail.users.messages.get",
+      "gmail.users.messages.list",
+      "gmail.users.messages.modify",
+      "gmail.users.settings.getAutoForwarding",
+      "gmail.users.settings.getVacation",
+      "gmail.users.threads.get",
+      "gmail.users.threads.list",
+      "gmail.users.threads.modify",
+    ]),
+  },
+};
+
+export async function compileHostedAngel(
+  raw: string,
+  options: CompileHostedAngelOptions = {},
+): Promise<HostedVersionArtifact> {
+  return compileSource(raw, options, []);
+}
+
+async function compileSource(
+  raw: string,
+  options: CompileHostedAngelOptions,
+  ancestors: string[],
+): Promise<HostedVersionArtifact> {
+  const root = object(parseYaml(raw), "ANGEL.yaml");
+  const name = angelName(root.name, "name");
+  const charter = root.charter === undefined ? "" : text(root.charter, "charter").trim();
+  const hasTools = root.tools !== undefined;
+  const hasAngels = root.angels !== undefined;
+  if (hasTools === hasAngels) {
+    throw new Error("ANGEL.yaml must set exactly one of tools or angels");
+  }
+  if (hasTools) {
+    exactKeys(root, ["name", "charter", "tools"], "ANGEL.yaml");
+    const tools = directTools(root.tools);
+    return artifact({
+      format: "angel.version.v1",
+      name,
+      charter,
+      children: [],
+      bindingRequirements: requirementsFor(name, tools),
+      tools,
+    });
+  }
+
+  exactKeys(root, ["name", "charter", "angels"], "ANGEL.yaml");
+  if (ancestors.includes(name)) {
+    throw new Error(`Angel composition cycle: ${[...ancestors, name].join(" -> ")}`);
+  }
+  if (!options.loadAngel) throw new Error(`composite Angel ${name} needs a local Angel resolver`);
+  const childNames = localAngelNames(root.angels);
+  const childArtifacts = await Promise.all(childNames.map(async (childName) => {
+    const childRaw = await options.loadAngel!(childName);
+    if (childRaw === undefined) throw new Error(`local Angel not found: ${childName}`);
+    const child = await compileSource(childRaw, options, [...ancestors, name]);
+    if (child.name !== childName) {
+      throw new Error(`local Angel ${childName} declares name ${child.name}`);
+    }
+    return child;
+  }));
+  const tools = flattenTools(childArtifacts);
+  const bindingRequirements = rebaseComposedRequirements(
+    childArtifacts.flatMap((child) => child.bindingRequirements),
+  );
+  return artifact({
+    format: "angel.version.v1",
+    name,
+    charter,
+    children: childArtifacts
+      .map((child) => ({ name: child.name, digest: child.digest }))
+      .sort(byName),
+    bindingRequirements,
+    tools,
+  });
+}
+
+async function artifact(content: HostedVersionContent): Promise<HostedVersionArtifact> {
+  const canonicalSource = JSON.stringify(content);
+  return { ...content, canonicalSource, digest: await sha256Hex(canonicalSource) };
+}
+
+function directTools(value: unknown): HostedTool[] {
+  if (!Array.isArray(value) || value.length === 0) throw new Error("tools must be a non-empty list");
+  const seen = new Map<string, string>();
+  const tools = value.map((entry, index) => sourceTool(entry, `tools[${index}]`));
+  for (const tool of tools) {
+    const folded = tool.name.toUpperCase();
+    const prior = seen.get(folded);
+    if (prior) throw new Error(`duplicate tool: ${prior} and ${tool.name}`);
+    seen.set(folded, tool.name);
+  }
+  return tools.sort(byName);
+}
+
+function localAngelNames(value: unknown): string[] {
+  if (!Array.isArray(value) || value.length === 0) throw new Error("angels must be a non-empty list");
+  const seen = new Set<string>();
+  return value.map((entry, index) => {
+    const name = angelName(entry, `angels[${index}]`);
+    if (seen.has(name)) throw new Error(`duplicate local Angel: ${name}`);
+    seen.add(name);
+    return name;
+  });
+}
+
+function flattenTools(children: HostedVersionArtifact[]): HostedTool[] {
+  const seen = new Map<string, string>();
+  const tools = children.flatMap((child) => child.tools);
+  for (const tool of tools) {
+    const folded = tool.name.toUpperCase();
+    const prior = seen.get(folded);
+    if (prior) throw new Error(`composed tool collision: ${prior} and ${tool.name}`);
+    seen.set(folded, tool.name);
+  }
+  return tools.sort(byName);
+}
+
+function sourceTool(value: unknown, at: string): HostedTool {
+  let operation: string;
+  let argGuards: ArgGuard[] = [];
+  if (typeof value === "string") {
+    operation = text(value, at);
+  } else {
+    const tool = object(value, at);
+    exactKeys(tool, ["tool", "argGuards"], at);
+    operation = text(tool.tool, `${at}.tool`);
+    if (tool.argGuards !== undefined) argGuards = guards(tool.argGuards, `${at}.argGuards`);
+  }
+
+  const provider = operation.split(".", 1)[0]!;
+  const adapter = ADAPTERS[provider];
+  if (!adapter) throw new Error(`unknown provider namespace: ${provider}`);
+  if (!adapter.operations.has(operation)) {
+    throw new Error(`operation ${operation} is not in the ${provider} adapter`);
+  }
+  return { name: operation, provider, operation, argGuards };
+}
+
+function requirementsFor(source: string, tools: HostedTool[]): ProviderBindingRequirement[] {
+  const byProvider = new Map<string, HostedTool[]>();
+  for (const tool of tools) {
+    const existing = byProvider.get(tool.provider) ?? [];
+    existing.push(tool);
+    byProvider.set(tool.provider, existing);
+  }
+  return [...byProvider.entries()].map(([provider, providerTools]) => ({
+    id: provider,
+    source,
+    provider,
+    credential: ADAPTERS[provider]!.credential,
+    tools: providerTools.map((tool) => tool.name).sort(codeUnitCompare),
+  })).sort(compareRequirement);
+}
+
+function rebaseComposedRequirements(
+  requirements: ProviderBindingRequirement[],
+): ProviderBindingRequirement[] {
+  const providersBySource = new Map<string, Set<string>>();
+  for (const requirement of requirements) {
+    const providers = providersBySource.get(requirement.source) ?? new Set<string>();
+    providers.add(requirement.provider);
+    providersBySource.set(requirement.source, providers);
+  }
+  const seenIds = new Set<string>();
+  return requirements.map((requirement) => {
+    const providers = providersBySource.get(requirement.source)!;
+    const id = providers.size === 1
+      ? requirement.source
+      : `${requirement.source}:${requirement.provider}`;
+    if (seenIds.has(id)) throw new Error(`composed binding requirement collision: ${id}`);
+    seenIds.add(id);
+    return { ...requirement, id };
+  }).sort(compareRequirement);
+}
+
+function guards(value: unknown, at: string): ArgGuard[] {
+  if (!Array.isArray(value) || value.length === 0) throw new Error(`${at} must be a non-empty list`);
+  const seen = new Set<string>();
+  const parsed = value.map((entry, index): ArgGuard => {
+    const guard = object(entry, `${at}[${index}]`);
+    exactKeys(guard, ["field", "forbiddenValues", "forbid", "pin"], `${at}[${index}]`);
+    const field = text(guard.field, `${at}[${index}].field`).normalize("NFC");
+    if (field === "angel_connection") throw new Error("angel_connection is reserved by Angel Cloud");
+    if (seen.has(field)) throw new Error(`${at} has duplicate field: ${field}`);
+    seen.add(field);
+    const kinds = ["forbiddenValues", "forbid", "pin"].filter((key) => guard[key] !== undefined);
+    if (kinds.length !== 1) throw new Error(`${at}[${index}] must set exactly one guard kind`);
+    if (guard.forbid !== undefined) {
+      if (guard.forbid !== true) throw new Error(`${at}[${index}].forbid must be true`);
+      return { field, forbid: true };
+    }
+    if (guard.pin !== undefined) return { field, pin: text(guard.pin, `${at}[${index}].pin`) };
+    if (!Array.isArray(guard.forbiddenValues) || guard.forbiddenValues.length === 0) {
+      throw new Error(`${at}[${index}].forbiddenValues must be a non-empty list`);
+    }
+    const forbiddenValues = [...new Set(guard.forbiddenValues.map((item) => text(item, at).normalize("NFC").toUpperCase()))]
+      .sort(codeUnitCompare);
+    return { field, forbiddenValues };
+  });
+  return parsed.sort((left, right) => codeUnitCompare(left.field, right.field));
+}
+
+function angelName(value: unknown, at: string): string {
+  const name = text(value, at);
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`${at} must be a lowercase slug: ${name}`);
+  return name;
+}
+
+function object(value: unknown, at: string): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`${at} must be a mapping`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function text(value: unknown, at: string): string {
+  if (typeof value !== "string" || value.trim() === "") throw new Error(`${at} must be a non-empty string`);
+  return value;
+}
+
+function exactKeys(value: Record<string, unknown>, allowed: string[], at: string): void {
+  const unknown = Object.keys(value).filter((key) => !allowed.includes(key));
+  if (unknown.length > 0) throw new Error(`${at} has unknown key: ${unknown.join(", ")}`);
+}
+
+function compareRequirement(left: ProviderBindingRequirement, right: ProviderBindingRequirement): number {
+  return codeUnitCompare(left.id, right.id);
+}
+
+function byName<T extends { name: string }>(left: T, right: T): number {
+  return codeUnitCompare(left.name, right.name);
+}
+
+function codeUnitCompare(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
