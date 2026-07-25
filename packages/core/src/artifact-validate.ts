@@ -15,6 +15,13 @@ import { selectRequiredScopes } from "./adapter-derive";
 import { GENERATED_ADAPTERS } from "./adapters.generated";
 
 export function validateArtifactAdapters(content: HostedVersionContent): void {
+  if (content.providers === null || typeof content.providers !== "object" || Array.isArray(content.providers)) {
+    throw new Error("artifact providers must be an object");
+  }
+  if (!Array.isArray(content.tools)) throw new Error("artifact tools must be an array");
+  if (!Array.isArray(content.bindingRequirements)) {
+    throw new Error("artifact bindingRequirements must be an array");
+  }
   const usedProviders = new Set(content.tools.map((tool) => tool.provider));
 
   for (const [provider, pinned] of Object.entries(content.providers)) {

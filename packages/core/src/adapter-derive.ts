@@ -57,13 +57,21 @@ export async function deriveAdapter(input: {
   for (const [path, pathItem] of Object.entries(paths)) {
     if (typeof pathItem !== "object" || pathItem === null) continue;
     for (const [method, member] of Object.entries(pathItem)) {
+      // Skipping an uninterpretable member would silently drop request data
+      // (path-level parameters vanish from every template) — fail instead.
+      if (PATH_ITEM_METADATA.has(method)) continue;
+      if (!PATH_ITEM_METHODS.has(method)) {
+        throw new Error(`${path}: uninterpretable path item member "${method}" — path-level parameters/$ref are not supported`);
+      }
       const op = member as {
         operationId?: unknown;
         parameters?: { name: string; in: string; schema?: { default?: unknown } }[];
         requestBody?: unknown;
         security?: unknown;
       };
-      if (typeof member !== "object" || member === null || typeof op.operationId !== "string") continue;
+      if (typeof member !== "object" || member === null || typeof op.operationId !== "string") {
+        throw new Error(`${path}: ${method} operation has no operationId`);
+      }
       const id = op.operationId;
       if (operations[id]) throw new Error(`duplicate operationId in spec: ${id}`);
       operations[id] = {
@@ -84,6 +92,9 @@ export async function deriveAdapter(input: {
     operations,
   };
 }
+
+const PATH_ITEM_METHODS = new Set(["get", "put", "post", "delete", "patch", "head", "options", "trace"]);
+const PATH_ITEM_METADATA = new Set(["summary", "description"]);
 
 function requestTemplate(
   id: string,
@@ -168,10 +179,12 @@ export function deepFreeze<T>(value: T): T {
   return value;
 }
 
-// The smallest consent that covers every tool: fewest scopes first, then the
-// narrowest by curated ranking. Scopes outside the ranking (full-access or
-// functionally restricted ones) are never selected automatically — a toolbox
-// they alone could cover fails compilation and forces a curation decision.
+// The least-authority consent that covers every tool: lowest total curated
+// rank first, then fewest scopes — several narrow scopes beat one broad one
+// (readonly+compose+labels wins over modify alone). Scopes outside the
+// ranking (full-access or functionally restricted ones) are never selected
+// automatically — a toolbox they alone could cover fails compilation and
+// forces a curation decision.
 export function selectRequiredScopes(input: {
   tools: string[];
   operations: Record<string, { scopes: string[] }>;
@@ -194,10 +207,9 @@ export function selectRequiredScopes(input: {
   const limit = 1 << pool.length;
   for (let mask = 1; mask < limit; mask++) {
     const subset = pool.filter((_, index) => mask & (1 << index));
-    if (best && subset.length > best.length) continue;
     if (!alternatives.every((set) => subset.some((scope) => set.has(scope)))) continue;
     const rankSum = subset.reduce((sum, scope) => sum + rank.get(scope)!, 0);
-    if (!best || subset.length < best.length || rankSum < bestRankSum) {
+    if (!best || rankSum < bestRankSum || (rankSum === bestRankSum && subset.length < best.length)) {
       best = subset;
       bestRankSum = rankSum;
     }

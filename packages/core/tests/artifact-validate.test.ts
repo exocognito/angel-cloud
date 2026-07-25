@@ -98,7 +98,28 @@ describe("publish-time adapter validation", () => {
       gmailReq,
       ...content.bindingRequirements.filter((r) => r.provider !== "gmail"),
     ];
-    expect(() => validateArtifactAdapters(content)).toThrow(/requirement id|claimed/);
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement id/);
+  });
+
+  test("rejects a double-claimed tool under a falsy non-string requirement id", async () => {
+    // id 0 dodges the empty-string check, so this exercises the claim map
+    // itself — the only branch the has() fix protects.
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    content.bindingRequirements = [
+      { ...gmailReq, id: 0 as unknown as string },
+      gmailReq,
+      ...content.bindingRequirements.filter((r) => r.provider !== "gmail"),
+    ];
+    expect(() => validateArtifactAdapters(content)).toThrow(/claimed by requirements/);
+  });
+
+  test("cleanly rejects artifacts missing top-level collections", async () => {
+    for (const key of ["providers", "tools", "bindingRequirements"] as const) {
+      const content = await compiled();
+      delete (content as unknown as Record<string, unknown>)[key];
+      expect(() => validateArtifactAdapters(content)).toThrow(new RegExp(key));
+    }
   });
 
   test("rejects duplicate requirement ids", async () => {

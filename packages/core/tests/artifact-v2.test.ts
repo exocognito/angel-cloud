@@ -68,8 +68,11 @@ tools:
   - tool: gmail.users.drafts.create
   - tool: gmail.users.labels.create
 `);
+    // Least authority: three narrow scopes beat modify alone.
     expect(workbench.bindingRequirements[0]!.requiredScopes).toEqual([
-      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.compose",
+      "https://www.googleapis.com/auth/gmail.labels",
+      "https://www.googleapis.com/auth/gmail.readonly",
     ]);
   });
 

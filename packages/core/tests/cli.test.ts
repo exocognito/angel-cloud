@@ -299,7 +299,10 @@ function versionArtifact(): HostedVersionArtifact {
         source: "gmail-read-and-draft",
         provider: "gmail",
         credential: "google_oauth" as const,
-        requiredScopes: ["https://www.googleapis.com/auth/gmail.modify"],
+        requiredScopes: [
+          "https://www.googleapis.com/auth/gmail.compose",
+          "https://www.googleapis.com/auth/gmail.readonly",
+        ],
         tools: ["gmail.users.messages.list", "gmail.users.messages.get", "gmail.users.drafts.create"],
       },
     ],

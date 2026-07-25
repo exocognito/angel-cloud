@@ -75,6 +75,28 @@ paths:
 `;
     await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/security/);
   });
+
+  test("rejects path-item members it cannot interpret instead of skipping them", async () => {
+    // A path-level parameters list would silently vanish from every derived
+    // template — the sealed request would drop a real parameter.
+    const specYaml = `
+openapi: 3.0.3
+info: { title: t, version: v1 }
+servers:
+  - url: https://gmail.googleapis.com
+paths:
+  /v1/things:
+    parameters:
+      - name: shared
+        in: query
+    get:
+      operationId: gmail.things.list
+      security:
+        - oauth2:
+            - https://www.googleapis.com/auth/gmail.readonly
+`;
+    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/path item|parameters/);
+  });
 });
 
 describe("required scope selection", () => {
@@ -92,13 +114,17 @@ describe("required scope selection", () => {
     "https://www.googleapis.com/auth/gmail.modify",
   ];
 
-  test("prefers the fewest scopes, then the narrowest ranking", () => {
-    // One scope (modify) covers both tools, so it beats readonly+compose.
+  test("prefers the least total authority, then the fewest scopes", () => {
+    // readonly+compose grants strictly less than modify alone — least
+    // authority wins even when a single broader scope would cover.
     expect(selectRequiredScopes({
       tools: Object.keys(operations),
       operations,
       scopeRanking: ranking,
-    })).toEqual(["https://www.googleapis.com/auth/gmail.modify"]);
+    })).toEqual([
+      "https://www.googleapis.com/auth/gmail.compose",
+      "https://www.googleapis.com/auth/gmail.readonly",
+    ]);
 
     // For the read-only subset the narrowest single cover wins.
     expect(selectRequiredScopes({
