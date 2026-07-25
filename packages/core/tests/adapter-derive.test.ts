@@ -77,15 +77,17 @@ paths:
   });
 
   test("rejects a non-object path item instead of skipping it", async () => {
-    const specYaml = `
+    for (const broken of ["broken", "[]"]) {
+      const specYaml = `
 openapi: 3.0.3
 info: { title: t, version: v1 }
 servers:
   - url: https://gmail.googleapis.com
 paths:
-  /v1/things: broken
+  /v1/things: ${broken}
 `;
-    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/path item/);
+      await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/path item/);
+    }
   });
 
   test("rejects operation members it cannot interpret", async () => {
@@ -163,6 +165,38 @@ describe("required scope selection", () => {
       operations,
       scopeRanking: ranking,
     })).toEqual(["https://www.googleapis.com/auth/gmail.readonly"]);
+  });
+
+  test("never prefers a broad scope over a cover of strictly narrower ones", () => {
+    // Three narrow scopes rank-sum to 3, tying the broad scope — least
+    // authority must still pick the narrow cover.
+    const ops = {
+      t1: { scopes: ["s.a", "s.broad"] },
+      t2: { scopes: ["s.b", "s.broad"] },
+      t3: { scopes: ["s.c", "s.broad"] },
+    };
+    expect(selectRequiredScopes({
+      tools: Object.keys(ops),
+      operations: ops,
+      scopeRanking: ["s.a", "s.b", "s.c", "s.broad"],
+    })).toEqual(["s.a", "s.b", "s.c"]);
+  });
+
+  test("rejects an operationId not namespaced under its provider", async () => {
+    const specYaml = `
+openapi: 3.0.3
+info: { title: t, version: v1 }
+servers:
+  - url: https://gmail.googleapis.com
+paths:
+  /v1/things:
+    get:
+      operationId: docs.things.list
+      security:
+        - oauth2:
+            - https://www.googleapis.com/auth/gmail.readonly
+`;
+    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/namespac/);
   });
 
   test("fails when no ranked scope covers a tool", () => {

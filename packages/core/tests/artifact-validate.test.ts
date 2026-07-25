@@ -139,6 +139,27 @@ describe("publish-time adapter validation", () => {
     expect(() => validateArtifactAdapters(content)).not.toThrow();
   });
 
+  test("cleanly rejects tools with non-string fields or a missing request", async () => {
+    const numericName = await compiled();
+    const tool = numericName.tools.find((t) => t.provider === "gmail")!;
+    (tool as unknown as Record<string, unknown>).name = 5;
+    (tool as unknown as Record<string, unknown>).operation = 5;
+    expect(() => validateArtifactAdapters(numericName)).toThrow(/tool/);
+
+    const noRequest = await compiled();
+    delete (noRequest.tools[0] as unknown as Record<string, unknown>).request;
+    expect(() => validateArtifactAdapters(noRequest)).toThrow(/request/);
+  });
+
+  test("rejects an operation not namespaced under its tool's provider", async () => {
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    tool.provider = "docs";
+    content.providers = { docs: content.providers.docs! };
+    content.bindingRequirements = [];
+    expect(() => validateArtifactAdapters(content)).toThrow(/namespac/);
+  });
+
   test("cleanly rejects malformed elements inside the collections", async () => {
     const nullProvider = await compiled();
     (nullProvider.providers as unknown as Record<string, unknown>).gmail = null;
@@ -171,7 +192,8 @@ describe("publish-time adapter validation", () => {
   test("rejects case-folded duplicate tool names", async () => {
     const content = await compiled();
     const tool = content.tools.find((t) => t.provider === "gmail")!;
-    content.tools.push({ ...tool, name: tool.name.toUpperCase(), operation: tool.operation.toUpperCase() });
+    const folded = tool.name.replace(/list$/, "LIST");
+    content.tools.push({ ...tool, name: folded, operation: folded });
     expect(() => validateArtifactAdapters(content)).toThrow(/duplicate|collision/i);
   });
 

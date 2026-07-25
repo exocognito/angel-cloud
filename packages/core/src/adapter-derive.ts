@@ -55,7 +55,7 @@ export async function deriveAdapter(input: {
   const operations: Record<string, DerivedOperation> = {};
   const paths = (spec.paths ?? {}) as Record<string, Record<string, unknown>>;
   for (const [path, pathItem] of Object.entries(paths)) {
-    if (typeof pathItem !== "object" || pathItem === null) {
+    if (typeof pathItem !== "object" || pathItem === null || Array.isArray(pathItem)) {
       throw new Error(`${path}: path item must be a mapping`);
     }
     for (const [method, member] of Object.entries(pathItem)) {
@@ -75,6 +75,12 @@ export async function deriveAdapter(input: {
         throw new Error(`${path}: ${method} operation has no operationId`);
       }
       const id = op.operationId;
+      // The compiler routes operations to adapters by namespace prefix; a
+      // mis-namespaced id would bind this adapter's origin and credential to
+      // another provider's tools.
+      if (id.split(".", 1)[0] !== input.provider) {
+        throw new Error(`${id}: operationId is not namespaced under provider ${input.provider}`);
+      }
       for (const key of Object.keys(member)) {
         if (!OPERATION_MEMBERS.has(key)) {
           throw new Error(`${id}: uninterpretable operation member "${key}"`);
@@ -192,12 +198,13 @@ export function deepFreeze<T>(value: T): T {
   return value;
 }
 
-// The least-authority consent that covers every tool: lowest total curated
-// rank first, then fewest scopes — several narrow scopes beat one broad one
-// (readonly+compose+labels wins over modify alone). Scopes outside the
-// ranking (full-access or functionally restricted ones) are never selected
-// automatically — a toolbox they alone could cover fails compilation and
-// forces a curation decision.
+// The least-authority consent that covers every tool: covers are compared by
+// their rank vectors sorted broadest-first (avoid the broadest scope, then
+// the next-broadest, ...), so several narrow scopes always beat one broad one
+// (readonly+compose+labels wins over modify alone) and fewest-scopes only
+// breaks exact-prefix ties. Scopes outside the ranking (full-access or
+// functionally restricted ones) are never selected automatically — a toolbox
+// they alone could cover fails compilation and forces a curation decision.
 export function selectRequiredScopes(input: {
   tools: string[];
   operations: Record<string, { scopes: string[] }>;
@@ -216,19 +223,29 @@ export function selectRequiredScopes(input: {
   // (Google APIs list well under a dozen ranked scopes per provider).
   const pool = input.scopeRanking.filter((scope) => alternatives.some((set) => set.has(scope)));
   let best: string[] | undefined;
-  let bestRankSum = Infinity;
+  let bestVector: number[] = [];
   const limit = 1 << pool.length;
   for (let mask = 1; mask < limit; mask++) {
     const subset = pool.filter((_, index) => mask & (1 << index));
     if (!alternatives.every((set) => subset.some((scope) => set.has(scope)))) continue;
-    const rankSum = subset.reduce((sum, scope) => sum + rank.get(scope)!, 0);
-    if (!best || rankSum < bestRankSum || (rankSum === bestRankSum && subset.length < best.length)) {
+    const vector = subset.map((scope) => rank.get(scope)!).sort((a, b) => b - a);
+    if (!best || compareBroadestFirst(vector, bestVector) < 0) {
       best = subset;
-      bestRankSum = rankSum;
+      bestVector = vector;
     }
   }
   if (!best) throw new Error(`no ranked scope subset covers tools: ${input.tools.join(", ")}`);
   return [...best].sort();
+}
+
+// Lexicographic on broadest-first rank vectors; a vector that is a strict
+// prefix of another wins (same authorities, fewer scopes).
+function compareBroadestFirst(left: number[], right: number[]): number {
+  const length = Math.min(left.length, right.length);
+  for (let index = 0; index < length; index++) {
+    if (left[index]! !== right[index]!) return left[index]! - right[index]!;
+  }
+  return left.length - right.length;
 }
 
 function requireText(value: unknown, at: string): string {

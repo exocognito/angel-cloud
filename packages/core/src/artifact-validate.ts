@@ -28,6 +28,15 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
   }
   for (const tool of content.tools) {
     if (tool === null || typeof tool !== "object") throw new Error("artifact tool must be an object");
+    if (typeof tool.name !== "string" || typeof tool.operation !== "string" || typeof tool.provider !== "string") {
+      throw new Error("artifact tool name, operation, and provider must be strings");
+    }
+    if (tool.request === null || typeof tool.request !== "object") {
+      throw new Error(`tool ${tool.name} request must be an object`);
+    }
+    if (tool.operation.split(".", 1)[0] !== tool.provider) {
+      throw new Error(`operation ${tool.operation} is not namespaced under provider ${tool.provider}`);
+    }
   }
   const usedProviders = new Set(content.tools.map((tool) => tool.provider));
 
