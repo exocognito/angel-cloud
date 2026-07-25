@@ -47,6 +47,28 @@ describe("adapter derivation", () => {
     );
     await expect(deriveAdapter({ ...gmail, adapterYaml })).rejects.toThrow(/origin/);
   });
+
+  test("rejects a server URL carrying a base path the templates would lose", async () => {
+    const specYaml = gmail.specYaml.replace(
+      "url: https://gmail.googleapis.com",
+      "url: https://gmail.googleapis.com/v2",
+    );
+    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/base path|pathname/);
+  });
+
+  test("rejects an operation whose security shape is not a single oauth2 entry", async () => {
+    const specYaml = `
+openapi: 3.0.3
+info: { title: t, version: v1 }
+servers:
+  - url: https://gmail.googleapis.com
+paths:
+  /v1/things:
+    get:
+      operationId: gmail.things.list
+`;
+    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/security/);
+  });
 });
 
 describe("required scope selection", () => {

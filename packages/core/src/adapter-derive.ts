@@ -58,14 +58,14 @@ export async function deriveAdapter(input: {
         operationId?: unknown;
         parameters?: { name: string; in: string; schema?: { default?: unknown } }[];
         requestBody?: unknown;
-        security?: { oauth2?: string[] }[];
+        security?: unknown;
       };
       if (typeof member !== "object" || member === null || typeof op.operationId !== "string") continue;
       const id = op.operationId;
       if (operations[id]) throw new Error(`duplicate operationId in spec: ${id}`);
       operations[id] = {
         request: requestTemplate(id, path, method, op),
-        scopes: [...(op.security?.[0]?.oauth2 ?? [])].sort(),
+        scopes: operationScopes(id, op.security),
       };
     }
   }
@@ -122,6 +122,21 @@ function requestTemplate(
   };
 }
 
+// Silent empty or partial scopes would surface only when a later compile
+// finds no ranked cover — fail at derivation instead, where the spec is
+// under review.
+function operationScopes(id: string, security: unknown): string[] {
+  if (!Array.isArray(security) || security.length !== 1) {
+    throw new Error(`${id}: security must be exactly one requirement entry`);
+  }
+  const entry = security[0] as Record<string, unknown>;
+  const keys = Object.keys(entry);
+  if (keys.length !== 1 || keys[0] !== "oauth2" || !Array.isArray(entry.oauth2)) {
+    throw new Error(`${id}: security entry must declare exactly oauth2 scopes`);
+  }
+  return [...(entry.oauth2 as string[])].sort();
+}
+
 // The access token is only ever sent to the reviewed origin, so the curated
 // origin and the narrowed spec's server must agree exactly.
 function requireSpecOrigin(spec: Record<string, unknown>, origin: string): void {
@@ -133,6 +148,21 @@ function requireSpecOrigin(spec: Record<string, unknown>, origin: string): void 
   if (url.origin !== origin) {
     throw new Error(`adapter origin ${origin} must match spec servers origin ${url.origin}`);
   }
+  if (url.pathname !== "/" || url.search !== "" || url.hash !== "") {
+    throw new Error(
+      `servers[0].url must not carry a base path: ${first.url} — derived pathTemplates would lose it`,
+    );
+  }
+}
+
+// The generated registry is shared, module-level data; compiled artifacts
+// alias its templates, so it must be immutable at runtime, not just in types.
+export function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object") {
+    for (const key of Object.keys(value)) deepFreeze((value as Record<string, unknown>)[key]);
+    Object.freeze(value);
+  }
+  return value;
 }
 
 // The smallest consent that covers every tool: fewest scopes first, then the
