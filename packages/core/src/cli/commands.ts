@@ -11,6 +11,7 @@ import { ManagementClient } from "./client";
 import type { FetchLike } from "./client";
 import {
   loadAngelDeploymentConfig,
+  type AngelDeploymentConfig,
   type DeploymentBindingMap,
 } from "./config";
 
@@ -18,6 +19,7 @@ export interface AngelCommandDependencies {
   repoRoot: string;
   fetch?: FetchLike;
   build?: (input: { repoRoot: string; angelId: string }) => Promise<PortableBuildResult>;
+  loadDeploymentConfig?: (input: { repoRoot: string; angelId: string }) => AngelDeploymentConfig;
   output?: (line: string) => void;
   env?: Readonly<Record<string, string | undefined>>;
 }
@@ -44,7 +46,7 @@ export async function runAngelCommand(
 }
 
 async function publish(angelId: string, dependencies: AngelCommandDependencies): Promise<void> {
-  const config = loadAngelDeploymentConfig({ repoRoot: dependencies.repoRoot, angelId });
+  const config = deploymentConfig(dependencies, angelId);
   const built = await build(dependencies)({ repoRoot: dependencies.repoRoot, angelId });
   if (built.artifact.name !== config.angel) {
     throw new Error(`angel.json angel ${config.angel} does not match artifact ${built.artifact.name}`);
@@ -87,7 +89,7 @@ async function deployProduction(
   angelId: string,
   dependencies: AngelCommandDependencies,
 ): Promise<void> {
-  const config = loadAngelDeploymentConfig({ repoRoot: dependencies.repoRoot, angelId });
+  const config = deploymentConfig(dependencies, angelId);
   const client = managementClient(config.target, dependencies);
   const angel = await client.getAngel(config.account, config.angel);
   if (angel.accountId !== config.account || angel.slug !== config.angel) {
@@ -120,14 +122,14 @@ function resolveBindings(
   requirements: readonly ProviderBindingRequirement[] | undefined,
   accountId: string,
 ): ManagementBindingMap {
-  const byNickname = new Map<string, ManagementConnection>();
-  const duplicates = new Set<string>();
+  const byNickname = new Map<string, ManagementConnection[]>();
   for (const connection of connections) {
     if (connection.accountId !== accountId) {
       throw new Error(`Connection ${connection.id} does not belong to Account ${accountId}`);
     }
-    if (byNickname.has(connection.nickname)) duplicates.add(connection.nickname);
-    byNickname.set(connection.nickname, connection);
+    const matches = byNickname.get(connection.nickname) ?? [];
+    matches.push(connection);
+    byNickname.set(connection.nickname, matches);
   }
   if (requirements !== undefined) {
     const expected = requirements.map((requirement) => requirement.id).sort();
@@ -140,10 +142,15 @@ function resolveBindings(
   for (const [requirementId, value] of Object.entries(configured)) {
     const nicknames = typeof value === "string" ? [value] : value;
     resolved[requirementId] = nicknames.map((nickname) => {
-      if (duplicates.has(nickname)) {
+      const matches = byNickname.get(nickname) ?? [];
+      const healthy = matches.filter((connection) => connection.health === "healthy");
+      if (healthy.length > 1) {
         throw new Error(`Connection nickname ${nickname} is duplicated`);
       }
-      const connection = byNickname.get(nickname);
+      const connection = healthy[0];
+      if (connection === undefined && matches.length > 0) {
+        throw new Error(`Connection nickname ${nickname} exists but is not healthy`);
+      }
       if (connection === undefined) {
         throw new Error(`Connection nickname ${nickname} was not found`);
       }
@@ -169,12 +176,21 @@ function managementClient(target: string, dependencies: AngelCommandDependencies
   return new ManagementClient({
     target,
     token,
+    accessToken: dependencies.env?.ANGEL_ACCESS_TOKEN,
     fetch: dependencies.fetch ?? globalThis.fetch,
   });
 }
 
 function build(dependencies: AngelCommandDependencies) {
   return dependencies.build ?? buildPortableAngel;
+}
+
+function deploymentConfig(
+  dependencies: AngelCommandDependencies,
+  angelId: string,
+): AngelDeploymentConfig {
+  return dependencies.loadDeploymentConfig?.({ repoRoot: dependencies.repoRoot, angelId })
+    ?? loadAngelDeploymentConfig({ repoRoot: dependencies.repoRoot, angelId });
 }
 
 function output(dependencies: AngelCommandDependencies): (line: string) => void {

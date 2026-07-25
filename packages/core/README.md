@@ -1,4 +1,4 @@
-# `@exocognito/angel-core`
+# `@smcllns/angel-core`
 
 This package owns the portable Angel standard:
 

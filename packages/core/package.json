@@ -1,5 +1,5 @@
 {
-  "name": "@exocognito/angel-core",
+  "name": "@smcllns/angel-core",
   "version": "0.2.0",
   "description": "Portable Angel policy compiler, artifact contract, and target-neutral CLI",
   "type": "module",
@@ -9,7 +9,14 @@
       "types": "./src/index.ts",
       "default": "./src/index.ts"
     },
-    "./*": "./src/*"
+    "./build": {
+      "types": "./src/build.ts",
+      "default": "./src/build.ts"
+    },
+    "./cli": {
+      "types": "./src/cli/index.ts",
+      "default": "./src/cli/index.ts"
+    }
   },
   "bin": {
     "angel": "src/scripts/angel.ts"
