@@ -90,6 +90,28 @@ describe("publish-time adapter validation", () => {
     expect(() => validateArtifactAdapters(content)).toThrow(/requirement/);
   });
 
+  test("rejects duplicate requirement ids", async () => {
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    const docsReq = content.bindingRequirements.find((r) => r.provider === "docs")!;
+    docsReq.id = gmailReq.id;
+    expect(() => validateArtifactAdapters(content)).toThrow(/duplicate requirement id/);
+  });
+
+  test("rejects a tool whose name differs from its operation", async () => {
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    tool.name = "gmail.users.messages.list-alias";
+    expect(() => validateArtifactAdapters(content)).toThrow(/name/);
+  });
+
+  test("rejects case-folded duplicate tool names", async () => {
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    content.tools.push({ ...tool, name: tool.name.toUpperCase(), operation: tool.operation.toUpperCase() });
+    expect(() => validateArtifactAdapters(content)).toThrow(/duplicate|collision/i);
+  });
+
   test("cleanly rejects prototype-chain provider names from untrusted JSON", async () => {
     const content = await compiled();
     content.tools.push({

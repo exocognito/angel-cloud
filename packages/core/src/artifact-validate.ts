@@ -37,7 +37,16 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
     }
   }
 
+  // Tool identity: the compiler emits name === operation and forbids
+  // case-folded collisions — a received artifact must satisfy the same rules.
+  const foldedNames = new Set<string>();
   for (const tool of content.tools) {
+    if (tool.name !== tool.operation) {
+      throw new Error(`tool name ${tool.name} must equal its operation ${tool.operation}`);
+    }
+    const folded = tool.name.toUpperCase();
+    if (foldedNames.has(folded)) throw new Error(`duplicate tool: ${tool.name}`);
+    foldedNames.add(folded);
     const adapter = registryAdapter(tool.provider);
     const contract = Object.hasOwn(adapter.operations, tool.operation)
       ? adapter.operations[tool.operation]
@@ -55,7 +64,12 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
   // what the artifact's real tools justify.
   const artifactTools = new Map(content.tools.map((tool) => [tool.name, tool.provider]));
   const claimedBy = new Map<string, string>();
+  const requirementIds = new Set<string>();
   for (const requirement of content.bindingRequirements) {
+    if (requirementIds.has(requirement.id)) {
+      throw new Error(`duplicate requirement id: ${requirement.id}`);
+    }
+    requirementIds.add(requirement.id);
     const adapter = registryAdapter(requirement.provider);
     if (requirement.credential !== adapter.credential) {
       throw new Error(`requirement ${requirement.id} credential does not match the ${requirement.provider} adapter`);
