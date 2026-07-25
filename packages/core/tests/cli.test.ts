@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HostedVersionArtifact } from "../src/domain";
+import { GENERATED_ADAPTERS } from "../src/adapters.generated";
 import { sha256Hex } from "../src/crypto";
 import { canonicalJson } from "../src/canonical-json";
 import { parseAngelDeploymentConfig } from "../src/cli/config";
@@ -265,19 +266,32 @@ function commandRepo(): string {
 
 function versionArtifact(): HostedVersionArtifact {
   const content = {
-    format: "angel.version.v1" as const,
+    format: "angel.version.v2" as const,
     name: "golden-assistant",
     charter: "Read mail and documents.",
     children: [
       { name: "gdocs-read", digest: "a".repeat(64) },
       { name: "gmail-read-and-draft", digest: "b".repeat(64) },
     ],
+    providers: {
+      docs: {
+        adapter: "google-discovery@1",
+        origin: "https://docs.googleapis.com",
+        sourceDigest: GENERATED_ADAPTERS.docs!.sourceDigest,
+      },
+      gmail: {
+        adapter: "google-discovery@1",
+        origin: "https://gmail.googleapis.com",
+        sourceDigest: GENERATED_ADAPTERS.gmail!.sourceDigest,
+      },
+    },
     bindingRequirements: [
       {
         id: "gdocs-read",
         source: "gdocs-read",
         provider: "docs",
         credential: "google_oauth" as const,
+        requiredScopes: ["https://www.googleapis.com/auth/documents.readonly"],
         tools: ["docs.documents.get"],
       },
       {
@@ -285,15 +299,25 @@ function versionArtifact(): HostedVersionArtifact {
         source: "gmail-read-and-draft",
         provider: "gmail",
         credential: "google_oauth" as const,
+        requiredScopes: ["https://www.googleapis.com/auth/gmail.modify"],
         tools: ["gmail.users.messages.list", "gmail.users.messages.get", "gmail.users.drafts.create"],
       },
     ],
     tools: [
-      { name: "docs.documents.get", provider: "docs", operation: "docs.documents.get", argGuards: [] },
-      { name: "gmail.users.drafts.create", provider: "gmail", operation: "gmail.users.drafts.create", argGuards: [] },
-      { name: "gmail.users.messages.get", provider: "gmail", operation: "gmail.users.messages.get", argGuards: [] },
-      { name: "gmail.users.messages.list", provider: "gmail", operation: "gmail.users.messages.list", argGuards: [] },
-    ],
+      "docs.documents.get",
+      "gmail.users.drafts.create",
+      "gmail.users.messages.get",
+      "gmail.users.messages.list",
+    ].map((name) => {
+      const provider = name.split(".", 1)[0]!;
+      return {
+        name,
+        provider,
+        operation: name,
+        argGuards: [],
+        request: GENERATED_ADAPTERS[provider]!.operations[name]!.request,
+      };
+    }),
   };
   const canonicalSource = canonicalJson(content);
   return { ...content, canonicalSource, digest: "d".repeat(64) };

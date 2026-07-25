@@ -1,15 +1,29 @@
 import { parse as parseYaml } from "yaml";
 import { sha256Hex } from "./crypto";
 import type { ArgGuard } from "./types";
+import type { HttpRequestTemplate } from "./adapter-derive";
+import { selectRequiredScopes } from "./adapter-derive";
+import { GENERATED_ADAPTERS } from "./adapters.generated";
 
 export type DeploymentEnvironment = "staging" | "production";
 export type CredentialKind = "google_oauth" | "service_token" | "bot_token" | "bridge_token";
+
+// The only request kind today. Future non-HTTP adapter kinds (mcp, local)
+// extend this union together with a format bump — the gates never read it.
+export type ToolRequest = HttpRequestTemplate;
 
 export interface HostedTool {
   name: string;
   provider: string;
   operation: string;
   argGuards: ArgGuard[];
+  request: ToolRequest;
+}
+
+export interface HostedProvider {
+  adapter: string;
+  origin: string;
+  sourceDigest: string;
 }
 
 export interface AngelVersionChild {
@@ -22,14 +36,16 @@ export interface ProviderBindingRequirement {
   source: string;
   provider: string;
   credential: CredentialKind;
+  requiredScopes: string[];
   tools: string[];
 }
 
 export interface HostedVersionContent {
-  format: "angel.version.v1";
+  format: "angel.version.v2";
   name: string;
   charter: string;
   children: AngelVersionChild[];
+  providers: Record<string, HostedProvider>;
   bindingRequirements: ProviderBindingRequirement[];
   tools: HostedTool[];
 }
@@ -43,43 +59,7 @@ export interface CompileHostedAngelOptions {
   loadAngel?: (name: string) => string | undefined | Promise<string | undefined>;
 }
 
-interface AdapterContract {
-  credential: CredentialKind;
-  operations: ReadonlySet<string>;
-}
-
-const ADAPTERS: Readonly<Record<string, AdapterContract>> = {
-  docs: {
-    credential: "google_oauth",
-    operations: new Set(["docs.documents.get"]),
-  },
-  gmail: {
-    credential: "google_oauth",
-    operations: new Set([
-      "gmail.users.drafts.create",
-      "gmail.users.drafts.get",
-      "gmail.users.drafts.list",
-      "gmail.users.drafts.update",
-      "gmail.users.getProfile",
-      "gmail.users.history.list",
-      "gmail.users.labels.create",
-      "gmail.users.labels.delete",
-      "gmail.users.labels.get",
-      "gmail.users.labels.list",
-      "gmail.users.labels.patch",
-      "gmail.users.labels.update",
-      "gmail.users.messages.attachments.get",
-      "gmail.users.messages.get",
-      "gmail.users.messages.list",
-      "gmail.users.messages.modify",
-      "gmail.users.settings.getAutoForwarding",
-      "gmail.users.settings.getVacation",
-      "gmail.users.threads.get",
-      "gmail.users.threads.list",
-      "gmail.users.threads.modify",
-    ]),
-  },
-};
+const ADAPTERS = GENERATED_ADAPTERS;
 
 export async function compileHostedAngel(
   raw: string,
@@ -105,10 +85,11 @@ async function compileSource(
     exactKeys(root, ["name", "charter", "tools"], "ANGEL.yaml");
     const tools = directTools(root.tools);
     return artifact({
-      format: "angel.version.v1",
+      format: "angel.version.v2",
       name,
       charter,
       children: [],
+      providers: providersFor(tools),
       bindingRequirements: requirementsFor(name, tools),
       tools,
     });
@@ -134,12 +115,13 @@ async function compileSource(
     childArtifacts.flatMap((child) => child.bindingRequirements),
   );
   return artifact({
-    format: "angel.version.v1",
+    format: "angel.version.v2",
     name,
     charter,
     children: childArtifacts
       .map((child) => ({ name: child.name, digest: child.digest }))
       .sort(byName),
+    providers: providersFor(tools),
     bindingRequirements,
     tools,
   });
@@ -201,10 +183,24 @@ function sourceTool(value: unknown, at: string): HostedTool {
   const provider = operation.split(".", 1)[0]!;
   const adapter = ADAPTERS[provider];
   if (!adapter) throw new Error(`unknown provider namespace: ${provider}`);
-  if (!adapter.operations.has(operation)) {
+  const contract = adapter.operations[operation];
+  if (!contract) {
     throw new Error(`operation ${operation} is not in the ${provider} adapter`);
   }
-  return { name: operation, provider, operation, argGuards };
+  return { name: operation, provider, operation, argGuards, request: contract.request };
+}
+
+function providersFor(tools: HostedTool[]): Record<string, HostedProvider> {
+  const providers: Record<string, HostedProvider> = {};
+  for (const provider of [...new Set(tools.map((tool) => tool.provider))].sort(codeUnitCompare)) {
+    const adapter = ADAPTERS[provider]!;
+    providers[provider] = {
+      adapter: adapter.adapter,
+      origin: adapter.origin,
+      sourceDigest: adapter.sourceDigest,
+    };
+  }
+  return providers;
 }
 
 function requirementsFor(source: string, tools: HostedTool[]): ProviderBindingRequirement[] {
@@ -214,13 +210,22 @@ function requirementsFor(source: string, tools: HostedTool[]): ProviderBindingRe
     existing.push(tool);
     byProvider.set(tool.provider, existing);
   }
-  return [...byProvider.entries()].map(([provider, providerTools]) => ({
-    id: provider,
-    source,
-    provider,
-    credential: ADAPTERS[provider]!.credential,
-    tools: providerTools.map((tool) => tool.name).sort(codeUnitCompare),
-  })).sort(compareRequirement);
+  return [...byProvider.entries()].map(([provider, providerTools]) => {
+    const adapter = ADAPTERS[provider]!;
+    const toolNames = providerTools.map((tool) => tool.name).sort(codeUnitCompare);
+    return {
+      id: provider,
+      source,
+      provider,
+      credential: adapter.credential,
+      requiredScopes: selectRequiredScopes({
+        tools: toolNames,
+        operations: adapter.operations,
+        scopeRanking: adapter.scopeRanking,
+      }),
+      tools: toolNames,
+    };
+  }).sort(compareRequirement);
 }
 
 function rebaseComposedRequirements(

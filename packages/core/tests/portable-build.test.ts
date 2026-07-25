@@ -43,7 +43,7 @@ describe("portable Angel source", () => {
 
     expect(first).toEqual(second);
     expect(first).toMatchObject({
-      format: "angel.version.v1",
+      format: "angel.version.v2",
       name: "research-assistant",
       charter: "Read mail and documents without changing them.",
       children: [],
@@ -109,6 +109,7 @@ describe("portable Angel source", () => {
         source: "docs-read",
         provider: "docs",
         credential: "google_oauth",
+        requiredScopes: ["https://www.googleapis.com/auth/documents.readonly"],
         tools: ["docs.documents.get"],
       },
       {
@@ -116,6 +117,7 @@ describe("portable Angel source", () => {
         source: "gmail-read",
         provider: "gmail",
         credential: "google_oauth",
+        requiredScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
         tools: ["gmail.users.messages.list"],
       },
     ]);

@@ -12,7 +12,7 @@ tools:
   - tool: gmail.users.messages.list
 `);
 
-    expect(artifact.format).toBe("angel.version.v1");
+    expect(artifact.format).toBe("angel.version.v2");
     expect(artifact.bindingRequirements[0]?.id).toBe("gmail");
     expect(artifact.canonicalSource).not.toMatch(/account|connection|target|secret/i);
   });

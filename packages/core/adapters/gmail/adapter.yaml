@@ -1,0 +1,18 @@
+# Reviewed adapter contract for the gmail provider namespace. The narrowed
+# spec beside this file is the source of request templates and per-operation
+# scope alternatives; this file holds what the spec cannot say.
+adapter: google-discovery@1
+credential: google_oauth
+origin: https://gmail.googleapis.com
+source: https://gmail.googleapis.com/$discovery/rest?version=v1
+# Authority order for choosing requiredScopes, narrowest first. The spec lists
+# which scopes each operation accepts but not their relative breadth — that
+# ranking is a human review judgment (e.g. gmail.metadata is technically
+# narrower than gmail.readonly but cannot fetch message bodies, so it is
+# deliberately excluded from automatic selection).
+scopeRanking:
+  - https://www.googleapis.com/auth/gmail.readonly
+  - https://www.googleapis.com/auth/gmail.labels
+  - https://www.googleapis.com/auth/gmail.compose
+  - https://www.googleapis.com/auth/gmail.settings.basic
+  - https://www.googleapis.com/auth/gmail.modify

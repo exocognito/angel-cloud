@@ -1,3 +1,6 @@
+export * from "./adapter-derive";
+export * from "./adapters.generated";
+export * from "./artifact-validate";
 export * from "./canonical-json";
 export * from "./build";
 export * from "./cli/client";

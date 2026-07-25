@@ -1,0 +1,8 @@
+# Reviewed adapter contract for the docs provider namespace.
+adapter: google-discovery@1
+credential: google_oauth
+origin: https://docs.googleapis.com
+source: https://docs.googleapis.com/$discovery/rest?version=v1
+scopeRanking:
+  - https://www.googleapis.com/auth/documents.readonly
+  - https://www.googleapis.com/auth/documents
