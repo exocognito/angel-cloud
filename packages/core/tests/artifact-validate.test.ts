@@ -122,6 +122,37 @@ describe("publish-time adapter validation", () => {
     }
   });
 
+  test("rejects any format other than angel.version.v2", async () => {
+    const content = await compiled();
+    (content as unknown as Record<string, unknown>).format = "angel.version.v1";
+    expect(() => validateArtifactAdapters(content)).toThrow(/format/);
+  });
+
+  test("accepts a request whose keys arrive in a different order", async () => {
+    // Any normalizing hop (jsonb, a proxy) may reorder keys; equality must be
+    // structural, not serialization-order.
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    tool.request = JSON.parse(
+      JSON.stringify(Object.fromEntries(Object.entries(tool.request).reverse())),
+    );
+    expect(() => validateArtifactAdapters(content)).not.toThrow();
+  });
+
+  test("cleanly rejects malformed elements inside the collections", async () => {
+    const nullProvider = await compiled();
+    (nullProvider.providers as unknown as Record<string, unknown>).gmail = null;
+    expect(() => validateArtifactAdapters(nullProvider)).toThrow(/providers entry/);
+
+    const nullTool = await compiled();
+    (nullTool.tools as unknown[]).push(null);
+    expect(() => validateArtifactAdapters(nullTool)).toThrow(/tool/);
+
+    const badRequirement = await compiled();
+    delete (badRequirement.bindingRequirements[0] as unknown as Record<string, unknown>).tools;
+    expect(() => validateArtifactAdapters(badRequirement)).toThrow(/requirement/);
+  });
+
   test("rejects duplicate requirement ids", async () => {
     const content = await compiled();
     const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;

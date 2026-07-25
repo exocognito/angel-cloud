@@ -55,7 +55,9 @@ export async function deriveAdapter(input: {
   const operations: Record<string, DerivedOperation> = {};
   const paths = (spec.paths ?? {}) as Record<string, Record<string, unknown>>;
   for (const [path, pathItem] of Object.entries(paths)) {
-    if (typeof pathItem !== "object" || pathItem === null) continue;
+    if (typeof pathItem !== "object" || pathItem === null) {
+      throw new Error(`${path}: path item must be a mapping`);
+    }
     for (const [method, member] of Object.entries(pathItem)) {
       // Skipping an uninterpretable member would silently drop request data
       // (path-level parameters vanish from every template) — fail instead.
@@ -73,6 +75,11 @@ export async function deriveAdapter(input: {
         throw new Error(`${path}: ${method} operation has no operationId`);
       }
       const id = op.operationId;
+      for (const key of Object.keys(member)) {
+        if (!OPERATION_MEMBERS.has(key)) {
+          throw new Error(`${id}: uninterpretable operation member "${key}"`);
+        }
+      }
       if (operations[id]) throw new Error(`duplicate operationId in spec: ${id}`);
       operations[id] = {
         request: requestTemplate(id, path, method, op),
@@ -95,6 +102,12 @@ export async function deriveAdapter(input: {
 
 const PATH_ITEM_METHODS = new Set(["get", "put", "post", "delete", "patch", "head", "options", "trace"]);
 const PATH_ITEM_METADATA = new Set(["summary", "description"]);
+// Members the derivation interprets or safely ignores; anything else (e.g. an
+// operation-level servers override) would change the request and must fail.
+const OPERATION_MEMBERS = new Set([
+  "operationId", "parameters", "requestBody", "security",
+  "summary", "description", "tags", "responses", "deprecated", "x-executor-toolPath",
+]);
 
 function requestTemplate(
   id: string,

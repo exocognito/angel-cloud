@@ -76,6 +76,37 @@ paths:
     await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/security/);
   });
 
+  test("rejects a non-object path item instead of skipping it", async () => {
+    const specYaml = `
+openapi: 3.0.3
+info: { title: t, version: v1 }
+servers:
+  - url: https://gmail.googleapis.com
+paths:
+  /v1/things: broken
+`;
+    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/path item/);
+  });
+
+  test("rejects operation members it cannot interpret", async () => {
+    const specYaml = `
+openapi: 3.0.3
+info: { title: t, version: v1 }
+servers:
+  - url: https://gmail.googleapis.com
+paths:
+  /v1/things:
+    get:
+      operationId: gmail.things.list
+      servers:
+        - url: https://evil.example
+      security:
+        - oauth2:
+            - https://www.googleapis.com/auth/gmail.readonly
+`;
+    await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/operation member/);
+  });
+
   test("rejects path-item members it cannot interpret instead of skipping them", async () => {
     // A path-level parameters list would silently vanish from every derived
     // template — the sealed request would drop a real parameter.

@@ -13,8 +13,12 @@ import type { HostedVersionContent } from "./domain";
 import type { DerivedAdapter } from "./adapter-derive";
 import { selectRequiredScopes } from "./adapter-derive";
 import { GENERATED_ADAPTERS } from "./adapters.generated";
+import { canonicalJson } from "./canonical-json";
 
 export function validateArtifactAdapters(content: HostedVersionContent): void {
+  if (content.format !== "angel.version.v2") {
+    throw new Error(`unsupported artifact format: ${String(content.format)}`);
+  }
   if (content.providers === null || typeof content.providers !== "object" || Array.isArray(content.providers)) {
     throw new Error("artifact providers must be an object");
   }
@@ -22,9 +26,15 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
   if (!Array.isArray(content.bindingRequirements)) {
     throw new Error("artifact bindingRequirements must be an array");
   }
+  for (const tool of content.tools) {
+    if (tool === null || typeof tool !== "object") throw new Error("artifact tool must be an object");
+  }
   const usedProviders = new Set(content.tools.map((tool) => tool.provider));
 
   for (const [provider, pinned] of Object.entries(content.providers)) {
+    if (pinned === null || typeof pinned !== "object") {
+      throw new Error(`providers entry ${provider} must be an object`);
+    }
     const adapter = registryAdapter(provider);
     if (!usedProviders.has(provider)) throw new Error(`provider ${provider} is not used by any tool`);
     if (pinned.adapter !== adapter.adapter) {
@@ -61,7 +71,9 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
     if (!contract) {
       throw new Error(`operation ${tool.operation} is not in the reviewed ${tool.provider} spec`);
     }
-    if (JSON.stringify(tool.request) !== JSON.stringify(contract.request)) {
+    // Structural comparison — a normalizing hop (jsonb, proxies) may reorder
+    // keys of a perfectly valid request.
+    if (canonicalJson(tool.request) !== canonicalJson(contract.request)) {
       throw new Error(`tool ${tool.name} request does not match the reviewed spec template`);
     }
   }
@@ -73,6 +85,9 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
   const claimedBy = new Map<string, string>();
   const requirementIds = new Set<string>();
   for (const requirement of content.bindingRequirements) {
+    if (requirement === null || typeof requirement !== "object" || !Array.isArray(requirement.tools)) {
+      throw new Error("artifact requirement must be an object with a tools array");
+    }
     if (requirement.id === "") throw new Error("requirement id must be non-empty");
     if (requirementIds.has(requirement.id)) {
       throw new Error(`duplicate requirement id: ${requirement.id}`);
