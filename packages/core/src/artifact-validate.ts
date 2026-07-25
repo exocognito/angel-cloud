@@ -1,10 +1,16 @@
 // Publish-time adapter validation for a received v2 artifact. The publisher
 // never trusts client-compiled adapter data: every request template, provider
-// pin, and consent set must equal what the reviewed registry derives. This is
-// the check that makes "policy accepts what the runtime cannot execute"
-// impossible — an operation with no reviewed template cannot publish.
+// pin, consent set, and requirement tool list must equal what the reviewed
+// registry derives. This is the check that makes "policy accepts what the
+// runtime cannot execute" impossible — an operation with no reviewed template
+// cannot publish.
+//
+// The content is attacker-supplied JSON, so every keyed lookup goes through
+// Object.hasOwn — prototype-chain names (constructor, __proto__) must reject
+// cleanly, never pass a truthy check or die on an incidental TypeError.
 
 import type { HostedVersionContent } from "./domain";
+import type { DerivedAdapter } from "./adapter-derive";
 import { selectRequiredScopes } from "./adapter-derive";
 import { GENERATED_ADAPTERS } from "./adapters.generated";
 
@@ -12,8 +18,7 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
   const usedProviders = new Set(content.tools.map((tool) => tool.provider));
 
   for (const [provider, pinned] of Object.entries(content.providers)) {
-    const adapter = GENERATED_ADAPTERS[provider];
-    if (!adapter) throw new Error(`unknown provider namespace: ${provider}`);
+    const adapter = registryAdapter(provider);
     if (!usedProviders.has(provider)) throw new Error(`provider ${provider} is not used by any tool`);
     if (pinned.adapter !== adapter.adapter) {
       throw new Error(`unsupported adapter version for ${provider}: ${pinned.adapter}`);
@@ -26,12 +31,17 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
     }
   }
   for (const provider of usedProviders) {
-    if (!content.providers[provider]) throw new Error(`tool provider ${provider} has no providers entry`);
+    registryAdapter(provider);
+    if (!Object.hasOwn(content.providers, provider)) {
+      throw new Error(`tool provider ${provider} has no providers entry`);
+    }
   }
 
   for (const tool of content.tools) {
-    const adapter = GENERATED_ADAPTERS[tool.provider]!;
-    const contract = adapter.operations[tool.operation];
+    const adapter = registryAdapter(tool.provider);
+    const contract = Object.hasOwn(adapter.operations, tool.operation)
+      ? adapter.operations[tool.operation]
+      : undefined;
     if (!contract) {
       throw new Error(`operation ${tool.operation} is not in the reviewed ${tool.provider} spec`);
     }
@@ -40,11 +50,30 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
     }
   }
 
+  // Requirement tool lists are the consent inputs — reconcile them exactly
+  // with the artifact's tools, or a padded list escalates requiredScopes past
+  // what the artifact's real tools justify.
+  const artifactTools = new Map(content.tools.map((tool) => [tool.name, tool.provider]));
+  const claimedBy = new Map<string, string>();
   for (const requirement of content.bindingRequirements) {
-    const adapter = GENERATED_ADAPTERS[requirement.provider];
-    if (!adapter) throw new Error(`unknown provider namespace: ${requirement.provider}`);
+    const adapter = registryAdapter(requirement.provider);
     if (requirement.credential !== adapter.credential) {
       throw new Error(`requirement ${requirement.id} credential does not match the ${requirement.provider} adapter`);
+    }
+    if (requirement.tools.length === 0) {
+      throw new Error(`requirement ${requirement.id} lists no tools`);
+    }
+    for (const toolName of requirement.tools) {
+      const prior = claimedBy.get(toolName);
+      if (prior) {
+        throw new Error(`tool ${toolName} is claimed by requirements ${prior} and ${requirement.id}`);
+      }
+      claimedBy.set(toolName, requirement.id);
+      if (artifactTools.get(toolName) !== requirement.provider) {
+        throw new Error(
+          `requirement ${requirement.id} lists tool ${toolName} the artifact does not contain for ${requirement.provider}`,
+        );
+      }
     }
     const expected = selectRequiredScopes({
       tools: requirement.tools,
@@ -57,4 +86,16 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
       );
     }
   }
+  for (const toolName of artifactTools.keys()) {
+    if (!claimedBy.has(toolName)) {
+      throw new Error(`tool ${toolName} has no binding requirement`);
+    }
+  }
+}
+
+function registryAdapter(provider: string): DerivedAdapter {
+  if (!Object.hasOwn(GENERATED_ADAPTERS, provider)) {
+    throw new Error(`unknown provider namespace: ${provider}`);
+  }
+  return GENERATED_ADAPTERS[provider]!;
 }

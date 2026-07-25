@@ -66,4 +66,39 @@ describe("publish-time adapter validation", () => {
     content.bindingRequirements = content.bindingRequirements.filter((r) => r.provider !== "docs");
     expect(() => validateArtifactAdapters(content)).toThrow(/docs/);
   });
+
+  test("rejects a requirement listing a tool the artifact does not contain", async () => {
+    // Padding the requirement's tool list escalates requiredScopes past what
+    // the artifact's actual tools justify — the consent-escalation tamper.
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    gmailReq.tools = [...gmailReq.tools, "gmail.users.drafts.create"].sort();
+    gmailReq.requiredScopes = ["https://www.googleapis.com/auth/gmail.modify"];
+    expect(() => validateArtifactAdapters(content)).toThrow(/tool/);
+  });
+
+  test("rejects an artifact whose tools have no binding requirement", async () => {
+    const content = await compiled();
+    content.bindingRequirements = [];
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement/);
+  });
+
+  test("rejects a tool claimed by two requirements", async () => {
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    content.bindingRequirements.push({ ...gmailReq, id: `${gmailReq.id}-dup` });
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement/);
+  });
+
+  test("cleanly rejects prototype-chain provider names from untrusted JSON", async () => {
+    const content = await compiled();
+    content.tools.push({
+      name: "constructor.x",
+      provider: "constructor",
+      operation: "constructor.x",
+      argGuards: [],
+      request: content.tools[0]!.request,
+    });
+    expect(() => validateArtifactAdapters(content)).toThrow(/unknown provider/);
+  });
 });
