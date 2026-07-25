@@ -39,6 +39,9 @@ export async function deriveAdapter(input: {
   adapterYaml: string;
   specYaml: string;
 }): Promise<DerivedAdapter> {
+  // The digest is a content pin, not a checkout pin — normalize line endings
+  // so LF and CRLF copies of the same reviewed spec derive one identity.
+  const specYaml = input.specYaml.replace(/\r\n/g, "\n");
   const meta = parseYaml(input.adapterYaml) as Record<string, unknown>;
   const adapter = requireText(meta.adapter, "adapter.yaml adapter");
   const credential = requireText(meta.credential, "adapter.yaml credential") as CredentialKind;
@@ -46,7 +49,7 @@ export async function deriveAdapter(input: {
   const source = requireText(meta.source, "adapter.yaml source");
   const scopeRanking = requireTextList(meta.scopeRanking, "adapter.yaml scopeRanking");
 
-  const spec = parseYaml(input.specYaml) as Record<string, unknown>;
+  const spec = parseYaml(specYaml) as Record<string, unknown>;
   requireSpecOrigin(spec, origin);
 
   const operations: Record<string, DerivedOperation> = {};
@@ -76,7 +79,7 @@ export async function deriveAdapter(input: {
     credential,
     origin,
     source,
-    sourceDigest: `sha256:${await sha256Hex(input.specYaml)}`,
+    sourceDigest: `sha256:${await sha256Hex(specYaml)}`,
     scopeRanking,
     operations,
   };

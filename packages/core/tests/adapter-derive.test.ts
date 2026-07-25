@@ -56,6 +56,12 @@ describe("adapter derivation", () => {
     await expect(deriveAdapter({ ...gmail, specYaml })).rejects.toThrow(/base path|pathname/);
   });
 
+  test("derives the same sourceDigest for LF and CRLF copies of a spec", async () => {
+    const lf = await deriveAdapter(gmail);
+    const crlf = await deriveAdapter({ ...gmail, specYaml: gmail.specYaml.replace(/\n/g, "\r\n") });
+    expect(crlf.sourceDigest).toBe(lf.sourceDigest);
+  });
+
   test("rejects an operation whose security shape is not a single oauth2 entry", async () => {
     const specYaml = `
 openapi: 3.0.3
