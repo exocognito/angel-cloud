@@ -73,6 +73,17 @@ tools:
     ]);
   });
 
+  test("cleanly rejects prototype-chain provider namespaces", async () => {
+    for (const operation of ["constructor.x", "toString.y", "hasOwnProperty.z"]) {
+      await expect(compileHostedAngel(`
+name: bad
+charter: x
+tools:
+  - tool: ${operation}
+`)).rejects.toThrow(/unknown provider namespace/);
+    }
+  });
+
   test("still rejects operations outside the reviewed adapter spec", async () => {
     await expect(compileHostedAngel(`
 name: bad

@@ -181,7 +181,9 @@ function sourceTool(value: unknown, at: string): HostedTool {
   }
 
   const provider = operation.split(".", 1)[0]!;
-  const adapter = ADAPTERS[provider];
+  // hasOwn, not truthiness: "constructor" and friends resolve up the
+  // prototype chain to truthy junk and would crash later instead of rejecting.
+  const adapter = Object.hasOwn(ADAPTERS, provider) ? ADAPTERS[provider] : undefined;
   if (!adapter) throw new Error(`unknown provider namespace: ${provider}`);
   const contract = adapter.operations[operation];
   if (!contract) {
