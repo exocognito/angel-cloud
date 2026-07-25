@@ -37,7 +37,7 @@ does not select one implicitly:
 | --- | --- | --- |
 | Public source repo | `gh repo edit exocognito/angels --visibility public` | Repository admin; consumers need none |
 | Public npm package from private source | `cd packages/angel-core && pnpm publish --access public` | Maintainer needs an npm publish token; consumers need none |
-| Private npm/Git package | `cd packages/angel-core && pnpm publish --access restricted` or pin `git+https://github.com/exocognito/angels.git#v0.1.0` | Maintainer needs registry/GitHub publish access; consumers and CI need an explicit read credential |
+| Private npm/Git package | `cd packages/angel-core && pnpm publish --access restricted` or pin `git+https://github.com/exocognito/angels.git#v<release-tag>` | Maintainer needs registry/GitHub publish access; consumers and CI need an explicit read credential |
 | Temporary workspace | `pnpm install` from a parent workspace | None, but it is not an independent fresh-clone boundary |
 
 No publication or visibility mutation has been performed.
