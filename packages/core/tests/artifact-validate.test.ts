@@ -90,6 +90,17 @@ describe("publish-time adapter validation", () => {
     expect(() => validateArtifactAdapters(content)).toThrow(/requirement/);
   });
 
+  test("rejects a double-claimed tool even when the first requirement id is empty", async () => {
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    content.bindingRequirements = [
+      { ...gmailReq, id: "" },
+      gmailReq,
+      ...content.bindingRequirements.filter((r) => r.provider !== "gmail"),
+    ];
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement id|claimed/);
+  });
+
   test("rejects duplicate requirement ids", async () => {
     const content = await compiled();
     const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;

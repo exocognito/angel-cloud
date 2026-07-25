@@ -66,6 +66,7 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
   const claimedBy = new Map<string, string>();
   const requirementIds = new Set<string>();
   for (const requirement of content.bindingRequirements) {
+    if (requirement.id === "") throw new Error("requirement id must be non-empty");
     if (requirementIds.has(requirement.id)) {
       throw new Error(`duplicate requirement id: ${requirement.id}`);
     }
@@ -78,9 +79,10 @@ export function validateArtifactAdapters(content: HostedVersionContent): void {
       throw new Error(`requirement ${requirement.id} lists no tools`);
     }
     for (const toolName of requirement.tools) {
-      const prior = claimedBy.get(toolName);
-      if (prior) {
-        throw new Error(`tool ${toolName} is claimed by requirements ${prior} and ${requirement.id}`);
+      // has(), not get()-truthiness — an empty-string id must still count as
+      // a claim, or one tool can belong to two requirements.
+      if (claimedBy.has(toolName)) {
+        throw new Error(`tool ${toolName} is claimed by requirements ${claimedBy.get(toolName)} and ${requirement.id}`);
       }
       claimedBy.set(toolName, requirement.id);
       if (artifactTools.get(toolName) !== requirement.provider) {
