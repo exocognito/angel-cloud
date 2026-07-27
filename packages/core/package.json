@@ -4,6 +4,7 @@
   "description": "Portable Angel policy compiler, artifact contract, and target-neutral CLI",
   "type": "module",
   "types": "src/index.ts",
+  "license": "MIT",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -20,6 +21,16 @@
   },
   "bin": {
     "angel": "src/scripts/angel.ts"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/exocognito/angels.git",
+    "directory": "packages/angel-core"
   },
   "scripts": {
     "angel": "bun run src/scripts/angel.ts",

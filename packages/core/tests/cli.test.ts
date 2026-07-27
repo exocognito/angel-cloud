@@ -7,6 +7,7 @@ import { GENERATED_ADAPTERS } from "../src/adapters.generated";
 import { sha256Hex } from "../src/crypto";
 import { canonicalJson } from "../src/canonical-json";
 import { parseAngelDeploymentConfig } from "../src/cli/config";
+import { ManagementClient } from "../src/cli/client";
 import { runAngelCommand } from "../src/cli/commands";
 
 describe("Angel CLI module surface", () => {
@@ -26,6 +27,80 @@ describe("Angel CLI module surface", () => {
     expect(packageJson.bin).toEqual({ angel: "src/scripts/angel.ts" });
     expect(packageJson.scripts.angel).toBe("bun run src/scripts/angel.ts");
     expect(existsSync(join(PACKAGE_ROOT, "src/scripts/angel.ts"))).toBe(true);
+  });
+
+  test("publishes tarball containing only runtime source, README, LICENSE, and package.json", () => {
+    const proc = Bun.spawnSync(["pnpm", "pack", "--dry-run"], { cwd: PACKAGE_ROOT });
+    const stdout = proc.stdout.toString();
+    const lines = stdout.split("\n");
+    const contentsStart = lines.indexOf("Tarball Contents");
+    const contentsEnd = lines.indexOf("Tarball Details");
+    expect(contentsStart).toBeGreaterThan(-1);
+    expect(contentsEnd).toBeGreaterThan(contentsStart);
+
+    const contents = lines.slice(contentsStart + 1, contentsEnd).map(l => l.trim()).filter(Boolean);
+
+    const allowed = (entry: string) =>
+      entry === "LICENSE" ||
+      entry === "README.md" ||
+      entry === "package.json" ||
+      entry.startsWith("src/");
+
+    for (const entry of contents) {
+      expect(allowed(entry)).toBe(true);
+    }
+
+    expect(contents).toContain("package.json");
+    expect(contents).toContain("README.md");
+    expect(contents).toContain("LICENSE");
+    expect(contents.some(f => f.startsWith("src/"))).toBe(true);
+  });
+
+  test("exports explicit root, build, and CLI modules without wildcard subpaths", () => {
+    const packageJson = JSON.parse(readFileSync(join(PACKAGE_ROOT, "package.json"), "utf8"));
+    expect(packageJson.exports).toEqual({
+      ".": {
+        types: "./src/index.ts",
+        default: "./src/index.ts",
+      },
+      "./build": {
+        types: "./src/build.ts",
+        default: "./src/build.ts",
+      },
+      "./cli": {
+        types: "./src/cli/index.ts",
+        default: "./src/cli/index.ts",
+      },
+    });
+  });
+
+  test("bundles the root entry for a Worker without Node filesystem dependencies", async () => {
+    const outDir = mkdtempSync(join(tmpdir(), "angel-core-worker-bundle-"));
+    const result = await Bun.build({
+      entrypoints: [join(PACKAGE_ROOT, "src/index.ts")],
+      target: "browser",
+      outdir: outDir,
+      format: "esm",
+      sourcemap: "none",
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.outputs).toHaveLength(1);
+    const output = await result.outputs[0]!.text();
+    expect(output).not.toContain("node:fs");
+    expect(output).not.toContain("node:path");
+  });
+
+  test("provides explicit Node-side build and CLI entrypoints", async () => {
+    const [build, cli] = await Promise.all([
+      import("../src/build"),
+      import("../src/cli"),
+    ]);
+
+    expect(typeof build.buildPortableAngel).toBe("function");
+    expect(typeof cli.ManagementClient).toBe("function");
+    expect(typeof cli.loadAngelDeploymentConfig).toBe("function");
+    expect(typeof cli.runAngelCommand).toBe("function");
   });
 });
 
@@ -84,6 +159,69 @@ describe("angel.json", () => {
 });
 
 describe("Angel management commands", () => {
+  test("parses the opaque Access token into standard Cloudflare Access headers", async () => {
+    const api = fakeApi([jsonResponse([])]);
+
+    await new ManagementClient({
+      target: "https://cloud.example",
+      token: "management-secret",
+      accessToken: JSON.stringify({
+        "cf-access-client-id": "access-client-id",
+        "cf-access-client-secret": "access-client-secret",
+      }),
+      fetch: api.fetch,
+    }).listConnections("acct_demo");
+
+    expect(api.requests[0]?.headers.get("authorization")).toBe("Bearer management-secret");
+    expect(api.requests[0]?.headers.get("cf-access-client-id")).toBe("access-client-id");
+    expect(api.requests[0]?.headers.get("cf-access-client-secret")).toBe("access-client-secret");
+    expect(api.requests[0]?.headers.has("x-angel-access")).toBe(false);
+  });
+
+  test("omits an unset optional Access token", async () => {
+    const api = fakeApi([jsonResponse([])]);
+
+    await new ManagementClient({
+      target: "https://cloud.example",
+      token: "management-secret",
+      fetch: api.fetch,
+    }).listConnections("acct_demo");
+
+    expect(api.requests[0]?.headers.has("cf-access-client-id")).toBe(false);
+    expect(api.requests[0]?.headers.has("cf-access-client-secret")).toBe(false);
+    expect(api.requests[0]?.headers.has("x-angel-access")).toBe(false);
+  });
+
+  test("rejects malformed Access service-token JSON before sending a request", async () => {
+    for (const accessToken of [
+      "",
+      "not-json",
+      JSON.stringify({ "cf-access-client-id": "client-id" }),
+      JSON.stringify({
+        "cf-access-client-id": "client-id",
+        "cf-access-client-secret": "client-secret",
+        extra: "not-allowed",
+      }),
+      JSON.stringify({
+        "cf-access-client-id": 123,
+        "cf-access-client-secret": "client-secret",
+      }),
+      JSON.stringify({
+        "cf-access-client-id": " client-id",
+        "cf-access-client-secret": "client-secret",
+      }),
+    ]) {
+      const api = fakeApi([jsonResponse([])]);
+      await expect(new ManagementClient({
+        target: "https://cloud.example",
+        token: "management-secret",
+        accessToken,
+        fetch: api.fetch,
+      }).listConnections("acct_demo")).rejects.toThrow(/Access token/);
+      expect(api.requests).toHaveLength(0);
+    }
+  });
+
   test("publishes one built artifact through the exact primitive API sequence", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
@@ -220,6 +358,40 @@ describe("Angel management commands", () => {
     }
   });
 
+  test("rejects an unhealthy historical nickname when no healthy match exists", async () => {
+    const tombstone = { ...connections()[0]!, id: "con_removed", health: "error" as const };
+    const api = fakeApi([jsonResponse([tombstone, connections()[1]!])]);
+    await expect(runAngelCommand(["publish", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact: versionArtifact(), outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow("Connection nickname personal-google exists but is not healthy");
+    expect(api.requests).toHaveLength(1);
+  });
+
+  test("resolves a healthy replacement despite a same-nickname tombstone", async () => {
+    const artifact = versionArtifact();
+    const tombstone = { ...connections()[0]!, id: "con_removed", health: "error" as const };
+    const replacement = { ...connections()[0]!, id: "con_replacement", health: "healthy" as const };
+    const api = fakeApi([
+      jsonResponse([tombstone, replacement, connections()[1]!]),
+      jsonResponse({ angel: managementAngel(), keys: { staging: "ak_staging_once", production: "ak_production_once" } }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse(stagingDeployment(artifact)),
+    ]);
+    await runAngelCommand(["publish", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+    const deployment = await api.requests[3]!.clone().json() as { bindings: Record<string, string[]> };
+    expect(deployment.bindings["gdocs-read"]).toEqual(["con_replacement"]);
+  });
+
   test("stops at the first HTTP, non-JSON, or response schema failure", async () => {
     const artifact = versionArtifact();
     for (const response of [
@@ -237,6 +409,42 @@ describe("Angel management commands", () => {
       })).rejects.toThrow();
       expect(api.requests).toHaveLength(1);
     }
+  });
+
+  test("uses an explicit injected deployment-config loader without weakening the file-backed default", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(connections()),
+      jsonResponse({ angel: managementAngel() }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse(stagingDeployment(artifact)),
+    ]);
+    const cleanRoot = mkdtempSync(join(tmpdir(), "angel-core-clean-cli-"));
+
+    await runAngelCommand(["publish", "golden-assistant"], {
+      repoRoot: cleanRoot,
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      loadDeploymentConfig: () => ({
+        target: "https://self-hosted.example",
+        account: "acct_demo",
+        angel: "golden-assistant",
+        bindings: {
+          staging: {
+            "gdocs-read": "personal-google",
+            "gmail-read-and-draft": ["personal-google", "work-google"],
+          },
+          production: {
+            "gdocs-read": "personal-google",
+            "gmail-read-and-draft": ["personal-google", "work-google"],
+          },
+        },
+      }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(api.requests[0]?.url).toBe("https://self-hosted.example/v1/accounts/acct_demo/connections");
   });
 });
 
