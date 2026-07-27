@@ -1,0 +1,15 @@
+{
+  "target": "https://angelmcp.example",
+  "account": "acct_example",
+  "angel": "google-read-proof",
+  "bindings": {
+    "staging": {
+      "docs": "proof-google",
+      "gmail": "proof-google"
+    },
+    "production": {
+      "docs": "proof-google",
+      "gmail": "proof-google"
+    }
+  }
+}

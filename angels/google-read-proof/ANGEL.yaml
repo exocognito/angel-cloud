@@ -1,0 +1,10 @@
+name: google-read-proof
+
+charter: Read bounded Gmail search results and one requested Google Doc. Never create, edit, send, or delete.
+
+tools:
+  - tool: gmail.users.messages.list
+    argGuards:
+      - field: maxResults
+        pin: "5"
+  - docs.documents.get

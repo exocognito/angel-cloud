@@ -1,0 +1,16 @@
+{
+  "target": "https://control.example.com",
+  "account": "acct_example",
+  "angel": "golden-research-assistant",
+  "bindings": {
+    "staging": {
+      "gmail": ["google-primary", "google-work"],
+      "docs": "google-primary"
+    },
+    "production": {
+      "gmail": ["google-primary", "google-work"],
+      "docs": "google-primary"
+    }
+  }
+}
+

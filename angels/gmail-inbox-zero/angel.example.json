@@ -1,0 +1,13 @@
+{
+  "target": "https://control.example",
+  "account": "acct_demo",
+  "angel": "gmail-inbox-zero",
+  "bindings": {
+    "staging": {
+      "gmail": "personal-google"
+    },
+    "production": {
+      "gmail": "personal-google"
+    }
+  }
+}

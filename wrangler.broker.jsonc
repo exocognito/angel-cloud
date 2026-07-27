@@ -1,0 +1,24 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "angelmcp-broker-demo",
+  "account_id": "6334e1f9af90be70f091a0116425606a",
+  "main": "src/workers/broker.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  // Secrets: CONTROL_BROKER_TOKEN, GATEWAY_BROKER_INVOKE_TOKEN, CREDENTIAL_KEK
+  "durable_objects": {
+    "bindings": [
+      { "name": "GATES", "class_name": "GateRuntime" },
+      { "name": "CREDENTIAL_VAULTS", "class_name": "CredentialVault" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GateRuntime"] },
+    { "tag": "v2", "new_sqlite_classes": ["CredentialVault"] }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

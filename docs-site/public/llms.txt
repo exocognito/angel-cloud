@@ -1,0 +1,36 @@
+# Angel Cloud
+
+> Angel Cloud is a hosted control plane where an owner defines an **Angel** — a
+> policy-sealed, credential-custodied surface of provider tools (e.g. read-only
+> Gmail and Google Docs) — then publishes it so an agent can call it over MCP.
+> Enforcement and credential custody live on the server; the agent only holds an
+> opaque Angel key.
+
+You are an agent helping someone create, publish, and operate an Angel. Do this
+over the management API and the published `@smcllns/angel-core` CLI. **Do not
+clone the `exocognito/angel-cloud` repository** — the CLI is an installable npm
+package and every deployment step is an HTTP call. The source tree is the
+operator's, not the user's.
+
+If you only read one file, read [SKILL.md](https://docs.angelmcp.ai/SKILL.md):
+it is the whole journey as procedural instructions.
+
+## Start here
+
+- [SKILL.md](https://docs.angelmcp.ai/SKILL.md): The create → publish → promote → connect journey as loadable agent instructions, API/CLI-first, no repo clone. Marks which steps need credentials and which are offline.
+
+## Reference docs
+
+- [User manual](https://docs.angelmcp.ai/user-manual.md): Canonical product mechanics — write an Angel (`ANGEL.yaml` + `angel.json`), add Google custody, authenticate management calls, build, publish to staging, promote the exact staged deployment, connect an agent over MCP, operate and pause. The authoritative reference the SKILL journey draws from.
+- [FAQ](https://docs.angelmcp.ai/faq.md): The rationale and boundaries — why policy is split from deployment config, why Versions are immutable, how credentials are custodied, what a Cloudflare account admin can and cannot see, current limits, and what is not built yet.
+- [Operator journey](https://docs.angelmcp.ai/operator-journey.md): A worked, credentialed end-to-end lifecycle for the `google-read-proof` Angel — publish, promote, prove real Google calls pass, revoke a Connection and prove loud failure, reauthorize and prove recovery. Tags each step "browser" vs "shell".
+
+## Interfaces
+
+- Management API base (today): `https://angelmcp-control-demo.sam-633.workers.dev` — all `/v1/...` routes need a Cloudflare Access identity **and** `Authorization: Bearer <management token>`; mutations need an `Idempotency-Key` header.
+- MCP endpoint (today): `POST https://angelmcp-gateway-demo.sam-633.workers.dev/v1/a/<account>/<angel>/<staging|production>/mcp` with `Authorization: Bearer <Angel key>`, MCP streamable HTTP, protocol `2025-06-18`.
+- CLI: `@smcllns/angel-core` on npm (`bin: angel`); run with `bun`. Subcommands: `angel build`, `angel publish`, `angel deploy --prod`.
+
+## Optional
+
+- [Domain architecture](https://docs.angelmcp.ai/domain-architecture.md): The target host and URL scheme (`@account/angel[@env]` coordinate, the `angelmcp.ai` host map). Forward-looking; most of it is not wired yet — everything currently runs on `*.sam-633.workers.dev`.

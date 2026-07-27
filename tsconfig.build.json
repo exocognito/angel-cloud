@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["angels/*/build/**/*.ts", "angel-relay/build/*/**/*.ts"]
+}

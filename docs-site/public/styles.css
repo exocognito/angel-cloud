@@ -1,0 +1,156 @@
+:root {
+  --bg: #ffffff;
+  --bg-soft: #f6f7f9;
+  --bg-code: #f2f3f5;
+  --fg: #1b1f24;
+  --fg-soft: #5a6472;
+  --border: #e3e6ea;
+  --accent: #d6266b;
+  --accent-fg: #ffffff;
+  --link: #b21e5a;
+  --max: 46rem;
+  --sidebar: 16rem;
+  font-synthesis: none;
+  -webkit-text-size-adjust: 100%;
+}
+:root[data-theme="dark"] {
+  --bg: #0f1216;
+  --bg-soft: #161b22;
+  --bg-code: #1b2129;
+  --fg: #e6e9ee;
+  --fg-soft: #9aa4b2;
+  --border: #262c34;
+  --accent: #ff4f97;
+  --accent-fg: #10131a;
+  --link: #ff85b8;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="auto"] {
+    --bg: #0f1216; --bg-soft: #161b22; --bg-code: #1b2129;
+    --fg: #e6e9ee; --fg-soft: #9aa4b2; --border: #262c34;
+    --accent: #ff4f97; --accent-fg: #10131a; --link: #ff85b8;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+code, pre, kbd {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* Top bar */
+#topbar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 0.7rem 1.25rem;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 700; font-size: 1.05rem; text-decoration: none; color: var(--fg); letter-spacing: -0.01em; }
+.brand-sub { color: var(--accent); font-weight: 700; }
+.topnav { display: flex; align-items: center; gap: 1rem; }
+.topnav a { color: var(--fg-soft); text-decoration: none; font-size: 0.9rem; font-family: ui-monospace, monospace; }
+.topnav a:hover { color: var(--link); }
+#theme-toggle {
+  background: var(--bg-soft); color: var(--fg); border: 1px solid var(--border);
+  border-radius: 6px; width: 2rem; height: 2rem; cursor: pointer; font-size: 1rem;
+}
+
+/* Layout */
+#layout { display: flex; flex: 1; align-items: flex-start; }
+#sidebar {
+  position: sticky; top: 3.25rem;
+  width: var(--sidebar); flex: none;
+  height: calc(100vh - 3.25rem); overflow-y: auto;
+  padding: 1.5rem 1rem; border-right: 1px solid var(--border);
+}
+.nav-group { margin-bottom: 1.4rem; }
+.nav-title {
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--fg-soft); margin-bottom: 0.4rem; font-weight: 700;
+}
+#sidebar a {
+  display: block; padding: 0.28rem 0.5rem; margin: 0 -0.5rem;
+  color: var(--fg-soft); text-decoration: none; border-radius: 6px;
+  font-size: 0.92rem;
+}
+#sidebar a:hover { background: var(--bg-soft); color: var(--fg); }
+#sidebar a.active { color: var(--accent); font-weight: 600; }
+
+#content { flex: 1; min-width: 0; padding: 2rem 2.5rem 4rem; }
+#home, #doc { max-width: var(--max); margin: 0 auto; }
+
+/* Landing */
+.lede { font-size: 1.12rem; color: var(--fg); }
+.agent-box {
+  background: var(--bg-soft);
+  /* Square the two corners touching the accent edge; round the far side. */
+  border-radius: 0 10px 10px 0;
+  padding: 1.1rem 1.3rem;
+  margin: 1.5rem 0 2rem;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.agent-box h2 { margin-top: 0.2rem; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 0.9rem; margin: 1.5rem 0 2.5rem; }
+.card {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.1rem;
+  background: var(--bg);
+}
+.card:hover { border-color: var(--accent); }
+.card h3 { margin: 0 0 0.35rem; color: var(--fg); }
+.card p { margin: 0; color: var(--fg-soft); font-size: 0.92rem; }
+.cred-table { width: 100%; border-collapse: collapse; margin: 1rem 0 2rem; font-size: 0.92rem; }
+.cred-table th, .cred-table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.cred-table th { color: var(--fg-soft); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Rendered markdown */
+#doc h1, #doc h2, #doc h3, #doc h4 { line-height: 1.25; scroll-margin-top: 4.5rem; }
+#doc h1 { font-size: 2rem; letter-spacing: -0.02em; margin: 0 0 1rem; }
+#doc h2 { font-size: 1.45rem; margin: 2.2rem 0 0.8rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
+#doc h3 { font-size: 1.15rem; margin: 1.8rem 0 0.6rem; }
+#doc h4 { font-size: 1rem; margin: 1.4rem 0 0.5rem; }
+#doc p, #doc li { color: var(--fg); }
+#doc a, .agent-box a, #home a { color: var(--link); }
+#doc img { max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 8px; margin: 0.8rem 0; }
+#doc table { width: 100%; border-collapse: collapse; margin: 1rem 0; display: block; overflow-x: auto; }
+#doc th, #doc td { border: 1px solid var(--border); padding: 0.45rem 0.65rem; text-align: left; }
+#doc th { background: var(--bg-soft); }
+#doc blockquote { margin: 1rem 0; padding: 0.2rem 1rem; color: var(--fg-soft); box-shadow: inset 3px 0 0 var(--border); }
+
+/* Anchor links on headings */
+.hanchor { opacity: 0; text-decoration: none; color: var(--fg-soft); margin-left: 0.4rem; font-weight: 400; }
+#doc h1:hover .hanchor, #doc h2:hover .hanchor, #doc h3:hover .hanchor, #doc h4:hover .hanchor { opacity: 1; }
+
+/* Code */
+:not(pre) > code { background: var(--bg-code); padding: 0.12em 0.38em; border-radius: 5px; font-size: 0.9em; }
+pre {
+  background: var(--bg-code); padding: 0.9rem 1rem; border-radius: 8px;
+  overflow-x: auto; border: 1px solid var(--border); font-size: 0.88rem; line-height: 1.5;
+}
+pre code { background: none; padding: 0; }
+pre.mermaid { background: var(--bg-soft); text-align: center; }
+
+#doc-error { max-width: var(--max); margin: 2rem auto; color: var(--fg-soft); }
+
+#footer { border-top: 1px solid var(--border); padding: 1rem 1.5rem; color: var(--fg-soft); font-size: 0.85rem; text-align: center; }
+
+/* Mobile */
+@media (max-width: 780px) {
+  #sidebar {
+    position: static; width: 100%; height: auto;
+    border-right: none; border-bottom: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 0.25rem 1rem;
+  }
+  .nav-group { margin-bottom: 0.5rem; }
+  #layout { flex-direction: column; }
+  #content { padding: 1.5rem 1.15rem 3rem; }
+}

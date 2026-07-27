@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "types/control.d.ts",
+    "src/control.ts",
+    "src/demo-fixtures.ts",
+    "src/domain.ts",
+    "src/gate.ts",
+    "src/workers/account-registry.ts",
+    "src/workers/control.ts",
+    "src/workers/service-gate-fleet.ts",
+    "src/workers/protocol.ts"
+  ]
+}

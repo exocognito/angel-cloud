@@ -1,0 +1,1102 @@
+/* ==========================================================================
+   Design tokens — ported from the approved prototype (angel-prototype-reference.html)
+   Light is the default. Dark applies via system preference AND a manual
+   [data-theme] override on <html> set by the topbar toggle (see app.js).
+   ========================================================================== */
+:root {
+  color-scheme: light;
+  --ground: #f2f0e8; --ground-2: #eae7dc; --card: #faf9f3; --card-2: #f4f2ea;
+  --ink: #1b1a17; --ink-2: #5b584d; --ink-3: #928f81;
+  --line: #ddd9cb; --line-2: #cdc9b8;
+  --navy: #1d3f5e; --navy-2: #285f89; --navy-ink: #f4f1e8; --link: #2c5f9e;
+  --good: #3f7d52; --good-bg: #e7efe3; --warn: #8a5e17; --warn-bg: #f6ecd8;
+  --danger: #b3452e; --danger-bg: #f5e2dc; --spark: #4a86c9;
+  --on: #33a457; --off: #d1503f;
+  /* solid navy accent used for fills/borders/box-shadows that need extra pop
+     in dark mode — bumped to --navy-2 there; plain --navy is fine for text */
+  --accent: #1d3f5e;
+  --sans: "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ground: #17150f; --ground-2: #201d16; --card: #23201a; --card-2: #2a271f;
+    --ink: #eceae1; --ink-2: #b1ad9e; --ink-3: #78756a;
+    --line: #423d3070; --line-2: #423d30;
+    --navy: #2c608e; --navy-2: #3a76a8; --navy-ink: #f4f1e8; --link: #7aa7d8;
+    --good: #5ba272; --good-bg: #1e2c20; --warn: #cc9a4e; --warn-bg: #2f2611;
+    --danger: #d3745c; --danger-bg: #331c15; --spark: #6fa0da;
+    --on: #35b45f; --off: #e2604d;
+    --accent: #3a76a8;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #17150f; --ground-2: #201d16; --card: #23201a; --card-2: #2a271f;
+  --ink: #eceae1; --ink-2: #b1ad9e; --ink-3: #78756a;
+  --line: #423d3070; --line-2: #423d30;
+  --navy: #2c608e; --navy-2: #3a76a8; --navy-ink: #f4f1e8; --link: #7aa7d8;
+  --good: #5ba272; --good-bg: #1e2c20; --warn: #cc9a4e; --warn-bg: #2f2611;
+  --danger: #d3745c; --danger-bg: #331c15; --spark: #6fa0da;
+  --on: #35b45f; --off: #e2604d;
+  --accent: #3a76a8;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #f2f0e8; --ground-2: #eae7dc; --card: #faf9f3; --card-2: #f4f2ea;
+  --ink: #1b1a17; --ink-2: #5b584d; --ink-3: #928f81;
+  --line: #ddd9cb; --line-2: #cdc9b8;
+  --navy: #1d3f5e; --navy-2: #285f89; --navy-ink: #f4f1e8; --link: #2c5f9e;
+  --good: #3f7d52; --good-bg: #e7efe3; --warn: #8a5e17; --warn-bg: #f6ecd8;
+  --danger: #b3452e; --danger-bg: #f5e2dc; --spark: #4a86c9;
+  --on: #33a457; --off: #d1503f;
+  --accent: #1d3f5e;
+}
+
+* { box-sizing: border-box; }
+
+html { min-width: 320px; background: var(--ground); }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; }
+button { color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--link);
+  outline-offset: 3px;
+}
+h1, h2, p { margin: 0; }
+h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+h2 { font-size: 14px; font-weight: 700; }
+code { font-family: var(--mono); font-size: 12px; overflow-wrap: anywhere; }
+a { color: var(--link); }
+[hidden] { display: none !important; }
+
+/* ==========================================================================
+   Topbar / primary nav
+   ========================================================================== */
+.topbar {
+  align-items: center;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  height: 58px;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font-size: 15px;
+  font-weight: 800;
+  gap: 8px;
+  letter-spacing: -0.01em;
+  padding: 0;
+}
+
+.brand-mark { color: var(--accent); font-size: 15px; }
+.primary-nav { align-self: stretch; display: flex; gap: 3px; margin-left: 30px; }
+.nav-item, .subnav-item {
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.nav-item {
+  align-self: center;
+  border-radius: 8px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 7px 12px;
+}
+.nav-item:hover { background: var(--ground-2); color: var(--ink-2); }
+.nav-item.is-active { background: var(--ground-2); color: var(--ink); }
+.nav-item:disabled { cursor: not-allowed; opacity: 0.5; }
+.nav-item:disabled:hover { background: none; color: var(--ink-3); }
+
+.account-identity { line-height: 1.25; margin-left: auto; text-align: right; }
+.account-identity span { display: block; font-size: 12px; font-weight: 700; }
+.account-identity small { color: var(--ink-3); font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.theme-toggle {
+  align-items: center;
+  background: var(--card-2);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--ink-2);
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  font-size: 14px;
+  height: 30px;
+  justify-content: center;
+  margin-left: 14px;
+  width: 30px;
+}
+.theme-toggle:hover { background: var(--ground-2); color: var(--ink); }
+
+/* ==========================================================================
+   Page shell
+   ========================================================================== */
+.page { margin: 0 auto; max-width: 1120px; padding: 40px 32px 72px; }
+.page-heading { align-items: flex-start; display: flex; flex-wrap: wrap; gap: 14px; justify-content: space-between; margin-bottom: 24px; }
+.page-heading p { color: var(--ink-2); font-size: 13px; margin-top: 7px; }
+.eyebrow, .error-kicker {
+  color: var(--ink-3);
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+/* ==========================================================================
+   Panels / cards (shared surface)
+   ========================================================================== */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.045);
+}
+.panel-heading { align-items: center; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; padding: 15px 16px; }
+.panel-heading h2 { font-size: 14px; }
+.panel-heading p { color: var(--ink-3); font-size: 11px; margin-top: 4px; }
+
+/* ==========================================================================
+   Status pills, buttons, toggles
+   ========================================================================== */
+.status-pill {
+  align-items: center;
+  background: var(--good-bg);
+  border: 1px solid var(--good);
+  border-radius: 999px;
+  color: var(--good);
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 650;
+  gap: 6px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+.status-pill.paused { background: var(--warn-bg); border-color: var(--warn); color: var(--warn); }
+.status-dot { background: var(--ink-3); border-radius: 50%; display: inline-block; flex: none; height: 7px; width: 7px; }
+.status-pill .status-dot { background: currentColor; }
+
+.button {
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 650;
+  min-height: 36px;
+  padding: 8px 14px;
+}
+.button:hover { background: var(--card-2); border-color: var(--ink-3); }
+.button.primary { background: var(--accent); border-color: var(--accent); color: var(--navy-ink); }
+.button.primary:hover { background: var(--accent); border-color: var(--accent); filter: brightness(1.08); }
+.button.compact { font-size: 11.5px; min-height: 30px; padding: 6px 11px; }
+.button:disabled { cursor: wait; opacity: 0.55; }
+.button:disabled:hover { background: var(--card); border-color: var(--line-2); filter: none; }
+
+.toggle {
+  background: var(--line-2);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  flex: none;
+  height: 26px;
+  padding: 0;
+  position: relative;
+  width: 44px;
+}
+.toggle::before {
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  content: "";
+  display: block;
+  height: 22px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 120ms ease;
+  width: 22px;
+}
+.toggle[aria-checked="true"] { background: var(--on); }
+.toggle[aria-checked="true"]::before { transform: translateX(18px); }
+.toggle[aria-checked="false"] { background: rgba(211, 116, 92, 0.22); }
+
+/* ==========================================================================
+   Home — angel list
+   ========================================================================== */
+.angel-list { display: grid; gap: 14px; }
+.environment-dot { background: var(--ink-3); border-radius: 50%; display: inline-block; height: 8px; width: 8px; }
+.environment-dot.production { background: var(--good); }
+.environment-dot.staging { background: var(--accent); }
+
+.empty-state { color: var(--ink-3); line-height: 1.5; padding: 18px 16px; }
+
+/* ==========================================================================
+   Custody panel — provider apps + connections
+   ========================================================================== */
+.custody-panel { margin-top: 24px; }
+/* .panel supplies only the surface (bg/border/radius); every panel pads its own
+   body. The custody body is a padded wrapper (the .pane/.dcard .body idiom)
+   because its children are nested rounded cards (.custody-form/.acctwrap) that
+   must sit inset from the panel edge — never flush against its rounded border. */
+.custody-body { padding: 0 16px 16px; }
+.custody-body > .form-note { margin-top: 14px; }
+.custody-grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; margin-top: 16px; }
+.custody-form { background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; display: grid; gap: 10px; padding: 16px; }
+.custody-form h3 { font-size: 13.5px; font-weight: 700; margin: 0 0 2px; }
+.custody-form label { color: var(--ink-2); display: grid; font-size: 11px; font-weight: 600; gap: 5px; }
+.custody-form input, .custody-form select {
+  background: var(--card);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  color: var(--ink);
+  padding: 8px 9px;
+}
+.custody-form input:focus-visible, .custody-form select:focus-visible { outline-offset: 1px; }
+/* PR F — Connections recomposed to the prototype idiom. Both custody lists are
+   .acctwrap cards preceded by a .cfg-h section label; Provider Apps use the flat
+   .acct-row (plogo · name · mono meta) and Connections use the richer .conn-row
+   grid below, all reusing the PR A prototype atoms (.plogo/.pill/.cap/.btn.sm).
+   The edge-to-edge, giant-scope-box bug is gone: the card supplies the padding
+   and scopes render as compact .cap chips. */
+.custody-list { margin-top: 20px; }
+.custody-list:empty { display: none; }
+.custody-list > .cfg-h { margin-bottom: 10px; }
+
+.conn-row {
+  align-items: start;
+  border-top: 1px solid var(--line);
+  column-gap: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "logo identity status" "logo scopes actions";
+  padding: 13px 15px;
+  row-gap: 6px;
+}
+.conn-row:first-child { border-top: 0; }
+.conn-row > .plogo { grid-area: logo; margin-top: 1px; }
+.conn-identity { grid-area: identity; min-width: 0; }
+.conn-identity b { display: block; font-size: 14px; font-weight: 600; }
+.conn-identity small { color: var(--ink-3); display: block; font-family: var(--mono); font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
+.conn-row > .pill { grid-area: status; justify-self: end; }
+.conn-scopes { display: flex; flex-wrap: wrap; gap: 6px; grid-area: scopes; min-width: 0; }
+.conn-scopes .cap { overflow-wrap: anywhere; }
+.conn-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 7px; grid-area: actions; justify-content: flex-end; min-width: 0; }
+.conn-actions .btn.sm.stop { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.conn-actions .btn:disabled { cursor: default; opacity: 0.55; }
+.conn-feedback { color: var(--ink-3); font-family: var(--mono); font-size: 11px; }
+.conn-feedback.fail { color: var(--danger); font-weight: 600; }
+.form-note { color: var(--ink-3); font-size: 11px; line-height: 1.5; }
+
+/* ==========================================================================
+   Angel detail — shell layout
+   ========================================================================== */
+.angel-layout { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: calc(100vh - 58px); align-items: start; }
+/* The Angels menu is the prototype .rail card (border/radius/card bg supplied by
+   the ported .rail rule), inset from the top-left corner of the detail shell. */
+.angel-rail { margin: 22px 0 22px 22px; align-self: start; }
+/* .rail-item rows are <button>s here (they were <div>s in the static prototype),
+   so strip the native button chrome and let them fill the card. (The prototype's
+   "+ New angel" .rail-new row is intentionally omitted — this product has no
+   in-app new-angel route; creation is the CLI journey reached via Home's
+   zero-Angel guide, and the IA contract bans a "New angel" surface.) */
+button.rail-item { -webkit-appearance: none; appearance: none; width: 100%; text-align: left; font: inherit; background: transparent; cursor: pointer; border: 0; border-top: 1px solid var(--line); }
+.angel-main { min-width: 0; padding-bottom: 70px; }
+
+.subnav { border-bottom: 1px solid var(--line); display: flex; gap: 3px; overflow-x: auto; padding: 0 34px; }
+.subnav-item { border-bottom: 2px solid transparent; color: var(--ink-3); flex: 0 0 auto; font-size: 13px; font-weight: 600; padding: 12px 11px; position: relative; }
+.subnav-item:hover { color: var(--ink-2); }
+.subnav-item.is-active { border-bottom-color: var(--accent); color: var(--ink); }
+.notification-dot { background: var(--accent); border-radius: 50%; display: inline-block; height: 6px; margin-left: 4px; vertical-align: top; width: 6px; }
+
+.pane { padding: 22px 34px; }
+
+/* ==========================================================================
+   Availability / state banners — must read loud when degraded
+   ========================================================================== */
+.state-banner {
+  align-items: center;
+  background: var(--good-bg);
+  border: 1px solid var(--good);
+  border-left: 4px solid var(--good);
+  border-radius: 9px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 14px 16px;
+}
+.state-banner b { color: var(--ink); }
+.state-banner.paused { background: var(--warn-bg); border-color: var(--warn); border-left-color: var(--warn); }
+.state-banner small { color: var(--ink-2); display: block; margin-top: 4px; }
+.button-row { display: flex; gap: 8px; }
+.binding-row { align-items: center; border-top: 1px solid var(--line); display: grid; gap: 16px; grid-template-columns: minmax(120px, 0.35fr) 1fr; padding: 14px 16px; }
+.binding-row:first-child { border-top: 0; }
+.binding-row b { display: block; }
+.binding-row small { color: var(--ink-3); display: block; margin-top: 3px; text-transform: capitalize; }
+.binding-connections { display: flex; flex-wrap: wrap; gap: 8px; }
+.binding-chip { background: var(--card-2); border: 1px solid var(--line-2); border-radius: 6px; display: inline-flex; flex-direction: column; gap: 4px; padding: 7px 10px; }
+.binding-chip b { font-size: 12px; }
+.binding-chip code { color: var(--ink-3); font-size: 10px; }
+
+/* ==========================================================================
+   Versions / promotion
+   ========================================================================== */
+.key-grid, .activity-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr); }
+.key-explainer, .activity-detail { padding: 20px; }
+.promotion-flow { align-items: stretch; display: grid; gap: 10px; grid-template-columns: 1fr auto 1fr; margin: 18px 0; }
+.promotion-side { background: var(--card-2); border: 1px solid var(--line); border-radius: 8px; padding: 13px; }
+.promotion-side small, .promotion-side code { color: var(--ink-3); display: block; }
+.promotion-side b { display: block; font-family: var(--mono); margin: 5px 0; }
+.promotion-arrow { align-self: center; color: var(--accent); font-size: 16px; }
+.exact-note { background: var(--card-2); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; color: var(--ink-2); font-size: 11.5px; line-height: 1.5; padding: 10px 12px; }
+.promotion-bindings { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 14px; }
+.promotion-bindings h3 { font-size: 12px; font-weight: 700; margin: 0 0 8px; }
+.promotion-bindings .binding-row { padding-left: 0; padding-right: 0; }
+.version-diff { align-items: center; border-top: 1px solid var(--line); display: grid; gap: 10px; grid-template-columns: auto 1fr auto; margin-top: 14px; padding-top: 14px; font-size: 12px; }
+.version-diff .added { color: var(--good); font-weight: 700; }
+.version-row, .connection-row { align-items: center; border-top: 1px solid var(--line); display: grid; gap: 12px; padding: 14px 16px; }
+.version-row:first-child, .connection-row:first-child { border-top: 0; }
+.version-row { grid-template-columns: auto 1fr auto; }
+.version-number { background: var(--card-2); border: 1px solid var(--line-2); border-radius: 6px; font-family: var(--mono); font-weight: 800; padding: 7px; text-align: center; }
+.version-row b { display: block; }
+.version-row small, .connection-row small { color: var(--ink-3); display: block; margin-top: 4px; }
+.scope-list { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.scope-chip { background: var(--card-2); border: 1px solid var(--line); border-radius: 4px; color: var(--ink-2); font-family: var(--mono); font-size: 10px; padding: 5px 7px; }
+.connection-row { grid-template-columns: 1fr auto; }
+.connection-row b { display: block; }
+.key-explainer p { color: var(--ink-2); line-height: 1.5; margin-top: 8px; }
+
+/* ==========================================================================
+   Activity rows / receipts
+   ========================================================================== */
+.activity-list { overflow: hidden; }
+.activity-row { background: transparent; border: 0; border-top: 1px solid var(--line); cursor: pointer; display: grid; gap: 9px; grid-template-columns: 1fr auto; padding: 13px 16px; text-align: left; width: 100%; }
+.activity-row:first-child { border-top: 0; }
+.activity-row:hover { background: var(--card-2); }
+.activity-row.is-active { background: var(--card-2); box-shadow: inset 3px 0 0 var(--accent); }
+.activity-row small { color: var(--ink-3); display: block; margin-top: 4px; }
+.decision { color: var(--good); font-family: var(--mono); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.decision.deny { color: var(--warn); }
+.activity-detail h2 { font-family: var(--mono); font-size: 15px; overflow-wrap: anywhere; }
+.activity-meta { color: var(--ink-3); font-size: 11px; margin-top: 7px; }
+.receipts { align-items: stretch; display: grid; gap: 8px; grid-template-columns: 1fr 1fr; margin-top: 18px; }
+.receipt { background: var(--good-bg); border: 1px solid var(--good); border-radius: 8px; padding: 12px; }
+.receipt.deny { background: var(--warn-bg); border-color: var(--warn); }
+.receipt small, .receipt span { color: var(--ink-2); display: block; font-size: 10px; }
+.receipt b { display: block; font-family: var(--mono); margin: 7px 0; text-transform: capitalize; }
+.explain-note { background: var(--card-2); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 0 6px 6px 0; color: var(--ink-2); font-size: 11px; margin-top: 12px; padding: 10px 12px; }
+
+/* ==========================================================================
+   WP-B: Activity = pulse + decision inbox (three environment-scoped strata)
+   Decision states stay visually LOUD via --warn; the resting state is calm.
+   ========================================================================== */
+.decision-card { margin-bottom: 14px; padding: 20px; }
+.decision-card h2 { font-size: 17px; margin-top: 10px; }
+.decision-card > p { color: var(--ink-2); line-height: 1.5; margin-top: 8px; }
+.decision-card > .button { margin-top: 14px; }
+/* Loud when a human decision is pending. */
+.decision-card.needs-decision { background: var(--warn-bg); border-color: var(--warn); border-left: 4px solid var(--warn); }
+.decision-card.needs-decision h2 { color: var(--warn); }
+/* Calm at rest. */
+.decision-card.resting { background: var(--card); }
+.decision-eyebrow { color: var(--warn); font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.decision-eyebrow.calm { color: var(--ink-3); }
+
+/* Per-environment badge — the reader always sees which environment a stratum
+   belongs to, reinforcing that staging and production never blend. */
+.environment-badge { align-items: center; background: var(--card-2); border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink-2); display: inline-flex; font-size: 10.5px; font-weight: 700; gap: 6px; margin-left: 10px; padding: 4px 10px; text-transform: uppercase; }
+.decision-card .environment-badge { margin-left: 10px; vertical-align: middle; }
+
+.activity-stratum { margin-bottom: 14px; overflow: hidden; }
+.stratum-heading { align-items: center; border-bottom: 1px solid var(--line); display: flex; gap: 12px; justify-content: space-between; padding: 15px 16px; }
+.stratum-heading h2 { font-size: 14px; }
+.stratum-heading p { color: var(--ink-3); font-size: 11px; margin-top: 4px; }
+
+/* Deploys/versions: ordinal sequence, never a fabricated clock time. */
+.lifecycle-row { align-items: center; border-top: 1px solid var(--line); display: grid; gap: 12px; grid-template-columns: auto 1fr auto; padding: 12px 16px; }
+.lifecycle-row:first-child { border-top: 0; }
+.lifecycle-step { background: var(--card-2); border: 1px solid var(--line-2); border-radius: 6px; color: var(--ink-2); font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 3px 8px; white-space: nowrap; }
+.lifecycle-row small { color: var(--ink-3); display: block; margin-top: 3px; }
+.lifecycle-derived { color: var(--ink-3); font-size: 10px; font-style: italic; text-align: right; }
+.lifecycle-at { color: var(--ink-2); font-family: var(--mono); font-size: 10px; text-align: right; }
+
+/* Decision filter chips (scoped to the hits/rejects stratum). */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+.chip { background: var(--card-2); border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink-2); cursor: pointer; font-size: 11px; font-weight: 700; padding: 5px 12px; }
+.chip:hover { background: var(--ground-2); }
+.chip.is-active { background: var(--accent); border-color: var(--accent); color: var(--navy-ink); }
+
+/* ==========================================================================
+   Loading / blocking error / toast
+   ========================================================================== */
+.loading-screen { align-items: center; color: var(--ink-2); display: flex; flex-direction: column; gap: 12px; justify-content: center; min-height: calc(100vh - 58px); }
+.loading-mark { animation: pulse 1.2s ease-in-out infinite; color: var(--accent); font-size: 24px; }
+@keyframes pulse { 50% { opacity: 0.35; } }
+.blocking-error { background: var(--danger-bg); border: 1px solid var(--danger); border-radius: 10px; margin: 80px auto; max-width: 620px; padding: 28px; }
+.blocking-error h1 { margin-bottom: 9px; }
+.blocking-error p { color: var(--ink-2); line-height: 1.5; margin-bottom: 20px; }
+.error-kicker { color: var(--danger); }
+.toast {
+  background: var(--ink);
+  border-radius: 8px;
+  bottom: 20px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
+  color: var(--ground);
+  left: 50%;
+  max-width: calc(100vw - 30px);
+  padding: 10px 15px;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 30;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+@media (max-width: 760px) {
+  .angel-layout { display: block; }
+  .angel-rail { display: none; }
+  .key-grid, .activity-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .conn-row { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "logo identity" "logo status" "scopes scopes" "actions actions"; }
+  .conn-row > .pill { justify-self: start; }
+  .conn-actions { justify-content: flex-start; }
+}
+
+@media (max-width: 390px) {
+  body { font-size: 13px; }
+  .topbar { height: 54px; padding: 0 14px; }
+  .brand > span:last-child { display: none; }
+  .primary-nav { margin-left: 12px; }
+  .nav-item { padding: 7px 8px; }
+  .account-identity { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account-identity small { display: none; }
+  .theme-toggle { margin-left: 8px; }
+  .page { padding: 28px 14px 54px; }
+  .page-heading { gap: 12px; }
+  .detail-head { align-items: flex-start; padding: 22px 14px 16px; }
+  .subnav { padding: 0 8px; }
+  .subnav-item { padding: 11px 8px; }
+  .pane { padding: 16px 14px; }
+  .button-row .button { flex: 1; }
+  .promotion-flow { grid-template-columns: 1fr; }
+  .promotion-arrow { justify-self: center; transform: rotate(90deg); }
+  .version-diff { grid-template-columns: auto minmax(0, 1fr); }
+  .version-diff > :last-child { grid-column: 2; }
+  .receipts { grid-template-columns: 1fr; }
+  .custody-grid { grid-template-columns: 1fr; }
+  .lifecycle-row { grid-template-columns: auto 1fr; }
+  .lifecycle-row .lifecycle-derived, .lifecycle-row .lifecycle-at { grid-column: 2; text-align: left; }
+  .stratum-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .binding-row { align-items: start; grid-template-columns: 1fr; }
+  .blocking-error { margin: 50px 14px; padding: 22px; }
+}
+
+/* ==========================================================================
+   WP1 — Allowed Tools: keep the availability banner LOUD when degraded. (The
+   app → group folder chrome moved to the prototype .mprov/.mgrp component layer
+   in PR D.) Appended block; reuses WP0 tokens only, edits no shared rule.
+   ========================================================================== */
+
+/* Loud availability banner. Partial availability keeps the shared warn
+   treatment (.state-banner.paused, defined once in the base block — NOT
+   overridden here); a frozen / gate-drifting / mid-repair environment escalates
+   to danger via this NEW class variant so a degraded environment can never read
+   as calm. Background, borders, and the thick left accent bar all live in one
+   rule so the escalation is unmistakable. This class is applied only by
+   renderPermissions, so the escalation stays scoped to the Allowed Tools pane. */
+.state-banner.state-banner-critical { background: var(--danger-bg); border: 1px solid var(--danger); border-left: 5px solid var(--danger); box-shadow: inset 3px 0 0 var(--danger); }
+.state-banner.state-banner-critical b { color: var(--danger); }
+
+/* ==========================================================================
+   WP2 — Settings (availability + immutable Version history).
+   The Home density styling now lives in the PR C recomposition block below.
+   ========================================================================== */
+/* Settings — availability (backed pause/resume) + immutable Version history. */
+.settings-grid { display: grid; gap: 16px; }
+.settings-availability-row {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 16px;
+}
+.settings-availability-row small { color: var(--ink-3); display: block; margin-top: 5px; }
+
+/* Quiet back-office mechanical detail (gate alignment · bindings · availability
+   revision), relocated off the front door. Small mono definition rows — never a
+   red box, never a wedge. */
+.gate-detail { border-top: 1px solid var(--line); display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; margin: 0; padding: 14px 16px 2px; }
+.gate-detail dt { color: var(--ink-3); font-size: 11px; }
+.gate-detail dd { color: var(--ink-2); font-family: var(--mono); font-size: 11.5px; margin: 0; }
+/* Full immutable digest line under each Version (the front door no longer shows a
+   sha, so the complete value is honest and readable here). */
+.version-digest { color: var(--ink-3); display: block; font-family: var(--mono); font-size: 10.5px; margin-top: 4px; word-break: break-all; }
+
+@media (max-width: 640px) {
+  .settings-availability-row { align-items: stretch; flex-direction: column; gap: 12px; }
+}
+
+/* ==========================================================================
+   WP4 — zero-Angel getting-started guide + ANGEL.yaml groups explainer.
+   Appended block; reuses WP0 tokens and WP1's folder classes. No shared edits.
+   ========================================================================== */
+.wp4-zero-state { display: grid; gap: 16px; grid-template-columns: 1fr; }
+.wp4-guide, .wp4-explainer { overflow: hidden; }
+.wp4-empty-intro b { display: block; font-size: 15px; }
+.wp4-empty-intro small { color: var(--ink-3); display: block; line-height: 1.5; margin-top: 6px; }
+
+.wp4-panel-head { border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 4px; padding: 15px 16px; }
+.wp4-panel-head b { font-size: 14px; }
+.wp4-panel-head small { color: var(--ink-3); line-height: 1.5; }
+.wp4-guide-more { border-left: 2px solid var(--line-2); font-style: italic; margin-top: 4px; padding-left: 10px; }
+
+.wp4-steps { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
+.wp4-step { border-top: 1px solid var(--line); display: grid; gap: 12px; grid-template-columns: auto 1fr; padding: 15px 16px; }
+.wp4-step:first-child { border-top: 0; }
+.wp4-step-index {
+  align-items: center;
+  background: var(--card-2);
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  color: var(--ink-2);
+  display: flex;
+  flex: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  height: 26px;
+  justify-content: center;
+  width: 26px;
+}
+.wp4-step-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wp4-step-title-line { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
+.wp4-step-title-line b { font-size: 13px; }
+.wp4-step-body small { color: var(--ink-3); line-height: 1.5; }
+.wp4-step-where {
+  border-radius: 4px;
+  flex: none;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  text-transform: uppercase;
+}
+/* Composed dynamically as `wp4-where-${step.where}` in app.js — not dead. */
+.wp4-where-browser { background: var(--warn-bg); border: 1px solid var(--warn); color: var(--warn); }
+.wp4-where-shell { background: var(--card-2); border: 1px solid var(--line-2); color: var(--ink-2); }
+.wp4-command {
+  background: var(--ground-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  margin-top: 4px;
+  overflow-x: auto;
+  padding: 10px 12px;
+}
+.wp4-command code { color: var(--ink); font-size: 11.5px; white-space: pre; }
+
+.wp4-explainer-split { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; padding: 16px; }
+.wp4-explainer-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.wp4-side-label { color: var(--ink-3); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.wp4-code {
+  background: var(--ground-2);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  margin: 0;
+  overflow-x: auto;
+  padding: 14px;
+}
+.wp4-code code { color: var(--ink); font-size: 11.5px; line-height: 1.6; white-space: pre; }
+.wp4-render-card { background: var(--card); border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; }
+
+@media (max-width: 640px) {
+  .wp4-explainer-split { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   === PROTOTYPE COMPONENT LAYER (PR A) ===
+   Ports the approved prototype's component vocabulary verbatim so later PRs can
+   recompose each screen with it. ADDITIVE: no existing rule is edited. Four
+   prototype class names collide with rules the shipped app already uses
+   (.topbar, .brand, .page, .pane) and the prototype's page-level `h1` scale
+   collides with the global h1 — those five are namespaced to `.pt-*` (and the
+   h1 scale is scoped under `.pt-page`); every other prototype class keeps its
+   original name (none of them collide — verified by grep). Dark variants are
+   preserved exactly in BOTH forms: @media (prefers-color-scheme: dark) AND the
+   :root[data-theme=…] manual-toggle overrides.
+   ========================================================================== */
+
+/* ---- topbar / brand (namespaced: .topbar/.brand collide) ---- */
+.pt-topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; gap: 14px; padding: 11px 20px; background: var(--card); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.pt-brand { font-weight: 800; font-size: 15px; display: flex; align-items: center; gap: 7px; letter-spacing: -0.01em; }
+.pt-brand .glyph { color: var(--navy); }
+@media (prefers-color-scheme: dark){ .pt-brand .glyph { color: var(--navy-2); } }
+:root[data-theme="dark"] .pt-brand .glyph { color: var(--navy-2); }
+:root[data-theme="light"] .pt-brand .glyph { color: var(--navy); }
+
+/* ---- page shell + page-level h1 scale (namespaced: .page collides) ---- */
+.pt-page { max-width: 1060px; margin: 0 auto; padding: 26px 22px 90px; }
+.pt-page h1 { font-size: 24px; letter-spacing: -0.02em; margin: 0; font-weight: 800; }
+
+/* ---- layout / text utilities ---- */
+.row { display: flex; gap: 12px; align-items: center; }
+.between { justify-content: space-between; }
+
+.reassure { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; color: var(--good); font-weight: 600; }
+.reassure .badge { width: 22px; height: 22px; border-radius: 50%; background: var(--good-bg); color: var(--good); display: grid; place-items: center; font-size: 12px; }
+
+/* ---- pills ---- */
+.pill { font-family: var(--mono); font-size: 10.5px; padding: 3px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; font-weight: 600; border: 1px solid; }
+.pill .led { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.live { color: var(--good); border-color: var(--good); background: var(--good-bg); }
+.pill.paused { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
+
+/* ---- buttons ---- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; font-size: 12.5px; font-weight: 600; padding: 8px 13px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--card); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--navy); color: var(--navy-ink); border-color: var(--navy); }
+@media (prefers-color-scheme: dark){ .btn.primary { background: var(--navy-2); border-color: var(--navy-2); } }
+:root[data-theme="dark"] .btn.primary { background: var(--navy-2); border-color: var(--navy-2); }
+:root[data-theme="light"] .btn.primary { background: var(--navy); border-color: var(--navy); }
+.btn.stop { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+.btn.sm { padding: 5px 9px; font-size: 11.5px; }
+
+/* ---- segmented control (+ icon-only + small) ---- */
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 9px; overflow: hidden; background: var(--card); }
+.seg span, .seg button { padding: 7px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; color: var(--ink-3); display: inline-flex; align-items: center; gap: 6px; }
+/* Real <button> segments (keyboard-focusable) share the span look: strip the UA
+   chrome so the prototype appearance is identical. */
+.seg button { appearance: none; border: 0; background: none; font-family: inherit; }
+.seg span.on, .seg button.on { background: var(--navy); color: var(--navy-ink); }
+@media (prefers-color-scheme: dark){ .seg span.on, .seg button.on { background: var(--navy-2); } }
+:root[data-theme="dark"] .seg span.on, :root[data-theme="dark"] .seg button.on { background: var(--navy-2); }
+:root[data-theme="light"] .seg span.on, :root[data-theme="light"] .seg button.on { background: var(--navy); }
+.seg.icons span, .seg.icons button { padding: 7px 14px; font-size: 15px; line-height: 1; }
+/* icon-only seg that consumes <svg><use> instead of text glyphs (PR A) */
+.seg.icons span svg, .seg.icons button svg { width: 16px; height: 16px; display: block; }
+.seg.sm2 span, .seg.sm2 button { padding: 5px 11px; font-size: 11.5px; }
+
+/* ---- inline SVG icon sizing (Lucide sprite, see index.html) ---- */
+.icon { width: 16px; height: 16px; display: inline-block; vertical-align: -2px; }
+.btn .icon { width: 16px; height: 16px; }
+
+/* ---- collection list / rows ---- */
+.collist { border: 1px solid var(--line-2); border-radius: 13px; overflow: hidden; background: var(--card); max-width: 480px; margin: 0 auto; box-shadow: 0 2px 10px rgba(0,0,0,.05); }
+.collist.narrow { max-width: 300px; }
+.corow { display: flex; align-items: center; gap: 13px; padding: 16px 18px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.corow:last-child { border-bottom: none; }
+.corow:hover { background: var(--card-2); }
+.corow .cdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.corow .cdot.live { background: var(--good); }
+.corow .cdot.paused { background: var(--warn); }
+.corow .cname { font-size: 15px; font-weight: 600; flex: 1; }
+.corow.paused .cname { color: var(--ink-3); }
+.corow .cmeta { font-size: 12px; color: var(--ink-3); font-family: var(--mono); }
+
+/* ---- workflow table ---- */
+table.wf { width: 100%; border-collapse: collapse; font-size: 12.5px; background: var(--card); border: 1px solid var(--line-2); border-radius: 12px; overflow: hidden; }
+table.wf th { text-align: left; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; padding: 10px 12px; border-bottom: 1px solid var(--line); background: var(--card-2); }
+table.wf td { padding: 11px 12px; border-bottom: 1px solid var(--line); color: var(--ink-2); }
+table.wf tr:last-child td { border-bottom: none; }
+table.wf tbody tr { cursor: pointer; }
+table.wf tbody tr:hover { background: var(--card-2); }
+table.wf .nm { color: var(--ink); font-weight: 700; }
+table.wf .mono { font-family: var(--mono); font-size: 11px; }
+.prov { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; }
+.cap { font-family: var(--mono); font-size: 10px; padding: 3px 7px; border-radius: 5px; border: 1px solid var(--line); color: var(--ink-2); background: var(--card-2); }
+.cap.off { color: var(--ink-3); opacity: 0.55; text-decoration: line-through; }
+
+/* ---- loud dashboard ---- */
+.dash-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.dash-hero .sub { color: var(--ink-3); font-size: 13px; margin-top: 6px; }
+.dash-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+@media (max-width: 720px){ .dash-grid { grid-template-columns: 1fr; } }
+.dcard { border: 1px solid var(--line-2); border-radius: 15px; background: var(--card); overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.045); cursor: pointer; transition: transform .13s ease, box-shadow .13s ease; }
+.dcard:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(0,0,0,.10); }
+.dcard .accent { height: 4px; background: var(--dc); }
+.dcard .body { padding: 17px 18px 16px; }
+.dcard .top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.dcard .nm { font-weight: 800; font-size: 16px; letter-spacing: -0.01em; }
+.dcard .pv { font-size: 11px; color: var(--ink-3); font-family: var(--mono); margin-top: 1px; }
+.dcard .top .pill { margin-left: auto; }
+.dtools { margin: 2px 0 12px; }
+.dtrow { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12.5px; border-top: 1px solid var(--line); }
+.dtrow:first-child { border-top: none; }
+.dtrow .dic { width: 12px; text-align: center; font-size: 16px; line-height: 1; color: var(--ink-3); flex: none; }
+.dtrow .dnm { flex: 1; font-weight: 600; }
+.dtrow.off .dnm { color: var(--ink-3); }
+.dsub { display: flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); padding: 10px 0 4px; border-top: 1px solid var(--line); margin-top: 3px; }
+.dsub.first { border-top: none; margin-top: 0; }
+.dsub .plogo.xs { width: 18px; height: 18px; border-radius: 5px; box-shadow: none; }
+.dmore { font-family: var(--mono); font-size: 11px; color: var(--link); cursor: pointer; padding: 8px 0 0; }
+
+/* ---- provider brand-mark plate (white in both themes) ---- */
+.plogo { background: #fff; border: 1px solid rgba(0,0,0,.10); display: inline-grid; place-items: center; flex: none; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.plogo svg { width: 100%; height: 100%; display: block; }
+.plogo.lg { width: 46px; height: 46px; border-radius: 12px; }
+.plogo.sm { width: 25px; height: 25px; border-radius: 7px; }
+.plogo.xs { width: 22px; height: 22px; border-radius: 6px; }
+/* neutral plate for an unknown app: a single upper-case letter, no external mark */
+.plogo.neutral { color: var(--ink-2); font-weight: 800; font-family: var(--sans); line-height: 1; }
+.plogo.neutral.lg { font-size: 20px; }
+.plogo.neutral.sm { font-size: 12px; }
+.plogo.neutral.xs { font-size: 10px; }
+
+/* ---- compact activity chart (tool calls / rejections / visits) ---- */
+/* Reserved: pinned by the www contract; no live adopter yet — the dashboard
+   activity chart returns when the ledger backend lands (see designer handoff). */
+.chart { display: flex; align-items: flex-end; gap: 1px; height: 46px; }
+.chart .bar { flex: 1 1 0; display: flex; flex-direction: column; justify-content: flex-end; min-width: 0; border-radius: 2px 2px 0 0; overflow: hidden; }
+.chart .bar i { display: block; width: 100%; }
+.s-hit { background: #3fae63; }
+.s-rej { background: #c2503f; }
+.s-read { background: rgba(60,58,50,.28); }
+@media (prefers-color-scheme: dark){ .s-hit { background: #4fbf74; } .s-rej { background: #d3745c; } .s-read { background: rgba(224,220,208,.20); } }
+:root[data-theme="dark"] .s-hit { background: #4fbf74; }
+:root[data-theme="dark"] .s-rej { background: #d3745c; }
+:root[data-theme="dark"] .s-read { background: rgba(224,220,208,.20); }
+:root[data-theme="light"] .s-hit { background: #3fae63; }
+:root[data-theme="light"] .s-rej { background: #c2503f; }
+:root[data-theme="light"] .s-read { background: rgba(60,58,50,.28); }
+.chart-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--ink-2); }
+.chart-legend .lg { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.chart-legend .lg i { width: 9px; height: 9px; border-radius: 2px; }
+.chart-legend .lg b { color: var(--ink); font-weight: 700; }
+
+/* ---- dashboard accounts ---- */
+.daccts { margin-top: 15px; padding-top: 13px; border-top: 1px solid var(--line); }
+.daccts .lab { font-size: 10.5px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); margin-bottom: 8px; }
+.daccts .alist { display: flex; gap: 8px; flex-wrap: wrap; }
+.aitem { display: inline-flex; align-items: center; gap: 8px; background: var(--card-2); border: 1px solid var(--line-2); border-radius: 22px; padding: 4px 12px 4px 5px; font-size: 12.5px; color: var(--ink); font-weight: 500; }
+.aitem .av { width: 22px; height: 22px; border-radius: 50%; background: var(--dc); color: #fff; display: grid; place-items: center; font-size: 10.5px; font-weight: 800; flex: none; }
+
+/* ---- app shell (angel detail) ---- */
+.shell { max-width: 1060px; margin: 0 auto; display: grid; grid-template-columns: 210px 1fr; gap: 20px; padding: 22px 22px 90px; align-items: start; }
+@media (max-width: 760px){ .shell { grid-template-columns: 1fr; } .rail { display: none; } .rail.open { display: block; } }
+.rail { border: 1px solid var(--line); border-radius: 12px; background: var(--card); overflow: hidden; }
+.rail-h { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-family: var(--mono); padding: 12px 14px 8px; }
+.rail-item { display: flex; align-items: center; gap: 9px; padding: 11px 14px; font-size: 13px; color: var(--ink-2); border-top: 1px solid var(--line); cursor: pointer; }
+.rail-item:hover { background: var(--card-2); }
+.rail-item.sel { background: var(--ground-2); color: var(--ink); font-weight: 700; box-shadow: inset 3px 0 0 var(--navy); }
+@media (prefers-color-scheme: dark){ .rail-item.sel { box-shadow: inset 3px 0 0 var(--navy-2); } }
+:root[data-theme="dark"] .rail-item.sel { box-shadow: inset 3px 0 0 var(--navy-2); }
+:root[data-theme="light"] .rail-item.sel { box-shadow: inset 3px 0 0 var(--navy); }
+.rail-item .dot-led { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.rail-item .dot-led.live { background: var(--good); }
+.rail-item .dot-led.paused { background: var(--warn); }
+/* Reserved: pinned by the www contract; intentionally unadopted — no in-app
+   new-angel row ships (creation is the CLI journey; see .angel-rail note). */
+.rail-new { padding: 11px 14px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--link); cursor: pointer; }
+.rail-new:hover { background: var(--card-2); }
+.rail-new.sel { background: var(--ground-2); font-weight: 700; box-shadow: inset 3px 0 0 var(--navy); }
+@media (prefers-color-scheme: dark){ .rail-new.sel { box-shadow: inset 3px 0 0 var(--navy-2); } }
+:root[data-theme="dark"] .rail-new.sel { box-shadow: inset 3px 0 0 var(--navy-2); }
+:root[data-theme="light"] .rail-new.sel { box-shadow: inset 3px 0 0 var(--navy); }
+
+/* ---- detail head ---- */
+.detail-head { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.detail-head .ic { width: 40px; height: 40px; border-radius: 10px; background: var(--ground-2); display: grid; place-items: center; font-size: 20px; }
+.detail-head .nm { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.detail-head .sub { font-size: 12px; color: var(--ink-3); font-family: var(--mono); }
+
+/* ---- account strip ---- */
+.acct-strip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+.acct-strip .lab { font-size: 11.5px; color: var(--ink-3); font-family: var(--mono); }
+.acct-chip { display: inline-flex; align-items: center; gap: 7px; background: var(--card); border: 1px solid var(--line-2); border-radius: 20px; padding: 4px 11px; font-size: 12px; }
+.acct-chip .ok { color: var(--good); }
+
+/* ---- subtabs + panes (namespaced: .pane collides) ---- */
+.subtabs { display: flex; gap: 3px; border-bottom: 1px solid var(--line); margin-bottom: 18px; overflow-x: auto; }
+.subtab { font-size: 13px; font-weight: 600; padding: 9px 13px; color: var(--ink-3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.subtab.on { color: var(--ink); border-bottom-color: var(--navy); }
+@media (prefers-color-scheme: dark){ .subtab.on { border-bottom-color: var(--navy-2); } }
+:root[data-theme="dark"] .subtab.on { border-bottom-color: var(--navy-2); }
+:root[data-theme="light"] .subtab.on { border-bottom-color: var(--navy); }
+.pt-pane { display: none; }
+.pt-pane.on { display: block; }
+
+.sec-lead { font-size: 12.5px; color: var(--ink-2); margin: 0 0 14px; max-width: 68ch; }
+.sec-lead b { color: var(--ink); }
+
+/* ---- code block ---- */
+.code { font-family: var(--mono); font-size: 11.5px; background: var(--card-2); color: var(--ink-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; white-space: pre; line-height: 1.6; }
+.code .k { color: var(--link); }
+.code .c { color: var(--ink-3); }
+.code .p { color: var(--ink-3); }
+.code .o { color: var(--good); }
+
+/* ---- token cards ---- */
+.tok-card { border: 1px solid var(--line-2); border-radius: 11px; background: var(--card); padding: 15px; margin-bottom: 12px; }
+.tok-card .th { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+.tokrow { display: flex; align-items: center; gap: 10px; font-size: 12.5px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.tokrow:last-child { border-bottom: none; }
+.tokrow .tn { font-weight: 600; flex: 1; }
+.tokrow .tk { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+
+/* ---- Agent Keys pane (endpoint card + named-key rows) ---- */
+.key-env-note { font-size: 11.5px; color: var(--ink-3); margin: 10px 0 0; line-height: 1.5; }
+.key-empty { font-size: 12.5px; color: var(--ink-3); padding: 9px 0; margin: 0; border-bottom: 1px solid var(--line); }
+.key-error { font-size: 12px; color: var(--danger); background: var(--danger-bg); border: 1px solid var(--danger); border-radius: 8px; padding: 9px 11px; margin: 12px 0 0; }
+.key-new { margin-top: 12px; }
+.key-new-form { display: flex; gap: 8px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+.key-new-input { font-family: var(--sans); font-size: 12.5px; padding: 6px 10px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--card-2); color: var(--ink); flex: 1; min-width: 140px; }
+.key-revoked-group { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line-2); }
+.key-revoked-head { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); margin-bottom: 2px; }
+.key-revoked-row { opacity: 0.6; }
+.key-revoked-row .tn { font-weight: 500; text-decoration: line-through; color: var(--ink-3); }
+.key-revoked-tag { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--danger); border: 1px solid var(--danger); border-radius: 20px; padding: 2px 8px; }
+.key-reveal { margin-top: 14px; padding: 13px 14px; border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 10px; }
+.key-reveal .code { margin: 8px 0; user-select: all; }
+.key-reveal-warn { font-size: 12px; font-weight: 600; color: var(--warn); margin: 4px 0 0; }
+
+/* ---- toggle switch ---- */
+.tog { width: 44px; height: 26px; border-radius: 20px; position: relative; flex: none; background: var(--line-2); }
+.tog::after { content: ""; position: absolute; width: 22px; height: 22px; border-radius: 50%; background: #fff; top: 2px; left: 2px; box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+.tog.on { background: var(--on); box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.tog.on::after { left: 20px; }
+.tog.off { background: rgba(201,83,66,.22); box-shadow: none; }
+.tog.off::after { left: 2px; }
+.tog.sm { width: 38px; height: 22px; }
+.tog.sm::after { width: 18px; height: 18px; }
+.tog.sm.on::after { left: 18px; }
+
+/* ---- multi-provider ("toolbox") angel ---- */
+.onekey { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--card-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+.mhead-logos { display: inline-flex; }
+.mhead-logos .plogo { margin-left: -8px; box-shadow: 0 0 0 2px var(--card); }
+.mhead-logos .plogo:first-child { margin-left: 0; }
+.mprov { border: 1px solid var(--line-2); border-radius: 12px; background: var(--card); margin-bottom: 10px; overflow: hidden; }
+.mprov-head { display: flex; align-items: center; gap: 11px; padding: 11px 14px; cursor: pointer; user-select: none; }
+.mprov-head:hover { background: var(--card-2); }
+.mprov.open .mprov-head { border-bottom: 1px solid var(--line); }
+.mprov-id { flex: 1; min-width: 0; }
+.mprov-head .pn2 { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
+.mprov-head .ps2 { font-size: 11.5px; color: var(--ink-2); margin-top: 1px; }
+.mprov-head .ro-badge { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 20px; padding: 2px 8px; margin-left: 6px; }
+.mprov-right { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); white-space: nowrap; }
+.mprov-chev { color: var(--ink-3); font-size: 11px; transition: transform .18s; flex: none; }
+.mprov.open .mprov-chev { transform: rotate(90deg); }
+.mprov-body { display: none; }
+.mprov.open .mprov-body { display: block; }
+
+/* ---- config sections + signed-in accounts ---- */
+.cfg-h { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--ink-3); margin: 0 0 10px; }
+.acctwrap { border: 1px solid var(--line-2); border-radius: 12px; background: var(--card); overflow: hidden; }
+.acct-row { display: flex; align-items: center; gap: 11px; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 12.5px; }
+.acct-row:first-child { border-top: none; }
+.acct-row .an { flex: 1; min-width: 0; font-weight: 600; }
+.acct-row .al { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); }
+.acct-more { font-family: var(--mono); font-size: 11px; color: var(--link); cursor: pointer; padding: 10px 14px; border-top: 1px solid var(--line); }
+
+/* ---- settings profile cards ---- */
+.set-head { display: flex; gap: 12px; flex-wrap: wrap; }
+.set-card { flex: 1; min-width: 210px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--card); padding: 13px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.set-actions { display: flex; gap: 10px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+
+/* ---- tool groups within a provider ---- */
+.mgrp-head { display: flex; align-items: center; gap: 10px; padding: 9px 14px 9px 15px; cursor: pointer; border-top: 1px solid var(--line); }
+.mprov-body > .mgrp:first-child .mgrp-head { border-top: none; }
+.mgrp-head:hover { background: var(--card-2); }
+.mgrp-mk { color: var(--ink-3); font-size: 16px; line-height: 1; width: 12px; text-align: center; flex: none; }
+.mgrp-mk.emoji { font-size: 14px; color: inherit; line-height: 1; }
+.mgrp-nm { flex: 1; font-weight: 600; font-size: 13px; }
+.mgrp-ct { font-family: var(--mono); font-size: 10px; white-space: nowrap; color: var(--ink-3); }
+.mgrp-chev { color: var(--ink-3); font-size: 10px; transition: transform .18s; flex: none; }
+.mgrp.open .mgrp-chev { transform: rotate(90deg); }
+.mgrp-tools { display: none; padding: 2px 15px 10px 27px; }
+.mgrp.open .mgrp-tools { display: block; }
+.mtool { display: flex; align-items: center; gap: 12px; padding: 5px 0; font-size: 11.5px; border-top: 1px solid var(--line); }
+.mtool:first-child { border-top: none; }
+.mtool .mtn { font-family: var(--mono); color: var(--ink-2); flex: 1; min-width: 0; word-break: break-all; }
+.mtool .tog { flex: none; }
+
+/* ---- tool-name syntax highlighting (namespace recedes, the verb reads) ---- */
+.t-ns { color: var(--ink-3); }
+.t-leaf { color: #2f7d72; font-weight: 600; }
+@media (prefers-color-scheme: dark){ .t-leaf { color: #7cbbb0; } }
+:root[data-theme="dark"] .t-leaf { color: #7cbbb0; }
+:root[data-theme="light"] .t-leaf { color: #2f7d72; }
+
+/* ---- arg-guard tool row ---- */
+.tool-g .tg-head { cursor: pointer; }
+.guard-pill { font-family: var(--mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--warn); border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 20px; padding: 2px 8px; white-space: nowrap; }
+.tg-detail { display: none; padding: 4px 0 8px 49px; }
+.tool-g.open .tg-detail { display: block; }
+.guard-item { padding: 8px 0; }
+.guard-item + .guard-item { border-top: 1px solid var(--line); }
+.gi-kv { font-family: var(--mono); font-size: 12px; }
+.gi-field { color: var(--link); font-weight: 700; }
+.gi-op { color: var(--ink-3); }
+.gi-vals { color: var(--warn); font-weight: 600; }
+.gi-nl { font-size: 11.5px; color: var(--ink-3); margin-top: 4px; line-height: 1.5; max-width: 64ch; }
+/* guarded tool nested inside a group */
+.mgrp-tools .tool-g { border-top: 1px solid var(--line); }
+.mgrp-tools .tool-g:first-child { border-top: none; }
+.mgrp-tools .tool-g .tg-head { padding: 5px 0; border-top: none; }
+.mgrp-tools .tool-g .tg-detail { padding: 2px 0 8px 0; }
+
+/* ---- new-angel getting-started guide ---- */
+.steps { counter-reset: step; margin-top: 20px; }
+.step { position: relative; padding: 0 0 22px 42px; }
+.step:not(:last-child)::before { content: ""; position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--line); }
+.step::after { counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0; width: 29px; height: 29px; border-radius: 50%; background: var(--navy); color: var(--navy-ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; font-family: var(--mono); }
+@media (prefers-color-scheme: dark){ .step::after { background: var(--navy-2); } }
+:root[data-theme="dark"] .step::after { background: var(--navy-2); }
+:root[data-theme="light"] .step::after { background: var(--navy); }
+.step .code { margin: 0; }
+.guide-foot { margin-top: 4px; padding: 14px 16px; border: 1px solid var(--line-2); border-radius: 11px; background: var(--card-2); font-size: 12.5px; color: var(--ink-2); }
+.guide-foot b { color: var(--ink); }
+
+/* ---- intentional stub surface ---- */
+.stub { text-align: center; padding: 70px 20px; color: var(--ink-3); }
+
+/* ==========================================================================
+   WEDGE UTILITY (PR A) — a deliberately-temporary highlight. Real-implementation
+   details the approved mockup does not yet account for get "wedged in" with this
+   style so the designer can spot them and place them properly later. Obvious on
+   purpose; theme-aware so it reads in light and dark.
+   ========================================================================== */
+/* PR G re-tones the wedge from danger-red to a QUIET amber/tan (--warn family).
+   Red reads "warning / broken"; a wedge only means "real detail the mockup has
+   not placed yet". Amber + a thin dashed border + a small lowercase tag says
+   "pending design placement", not "something is wrong". Theme-aware in both the
+   media-query and manual [data-theme] forms. */
+:root { --wedge: #8a5e17; --wedge-bg: rgba(138,94,23,.07); }
+@media (prefers-color-scheme: dark){ :root { --wedge: #cc9a4e; --wedge-bg: rgba(204,154,78,.10); } }
+:root[data-theme="dark"] { --wedge: #cc9a4e; --wedge-bg: rgba(204,154,78,.10); }
+:root[data-theme="light"] { --wedge: #8a5e17; --wedge-bg: rgba(138,94,23,.07); }
+.wedge { position: relative; border: 1px dashed var(--wedge); background: var(--wedge-bg); border-radius: 6px; }
+.wedge-tag { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 10px; font-weight: 600; text-transform: lowercase; color: var(--wedge); background: transparent; border: 1px solid var(--wedge); border-radius: 4px; padding: 1px 5px; }
+
+/* ==========================================================================
+   PR C — Home recomposition (single header, icon density toggle, logo views).
+   Reuses the PR A prototype component layer (.seg / .collist / table.wf /
+   .dash-grid / .dcard / .plogo / .daccts) and only adds the glue the ported
+   layer lacked: the ambient hero, the reassure-degraded treatment, button
+   variants of the click-through surfaces, and a few density containers.
+   ========================================================================== */
+
+/* Header: reassure health on the LEFT under the h1, density toggle on the RIGHT. */
+.home-heading { align-items: flex-start; }
+.home-heading-copy { min-width: 0; }
+.home-heading .home-sub { color: var(--ink-3); font-size: 13px; margin-top: 7px; }
+.home-heading .reassure { margin-top: 12px; }
+/* Degraded fleets stay loud: warn colour + amber badge. */
+.reassure.attention { color: var(--warn); }
+.reassure.attention .badge { background: var(--warn-bg); color: var(--warn); }
+
+/* Icon-only density segmented control (buttons, keyboard + aria labelled). */
+.seg button { appearance: none; -webkit-appearance: none; margin: 0; border: none; background: none; font: inherit; }
+.seg.icons button { padding: 7px 14px; line-height: 1; color: var(--ink-3); cursor: pointer; display: inline-flex; align-items: center; }
+.seg.icons button:hover { color: var(--ink-2); }
+.seg.icons button.on { background: var(--navy); color: var(--navy-ink); }
+.seg.icons button.on:hover { color: var(--navy-ink); }
+@media (prefers-color-scheme: dark){ .seg.icons button.on { background: var(--navy-2); } }
+:root[data-theme="dark"] .seg.icons button.on { background: var(--navy-2); }
+:root[data-theme="light"] .seg.icons button.on { background: var(--navy); }
+.seg.icons button svg { width: 16px; height: 16px; display: block; }
+
+/* The density host: the ported components own their own layout, so the base
+   angel-list grid must not add a competing gap in these modes. */
+.angel-list.density-quiet, .angel-list.density-list, .angel-list.density-dashboard { display: block; gap: 0; }
+
+/* Quiet: ambient hero + narrow list of button rows. */
+.amb-wrap { text-align: center; padding: 4vh 0 3vh; }
+.amb-wrap .huge { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.08; margin: 0 0 26px; }
+.amb-wrap .huge .ok { color: var(--good); }
+.amb-wrap .huge .warn { color: var(--warn); }
+.amb-wrap .collist.narrow { max-width: 360px; }
+/* Whole-row button reset so .corow reads like the prototype's clickable div. */
+button.corow { width: 100%; margin: 0; font: inherit; color: inherit; text-align: left; background: var(--card); border: none; border-bottom: 1px solid var(--line); }
+button.corow:last-child { border-bottom: none; }
+button.corow:hover { background: var(--card-2); }
+button.corow.paused .cname { color: var(--ink-3); }
+/* Give the brand mark presence in the quiet row (prototype .home-ambient tweak). */
+.amb-wrap .corow { padding: 15px 18px; }
+.amb-wrap .corow .plogo.xs { width: 28px; height: 28px; border-radius: 8px; }
+
+/* List: real tool names as wrapping .cap chips, and a bare-button Angel name. */
+.wf-caps { display: inline-flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.cap.cap-more, .cap.aitem-more { color: var(--ink-3); }
+.wf-open { appearance: none; -webkit-appearance: none; margin: 0; padding: 0; border: none; background: none; font: inherit; color: var(--ink); font-weight: 700; cursor: pointer; text-align: left; }
+.wf-open:hover { text-decoration: underline; }
+
+/* Dashboard: the card is a whole-surface button; keep its inner layout intact. */
+button.dcard { width: 100%; margin: 0; font: inherit; color: inherit; text-align: left; padding: 0; }
+.dash-grid { align-items: start; }
+.dcard .dcard-id { min-width: 0; }
+/* The wedged real info (per-environment Version / promotion hint) sits compact. */
+.dcard .home-wedge { display: flex; align-items: center; gap: 8px; margin: 4px 0 2px; padding: 8px 10px; font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); }
+.aitem.aitem-more { background: none; border: 1px dashed var(--line-2); color: var(--ink-3); }
+
+@media (max-width: 640px) {
+  .amb-wrap .huge { font-size: 32px; }
+}
+
+/* ==========================================================================
+   PR D — Angel detail recomposition. The header (name, charter, inline version
+   line, env segmented control, Live pill) and the Allowed Tools pane are
+   rendered with the prototype .detail-head / .mprov / .mgrp / .mtool component
+   layer (PR A). This block only adds the wiring the shipped shell needs around
+   those ported components; it edits no shared or ported rule.
+   ========================================================================== */
+
+/* Header row: brand-mark cluster · id block (name + charter + version line) ·
+   right-aligned actions (bulk wedge + env seg + Live pill). Horizontal padding
+   matches the subnav so the header, tabs, and pane share one left edge. */
+.angel-main .detail-head { align-items: flex-start; gap: 14px; margin-bottom: 0; padding: 26px 34px 18px; }
+.detail-head .mhead-logos { flex: none; margin-top: 2px; }
+.detail-head-id { flex: 1; min-width: 0; }
+.detail-head-id .nm { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.detail-charter { color: var(--ink-2); font-size: 12.5px; margin: 4px 0 0; max-width: 68ch; }
+.detail-head-meta { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 7px; }
+.detail-head-meta .sub { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); }
+.detail-head-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; }
+.env-seg { flex: none; }
+
+/* The availability toggle is a prototype .tog switch rendered as a <button>;
+   strip the native button chrome so only the switch paints. */
+button.tog { -webkit-appearance: none; appearance: none; border: 0; padding: 0; cursor: pointer; }
+
+/* Compact the shipped loud banner so, when it does appear (degraded only), it
+   sits quietly at the top of the pane rather than as a heavy stacked band. */
+.pane .state-banner { margin-bottom: 14px; }
+
+/* Provider cards fill the pane width; the pane already supplies the frame. */
+.pane #tool-list { display: block; }
+
+@media (max-width: 640px) {
+  .detail-head-actions { justify-content: flex-start; width: 100%; }
+}

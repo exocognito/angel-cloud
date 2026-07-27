@@ -1,0 +1,24 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "angelmcp-gateway-demo",
+  "account_id": "6334e1f9af90be70f091a0116425606a",
+  "main": "src/workers/gateway.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  // Secrets: CONTROL_GATEWAY_TOKEN, GATEWAY_BROKER_INVOKE_TOKEN
+  "durable_objects": {
+    "bindings": [
+      { "name": "GATES", "class_name": "GateRuntime" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GateRuntime"] }
+  ],
+  "services": [
+    { "binding": "BROKER", "service": "angelmcp-broker-demo" }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

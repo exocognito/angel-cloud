@@ -1,0 +1,21 @@
+{
+  "target": "https://control.example",
+  "account": "acct_demo",
+  "angel": "golden-assistant",
+  "bindings": {
+    "staging": {
+      "gdocs-read": "personal-google",
+      "gmail-read-and-draft": [
+        "personal-google",
+        "work-google"
+      ]
+    },
+    "production": {
+      "gdocs-read": "personal-google",
+      "gmail-read-and-draft": [
+        "personal-google",
+        "work-google"
+      ]
+    }
+  }
+}

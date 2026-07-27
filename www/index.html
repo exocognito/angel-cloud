@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#faf9f3" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
+    <title>AngelMCP</title>
+    <link rel="stylesheet" href="/app.css">
+    <script>
+      (function () {
+        function syncChrome(theme) {
+          // A non-media theme-color meta wins over the OS-scoped metas above, so a
+          // manual theme choice paints the mobile browser chrome to match.
+          var meta = document.querySelector('meta[name="theme-color"]:not([media])');
+          if (!meta) {
+            meta = document.createElement("meta");
+            meta.setAttribute("name", "theme-color");
+            // theme-color uses the FIRST matching meta in tree order, so the
+            // override must precede the OS-scoped metas to win a manual choice.
+            var scoped = document.querySelector('meta[name="theme-color"][media]');
+            if (scoped) scoped.parentNode.insertBefore(meta, scoped);
+            else document.head.appendChild(meta);
+          }
+          meta.setAttribute("content", theme === "dark" ? "#17150f" : "#faf9f3");
+        }
+        try {
+          var stored = localStorage.getItem("angelmcp-theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+            syncChrome(stored);
+          }
+        } catch (error) { /* localStorage unavailable — fall back to system preference */ }
+      })();
+    </script>
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <!--
+      Provider brand-mark sprite, ported from the approved prototype.
+      Hidden defs only — not yet wired into rendering (WP0 scope is tokens/CSS).
+    -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+      <symbol id="logo-gmail" viewBox="0 0 48 48">
+        <path fill="#4285F4" d="M8 38h6V24l-8-6v17a3 3 0 0 0 2 3z"/>
+        <path fill="#34A853" d="M34 38h6a3 3 0 0 0 2-3V18l-8 6z"/>
+        <path fill="#FBBC04" d="M34 13v11l8-6v-3.2c0-2.6-3-4.1-5-2.5z"/>
+        <path fill="#C5221F" d="M6 14.8V18l8 6V13l-3-2.3c-2-1.6-5-.1-5 2.5z"/>
+        <path fill="#EA4335" d="M14 24V13l10 7.5L34 13v11l-10 7.5z"/>
+      </symbol>
+      <symbol id="logo-gcal" viewBox="0 0 48 48">
+        <rect x="9" y="11" width="30" height="29" rx="4" fill="#fff" stroke="#dadce0" stroke-width="1.2"/>
+        <line x1="18" y1="8" x2="18" y2="14.5" stroke="#5f6368" stroke-width="2.6" stroke-linecap="round"/>
+        <line x1="30" y1="8" x2="30" y2="14.5" stroke="#5f6368" stroke-width="2.6" stroke-linecap="round"/>
+        <text x="24" y="34" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="15" fill="#4285F4">31</text>
+      </symbol>
+      <symbol id="logo-x" viewBox="0 0 48 48">
+        <path fill="#0f0f0f" d="M27.7 21.3 39.4 8h-3.1L26.3 19.6 18.3 8H8l12.3 17.9L8 40h3.1l10.8-12.5L30.4 40H41L27.7 21.3zm-3.8 4.4-1.3-1.8L12.1 10.3h4.2l8 11.6 1.3 1.8 10.5 15.1h-4.2L23.9 25.7z"/>
+      </symbol>
+      <symbol id="logo-whatsapp" viewBox="0 0 48 48">
+        <rect width="48" height="48" rx="11" fill="#25D366"/>
+        <path fill="#fff" d="M24 10c-7.7 0-14 6.3-14 14 0 2.5.7 4.9 1.9 7L10 38l7.2-1.9c2 1.1 4.4 1.7 6.8 1.7 7.7 0 14-6.3 14-14S31.7 10 24 10z"/>
+        <path fill="#25D366" d="M19.5 17c-.3-.7-.6-.7-.9-.7h-.8c-.3 0-.7.1-1.1.5-.4.4-1.4 1.3-1.4 3.3s1.4 3.9 1.6 4.1c.2.3 2.8 4.4 6.9 6 3.4 1.3 4.1 1.1 4.9 1 .8-.1 2.5-1 2.9-2 .4-1 .4-1.8.3-2-.1-.2-.4-.3-.8-.5s-2.5-1.2-2.9-1.4c-.4-.1-.7-.2-.9.2-.3.4-1.1 1.4-1.3 1.6-.2.3-.5.3-.9.1s-1.8-.7-3.4-2.1c-1.3-1.1-2.1-2.5-2.4-2.9-.2-.4 0-.6.2-.8.2-.2.4-.5.6-.7.2-.2.3-.4.4-.7s.1-.5 0-.7c-.1-.2-.9-2.3-1.3-3.1z"/>
+      </symbol>
+      <symbol id="logo-imessage" viewBox="0 0 48 48">
+        <rect width="48" height="48" rx="11" fill="#34C759"/>
+        <path fill="#fff" d="M24 13c-6.9 0-12.5 4.6-12.5 10.3 0 3.3 1.9 6.2 4.8 8.1-.3 1.6-1.2 3.2-1.9 4.3-.3.4.1.9.6.7 2.3-.6 4.3-1.4 5.8-2.4 1 .2 2.1.3 3.2.3 6.9 0 12.5-4.6 12.5-10.3S30.9 13 24 13z"/>
+      </symbol>
+      <symbol id="logo-gdocs" viewBox="0 0 48 48">
+        <path fill="#4285F4" d="M14 5h13l9 9v27a2 2 0 0 1-2 2H14a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>
+        <path fill="#a5c4fb" d="M27 5l9 9h-9z"/>
+        <g fill="#fff"><rect x="17" y="21" width="14" height="2.3" rx="1.15"/><rect x="17" y="26.5" width="14" height="2.3" rx="1.15"/><rect x="17" y="32" width="10" height="2.3" rx="1.15"/></g>
+      </symbol>
+      <symbol id="logo-telegram" viewBox="0 0 48 48">
+        <circle cx="24" cy="24" r="20" fill="#2AABEE"/>
+        <path fill="#fff" d="M34.3 15 30.8 32.8c-.3 1.2-1 1.5-1.9.9l-5.4-4-2.6 2.5c-.3.3-.5.5-1.1.5l.4-5.6 10.3-9.3c.4-.4-.1-.6-.7-.2L16.9 25.7l-5.5-1.7c-1.2-.4-1.2-1.2.3-1.8l21.3-8.2c1-.4 1.8.2 1.3 1z"/>
+      </symbol>
+      <symbol id="logo-slack" viewBox="-12 -12 146.8 146.8">
+        <path fill="#E01E5A" d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zM32.3 77.6c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z"/>
+        <path fill="#36C5F0" d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zM45.2 32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z"/>
+        <path fill="#2EB67D" d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2zM90.5 45.2c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z"/>
+        <path fill="#ECB22E" d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9zM77.6 90.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z"/>
+      </symbol>
+
+      <!--
+        UI icons — Feather/Lucide (https://lucide.dev), ISC License, © Lucide
+        Contributors. Path data copied verbatim from Lucide; inlined as <symbol>s
+        (no package, no CDN) so the app stays self-contained. All are 24×24,
+        fill:none, stroke:currentColor, stroke-width:2, round caps/joins — set on
+        each <symbol> so a <use> inherits them. Icon-only buttons reference these
+        via <svg class="icon"><use href="#icon-…"></use></svg>.
+      -->
+      <symbol id="icon-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/>
+      </symbol>
+      <symbol id="icon-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>
+      </symbol>
+      <symbol id="icon-layout-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>
+      </symbol>
+      <symbol id="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+      </symbol>
+      <symbol id="icon-rotate-cw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>
+      </symbol>
+      <symbol id="icon-ban" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"/><path d="M12 5v14"/>
+      </symbol>
+      <symbol id="icon-pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>
+      </symbol>
+      <symbol id="icon-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="6 3 20 12 6 21 6 3"/>
+      </symbol>
+      <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+      </symbol>
+    </svg>
+
+    <header class="topbar">
+      <button class="brand" type="button" data-route="home" aria-label="AngelMCP Home">
+        <span class="brand-mark" aria-hidden="true">◆</span>
+        <span>AngelMCP</span>
+      </button>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <button class="nav-item is-active" type="button" data-route="home">Home</button>
+        <button class="nav-item" type="button" data-route="angel">Angels</button>
+        <button class="nav-item" type="button" data-route="connections">Connections</button>
+      </nav>
+      <div class="account-identity">
+        <span id="account-name">Loading Account</span>
+        <small>Access protected</small>
+      </div>
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Toggle color theme" title="Toggle color theme">
+        <span aria-hidden="true">◐</span>
+      </button>
+    </header>
+
+    <div id="blocking-error" class="blocking-error" role="alert" hidden>
+      <span class="error-kicker">Demo unavailable</span>
+      <h1>Angel state could not be loaded</h1>
+      <p id="blocking-error-message"></p>
+      <button class="button" type="button" id="retry-state">Retry</button>
+    </div>
+
+    <main id="app" aria-live="polite" aria-busy="true">
+      <section class="loading-screen">
+        <span class="loading-mark" aria-hidden="true">◆</span>
+        <p>Loading exact demo state…</p>
+      </section>
+
+      <section class="screen" data-screen="home" hidden>
+        <div class="page home-page">
+          <header class="page-heading home-heading">
+            <div class="home-heading-copy">
+              <span class="eyebrow" id="home-account">Account</span>
+              <h1>Home</h1>
+              <p id="home-summary" class="home-sub">Loading hosted Angels…</p>
+              <div class="reassure" id="home-health-line" hidden>
+                <span class="badge" id="home-health-badge" aria-hidden="true">✓</span>
+                <span id="home-health">Loading…</span>
+              </div>
+            </div>
+            <div class="seg icons" id="home-density" role="group" aria-label="Home density">
+              <button type="button" data-density="quiet" aria-label="Quiet view" title="Quiet">
+                <svg aria-hidden="true"><use href="#icon-circle"></use></svg>
+              </button>
+              <button type="button" data-density="list" aria-label="List view" title="List">
+                <svg aria-hidden="true"><use href="#icon-list"></use></svg>
+              </button>
+              <button type="button" data-density="dashboard" aria-label="Dashboard view" title="Dashboard">
+                <svg aria-hidden="true"><use href="#icon-layout-grid"></use></svg>
+              </button>
+            </div>
+          </header>
+
+          <div class="angel-list" id="angel-list"></div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="angel" hidden>
+        <div class="angel-layout">
+          <aside class="rail angel-rail" id="angel-rail">
+            <div class="rail-h">Angels</div>
+            <div id="angel-rail-list"></div>
+          </aside>
+
+          <div class="angel-main">
+            <header class="detail-head">
+              <span class="mhead-logos" id="angel-logos" aria-hidden="true"></span>
+              <div class="detail-head-id">
+                <div class="nm" id="angel-name"></div>
+                <p class="detail-charter" id="angel-charter"></p>
+                <div class="detail-head-meta">
+                  <span class="sub" id="angel-envline"></span>
+                </div>
+              </div>
+              <div class="detail-head-actions">
+                <div class="seg env-seg" id="environment-seg" role="group" aria-label="Environment">
+                  <button type="button" data-environment="staging" aria-pressed="false">Staging</button>
+                  <button type="button" class="on" data-environment="production" aria-pressed="true">Production</button>
+                </div>
+                <span class="pill live" id="angel-status"><span class="led"></span>Live</span>
+              </div>
+            </header>
+
+            <nav class="subnav" aria-label="Angel detail">
+              <button class="subnav-item is-active" type="button" data-pane="permissions">Allowed Tools</button>
+              <button class="subnav-item" type="button" data-pane="keys">Agent Keys</button>
+              <button class="subnav-item" type="button" data-pane="activity">Activity <span class="notification-dot" id="version-notification" hidden></span></button>
+              <button class="subnav-item" type="button" data-pane="settings">Settings</button>
+            </nav>
+
+            <section class="pane is-active" data-pane-section="permissions">
+              <div class="state-banner" id="availability-banner" hidden></div>
+              <div id="tool-list"></div>
+            </section>
+
+            <section class="pane" data-pane-section="keys" hidden>
+              <div id="keys-host" class="keys-host"></div>
+            </section>
+
+            <section class="pane" data-pane-section="activity" hidden>
+              <!-- WP-B stratum 1: pinned "Needs decision" card (promotion / gate repair). -->
+              <section class="panel decision-card" id="decision-card" aria-live="polite"></section>
+
+              <!-- WP-B stratum 2: deploys/versions lifecycle, ordinal sequence, per environment. -->
+              <section class="panel activity-stratum" aria-labelledby="lifecycle-heading">
+                <header class="stratum-heading">
+                  <span><h2 id="lifecycle-heading">Deploys &amp; versions</h2><p>Ordinal sequence for this environment. No wall-clock is recorded.</p></span>
+                  <span class="environment-badge" id="lifecycle-environment"></span>
+                </header>
+                <div id="lifecycle-list"></div>
+              </section>
+
+              <!-- WP-B stratum 3: hits/rejects request receipts, per environment. -->
+              <section class="panel activity-stratum" aria-labelledby="requests-heading">
+                <header class="stratum-heading">
+                  <span><h2 id="requests-heading">Hits &amp; rejects</h2><p>Every request shows both independent decisions.</p></span>
+                  <span class="environment-badge" id="activity-environment"></span>
+                </header>
+                <div class="filter-chips" id="activity-filters" role="group" aria-label="Filter requests by decision">
+                  <button class="chip" type="button" data-activity-filter="all">All</button>
+                  <button class="chip" type="button" data-activity-filter="allow">Allowed</button>
+                  <button class="chip" type="button" data-activity-filter="deny">Denied</button>
+                </div>
+              </section>
+              <div class="activity-grid">
+                <section class="panel activity-list" id="activity-list"></section>
+                <aside class="panel activity-detail" id="activity-detail"></aside>
+              </div>
+              <p class="explain-note">Every request shows both independent decisions. Staging and production Activity never mix.</p>
+            </section>
+
+            <section class="pane" data-pane-section="settings" hidden>
+              <div class="settings-grid">
+                <section class="panel settings-availability" aria-labelledby="settings-availability-heading">
+                  <header class="panel-heading"><span><h2 id="settings-availability-heading">Availability</h2><p>Pause or resume every tool in the active environment. Runtime availability only — the immutable Version never changes.</p></span></header>
+                  <div class="settings-availability-row">
+                    <span><b id="settings-availability-summary"></b><small id="settings-availability-note"></small></span>
+                    <span class="button-row">
+                      <button class="button compact" type="button" data-action="pause_all" data-availability-action>Pause all</button>
+                      <button class="button compact" type="button" data-action="resume_all" data-availability-action>Resume all</button>
+                    </span>
+                  </div>
+                  <dl class="gate-detail" id="settings-gate-detail"></dl>
+                </section>
+                <section class="panel settings-versions" aria-labelledby="settings-versions-heading">
+                  <header class="panel-heading"><span><h2 id="settings-versions-heading">Version history</h2><p>Published Versions are immutable. History only — no rename, remove, or export.</p></span></header>
+                  <div id="settings-versions-list"></div>
+                </section>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" data-screen="connections" hidden>
+        <div class="page">
+          <header class="page-heading">
+            <div>
+              <span class="eyebrow">Account</span>
+              <h1>Connections</h1>
+              <p>Access-protected Provider Apps and Connections for this Account.</p>
+            </div>
+            <span class="status-pill"><span class="status-dot"></span>Owner view</span>
+          </header>
+
+          <section class="panel custody-panel" aria-labelledby="custody-heading">
+            <header class="panel-heading">
+              <span><h2 id="custody-heading">Google custody</h2><p>Authorize Provider Apps and manage the Connections your Angels bind to.</p></span>
+            </header>
+            <div class="custody-body">
+              <div class="custody-grid">
+                <form id="provider-app-form" class="custody-form">
+                  <h3>Connect a Provider App</h3>
+                  <label>App nickname<input name="providerAppId" required autocomplete="off"></label>
+                  <label>Display name<input name="displayName" required autocomplete="off"></label>
+                  <label>Google client ID<input name="clientId" required autocomplete="off"></label>
+                  <label>Google client secret<input name="clientSecret" required type="password" autocomplete="new-password"></label>
+                  <button class="button primary" type="submit">Save Provider App</button>
+                </form>
+                <form id="connection-authorize-form" class="custody-form">
+                  <h3>Authorize a Connection</h3>
+                  <label>Provider App<select name="providerAppId" id="provider-app-selector" required></select></label>
+                  <label>Private deployment nickname<input name="nickname" required autocomplete="off"></label>
+                  <button class="button" type="submit">Start Google authorization</button>
+                  <p class="form-note">Google consent is fixed to read-only Gmail and Docs access.</p>
+                </form>
+              </div>
+              <div id="provider-app-list" class="custody-list"></div>
+              <div id="provider-connection-list" class="custody-list"></div>
+              <p id="custody-status" class="form-note" role="status"></p>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <template id="promote-action-template">
+      <button class="button primary" type="button" data-action="promote">Promote exact staged Version</button>
+    </template>
+  </body>
+</html>

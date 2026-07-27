@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Angel Cloud docs</title>
+  <meta name="description" content="Angel Cloud documentation: write, publish, promote, connect, and operate an Angel over the management API — no repo clone." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header id="topbar">
+    <a class="brand" href="#/">Angel&nbsp;Cloud <span class="brand-sub">docs</span></a>
+    <nav class="topnav">
+      <a href="SKILL.md">SKILL.md</a>
+      <a href="llms.txt">llms.txt</a>
+      <button id="theme-toggle" type="button" aria-label="Toggle theme">◐</button>
+    </nav>
+  </header>
+
+  <div id="layout">
+    <aside id="sidebar">
+      <div class="nav-group">
+        <div class="nav-title">Start here</div>
+        <a href="#/">Overview</a>
+        <a href="#/skill">Agent journey (SKILL.md)</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">Reference</div>
+        <a href="#/user-manual">User manual</a>
+        <a href="#/faq">FAQ</a>
+        <a href="#/operator-journey">Operator journey</a>
+        <a href="#/domain-architecture">Domain architecture</a>
+      </div>
+      <div class="nav-group">
+        <div class="nav-title">For agents</div>
+        <a href="llms.txt">/llms.txt</a>
+        <a href="SKILL.md">/SKILL.md</a>
+      </div>
+    </aside>
+
+    <main id="content">
+      <section id="home">
+        <h1>Angel Cloud documentation</h1>
+        <p class="lede">
+          An Angel is a policy-sealed, credential-custodied tool surface an agent
+          reaches over MCP. These docs take you from an empty directory to a
+          promoted Angel answering calls — driven by the management API and the
+          published <code>@smcllns/angel-core</code> CLI. <strong>You never clone
+          this repository.</strong>
+        </p>
+
+        <div class="agent-box">
+          <h2>Building this with an agent?</h2>
+          <p>
+            Point your agent at the two plain-text files below. They are stable,
+            need no auth, and describe the whole journey without a repo checkout.
+          </p>
+          <ul>
+            <li><a href="SKILL.md"><code>/SKILL.md</code></a> — the create → publish → promote → connect journey as loadable instructions.</li>
+            <li><a href="llms.txt"><code>/llms.txt</code></a> — a one-screen map of every doc and its URL.</li>
+          </ul>
+        </div>
+
+        <div class="card-grid">
+          <a class="card" href="#/user-manual">
+            <h3>User manual</h3>
+            <p>The canonical product mechanics: write, build, publish, promote, connect, operate.</p>
+          </a>
+          <a class="card" href="#/faq">
+            <h3>FAQ</h3>
+            <p>The <em>why</em> — design rationale, security boundaries, current limits, roadmap.</p>
+          </a>
+          <a class="card" href="#/operator-journey">
+            <h3>Operator journey</h3>
+            <p>A worked credentialed lifecycle: publish, promote, prove, revoke, reauthorize.</p>
+          </a>
+          <a class="card" href="#/domain-architecture">
+            <h3>Domain architecture</h3>
+            <p>The target host and URL scheme (forward-looking; not all wired yet).</p>
+          </a>
+        </div>
+
+        <h2>What needs credentials, and what is offline</h2>
+        <table class="cred-table">
+          <thead><tr><th>Step</th><th>How</th><th>Credentials</th></tr></thead>
+          <tbody>
+            <tr><td>Install the CLI</td><td><code>pnpm</code> / <code>bun</code></td><td>No credentials (needs npm registry)</td></tr>
+            <tr><td>Write <code>ANGEL.yaml</code> + <code>angel.json</code></td><td>Text editor</td><td>None — offline</td></tr>
+            <tr><td>Build the version artifact</td><td><code>angel build</code></td><td>None — offline, no network</td></tr>
+            <tr><td>Create a Google Connection</td><td>Browser (Cloudflare Access + Google consent)</td><td>Interactive login — no headless path</td></tr>
+            <tr><td>Publish to staging</td><td><code>angel publish</code> / management API</td><td>Management bearer + Access service token</td></tr>
+            <tr><td>Promote to production</td><td><code>angel deploy --prod</code> / management API</td><td>Management bearer + Access service token</td></tr>
+            <tr><td>Connect over MCP</td><td>HTTP to the Gateway</td><td>The minted Angel key only</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <article id="doc" hidden></article>
+      <div id="doc-error" hidden></div>
+    </main>
+  </div>
+
+  <footer id="footer">
+    <span>Rendered from the repo's own <code>docs/*.md</code> — no forked content.</span>
+  </footer>
+
+  <!-- Pinned CDN libraries for the human-readable view, guarded with Subresource
+       Integrity + crossorigin so a CDN compromise cannot inject script. Agents
+       fetch the raw .md / .txt files directly and never load these. mermaid is
+       deferred (large) and signals readiness on load; viewer.js tolerates it
+       never arriving. -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"
+          integrity="sha384-/TQbtLCAerC3jgaim+N78RZSDYV7ryeoBCVqTuzRrFec2akfBkHS7ACQ3PQhvMVi"
+          crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"
+          integrity="sha384-WmdflGW9aGfoBdHc4rRyWzYuAjEmDwMdGdiPNacbwfGKxBW/SO6guzuQ76qjnSlr"
+          crossorigin="anonymous"
+          onload="window.__mermaid=window.mermaid;window.dispatchEvent(new Event('mermaid-ready'));"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

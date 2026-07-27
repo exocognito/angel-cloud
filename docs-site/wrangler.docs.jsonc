@@ -1,0 +1,24 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "angelmcp-docs-demo",
+  "account_id": "6334e1f9af90be70f091a0116425606a",
+  "compatibility_date": "2026-07-18",
+  // Assets-only worker: no `main`, no service bindings, no Cloudflare Access.
+  // The docs are public by design — the opposite of the Access-gated Control
+  // dashboard. Deploy from a built `./dist` (see build.sh); never point this at
+  // the repo `docs/` directly, because the SPA and llms.txt/SKILL.md live
+  // alongside the rendered markdown.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+  // Custom domain: after the `angelmcp.ai` zone moves into this account
+  // (docs/domain-architecture.md migration checklist, step 1), bind
+  // `docs.angelmcp.ai` here (the settled canonical docs host) and wire the apex
+  // `/docs` + `/llms.txt` redirects to it. Until then the stable URL is
+  // https://angelmcp-docs-demo.sam-633.workers.dev.
+}

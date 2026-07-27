@@ -1,0 +1,7 @@
+name: golden-assistant
+
+charter: Research Gmail and Google Docs and prepare Gmail drafts for review.
+
+angels:
+  - gmail-read-and-draft
+  - gdocs-read

@@ -1,0 +1,25 @@
+{
+  "target": "https://control.example.com",
+  "account": "acct_example",
+  "angel": "communications-stack",
+  "bindings": {
+    "staging": {
+      "gmail": ["google-primary", "google-family"],
+      "docs": "google-family-docs",
+      "twitter": ["x-primary", "x-project"],
+      "whatsapp": "whatsapp-family-business",
+      "imessage": "imessage-home-bridge",
+      "telegram": "telegram-family-bot",
+      "slack": ["slack-family", "slack-project"]
+    },
+    "production": {
+      "gmail": ["google-primary", "google-family"],
+      "docs": "google-family-docs",
+      "twitter": ["x-primary", "x-project"],
+      "whatsapp": "whatsapp-family-business",
+      "imessage": "imessage-home-bridge",
+      "telegram": "telegram-family-bot",
+      "slack": ["slack-family", "slack-project"]
+    }
+  }
+}

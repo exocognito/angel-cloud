@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "types/broker.d.ts",
+    "src/domain.ts",
+    "src/gate.ts",
+    "src/workers/gate-object.ts",
+    "src/workers/protocol.ts",
+    "src/workers/broker.ts"
+  ]
+}

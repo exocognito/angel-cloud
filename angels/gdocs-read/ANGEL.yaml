@@ -1,0 +1,6 @@
+name: gdocs-read
+
+charter: Read Google Docs. Never create, edit, move, or delete documents.
+
+tools:
+  - docs.documents.get

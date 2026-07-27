@@ -1,0 +1,33 @@
+# ILLUSTRATIVE ONLY: most adapter namespaces and operations below are not yet
+# implemented. This exercises the portable shape, not current compilability.
+name: communications-stack
+
+charter: |
+  Find and summarize communication across connected identities. Read and
+  search; prepare drafts where supported. Never send, post, delete, invite,
+  change membership, or alter settings.
+
+tools:
+  - gmail.users.messages.list
+  - gmail.users.messages.get
+  - gmail.users.threads.list
+  - gmail.users.threads.get
+  - gmail.users.drafts.create
+  - gmail.users.drafts.update
+  - docs.documents.get
+  - twitter.posts.searchRecent
+  - twitter.users.me
+  - twitter.users.timeline
+  - twitter.users.mentions
+  - whatsapp.businessProfile.get
+  - whatsapp.media.get
+  - imessage.messages.list
+  - imessage.messages.get
+  - imessage.attachments.get
+  - telegram.getMe
+  - telegram.getUpdates
+  - telegram.getChat
+  - telegram.getFile
+  - slack.conversations.list
+  - slack.conversations.history
+  - slack.conversations.replies

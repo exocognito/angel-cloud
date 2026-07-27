@@ -1,0 +1,39 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "angelmcp-control-demo",
+  "account_id": "6334e1f9af90be70f091a0116425606a",
+  "main": "src/workers/control.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  // Secrets: MANAGEMENT_API_TOKEN, CONTROL_RESPONSE_KEK, CONTROL_GATEWAY_TOKEN,
+  // CONTROL_BROKER_TOKEN, DEMO_ADMIN_TOKEN
+  "vars": {
+    "ACCOUNT_ID": "acct_m1",
+    "ACCESS_TEAM_DOMAIN": "https://angel-cloud.cloudflareaccess.com",
+    "ACCESS_AUDIENCE": "4848f84b13d92d4c9a219e35662c5ca84cd9b6188b5e556df801e34fb7bf1da7",
+    "CONTROL_BASE_URL": "https://angelmcp-control-demo.sam-633.workers.dev",
+    "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "ACCOUNTS", "class_name": "AccountRegistry" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["AccountRegistry"] }
+  ],
+  "services": [
+    { "binding": "GATEWAY", "service": "angelmcp-gateway-demo" },
+    { "binding": "BROKER", "service": "angelmcp-broker-demo" }
+  ],
+  "assets": {
+    "directory": "./www",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

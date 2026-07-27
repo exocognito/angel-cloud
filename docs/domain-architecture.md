@@ -1,0 +1,141 @@
+# Domain architecture (target)
+
+Status: direction agreed 2026-07-23; nothing here is wired yet. Everything
+currently runs on `workers.dev` URLs in the dedicated Cloudflare account, and
+that carries us until the public-product milestone. This document exists so
+the URL scheme is settled before anything public depends on it.
+
+## The angel coordinate
+
+Every surface addresses an Angel with one coordinate:
+
+```
+@<account>/<angel>[@<environment-or-version>]
+```
+
+- `@smcllns/inbox-zero` — production. Bare means production; the URL people
+  say most often stays shortest.
+- `@smcllns/inbox-zero@staging` — staging.
+- `@smcllns/inbox-zero@3` — reserved extension: pinned immutable Version 3,
+  for the rollback/preview work already on the deferred punch list. A pinned
+  Version carries no environment (see below); the bare URL is always the
+  only address that means "whatever production runs now".
+
+Precedent is npm's `@scope/name@tag`. The leading `@` is the account sigil
+everywhere (it also eliminates path collisions with marketing pages on the
+apex); the trailing `@suffix` is the environment axis. Switching any URL
+between production and staging is appending or removing `@staging`, and which
+one you are looking at is unmissable.
+
+The suffix is **one axis, not two**. An environment is a mutable pointer to a
+Version (staging points at the staged Version, production at the promoted
+one), so the suffix always answers the single question "which deployment
+pointer, or which pinned snapshot?" — the combination "Version N *in*
+environment E" does not exist as an address. Invocation targets an
+environment (its gate, Connections, keys, and currently bound Version); a
+pinned `@N` address exists only on inspection surfaces (an immutable
+Version's page or metadata), which carry no environment. This mirrors npm
+dist-tags vs versions sharing one `@` namespace, and inherits npm's
+disambiguation rule: a suffix of all digits is a Version; anything else must
+be a name from the closed environment list, and **environment names must not
+start with a digit**. `latest` and `production` are reserved and invalid as
+suffixes — production has exactly one spelling, the bare coordinate — so
+every Angel has one canonical production URL.
+
+The suffix set is closed and product-defined — today just `staging` (bare =
+production), with room for a small fixed set later (e.g. per-PR previews).
+The canonical validation pattern, to be reused verbatim wherever coordinates
+are parsed:
+
+```
+^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(staging|[0-9]+))?$
+```
+
+Growing the set means editing one alternation in one pattern.
+
+Considered and rejected: a distinct leading sigil per environment (e.g.
+`$account/angel` for staging). `$`, `~`, `!`, and `;` all collide with shell
+expansion or syntax, so pasted URLs break silently in terminals; a changed
+sigil visually mutates the account token (reads as a different namespace, not
+a different environment); it is unpronounceable; and versions would still
+need the `@suffix`, leaving two grammars where one suffices. `@` is the rare
+symbol that is both URL-legal and shell-inert — it is effectively the only
+good sigil available, so it is spent on the account namespace alone.
+
+Consequences:
+- Account handles and Angel names must never contain `@`.
+- `@<account>` names an **Account** (Personal or Family), not a human — one
+  login enters one Account, and a Family handle is shared by its members.
+- Staging and production stay independently addressed, matching the
+  exact-promotion model's independent environment bindings.
+
+## Hosts
+
+| Host | Serves | Backed by |
+| --- | --- | --- |
+| `angelmcp.ai` | Marketing site, plus public Angel www pages at `/@account/angel` | apex dispatcher (future) |
+| `docs.angelmcp.ai` | Public docs site (user manual, FAQ, operator journey), plus `/llms.txt` and `/SKILL.md` for agents | Docs worker (static assets) |
+| `dash.angelmcp.ai` | Control dashboard for the logged-in Account | Control worker |
+| `mcp.angelmcp.ai` | MCP endpoint per Angel: `/@account/angel[@suffix]` | Gateway worker |
+| `api.angelmcp.ai` | Control-plane API (exists today behind Control; the CLI consumes it) and, later, per-Angel REST invocation at `/@account/angel[@suffix]` | Control worker; invocation surface TBD |
+| `auth.angelmcp.ai` | Upstream-provider OAuth callbacks; later, first-party session issuance if we outgrow Cloudflare Access | Control worker (or a small dedicated worker) |
+
+`docs.angelmcp.ai` is the canonical docs host — it is the URL handed to agents,
+so it stays stable and needs no auth. It is a subdomain rather than an apex path
+so agents fetch `/llms.txt` and `/SKILL.md` from a stable host root; keeping docs
+on their own host also keeps the public surface cleanly separate from the
+authenticated `dash.` and `api.` hosts.
+
+Deliberate absences:
+
+- **The Broker gets no hostname, ever.** It is reachable only over service
+  bindings from Gateway and Control. "The credential vault has no public URL"
+  is a security property, not an omission.
+- **No `cli.angelmcp.ai`.** The CLI is a client, not a server. At most the
+  name becomes an install-script redirect one day; it is not infrastructure.
+
+## Why `auth.` is its own host
+
+Google OAuth clients pin exact redirect URIs, and changing them means touching
+the Google client config (and, for a verified production OAuth app,
+re-review). The callback lives on a small, stable host that never serves user
+content and never changes, regardless of what `dash.` becomes.
+
+## Apex rules
+
+The apex is shared between marketing paths and `@handle` pages. The `@` sigil
+removes the collision by construction, but two rules keep it safe:
+
+- Non-`@` top-level paths belong to the product (`/pricing`, `/docs`,
+  `/blog`, …). The handle registry additionally reserves those words so no
+  Account can squat a product path even without its sigil.
+- `angelmcp.ai/docs` and `angelmcp.ai/llms.txt` redirect to `docs.angelmcp.ai`
+  and `docs.angelmcp.ai/llms.txt` — the docs host is canonical, and the apex
+  paths exist only so the reserved words resolve to one place.
+- No auth cookie is ever scoped to `.angelmcp.ai`. Angel www pages are
+  user-shaped content; session cookies stay host-only on `dash.` / `auth.`.
+
+## Migration checklist (when this becomes real)
+
+1. Move the `angelmcp.ai` zone into the dedicated Cloudflare account. This
+   moves **all** DNS for the domain — audit email routing and any other
+   records on the personal account first.
+2. Add Workers custom domains/routes for Control (`dash.`, `api.`, `auth.`),
+   Gateway (`mcp.`), and the Docs worker (`docs.`); add apex redirects for
+   `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
+3. Update `CONTROL_BASE_URL` / `GATEWAY_BASE_URL` vars in
+   `wrangler.control.jsonc` and redeploy.
+4. Update the Cloudflare Access application URL to `dash.angelmcp.ai`.
+5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
+   (operator-in-a-browser step in Google Cloud Console).
+6. Keep `workers.dev` URLs alive through the cutover, then disable.
+
+## Open questions
+
+1. Does staging need more company (per-PR previews, a third environment), and
+   if so, which names join the closed suffix alternation?
+2. What does the apex dispatcher look like — one worker routing marketing vs
+   `@` pages, or marketing on Pages with a route carve-out?
+3. When the REST invocation surface lands on `api.`, does the control-plane
+   API move under a `/v1/` prefix on the same host or keep a separate path
+   root?

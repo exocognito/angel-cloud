@@ -1,0 +1,17 @@
+name: golden-research-assistant
+
+charter: |
+  Research my mail and documents. Read a bounded set of Gmail messages and
+  one pinned Google Doc. Never send mail, delete content, alter labels, or
+  modify documents. An out-of-bounds read exists only to prove the compiled
+  argument guards fail closed before a provider call.
+
+tools:
+  - tool: gmail.users.messages.list
+    argGuards:
+      - field: maxResults
+        pin: "5"
+  - tool: docs.documents.get
+    argGuards:
+      - field: documentId
+        pin: "${GOLDEN_GOOGLE_DOC_ID}"

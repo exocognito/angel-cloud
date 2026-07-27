@@ -1,0 +1,11 @@
+node_modules/
+.secrets/
+.env
+*.local
+.DS_Store
+
+# personal scratch pad, local only
+docs/sam-feedback.md
+
+# actual deployment configuration, local only
+angels/*/angel.json

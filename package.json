@@ -1,0 +1,28 @@
+{
+  "name": "@exocognito/angel-cloud",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "angel": "node_modules/@smcllns/angel-core/src/scripts/angel.ts"
+  },
+  "scripts": {
+    "angel": "pnpm exec angel",
+    "test": "bun test",
+    "test:golden": "bun run scripts/golden.ts",
+    "test:google-read-proof": "bun run scripts/google-read-proof.ts",
+    "typecheck": "tsc --noEmit",
+    "typecheck:workers": "bun run tsc -p tsconfig.broker.json --noEmit && bun run tsc -p tsconfig.gateway.json --noEmit && bun run tsc -p tsconfig.control.json --noEmit",
+    "check": "bun run typecheck && bun run typecheck:workers && bun test && bun run scripts/check-fixture-staleness.ts"
+  },
+  "dependencies": {
+    "@smcllns/angel-core": "0.2.0",
+    "yaml": "^2.4.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260711.1",
+    "@types/bun": "^1.1.3",
+    "typescript": "^5.4.5",
+    "wrangler": "^4.110.0"
+  }
+}

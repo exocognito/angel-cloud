@@ -1,0 +1,38 @@
+name: gmail-inbox-zero
+
+charter: Triage and manage my personal Gmail. Read and search mail,
+  organize labels, create and edit drafts for me to review — but never
+  send, never delete, never change settings.
+
+tools:
+  - gmail.users.messages.list
+  - gmail.users.messages.get
+  - gmail.users.threads.list
+  - gmail.users.threads.get
+  - gmail.users.labels.list
+  - gmail.users.labels.get
+  - gmail.users.drafts.list
+  - gmail.users.drafts.get
+  - gmail.users.getProfile
+  - gmail.users.history.list
+  - gmail.users.messages.attachments.get
+  - gmail.users.settings.getVacation
+  - gmail.users.settings.getAutoForwarding
+  - gmail.users.drafts.create
+  - gmail.users.drafts.update
+  - gmail.users.labels.create
+  - gmail.users.labels.patch
+  - gmail.users.labels.update
+  - gmail.users.labels.delete
+  - tool: gmail.users.messages.modify
+    argGuards:
+      - field: addLabelIds
+        forbiddenValues: [TRASH, SPAM, SENT]
+      - field: removeLabelIds
+        forbiddenValues: [TRASH, SPAM, SENT]
+  - tool: gmail.users.threads.modify
+    argGuards:
+      - field: addLabelIds
+        forbiddenValues: [TRASH, SPAM, SENT]
+      - field: removeLabelIds
+        forbiddenValues: [TRASH, SPAM, SENT]

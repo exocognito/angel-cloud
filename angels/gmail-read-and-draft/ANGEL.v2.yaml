@@ -1,0 +1,12 @@
+name: gmail-read-and-draft
+
+charter: Read bounded Gmail results and prepare drafts for review. Never send or delete mail.
+
+tools:
+  - tool: gmail.users.messages.list
+    argGuards:
+      - field: maxResults
+        pin: "5"
+  - gmail.users.messages.get
+  - gmail.users.drafts.create
+  - gmail.users.labels.list

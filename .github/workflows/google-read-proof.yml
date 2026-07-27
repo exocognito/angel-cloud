@@ -1,0 +1,27 @@
+name: google-read-proof acceptance
+
+on:
+  schedule:
+    - cron: "17 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    env:
+      # This is the exact full production MCP endpoint, including /v1/a/.../production/mcp.
+      GOLDEN_GATEWAY_URL: ${{ vars.GOLDEN_GATEWAY_URL }}
+      GOLDEN_GMAIL_QUERY: ${{ vars.GOLDEN_GMAIL_QUERY }}
+      GOLDEN_DOC_ID: ${{ vars.GOLDEN_DOC_ID }}
+      GOLDEN_ANGEL_KEY: ${{ secrets.GOLDEN_ANGEL_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: oven-sh/setup-bun@v2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run test:google-read-proof
