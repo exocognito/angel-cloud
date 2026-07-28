@@ -646,7 +646,7 @@ Transport and platform errors:
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
 | `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
-| `409` | Digest, idempotency, staging, revision, or pending-repair conflict. |
+| `409` | Digest, idempotency, staging, revision, or pending-repair conflict — or a handle already claimed or a second rename, see [Account handles](#account-handles). |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |
@@ -695,6 +695,7 @@ the `/v1` management surface — there is no self-serve rename:
 
 ```sh
 curl -X PUT "https://<control>/v1/accounts/<acct_id-or-handle>/handle" \
+  -H "CF-Access-Client-Id: <id>" -H "CF-Access-Client-Secret: <secret>" \
   -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"handle":"smcllns"}'
