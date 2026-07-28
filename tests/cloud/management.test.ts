@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { compileHostedAngel, sha256Hex } from "@smcllns/angel-core";
+import { canonicalJson, compileHostedAngel, sha256Hex } from "@smcllns/angel-core";
+import { MemoryGateFleet } from "../../src/control";
 import { buildDemoView } from "../../src/demo-view";
 import type { HostedVersionArtifact } from "../../src/domain";
 import type { ManagementConnection } from "../../src/management-contract";
@@ -674,6 +675,102 @@ describe("ManagementControl", () => {
       toolOverrides: {},
       connectionOverrides: {},
       revision: 1,
+    });
+  });
+
+  test("management and real gates hold byte-identical availability after a promote with overrides", async () => {
+    // The forward fix rests on management and the gates running the SAME
+    // migration: if their availability ever diverges, the next
+    // changeAvailability fails to reconcile. Run the incident flow against
+    // real PolicyGates and pin the invariant.
+    const fleet = new MemoryGateFleet();
+    const vault = new MemoryReplayVault();
+    let sequence = 0;
+    const control = ManagementControl.restore(
+      createManagementState({ account, connections }),
+      {
+        replayVault: vault,
+        fleetFor: () => fleet,
+        randomId: (prefix) => `${prefix}_${String(++sequence).padStart(4, "0")}`,
+        checkpoint: { persist: async () => {} },
+        now: () => MANAGEMENT_NOW,
+      },
+    );
+    const ensured = await ensure(control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(control, angelId, artifact);
+    const staged = await stage(control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote1 = {
+      stagedDeploymentId: staged.id,
+      expectedDigest: staged.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await control.promoteProduction(
+      angelId,
+      promote1,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote1),
+    );
+    const change = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: false,
+    };
+    await control.changeAvailability(
+      angelId,
+      "production",
+      change,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-personal", change),
+    );
+
+    const body = {
+      versionId: version.id,
+      expectedDigest: artifact.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    const restaged = await control.deployStaging(
+      angelId,
+      body,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/deployments`, "restage", body),
+    );
+    const promote2 = {
+      stagedDeploymentId: restaged.id,
+      expectedDigest: restaged.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await control.promoteProduction(
+      angelId,
+      promote2,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-2", promote2),
+    );
+
+    const stored = control.exportState().angels[0]!.environments.production.availability;
+    expect(Object.keys(stored.connectionOverrides)).toEqual(["gmail.users.messages.list"]);
+    for (const gate of ["broker", "gateway"] as const) {
+      expect(canonicalJson((await fleet.snapshot(gate, "production")).availability))
+        .toBe(canonicalJson(stored));
+    }
+
+    // A follow-up availability change must still reconcile end to end.
+    const followUp = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_work_google",
+      enabled: false,
+    };
+    const view = await control.changeAvailability(
+      angelId,
+      "production",
+      followUp,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-work", followUp),
+    );
+    expect(view.connectionOverrides).toEqual({
+      "gmail.users.messages.list": { con_personal_google: false, con_work_google: false },
     });
   });
 
