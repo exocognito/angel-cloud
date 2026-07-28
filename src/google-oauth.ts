@@ -7,6 +7,18 @@ export const DEFAULT_GOOGLE_PROVIDER_SCOPES: readonly string[] = [
 
 const GOOGLE_IDENTITY_SCOPES = ["openid", "email"] as const;
 
+// Identity scopes a Provider App must not configure: consent always adds what
+// it needs, and Google reports the aliases back rewritten (email ->
+// .../userinfo.email), so a configured alias would fail every exchange's
+// floor check with no way to edit the Provider App.
+const REJECTED_IDENTITY_SCOPES = new Set([
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+]);
+
 // Every consent needs the identity scopes: exchangeGoogleCode verifies the
 // subject and email from the id_token they produce.
 export function googleConsentScopes(providerScopes: readonly string[]): string[] {
@@ -22,6 +34,9 @@ export function parseProviderScopes(value: unknown): string[] {
   for (const scope of value) {
     if (typeof scope !== "string" || !/^[\x21-\x7e]+$/.test(scope)) {
       throw new Error("scopes entries must be non-empty strings without whitespace");
+    }
+    if (REJECTED_IDENTITY_SCOPES.has(scope)) {
+      throw new Error(`scopes must not include identity scopes (every consent requests them): ${scope}`);
     }
   }
   return [...new Set<string>(value)].sort();

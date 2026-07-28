@@ -67,6 +67,21 @@ describe("Google OAuth custody boundary", () => {
     ]);
   });
 
+  test("parseProviderScopes rejects identity scopes, which every consent adds itself", () => {
+    // Google reports the aliases back in rewritten form (email ->
+    // .../userinfo.email), so a configured identity scope would make every
+    // exchange fail its floor check with no way to edit the Provider App.
+    for (const scope of [
+      "openid",
+      "email",
+      "profile",
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+    ]) {
+      expect(() => parseProviderScopes([scope, ...DEFAULT_GOOGLE_PROVIDER_SCOPES])).toThrow(/identity/);
+    }
+  });
+
   test("parseProviderScopes rejects malformed scope lists", () => {
     const malformed: unknown[] = [
       undefined,
