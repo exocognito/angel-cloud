@@ -3,7 +3,7 @@
 - Status: Agreed
 - Date: 2026-07-28
 - Implemented: No
-- Tracked: none yet
+- Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
 
 ## Decision
 
