@@ -75,9 +75,15 @@ no Angel with the new slug and creates one, with its own environments and its
 own freshly minted keys. The original stays deployed, live, and bound to its
 Connections.
 
-So there is nothing to alias, because there is no rename to alias. That is a
-missing operation rather than a naming-policy question, and it is tracked in
-[#13](https://github.com/exocognito/angel-cloud/issues/13).
+So there is nothing to alias, because there is no rename to alias — and a
+rename operation is not the answer. Renaming an Angel should be publishing
+under the new name and deleting the old one, which needs deletion to exist.
+It does not: Angels have no delete, and the only removal path resets the whole
+Account. Tracked in [#13](https://github.com/exocognito/angel-cloud/issues/13).
+
+The asymmetry with handles is deliberate. An Angel is disposable — republish
+it, throw the old one away. A handle is not: it is the name other people hold,
+so it is retained rather than reclaimed.
 
 ## Open
 
