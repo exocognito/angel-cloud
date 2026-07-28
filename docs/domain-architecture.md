@@ -64,9 +64,9 @@ Consequences:
 - Account handles and Angel names must never contain `@`.
 - `@<account>` names an **Account** (Personal or Family), not a human — one
   login enters one Account, and a Family handle is shared by its members.
-- Preview and production stay independently addressed, matching the
-  exact-promotion model's independent environment bindings — though they
-  share Connections by default (PD 0003).
+- Preview and production stay independently addressed and independently bound,
+  matching the exact-promotion model. Preview binds its own Connections
+  (PD 0005).
 
 ## Hosts
 
