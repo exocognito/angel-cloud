@@ -27,7 +27,7 @@ lives and how many independent checks sit between agent and provider:
   trust domains, no execution engine.
 - **Angel Cloud** — the hosted evolution of relay's two-gate shape. An Account
   owns immutable Versions, Connection bindings, stable keys, and
-  staging/production deployments; a shared Gateway and Broker enforce them.
+  preview/production deployments; a shared Gateway and Broker enforce them.
   Nothing to host per Angel ([what it is](user-manual.md#what-angel-cloud-is)).
 
 Pick lite for the smallest self-hosted footprint, relay to keep two trust
@@ -108,7 +108,7 @@ agents can see the policy moved without losing their credentials
 ### Can I rotate an Angel key? Is it shown more than once?
 
 A key's plaintext is shown exactly once, on the first ensure and again each time
-you mint or rotate one ([publish](user-manual.md#publish-to-staging)). Later
+you mint or rotate one ([publish](user-manual.md#publish-to-preview)). Later
 reads show only fingerprints. Rotation and revocation are explicit actions on
 the dashboard's Agent Keys pane, never a side effect of a deploy
 ([the dashboard](user-manual.md#use-the-dashboard)). Keys are hashed at rest, so
@@ -117,11 +117,14 @@ replacement. The last active key cannot be revoked.
 
 ### Why can't production reuse my staging bindings automatically?
 
-Implicit reuse would cross an environment boundary and could promote the right
-Version with the wrong identity. Each environment stands alone
-([concepts](user-manual.md#concepts)), so `angel.json` spells out both maps and
-reviewing bindings at promotion is a deliberate extra step
-([angel.json](user-manual.md#angeljson)).
+(The environment is named `preview` since PD 0003; this question keeps its old
+title so links keep working.) Implicit reuse would cross an environment
+boundary and could promote the right Version with the wrong identity — in
+either direction: preview never inherits production's Connections either
+([PD 0005](product-decisions/0005-preview-binds-its-own-connections.md)). Each
+environment stands alone ([concepts](user-manual.md#concepts)), so
+`angel.json` spells out both maps and reviewing bindings at promotion is a
+deliberate extra step ([angel.json](user-manual.md#angeljson)).
 
 ### What happens when an agent calls an operation outside my policy?
 
@@ -314,7 +317,7 @@ through reviewed source and the CLI ([ship it](user-manual.md#ship-it)).
 ### What's the difference between pause/resume and disabling an Angel?
 
 Pause/resume is per environment: one tool, one tool + Connection pair, or
-everything in staging or production — a reversible overlay that never creates a
+everything in preview or production — a reversible overlay that never creates a
 Version or touches a guard ([pause and resume](user-manual.md#pause-and-resume)).
 It can remove effective availability but can never add a tool or loosen a guard.
 A global "disable Angel" circuit breaker across both environments is on the

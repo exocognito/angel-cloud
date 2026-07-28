@@ -19,7 +19,7 @@ The deployed shape is three Workers:
 
 Gateway and Broker use separate SQLite Durable Object namespaces. Control uses
 one AccountRegistry SQLite Durable Object. Deployments install Broker first and
-Gateway second; production promotion consumes the exact active staging
+Gateway second; production promotion consumes the exact active preview
 deployment ID and digest.
 
 ## Documentation
@@ -77,8 +77,10 @@ angels:
 ```
 
 `angel.json` separately owns the target, Account, Angel slug, and explicit
-staging/production Connection nicknames. Builds emit canonical, secret-free
-`build/angel.version.json` and `build/angel.version.sha256` files.
+per-environment Connection nicknames (the pinned CLI still spells the second
+environment `staging`; the platform calls it `preview`). Builds emit
+canonical, secret-free `build/angel.version.json` and
+`build/angel.version.sha256` files.
 
 ```text
 bun run angel build golden-assistant
@@ -87,8 +89,12 @@ bun run angel deploy golden-assistant --prod
 ```
 
 `publish` builds, ensures the Angel, publishes an immutable Version, and deploys
-it to staging. `deploy --prod` promotes the exact active staged deployment; it
-does not build or publish. M1 Control is Access-protected: CLI publish and
+it to the preview environment (the pinned CLI still calls it staging on the
+wire). `deploy --prod` promotes the exact active previewed deployment; it does
+not build or publish. Server-side, `POST
+/v1/angels/{id}/environments/production/deployments` already takes a published
+Version live in one step; the CLI default flips to it with the next
+`@smcllns/angel-core` release (PD 0003). M1 Control is Access-protected: CLI publish and
 deploy require both `ANGEL_MANAGEMENT_TOKEN` and `ANGEL_ACCESS_TOKEN`.
 
 ## Deterministic CI (golden proof)
@@ -99,8 +105,8 @@ bun run check
 
 Ordinary CI runs the deterministic journey against in-memory Worker and
 Durable Object adapters and injects a deterministic provider at Broker, without
-Google credentials (419 tests / 2,698 assertions). The journey publishes both
-checked-in comparison Angels, promotes exact staged deployments, discovers one
+Google credentials (444 tests / 2,775 assertions). The journey publishes both
+checked-in comparison Angels, promotes exact previewed deployments, discovers one
 canonical Gmail tool with two opaque Connection choices, proves omission never
 fans out, calls each Connection separately, pauses one tuple without pausing
 the other, pauses all then resumes one tool, publishes v2 from checked-in
@@ -157,7 +163,8 @@ bun run test:google-read-proof
 See [`docs/google-read-proof-manual-journey.md`](docs/google-read-proof-manual-journey.md).
 
 `GOLDEN_GATEWAY_URL` is the exact full production MCP endpoint, for example
-`https://gateway.example/v1/a/<account>/google-read-proof/production/mcp`. It is
+`https://gateway.example/@<handle>/google-read-proof` (the legacy
+`/v1/a/<account>/google-read-proof/production/mcp` shape still answers). It is
 not an origin: the runner requires the checked-in Angel slug, calls the supplied
 URL unchanged, and verifies both gate receipts against the checked-in build
 digest.
@@ -181,8 +188,14 @@ durable monitoring.
   Cloudflare Access identity. Static shell assets contain no Account state.
 - `POST /api/demo/reset` requires the automation-only admin bearer.
 - The old embedded `POST /api/demo/publish` fixture route does not exist.
-- `POST /v1/a/:account/:angel/:environment/mcp` requires that environment's
-  stable Angel key for initialize, discovery, and calls.
+- `POST /@{handle}/{angel}` is the canonical MCP coordinate (PD 0001): bare is
+  production, `/@{handle}/{angel}@preview` is the preview environment, and
+  `latest`, `production`, `staging`, and pinned `@N` suffixes are 404s. It
+  requires that environment's stable Angel key for initialize, discovery, and
+  calls.
+- `POST /v1/a/:account/:angel/:environment/mcp` is the legacy MCP route and
+  still answers through the cutover; its `staging` segment is the old spelling
+  of `preview`.
 
 ## Deploy
 

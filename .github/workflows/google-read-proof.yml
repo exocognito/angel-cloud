@@ -12,7 +12,9 @@ jobs:
   acceptance:
     runs-on: ubuntu-latest
     env:
-      # This is the exact full production MCP endpoint, including /v1/a/.../production/mcp.
+      # The exact full production MCP endpoint: the bare coordinate
+      # https://<gateway>/@<handle>/google-read-proof (the legacy
+      # /v1/a/.../production/mcp shape still answers).
       GOLDEN_GATEWAY_URL: ${{ vars.GOLDEN_GATEWAY_URL }}
       GOLDEN_GMAIL_QUERY: ${{ vars.GOLDEN_GMAIL_QUERY }}
       GOLDEN_DOC_ID: ${{ vars.GOLDEN_DOC_ID }}

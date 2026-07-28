@@ -58,7 +58,7 @@ client secret.
 
 **Live and proven end to end:**
 
-- The local build, publish, staging deploy, and exact-promotion lifecycle
+- The local build, publish, preview deploy, and exact-promotion lifecycle
   ([Ship it](#ship-it)), driven through the Account-scoped management API with
   safely retryable mutations and stable environment keys.
 - Bring-your-own Google OAuth custody: a Provider App stored write-only, Google
@@ -95,13 +95,13 @@ flowchart TD
     PA --> CON
     ACC --> AN["Angel"]
     AN --> VER["Versions\n(immutable artifacts)"]
-    AN --> ST["staging environment"]
+    AN --> ST["preview environment"]
     AN --> PROD["production environment"]
     ST --> DS["deployment =\nVersion + bindings"]
     PROD --> DP["deployment =\nVersion + bindings"]
     DS --> CON
     DP --> CON
-    ST --> KS["staging Angel key"]
+    ST --> KS["preview Angel key"]
     PROD --> KP["production Angel key"]
 ```
 
@@ -122,9 +122,11 @@ flowchart TD
   its canonical source. Versions never change; publishing the same digest twice
   returns the existing Version
   ([why](faq.md#why-are-versions-immutable)).
-- **Environment** — `staging` or `production`, nothing else. Each has its own
-  deployment, bindings, availability state, and Angel key. A staging key cannot
-  call production.
+- **Environment** — `preview` or `production`, nothing else. Each has its own
+  deployment, bindings, availability state, and Angel key. A preview key cannot
+  call production. `preview` was named `staging` until 2026-07-28 (PD 0003);
+  the pinned CLI and its `angel.json` still use the old spelling, and the
+  server accepts it as a legacy dialect.
 - **Deployment** — one Version installed into one environment, with explicit
   **bindings** that map each of the artifact's requirements to Connections.
 - **Angel key** — the bearer an agent presents. Each environment gets a default
@@ -295,12 +297,14 @@ Exactly four keys:
   credentials.
 - `account` — your Account ID.
 - `angel` — the Angel slug; must equal the artifact's `name`.
-- `bindings` — a `staging` map and a `production` map, each keyed by the
+- `bindings` — a `staging` map (the pinned CLI's spelling of the preview
+  environment) and a `production` map, each keyed by the
   artifact's binding-requirement IDs. For a direct Angel the ID is the provider
   name (`gmail`); for a composed Angel it is the child name
   (`gmail-read-and-draft`), or `<child>:<provider>` when one child uses two
   providers. The value is one Connection nickname, or a list of nicknames to give
-  the agent a choice. Production never inherits staging's bindings
+  the agent a choice. Production never inherits preview's bindings, and
+  preview never inherits production's (PD 0005)
   ([why](faq.md#why-cant-production-reuse-my-staging-bindings-automatically)).
 
 ## Add Google custody
@@ -392,7 +396,7 @@ flowchart LR
     ART --> PUB["angel publish"]
     J["angel.json\n(target, Account,\nbindings)"] --> PUB
     PUB --> V["immutable Version"]
-    V --> S["staging deployment"]
+    V --> S["preview deployment"]
     S -->|"angel deploy --prod\nor dashboard promote"| PR["production deployment"]
 ```
 
@@ -434,7 +438,7 @@ children) and writes `build/angel.version.json` (the canonical, secret-free
 artifact) and `build/angel.version.sha256` (its digest). You never need to run
 `build` by hand — `publish` runs it — but it is a cheap, offline preview.
 
-### Publish to staging
+### Publish to preview
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -451,14 +455,19 @@ One command does four things:
    read the plaintext back**
    ([can I rotate?](faq.md#can-i-rotate-an-angel-key-is-it-shown-more-than-once)).
 3. Publishes the Version. The same digest returns the same Version.
-4. Deploys it to staging, resolving your `staging` binding nicknames against the
-   Account's live Connections. Each nickname must exist, be `healthy`, and cover
-   its requirement's provider.
+4. Deploys it to the preview environment, resolving your `staging` binding
+   nicknames (the CLI's legacy spelling of preview) against the Account's live
+   Connections. Each nickname must exist, be `healthy`, and cover its
+   requirement's provider. A preview deploy with no bindings for a Version
+   that requires them fails and names the two ways forward (PD 0005). The
+   server can also take a published Version straight to production in one step
+   (`POST /v1/angels/{id}/environments/production/deployments`); the CLI
+   default moves there with the next `@smcllns/angel-core` release (PD 0003).
 
 Every mutation carries an idempotency key: resend the same key to retry a call
 safely, and never reuse a key for different input.
 
-### Promote the exact staged deployment
+### Promote the exact previewed deployment
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -466,12 +475,12 @@ ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."
 pnpm exec angel deploy google-read-proof --prod
 ```
 
-Promotion, not deployment from source. It reads the *currently active* staging
+Promotion, not deployment from source. It reads the *currently active* preview
 deployment, resolves your `production` binding nicknames, and asks Control to
-promote that exact staged Version and digest under your production bindings. It
-does not build, publish, or pick a newer Version — the policy you tested on
-staging is byte-for-byte what production runs, though each environment keeps its
-own bindings. The
+promote that exact previewed Version and digest under your production bindings.
+It does not build, publish, or pick a newer Version — the policy you tested on
+preview is byte-for-byte what production runs, though each environment keeps
+its own bindings. The
 dashboard's promote button does the same thing, with a drift check on top
 ([the Activity pane](#use-the-dashboard)). Rollback has no command yet; see
 [How do I roll back?](faq.md#how-do-i-roll-back)
@@ -480,19 +489,29 @@ dashboard's promote button does the same thing, with a drift check on top
 
 ### Endpoint and auth
 
-Each Angel environment has one MCP endpoint on the Gateway:
+Each Angel has one canonical MCP coordinate on the Gateway (PD 0001); bare
+means production:
 
 ```text
-POST https://<gateway>/v1/a/<account>/<angel>/<staging|production>/mcp
+POST https://<gateway>/@<handle>/<angel>           → production
+POST https://<gateway>/@<handle>/<angel>@preview   → preview
 Authorization: Bearer <that environment's Angel key>
 ```
 
-Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The endpoint
-serves only POST; other methods get `405`. `<account>` is either the internal
-`acct_*` id or the Account's [handle](#account-handles) — a retired handle
-also works and is answered directly with `200`, never a redirect. An unknown
-handle answers `401` exactly like a wrong key, so handle existence cannot be
-probed without one.
+`<handle>` is the Account's [handle](#account-handles) — a retired handle also
+works and is answered directly with `200`, never a redirect. An unknown handle
+answers `401` exactly like a wrong key, so handle existence cannot be probed
+without one. `latest` and `production` are rejected as suffixes, so production
+has exactly one spelling; pinned `@N` Version addresses are reserved in the
+grammar and answer `404` for now.
+
+The legacy route
+`POST /v1/a/<account>/<angel>/<staging|preview|production>/mcp` still answers
+through the cutover — `staging` is the old spelling of `preview`, and
+`<account>` is either the internal `acct_*` id or the handle.
+
+Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The
+endpoints serve only POST; other methods get `405`.
 
 ![The Agent Keys pane: the active environment's MCP endpoint ready to paste into an agent client, and named keys with masked fingerprints, Rotate, and Revoke](manual-images/agent-keys-pane.png)
 
@@ -646,7 +665,7 @@ Transport and platform errors:
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
 | `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
-| `409` | Digest, idempotency, staging, revision, or pending-repair conflict — or a handle already claimed or a second rename, see [Account handles](#account-handles). |
+| `409` | Digest, idempotency, preview, revision, or pending-repair conflict — or a handle already claimed or a second rename, see [Account handles](#account-handles). |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |
