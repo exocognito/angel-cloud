@@ -374,6 +374,15 @@ describe("Control handle routes", () => {
     expect(response.status).toBe(404);
   });
 
+  test("a malformed account segment encoding is a 400 client error, not a 500", async () => {
+    const harness = controlHarness();
+    const response = await handleControlRequest(new Request(
+      "https://control.test/v1/accounts/sm%zzllns/angels/golden-assistant",
+      { headers: managementHeaders },
+    ), harness.env);
+    expect(response.status).toBe(400);
+  });
+
   test("refuses to start with a handle-shaped ACCOUNT_ID", async () => {
     const harness = controlHarness();
     (harness.env as { ACCOUNT_ID: string }).ACCOUNT_ID = "m1";
@@ -540,10 +549,12 @@ describe("Gateway handle resolution on the MCP request path", () => {
     expect(names).toEqual(["acct_m1:angel_demo:production"]);
   });
 
-  test("an unknown handle-shaped Account segment is 404 before any gate state is read", async () => {
+  test("an unknown handle-shaped Account segment is 401, indistinguishable from a bad key", async () => {
+    // 404 here would let an unauthenticated caller probe which handles exist;
+    // a wrong key against an existing handle answers 401, so this must too.
     const { env, names } = await gatewayEnv({});
     const response = await handleGatewayRequest(initialize("ghost-name"), env);
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(names).toEqual([]);
   });
 
@@ -567,7 +578,7 @@ describe("Gateway handle resolution on the MCP request path", () => {
     expect(malformed.status).toBe(400);
   });
 
-  test("an unbound Object.prototype name is 404, not a phantom Account", async () => {
+  test("an unbound Object.prototype name is unknown (401), not a phantom Account", async () => {
     const storage = new Map<string, unknown>();
     const directory = new HandleDirectory({
       storage: {
@@ -578,7 +589,7 @@ describe("Gateway handle resolution on the MCP request path", () => {
     const { env, names } = await gatewayEnv({});
     (env as { HANDLES: unknown }).HANDLES = { getByName: () => directory };
     const response = await handleGatewayRequest(initialize("constructor"), env);
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(401);
     expect(names).toEqual([]);
   });
 });

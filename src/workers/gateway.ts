@@ -93,10 +93,10 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
         } catch {
           return Response.json({ error: "malformed account segment encoding" }, { status: 400 });
         }
+        // An unknown handle answers exactly like a wrong key: a 404 here would
+        // let an unauthenticated caller probe which handles exist.
         const accountId = await resolveAccountSegment(env, accountSegment);
-        if (accountId === null) {
-          return Response.json({ error: "unknown account handle" }, { status: 404 });
-        }
+        if (accountId === null) return invalidAngelKey();
         const runtimeId = `${accountId}:${angelId}:${environment}`;
         const runtime = env.GATES.getByName(runtimeId);
         const state = await runtime.snapshot("gateway");

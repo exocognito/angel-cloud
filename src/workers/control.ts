@@ -205,7 +205,12 @@ async function pushHandleBinding(env: ControlRequestEnv, handle: string, account
 async function withCanonicalAccountSegment(url: URL, env: ControlRequestEnv): Promise<URL> {
   const match = /^\/v1\/accounts\/([^/]+)((?:\/.*)?)$/.exec(url.pathname);
   if (match === null) return url;
-  const segment = decodeURIComponent(match[1]!);
+  let segment: string;
+  try {
+    segment = decodeURIComponent(match[1]!);
+  } catch {
+    throw new RequestError(400, "malformed account segment encoding");
+  }
   const canonical = await canonicalAccountId(env, segment);
   if (canonical === segment) return url;
   return new URL(`/v1/accounts/${encodeURIComponent(canonical)}${match[2]!}${url.search}`, url);

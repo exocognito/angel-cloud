@@ -491,7 +491,8 @@ Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The endpoint
 serves only POST; other methods get `405`. `<account>` is either the internal
 `acct_*` id or the Account's [handle](#account-handles) — a retired handle
 also works and is answered directly with `200`, never a redirect. An unknown
-handle-shaped segment is `404`.
+handle answers `401` exactly like a wrong key, so handle existence cannot be
+probed without one.
 
 ![The Agent Keys pane: the active environment's MCP endpoint ready to paste into an agent client, and named keys with masked fingerprints, Rotate, and Revoke](manual-images/agent-keys-pane.png)
 
