@@ -376,11 +376,61 @@ describe("Control handle routes", () => {
 
   test("a malformed account segment encoding is a 400 client error, not a 500", async () => {
     const harness = controlHarness();
+    for (const [path, options] of [
+      ["/v1/accounts/sm%zzllns/angels/golden-assistant", { headers: managementHeaders }],
+      ["/v1/accounts/sm%zzllns/handle", {
+        method: "PUT",
+        headers: managementHeaders,
+        body: JSON.stringify({ handle: "smcllns" }),
+      }],
+      ["/v1/handles/sm%zz", { headers: managementHeaders }],
+    ] as const) {
+      const response = await handleControlRequest(
+        new Request(`https://control.test${path}`, options as RequestInit),
+        harness.env,
+      );
+      expect(response.status).toBe(400);
+    }
+  });
+
+  test("GET /v1/handles/{handle} answers unclaimed and unowned names with one identical 404", async () => {
+    const harness = controlHarness();
+    await harness.directory.registry.dispatchJson({
+      operation: "claim_handle",
+      accountId: "acct_other",
+      handle: "somebody-else",
+    } as never);
+    const bodies: unknown[] = [];
+    for (const handle of ["nobody-here", "somebody-else"]) {
+      const response = await handleControlRequest(new Request(
+        `https://control.test/v1/handles/${handle}`,
+        { headers: managementHeaders },
+      ), harness.env);
+      expect(response.status).toBe(404);
+      bodies.push(await response.json());
+    }
+    // Identical bodies, or the error message becomes a which-names-are-taken oracle.
+    expect(bodies[0]).toEqual(bodies[1]);
+  });
+
+  test("an unclaimably long segment never reaches the directory and stays a plain 404", async () => {
+    // A segment past the claimable cap can never be a handle; probing the
+    // directory with it would build an over-long Durable Object storage key
+    // and surface a 500 instead of the normal not-found path.
+    const harness = controlHarness();
+    harness.env.ACCOUNTS = {
+      getByName(name: string) {
+        if (name === HANDLE_DIRECTORY_REGISTRY) {
+          throw new Error("directory must not be probed with unclaimable segments");
+        }
+        return { dispatchJson: async () => JSON.stringify({ ok: true, value: {} }) };
+      },
+    };
     const response = await handleControlRequest(new Request(
-      "https://control.test/v1/accounts/sm%zzllns/angels/golden-assistant",
+      `https://control.test/v1/accounts/${"a".repeat(4000)}/angels/golden-assistant`,
       { headers: managementHeaders },
     ), harness.env);
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(404);
   });
 
   test("refuses to start with a handle-shaped ACCOUNT_ID", async () => {
@@ -566,6 +616,21 @@ describe("Gateway handle resolution on the MCP request path", () => {
     const response = await handleGatewayRequest(initialize("acct_m1"), env);
     expect(response.status).toBe(200);
     expect(names).toEqual(["acct_m1:angel_demo:production"]);
+  });
+
+  test("an unclaimably long or short segment is 401 without touching the directory", async () => {
+    // Past the cap it cannot be a claimed handle, and probing the directory
+    // would build an over-long Durable Object storage key that errors as 500 —
+    // a distinguishable answer on the path the 401 rule just closed.
+    const { env, names } = await gatewayEnv({});
+    (env as { HANDLES: unknown }).HANDLES = {
+      getByName: () => { throw new Error("directory must not be probed with unclaimable segments"); },
+    };
+    for (const segment of ["a".repeat(4000), "ab"]) {
+      const response = await handleGatewayRequest(initialize(segment), env);
+      expect(response.status).toBe(401);
+    }
+    expect(names).toEqual([]);
   });
 
   test("a percent-encoded handle segment resolves after decoding; malformed encoding is 400", async () => {

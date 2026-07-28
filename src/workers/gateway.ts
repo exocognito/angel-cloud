@@ -32,7 +32,7 @@ import {
   requireInternalRequest,
 } from "./protocol";
 import { DurableObject } from "cloudflare:workers";
-import { ACCOUNT_HANDLE_GRAMMAR, isInternalAccountId } from "../handles";
+import { ACCOUNT_HANDLE_GRAMMAR, ACCOUNT_HANDLE_PATTERN, isInternalAccountId } from "../handles";
 
 export { GateRuntime };
 
@@ -237,6 +237,10 @@ async function bindHandle(request: Request, env: GatewayEnv): Promise<Response> 
  */
 async function resolveAccountSegment(env: GatewayEnv, segment: string): Promise<string | null> {
   if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
+  // Handle-shaped but past the claimable pattern (the cap, or under the
+  // floor): it can never be claimed, and probing the directory would build an
+  // over-long Durable Object storage key that errors as a distinguishable 500.
+  if (!ACCOUNT_HANDLE_PATTERN.test(segment)) return null;
   return env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).resolve(segment);
 }
 

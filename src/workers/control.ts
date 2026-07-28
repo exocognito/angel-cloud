@@ -26,7 +26,7 @@ import {
   type ConnectionSummary,
   type ProviderAppSummary,
 } from "../provider-management";
-import { ACCOUNT_HANDLE_GRAMMAR, HANDLE_DIRECTORY_REGISTRY, isInternalAccountId } from "../handles";
+import { ACCOUNT_HANDLE_PATTERN, HANDLE_DIRECTORY_REGISTRY, isInternalAccountId } from "../handles";
 
 export { AccountRegistry };
 
@@ -167,9 +167,19 @@ async function handleRoutes(
   const get = matchPath(url.pathname, /^\/v1\/handles\/([^/]+)$/);
   if (get !== null && request.method === "GET") {
     const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
-    const resolution = await registryValue(directory, { operation: "resolve_handle", handle: get[0]! }) as {
-      accountId: string;
-    };
+    let resolution: { accountId: string };
+    try {
+      resolution = await registryValue(directory, { operation: "resolve_handle", handle: get[0]! }) as {
+        accountId: string;
+      };
+    } catch (error) {
+      // Unclaimed names answer with the exact body an unowned name gets below,
+      // or the error message becomes a which-names-are-taken oracle.
+      if (error instanceof RequestError && error.status === 404) {
+        throw new RequestError(404, "not found");
+      }
+      throw error;
+    }
     // Scoped like every other account route: another Account's handle is 404,
     // so the directory never doubles as a public enumeration surface.
     requireAuthenticatedAccount(resolution.accountId, identity.accountId);
@@ -217,7 +227,10 @@ async function withCanonicalAccountSegment(url: URL, env: ControlRequestEnv): Pr
 }
 
 async function canonicalAccountId(env: ControlRequestEnv, segment: string): Promise<string> {
-  if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
+  // The claimable pattern, not just the grammar: a segment past the cap can
+  // never be a handle, and probing the directory with it would build an
+  // over-long Durable Object storage key that errors instead of missing.
+  if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_PATTERN.test(segment)) return segment;
   const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
   try {
     const resolution = await registryValue(directory, { operation: "resolve_handle", handle: segment }) as {
@@ -1088,7 +1101,12 @@ function parseBindings(value: unknown): ManagementBindingMap {
 function matchPath(pathname: string, pattern: RegExp): string[] | null {
   const match = pattern.exec(pathname);
   if (!match) return null;
-  return match.slice(1).map((value) => decodeURIComponent(value));
+  try {
+    return match.slice(1).map((value) => decodeURIComponent(value));
+  } catch {
+    // A malformed percent-escape is the client's error, never a 500.
+    throw new RequestError(400, "malformed path segment encoding");
+  }
 }
 
 function requiredString(value: unknown, label: string): string {
