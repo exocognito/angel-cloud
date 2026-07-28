@@ -43,7 +43,7 @@ writing a new record that supersedes the old one, never editing the old one.
 | # | Decision | Agreed | Implemented | Tracked |
 | --- | --- | --- | --- | --- |
 | [0001](0001-angel-coordinate-scheme.md) | Address every Angel as `@account/angel[@suffix]`; bare means production | 2026-07-23 | No | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
-| [0002](0002-public-angel-page.md) | Every Angel has a public page anyone can read without a key | 2026-07-23 | No | none yet |
+| [0002](0002-public-angel-page.md) | Every Angel has a public page anyone can read without a key | 2026-07-23 | No | [#11](https://github.com/exocognito/angel-cloud/issues/11) |
 | [0003](0003-preview-is-opt-in.md) | Publishing goes live; `preview` is opt-in and shares credentials | 2026-07-28 | No | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
 
 All three are live-facing gaps. The running Gateway serves
