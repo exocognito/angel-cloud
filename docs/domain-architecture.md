@@ -56,6 +56,11 @@ are parsed:
 ^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$
 ```
 
+The account segment additionally carries PD 0004's four-character floor and a
+32-character cap, enforced by the registry in `src/handles.ts`
+(`^[a-z][a-z0-9-]{3,31}$`); the pattern above stays the shape of a
+coordinate, not the claimability of a name.
+
 Growing the set means editing one alternation in one pattern. The suffix
 vocabulary is under review — see PD 0001, which also records the rejected
 alternatives.

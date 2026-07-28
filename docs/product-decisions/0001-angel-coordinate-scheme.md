@@ -90,3 +90,9 @@ The suffix vocabulary was left open here and settled on 2026-07-28 by
 [PD 0003](0003-preview-is-opt-in.md): the slot reads `@preview`, not
 `@staging`. The grammar, the one-axis rule, and everything else above are
 unaffected — it edits one alternation in one pattern.
+
+The "Blocked on" gap above cleared on 2026-07-28 when
+[#12](https://github.com/exocognito/angel-cloud/issues/12) landed Account
+handles ([PD 0004](0004-account-handles.md)). The route in "What runs instead
+today" still runs, but its account segment now also accepts a handle,
+retired handles included.

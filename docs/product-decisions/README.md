@@ -52,6 +52,8 @@ writing a new record that supersedes the old one, never editing the old one.
 is a record rather than an edit because the convention has to hold at one day
 old to hold at one year.
 
-All five are live-facing gaps. The running Gateway serves
-`/v1/a/{account}/{angel}/{staging\|production}/mcp`, POST-only and key-only,
-which matches none of them, and `angel publish` still deploys to staging.
+Four are still whole live-facing gaps; 0004 is partly built. The running
+Gateway serves `/v1/a/{account}/{angel}/{staging\|production}/mcp`, POST-only
+and key-only — the account segment now also takes a handle, but the `@`
+coordinate, the public page, and the preview rename remain unbuilt, and
+`angel publish` still deploys to staging.
