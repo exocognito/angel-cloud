@@ -1,6 +1,7 @@
 # Domain architecture (target)
 
-Status: direction agreed 2026-07-23; nothing here is wired yet. Everything
+Status: direction agreed 2026-07-23. The coordinate path grammar is live on
+the Gateway as of 2026-07-28 (issue #3); the host move is not — everything
 currently runs on `workers.dev` URLs in the dedicated Cloudflare account, and
 that carries us until the public-product milestone. This document exists so
 the URL scheme is settled before anything public depends on it.
@@ -8,9 +9,10 @@ the URL scheme is settled before anything public depends on it.
 This is reference — what the addresses are. Why they are shaped this way, and
 whether they are built yet, lives in the product decision records:
 [PD 0001](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0001-angel-coordinate-scheme.md)
-for the coordinate and
+for the coordinate (implemented — the Gateway answers it on the current host)
+and
 [PD 0002](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0002-public-angel-page.md)
-for public Angel pages. Neither is implemented.
+for public Angel pages (not implemented).
 
 ## The angel coordinate
 

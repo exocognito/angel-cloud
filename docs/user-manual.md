@@ -578,10 +578,10 @@ rows described in [Add Google custody](#add-google-custody).
 **Angels** shows one Angel beside a rail of the Account's Angels. The header
 carries provider marks, a generated provider summary line (derived from the
 active environment's deployed tools, not the `ANGEL.yaml` charter), and the
-environment's Version line, with a Staging/Production toggle and a Live/Paused
+environment's Version line, with a Preview/Production toggle and a Live/Paused
 pill.
 
-![Angel header with provider marks, the generated provider summary, environment Version line, the Staging/Production toggle, the Live pill, and the four pane tabs](manual-images/angel-header-panes.png)
+![Angel header with provider marks, the generated provider summary, environment Version line, the Preview/Production toggle, the Live pill, and the four pane tabs](manual-images/angel-header-panes.png)
 
 Angel detail has four panes:
 

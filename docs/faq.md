@@ -89,7 +89,7 @@ runtime interprets but cannot edit.
 So that production is exactly what you tested. Rebuilding or republishing during
 promotion could make production differ from the staged bytes; instead, promotion
 re-deploys the exact staged Version and digest under production bindings, and changes nothing else
-([promote](user-manual.md#promote-the-exact-staged-deployment)). We considered
+([promote](user-manual.md#promote-the-exact-previewed-deployment)). We considered
 building inside `deploy --prod` and promoting "latest", and rejected both: the
 first lets bytes drift, the second races and cannot be audited. A Version is
 never edited or overwritten, and runtime pause state never changes policy — the
@@ -303,7 +303,7 @@ Connections.
 
 By re-promotion. Stage the earlier Version again, then promote that exact staged
 deployment through the normal path — a full two-gate deployment, not a pointer
-flip ([promote](user-manual.md#promote-the-exact-staged-deployment)). No
+flip ([promote](user-manual.md#promote-the-exact-previewed-deployment)). No
 dedicated rollback command exists yet, so today you publish and deploy the old
 source again yourself.
 
