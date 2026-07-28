@@ -70,8 +70,8 @@ The minimal resource API is:
    hard deletion. Keys are revoked first, then Broker closes before Gateway in
    both environments — the same order as disable — then the Angel's state,
    Deployments, and Versions are dropped. The slug is immediately reusable.
-   When production has a live deployment the body must repeat the slug as
-   `{"confirm": "<slug>"}`.
+   When production has an active or pending-repair deployment the body must
+   repeat the slug as `{"confirm": "<slug>"}`.
 
 Every mutation requires management bearer authentication and an
 `Idempotency-Key`, rejects unknown JSON keys, and accepts no credentials.

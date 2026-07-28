@@ -541,6 +541,12 @@ describe("PolicyGate named runtime keys", () => {
     expect(() => gate.reconcileGatewayKeys(["not-a-hash"])).toThrow(/SHA-256/);
   });
 
+  test("install still requires at least one gateway key hash", async () => {
+    // Only reconcile may go empty (deletion lockout); an install without keys
+    // would create a gate nobody can ever authenticate to.
+    await expect(gatewayWithKeys([])).rejects.toThrow(/at least one/);
+  });
+
   test("reconcileGatewayKeys to an empty set locks the gate: no key authenticates", async () => {
     // Angel deletion revokes every key before tearing the gates down; an empty
     // reconcile is that revocation, and it must reject previously valid keys

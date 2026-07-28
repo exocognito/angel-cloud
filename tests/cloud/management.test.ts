@@ -1146,13 +1146,25 @@ describe("ManagementControl delete", () => {
     expect(Object.keys(harness.control.exportState().idempotency)).toEqual(["delete-1"]);
   });
 
-  test("purges pre-upgrade records without a recorded path on delete", async () => {
+  test("purges pre-upgrade records that reference the dead Angel and keeps other Angels' records", async () => {
     const seed = managementHarness();
-    await ensure(seed.control);
+    const ensured = await ensure(seed.control);
     const state = seed.control.exportState();
-    // A record persisted before deletion existed has no `path`; it cannot be
-    // attributed, and keeping it would let a dead Angel's response replay.
-    state.idempotency["legacy-ensure"] = { fingerprint: "f".repeat(64), responseJson: "{}" };
+    // Records persisted before deletion existed carry no `path`. Purge the ones
+    // whose stored response references the dead Angel (plain or sealed), but
+    // leave a different Angel's replay protection alone.
+    state.idempotency["legacy-dead"] = {
+      fingerprint: "f".repeat(64),
+      responseJson: JSON.stringify({ angel: { id: ensured.angel.id, slug: "golden-assistant" } }),
+    };
+    state.idempotency["legacy-dead-sealed"] = {
+      fingerprint: "d".repeat(64),
+      ciphertext: await seed.vault.seal(JSON.stringify({ angel: { id: ensured.angel.id } })),
+    };
+    state.idempotency["legacy-other"] = {
+      fingerprint: "e".repeat(64),
+      responseJson: JSON.stringify({ key: { id: "key_other" }, plaintext: "ak_other" }),
+    };
     const control = ManagementControl.restore(state, freshDependencies(seed));
 
     await control.deleteAngel(
@@ -1162,7 +1174,28 @@ describe("ManagementControl delete", () => {
       mutation("DELETE", deletePath, "delete-1", {}),
     );
 
-    expect(Object.keys(control.exportState().idempotency)).toEqual(["delete-1"]);
+    expect(Object.keys(control.exportState().idempotency).sort()).toEqual(["delete-1", "legacy-other"]);
+  });
+
+  test("purges records stored under a percent-encoded coordinate path", async () => {
+    const harness = managementHarness();
+    // A client may percent-encode the coordinate; routing decodes it, so the
+    // record must canonicalize to the decoded path or it escapes the purge and
+    // replays the dead Angel.
+    await harness.control.ensureAngel(
+      account.id,
+      "golden-assistant",
+      mutation("PUT", "/v1/accounts/acct_personal/angels/%67olden-assistant", "ensure-encoded", {}),
+    );
+
+    await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-1", {}),
+    );
+
+    expect(Object.keys(harness.control.exportState().idempotency)).toEqual(["delete-1"]);
   });
 
   test("requires confirmation when a production deployment is pending repair", async () => {

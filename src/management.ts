@@ -314,19 +314,23 @@ export class ManagementControl {
       //    dead Angel's sealed response (stale id, spent keys) instead of
       //    creating a fresh one. The delete's own record is stored after this
       //    runs, so its replay remains available.
-      //    Records persisted before deletion existed carry no `path`; they
-      //    cannot be attributed to an Angel, and keeping one risks replaying a
-      //    dead Angel's response — losing an unidentifiable replay is strictly
-      //    safer, so they are purged too.
+      //    Records persisted before deletion existed carry no `path`; those are
+      //    purged only when their stored response references the dead Angel, so
+      //    a different Angel's replay protection survives. A sealed legacy
+      //    record that cannot be opened is unattributable and purged — losing
+      //    it is strictly safer than replaying a dead Angel's response.
       const coordinatePath = `/v1/accounts/${accountId}/angels/${slug}`;
       for (const [key, record] of Object.entries(this.state.idempotency)) {
-        if (
-          record.path === undefined
-          || record.path === coordinatePath
-          || record.path.startsWith(`/v1/angels/${angel.id}/`)
-        ) {
-          delete this.state.idempotency[key];
+        let purge: boolean;
+        if (record.path !== undefined) {
+          purge = record.path === coordinatePath || record.path.startsWith(`/v1/angels/${angel.id}/`);
+        } else {
+          const response = "ciphertext" in record
+            ? await this.dependencies.replayVault.open(record.ciphertext).catch(() => null)
+            : record.responseJson;
+          purge = response === null || response.includes(angel.id) || response.includes(`"${slug}"`);
         }
+        if (purge) delete this.state.idempotency[key];
       }
       return { id: angel.id, slug: angel.slug, deleted: true as const };
     });
@@ -984,7 +988,16 @@ function requiredSlug(value: string): string {
 
 function canonicalPath(value: string): string {
   if (!value.startsWith("/")) throw new ManagementError(400, "mutation path must be absolute");
-  return value.length > 1 ? value.replace(/\/+$/, "") : value;
+  const trimmed = value.length > 1 ? value.replace(/\/+$/, "") : value;
+  // Decode each segment the way routing does, so a percent-encoded coordinate
+  // fingerprints and purges identically to its canonical spelling.
+  return trimmed.split("/").map((segment) => {
+    try {
+      return decodeURIComponent(segment);
+    } catch {
+      throw new ManagementError(400, "mutation path must be percent-decodable");
+    }
+  }).join("/");
 }
 
 function defaultAvailability(): GateAvailability {
