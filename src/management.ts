@@ -124,6 +124,33 @@ export class ManagementControl {
         const environmentState = angel.environments[environment];
         environmentState.availability ??= defaultAvailability();
         environmentState.pendingAvailability ??= null;
+        // Repair a state persisted by a pre-migration deploy (issue #1): its
+        // connection overrides still key refs of a deployment that is no longer
+        // active, so every read of the environment throws. The gates pruned
+        // their copy of those overrides when they installed that deployment, so
+        // DROP the dangling entries rather than remap them — resurrecting an
+        // override the gates no longer hold would diverge the recorded
+        // availability from what the gates enforce and wedge the next change.
+        const activeId = environmentState.activeDeploymentId;
+        const activeBindings = this.state.deployments
+          .find((deployment) => deployment.id === activeId)?.runtimeBindings ?? [];
+        const activeRefs = new Map<string, Set<string>>();
+        for (const binding of activeBindings) {
+          const folded = binding.tool.toUpperCase();
+          const refs = activeRefs.get(folded) ?? new Set<string>();
+          refs.add(binding.connectionRef);
+          activeRefs.set(folded, refs);
+        }
+        environmentState.availability.connectionOverrides = Object.fromEntries(
+          Object.entries(environmentState.availability.connectionOverrides)
+            .flatMap(([tool, overrides]) => {
+              const refs = activeRefs.get(tool.toUpperCase());
+              const surviving = Object.fromEntries(
+                Object.entries(overrides).filter(([ref]) => refs?.has(ref) ?? false),
+              );
+              return Object.keys(surviving).length === 0 ? [] : [[tool, surviving] as const];
+            }),
+        );
         // Migrate a legacy single key into the named-keys model. The migrated key
         // preserves the exact hash/fingerprint (so gate auth never breaks) and is
         // named "Default key". Its id is derived deterministically from the hash so

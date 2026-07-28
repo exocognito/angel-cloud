@@ -619,6 +619,64 @@ describe("ManagementControl", () => {
     });
   });
 
+  test("restores a state left dangling by a pre-fix promote to readable, gate-matching availability", async () => {
+    // Build a healthy promoted environment with an override, then re-key the
+    // stored override to the ref of a non-active deployment — the exact state
+    // a pre-fix promote persisted (issue #1). The gates pruned their copy of
+    // the override at that install, so restore must drop it, not resurrect it.
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    const staged = await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google"],
+    });
+    const promote = {
+      stagedDeploymentId: staged.id,
+      expectedDigest: staged.digest,
+      bindings: { gmail: ["con_personal_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote),
+    );
+    const change = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: false,
+    };
+    await harness.control.changeAvailability(
+      angelId,
+      "production",
+      change,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-personal", change),
+    );
+
+    const damaged = harness.control.exportState();
+    const production = damaged.angels[0]!.environments.production;
+    const stagingRef = damaged.deployments.find((candidate) => candidate.id === staged.id)!
+      .runtimeBindings[0]!.connectionRef;
+    // The staging deployment's ref is never active in production — like the old
+    // production deployment's ref after a pre-fix promote.
+    production.availability.connectionOverrides = {
+      "gmail.users.messages.list": { [stagingRef]: false },
+    };
+
+    const restored = ManagementControl.restore(damaged, freshDependencies(harness));
+    const environment = restored.getEnvironment(angelId, "production");
+    expect(environment.availability).toEqual({
+      defaultEnabled: true,
+      toolOverrides: {},
+      connectionOverrides: {},
+      revision: 1,
+    });
+  });
+
   test("returns tenant-safe not found for Angel resources outside the Account", async () => {
     const { control } = managementHarness();
     await ensure(control);
