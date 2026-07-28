@@ -644,12 +644,13 @@ Transport and platform errors:
 | `404` | The route or owned resource is absent — cross-Account lookups also return `404`. |
 | `405` | Non-POST to the MCP endpoint. |
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
-| `403` | Disallowed `Origin`. |
+| `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
 | `409` | Digest, idempotency, staging, revision, or pending-repair conflict. |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |
+| `502` | A handle claim committed but its Gateway push failed — see [Account handles](#account-handles). |
 
 Management errors share one shape: `{"error":"<message>"}` with the HTTP status.
 Provider and custody failures throw; the runtime never silently substitutes a

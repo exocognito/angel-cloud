@@ -221,6 +221,11 @@ async function bindHandle(request: Request, env: GatewayEnv): Promise<Response> 
   if (typeof handle !== "string" || handle === "" || typeof accountId !== "string" || accountId === "") {
     throw new HttpError(400, "handle and accountId are required");
   }
+  // Defense in depth against a misbehaving Control: an unclaimable name must
+  // never become a replica storage key (Durable Object keys cap at 2 KiB).
+  if (!ACCOUNT_HANDLE_PATTERN.test(handle)) {
+    throw new HttpError(400, "handle is outside the claimable pattern");
+  }
   const outcome = await env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).bind(handle, accountId);
   if (outcome === "conflict") {
     return Response.json({ error: "handle is bound to another Account" }, { status: 409 });

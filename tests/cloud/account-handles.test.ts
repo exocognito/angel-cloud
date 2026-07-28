@@ -411,6 +411,21 @@ describe("Control handle routes", () => {
     expect(response.status).toBe(404);
   });
 
+  test("another Account's handle on a management route is 404 and dispatches nothing", async () => {
+    const harness = controlHarness();
+    await harness.directory.registry.dispatchJson({
+      operation: "claim_handle",
+      accountId: "acct_other",
+      handle: "somebody-else",
+    } as never);
+    const response = await handleControlRequest(new Request(
+      "https://control.test/v1/accounts/somebody-else/angels/golden-assistant",
+      { headers: managementHeaders },
+    ), harness.env);
+    expect(response.status).toBe(404);
+    expect(harness.accountCommands).toEqual([]);
+  });
+
   test("a malformed account segment encoding is a 400 client error, not a 500", async () => {
     const harness = controlHarness();
     for (const [path, options] of [
@@ -579,6 +594,9 @@ describe("Gateway handle directory", () => {
     expect(await directory.resolve("smcllns")).toBe("acct_m1");
     expect((await bind("control-gateway", { handle: "smcllns", accountId: "acct_other" })).status).toBe(409);
     expect((await bind("control-gateway", { handle: "smcllns" })).status).toBe(400);
+    // Defense in depth against a misbehaving Control: an unclaimable name must
+    // never become a replica storage key either.
+    expect((await bind("control-gateway", { handle: "a".repeat(4000), accountId: "acct_m1" })).status).toBe(400);
   });
 });
 
