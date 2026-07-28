@@ -4,6 +4,7 @@ import {
   PolicyGate,
   availableTools,
   createPolicyGateState,
+  migrateInstalledAvailability,
   type GateToolBinding,
 } from "../../src/gate";
 import { sha256Hex } from "@smcllns/angel-core";
@@ -537,6 +538,49 @@ describe("PolicyGate policy and availability", () => {
       },
       revision: 1,
     });
+  });
+
+  test("refuses to migrate conflicting overrides from two old refs of one Connection", () => {
+    // No writer can produce two different values for one (tool, Connection) —
+    // both values would have to differ from the same base. If persisted state
+    // ever carries that shape, collapsing it silently would let ref order pick
+    // which override wins; fail loudly instead.
+    expect(() => migrateInstalledAvailability(
+      {
+        defaultEnabled: false,
+        overrides: {},
+        connectionOverrides: {
+          "gmail.users.messages.list": { arc_old_a: true, arc_old_b: false },
+        },
+        revision: 2,
+      },
+      [{ name: "gmail.users.messages.list" }],
+      [
+        {
+          tool: "gmail.users.messages.list",
+          connectionRef: "arc_old_a",
+          connectionId: "con_google",
+          provider: "gmail",
+          identityLabel: "Golden Google",
+        },
+        {
+          tool: "gmail.users.messages.list",
+          connectionRef: "arc_old_b",
+          connectionId: "con_google",
+          provider: "gmail",
+          identityLabel: "Golden Google",
+        },
+      ],
+      [
+        {
+          tool: "gmail.users.messages.list",
+          connectionRef: "arc_new",
+          connectionId: "con_google",
+          provider: "gmail",
+          identityLabel: "Golden Google",
+        },
+      ],
+    )).toThrow(/conflicting availability overrides/);
   });
 
   test("the broker independently applies the same policy without an agent key", async () => {

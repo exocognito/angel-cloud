@@ -844,21 +844,32 @@ export function migrateInstalledAvailability(
           nextRefsByConnection.set(binding.connectionId, refs);
         }
         const nextRefs = new Set(next.map((binding) => binding.connectionRef));
+        const migrated = new Map<string, boolean>();
+        for (const [ref, enabled] of Object.entries(refOverrides)) {
+          // A ref that is still bound stays as-is — the migration is a
+          // no-op on refs the next deployment keeps (including a re-run).
+          // Otherwise fan out to every ref the Connection now serves the tool
+          // under: the override targets the Connection, not one of its refs.
+          const connectionId = previous
+            .find((binding) => binding.connectionRef === ref)?.connectionId;
+          const targets = nextRefs.has(ref)
+            ? [ref]
+            : connectionId === undefined
+            ? []
+            : nextRefsByConnection.get(connectionId) ?? [];
+          for (const nextRef of targets) {
+            const existing = migrated.get(nextRef);
+            // No writer can record two values for one (tool, Connection): both
+            // would have to differ from the same base. Refuse to let ref order
+            // silently pick a winner if persisted state ever carries it.
+            if (existing !== undefined && existing !== enabled) {
+              throw new Error(`conflicting availability overrides for ${tool} / ${nextRef}`);
+            }
+            migrated.set(nextRef, enabled);
+          }
+        }
         const surviving = Object.fromEntries(
-          Object.entries(refOverrides)
-            .flatMap(([ref, enabled]) => {
-              // A ref that is still bound stays as-is — the migration is a
-              // no-op on refs the next deployment keeps (including a re-run).
-              if (nextRefs.has(ref)) return [[ref, enabled] as const];
-              const connectionId = previous
-                .find((binding) => binding.connectionRef === ref)?.connectionId;
-              if (connectionId === undefined) return [];
-              // Fan out to every ref the Connection now serves the tool under:
-              // the override targets the Connection, not one of its refs.
-              return (nextRefsByConnection.get(connectionId) ?? [])
-                .map((nextRef) => [nextRef, enabled] as const);
-            })
-            .sort(([left], [right]) => left.localeCompare(right)),
+          [...migrated.entries()].sort(([left], [right]) => left.localeCompare(right)),
         );
         return Object.keys(surviving).length === 0 ? [] : [[tool, surviving] as const];
       })
