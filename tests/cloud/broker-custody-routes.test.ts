@@ -68,6 +68,24 @@ describe("Broker custody lifecycle routes", () => {
     expect(stored).toMatchObject({ scopes: ["https://www.googleapis.com/auth/calendar.readonly"] });
   });
 
+  test("registers a Provider App posted without scopes with the default set (old-Control compatibility)", async () => {
+    let stored: unknown;
+    const vault = {
+      async fetch(input: string | Request) {
+        stored = await vaultRequest(input).json();
+        return Response.json({ ok: true });
+      },
+    };
+    const response = await handleBrokerRequest(new Request("https://broker.internal/internal/provider-apps", {
+      method: "POST",
+      headers: { authorization: "Bearer control-broker", "content-type": "application/json" },
+      body: JSON.stringify({ accountId: "acct_a", providerAppId: "app_google", provider: "google", displayName: "Family", clientId: "client-id", clientSecret: "secret" }),
+    }), brokerEnv(vault), () => ({}));
+
+    expect(response.status).toBe(200);
+    expect(stored).toMatchObject({ scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] });
+  });
+
   test("exchange fails closed when the grant misses a configured Provider App scope", async () => {
     const idToken = await signedGoogleIdToken();
     const vault = {

@@ -15,6 +15,7 @@ import {
   requireInternalRequest,
 } from "./protocol";
 import {
+  DEFAULT_GOOGLE_PROVIDER_SCOPES,
   buildGoogleAuthorizeUrl,
   exchangeGoogleCode,
   parseProviderScopes,
@@ -231,7 +232,10 @@ export async function handleBrokerRequest(
 }
 
 function parseProviderApp(value: unknown) {
-  const body = exactRecord(value, ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret", "scopes"]);
+  // scopes is absent from a pre-scope Control's POST during a deploy window
+  // (Broker deploys before Control); absent means the historical default.
+  const keys = ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret"];
+  const body = exactRecord(value, isRecord(value) && "scopes" in value ? [...keys, "scopes"] : keys);
   if (body.provider !== "google") throw new Error("provider must be google");
   return {
     accountId: stringField(body.accountId, "accountId"),
@@ -240,7 +244,7 @@ function parseProviderApp(value: unknown) {
     displayName: stringField(body.displayName, "displayName"),
     clientId: stringField(body.clientId, "clientId"),
     clientSecret: stringField(body.clientSecret, "clientSecret"),
-    scopes: parseProviderScopes(body.scopes),
+    scopes: "scopes" in body ? parseProviderScopes(body.scopes) : [...DEFAULT_GOOGLE_PROVIDER_SCOPES],
   };
 }
 

@@ -96,7 +96,7 @@ describe("Broker CredentialVault", () => {
 
   test("rejects a Provider App registration with a malformed scope list", async () => {
     const vault = new CredentialVault(vaultContext("acct_a") as never, { CREDENTIAL_KEK: VALID_KEK } as never);
-    for (const scopes of [undefined, "gmail.readonly", [], [""], ["two scopes"], [42]]) {
+    for (const scopes of ["gmail.readonly", [], [""], ["two scopes"], [42]]) {
       const response = await vault.fetch(new Request("https://vault.internal/provider-apps", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -104,6 +104,19 @@ describe("Broker CredentialVault", () => {
       }));
       expect(response.status).toBe(400);
     }
+  });
+
+  test("stores a Provider App posted without scopes with the default set (old-Control compatibility)", async () => {
+    const vault = new CredentialVault(vaultContext("acct_a") as never, { CREDENTIAL_KEK: VALID_KEK } as never);
+    const app = await request(vault, "/provider-apps", {
+      accountId: "acct_a",
+      providerAppId: "app_google",
+      provider: "google",
+      displayName: "Family Google",
+      clientId: "client-id.apps.googleusercontent.com",
+      clientSecret: "provider-app-secret",
+    });
+    expect(app).toMatchObject({ id: "app_google", scopes: ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/gmail.readonly"] });
   });
 
   test("preserves concurrent provider-app writes in durable storage", async () => {

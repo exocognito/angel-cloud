@@ -132,7 +132,10 @@ async function credentialKek(value: string): Promise<Uint8Array> {
 }
 
 function parseProviderApp(value: unknown, accountId: string): StoreProviderAppInput {
-  const body = exactRecord(value, ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret", "scopes"]);
+  // scopes is absent from a pre-scope Control's POST during a deploy window
+  // (Broker deploys before Control); absent means the historical default.
+  const keys = ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret"];
+  const body = exactRecord(value, isRecord(value) && "scopes" in value ? [...keys, "scopes"] : keys);
   if (body.accountId !== accountId || body.provider !== "google") throw new Error("provider app Account or provider is invalid");
   return {
     accountId,
@@ -141,7 +144,7 @@ function parseProviderApp(value: unknown, accountId: string): StoreProviderAppIn
     displayName: nonEmpty(body.displayName, "displayName"),
     clientId: nonEmpty(body.clientId, "clientId"),
     clientSecret: nonEmpty(body.clientSecret, "clientSecret"),
-    scopes: parseProviderScopes(body.scopes),
+    scopes: "scopes" in body ? parseProviderScopes(body.scopes) : [...DEFAULT_GOOGLE_PROVIDER_SCOPES],
   };
 }
 
