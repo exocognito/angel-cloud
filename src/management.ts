@@ -314,10 +314,17 @@ export class ManagementControl {
       //    dead Angel's sealed response (stale id, spent keys) instead of
       //    creating a fresh one. The delete's own record is stored after this
       //    runs, so its replay remains available.
+      //    Records persisted before deletion existed carry no `path`; they
+      //    cannot be attributed to an Angel, and keeping one risks replaying a
+      //    dead Angel's response — losing an unidentifiable replay is strictly
+      //    safer, so they are purged too.
       const coordinatePath = `/v1/accounts/${accountId}/angels/${slug}`;
       for (const [key, record] of Object.entries(this.state.idempotency)) {
-        if (record.path === undefined) continue;
-        if (record.path === coordinatePath || record.path.startsWith(`/v1/angels/${angel.id}/`)) {
+        if (
+          record.path === undefined
+          || record.path === coordinatePath
+          || record.path.startsWith(`/v1/angels/${angel.id}/`)
+        ) {
           delete this.state.idempotency[key];
         }
       }

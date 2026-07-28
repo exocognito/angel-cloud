@@ -482,6 +482,8 @@ authentication as every mutation (Access identity, management bearer, and an
 
 ```sh
 curl -X DELETE "$CONTROL_BASE_URL/v1/accounts/<account>/angels/<slug>" \
+  -H "CF-Access-Client-Id: <service-token-id>" \
+  -H "CF-Access-Client-Secret: <service-token-secret>" \
   -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
   -H "Idempotency-Key: $(uuidgen)"
 ```
@@ -494,10 +496,11 @@ immediately reusable inside your Account; publish-then-delete is how an Angel
 gets renamed. Account handles are different — they are
 [never released](product-decisions/0004-account-handles.md).
 
-When production has a live deployment, the request must repeat the slug in the
-body — `{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose
-production is empty deletes without a body; a live staging deployment does not
-require confirmation. Replaying the same `Idempotency-Key` returns the original
+When production has a deployment — active, or pending repair after a failed
+convergence — the request must repeat the slug in the body —
+`{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose production is
+empty deletes without a body; a live staging deployment does not require
+confirmation. Replaying the same `Idempotency-Key` returns the original
 response; a fresh delete of an already-deleted slug returns `404`. If a gate
 call fails mid-teardown the Angel stays visible with its keys revoked — call
 delete again to finish.

@@ -1146,6 +1146,25 @@ describe("ManagementControl delete", () => {
     expect(Object.keys(harness.control.exportState().idempotency)).toEqual(["delete-1"]);
   });
 
+  test("purges pre-upgrade records without a recorded path on delete", async () => {
+    const seed = managementHarness();
+    await ensure(seed.control);
+    const state = seed.control.exportState();
+    // A record persisted before deletion existed has no `path`; it cannot be
+    // attributed, and keeping it would let a dead Angel's response replay.
+    state.idempotency["legacy-ensure"] = { fingerprint: "f".repeat(64), responseJson: "{}" };
+    const control = ManagementControl.restore(state, freshDependencies(seed));
+
+    await control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-1", {}),
+    );
+
+    expect(Object.keys(control.exportState().idempotency)).toEqual(["delete-1"]);
+  });
+
   test("requires confirmation when a production deployment is pending repair", async () => {
     const seed = managementHarness();
     const deployed = await stagedGolden(seed);

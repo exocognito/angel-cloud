@@ -839,6 +839,40 @@ describe("AccountRegistry", () => {
     expect(reset.angels).toEqual([]);
   });
 
+  test("dashboard actions on a re-created slug do not replay the dead Angel's records", async () => {
+    const harness = registryHarness();
+    await deployGolden(harness.registry);
+    const pause = {
+      operation: "action" as const,
+      angelId: "golden-assistant",
+      action: "pause_all" as const,
+      environment: "production" as const,
+    };
+    const paused = valueOf(await harness.registry.dispatchJson(pause));
+    expect(paused.angels[0].enabled).toBe(false);
+
+    valueOf(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      input: { confirm: "golden-assistant" },
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-for-recreate",
+        body: { confirm: "golden-assistant" },
+      },
+    }));
+    await deployGolden(harness.registry, "-recreated");
+
+    // The re-created Angel starts at availability revision 0 again, so a
+    // slug+revision-derived key would collide with the dead Angel's record and
+    // silently replay it, leaving every tool live. The action must pause the
+    // NEW Angel's gates for real.
+    const pausedAgain = valueOf(await harness.registry.dispatchJson(pause));
+    expect(pausedAgain.angels[0].enabled).toBe(false);
+  });
+
   test("delete_angel without confirmation refuses a live production Angel", async () => {
     const harness = registryHarness();
     await deployGolden(harness.registry);
@@ -1055,13 +1089,13 @@ function registryHarness(observe: (input: GateInternalRequest) => void = () => {
   return { registry, storage };
 }
 
-async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
+async function deployGolden(registry: InstanceType<typeof AccountRegistry>, keySuffix = "") {
   const slug = "golden-assistant";
   const ensure = valueOf(await registry.dispatchJson({
     operation: "ensure_angel",
     accountId: "acct_demo",
     slug,
-    mutation: registryMutation("ensure-golden", {}),
+    mutation: registryMutation(`ensure-golden${keySuffix}`, {}),
   }));
   const artifact = checkedArtifact(slug);
   const publishBody = { artifact, expectedDigest: artifact.digest };
@@ -1069,7 +1103,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "publish_version",
     angelId: ensure.angel.id,
     input: publishBody,
-    mutation: registryMutation("publish-golden", publishBody),
+    mutation: registryMutation(`publish-golden${keySuffix}`, publishBody),
   }));
   const bindings = {
     "gdocs-read": ["con_personal_google"],
@@ -1080,7 +1114,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "deploy_staging",
     angelId: ensure.angel.id,
     input: stagingBody,
-    mutation: registryMutation("stage-golden", stagingBody),
+    mutation: registryMutation(`stage-golden${keySuffix}`, stagingBody),
   }));
   const productionBody = {
     stagedDeploymentId: staged.id,
@@ -1091,7 +1125,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "promote_production",
     angelId: ensure.angel.id,
     input: productionBody,
-    mutation: registryMutation("promote-golden", productionBody),
+    mutation: registryMutation(`promote-golden${keySuffix}`, productionBody),
   }));
   return { ensure, version, staged, bindings };
 }
