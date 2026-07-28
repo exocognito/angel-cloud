@@ -774,6 +774,150 @@ describe("ManagementControl", () => {
     });
   });
 
+  test("restore also repairs a pending availability change whose target carries dangling refs", async () => {
+    // A pause attempted DURING the issue-#1 outage recorded a pendingAvailability
+    // whose target embeds the dangling refs, wedging every retry and deploy.
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    const staged = await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote = {
+      stagedDeploymentId: staged.id,
+      expectedDigest: staged.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote),
+    );
+
+    const damaged = harness.control.exportState();
+    const production = damaged.angels[0]!.environments.production;
+    const activeBindings = damaged.deployments.find(
+      (candidate) => candidate.id === production.activeDeploymentId,
+    )!.runtimeBindings;
+    const activeRef = activeBindings.find(
+      (binding) => binding.connectionId === "con_work_google",
+    )!.connectionRef;
+    const staleRef = damaged.deployments.find((candidate) => candidate.id === staged.id)!
+      .runtimeBindings[0]!.connectionRef;
+    production.availability = {
+      defaultEnabled: true,
+      overrides: {},
+      connectionOverrides: { "gmail.users.messages.list": { [staleRef]: false } },
+      revision: 1,
+    };
+    production.pendingAvailability = {
+      change: {
+        kind: "tool_connection",
+        tool: "gmail.users.messages.list",
+        connectionId: "con_work_google",
+        enabled: false,
+      },
+      command: {
+        kind: "tool_connection",
+        tool: "gmail.users.messages.list",
+        connectionRef: activeRef,
+        enabled: false,
+        expectedRevision: 1,
+      },
+      target: {
+        defaultEnabled: true,
+        overrides: {},
+        connectionOverrides: {
+          "gmail.users.messages.list": { [staleRef]: false, [activeRef]: false },
+        },
+        revision: 2,
+      },
+    };
+    production.repair = "broker";
+
+    const restored = ManagementControl.restore(damaged, freshDependencies(harness));
+    const state = restored.exportState().angels[0]!.environments.production;
+    // The dangling ref is gone from both the availability and the pending
+    // target; the operator's in-flight change on the live ref survives.
+    expect(state.availability.connectionOverrides).toEqual({});
+    expect(state.pendingAvailability!.target.connectionOverrides).toEqual({
+      "gmail.users.messages.list": { [activeRef]: false },
+    });
+  });
+
+  test("restore drops a tool override for a tool the active deployment no longer ships", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google"],
+    });
+
+    const damaged = harness.control.exportState();
+    const stagingState = damaged.angels[0]!.environments.staging;
+    // A pre-fix deploy of a Version that dropped this tool pruned the override
+    // at the gates but left it in Management.
+    stagingState.availability = {
+      defaultEnabled: true,
+      overrides: { "gmail.users.labels.list": false },
+      connectionOverrides: {},
+      revision: 1,
+    };
+
+    const restored = ManagementControl.restore(damaged, freshDependencies(harness));
+    expect(
+      restored.getEnvironment(angelId, "staging").availability.toolOverrides,
+    ).toEqual({});
+  });
+
+  test("restore leaves a healthy environment's availability untouched", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const pauseTool = { kind: "tool" as const, tool: "gmail.users.messages.list", enabled: false };
+    await harness.control.changeAvailability(
+      angelId,
+      "staging",
+      pauseTool,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/availability`, "pause-tool", pauseTool),
+    );
+    const enablePersonal = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: true,
+    };
+    await harness.control.changeAvailability(
+      angelId,
+      "staging",
+      enablePersonal,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/availability`, "enable-personal", enablePersonal),
+    );
+
+    const before = harness.control.exportState();
+    const restored = ManagementControl.restore(before, freshDependencies(harness));
+    const after = restored.exportState();
+    expect(canonicalJson(after.angels[0]!.environments.staging.availability))
+      .toBe(canonicalJson(before.angels[0]!.environments.staging.availability));
+    expect(after.angels[0]!.environments.staging.availability.overrides)
+      .toEqual({ "gmail.users.messages.list": false });
+  });
+
   test("returns tenant-safe not found for Angel resources outside the Account", async () => {
     const { control } = managementHarness();
     await ensure(control);
