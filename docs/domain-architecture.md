@@ -5,6 +5,13 @@ currently runs on `workers.dev` URLs in the dedicated Cloudflare account, and
 that carries us until the public-product milestone. This document exists so
 the URL scheme is settled before anything public depends on it.
 
+This is reference — what the addresses are. Why they are shaped this way, and
+whether they are built yet, lives in the product decision records:
+[PD 0001](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0001-angel-coordinate-scheme.md)
+for the coordinate and
+[PD 0002](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0002-public-angel-page.md)
+for public Angel pages. Neither is implemented.
+
 ## The angel coordinate
 
 Every surface addresses an Angel with one coordinate:
@@ -15,59 +22,51 @@ Every surface addresses an Angel with one coordinate:
 
 - `@smcllns/inbox-zero` — production. Bare means production; the URL people
   say most often stays shortest.
-- `@smcllns/inbox-zero@staging` — staging.
+- `@smcllns/inbox-zero@preview` — preview, the opt-in second environment.
 - `@smcllns/inbox-zero@3` — reserved extension: pinned immutable Version 3,
-  for the rollback/preview work already on the deferred punch list. A pinned
+  for the rollback and inspection work already on the deferred punch list
+  (unrelated to the `@preview` environment). A pinned
   Version carries no environment (see below); the bare URL is always the
   only address that means "whatever production runs now".
 
-Precedent is npm's `@scope/name@tag`. The leading `@` is the account sigil
-everywhere (it also eliminates path collisions with marketing pages on the
-apex); the trailing `@suffix` is the environment axis. Switching any URL
-between production and staging is appending or removing `@staging`, and which
-one you are looking at is unmissable.
+The grammar follows npm's `@scope/name@tag`. The leading `@` is the account
+sigil everywhere; the trailing `@suffix` is the environment axis.
 
 The suffix is **one axis, not two**. An environment is a mutable pointer to a
-Version (staging points at the staged Version, production at the promoted
+Version (preview points at the previewed Version, production at the promoted
 one), so the suffix always answers the single question "which deployment
 pointer, or which pinned snapshot?" — the combination "Version N *in*
 environment E" does not exist as an address. Invocation targets an
 environment (its gate, Connections, keys, and currently bound Version); a
 pinned `@N` address exists only on inspection surfaces (an immutable
-Version's page or metadata), which carry no environment. This mirrors npm
-dist-tags vs versions sharing one `@` namespace, and inherits npm's
-disambiguation rule: a suffix of all digits is a Version; anything else must
-be a name from the closed environment list, and **environment names must not
-start with a digit**. `latest` and `production` are reserved and invalid as
-suffixes — production has exactly one spelling, the bare coordinate — so
-every Angel has one canonical production URL.
+Version's page or metadata), which carry no environment.
 
-The suffix set is closed and product-defined — today just `staging` (bare =
-production), with room for a small fixed set later (e.g. per-PR previews).
+Parsing rules, inherited from npm: a suffix of all digits is a Version;
+anything else must be a name from the closed environment list, and
+**environment names must not start with a digit**. `latest` and `production`
+are reserved and invalid as suffixes — production has exactly one spelling,
+the bare coordinate — so every Angel has one canonical production URL.
+
+The suffix set is closed and product-defined — today just `preview` (bare =
+production), with room for a small fixed set later (e.g. per-PR builds).
 The canonical validation pattern, to be reused verbatim wherever coordinates
 are parsed:
 
 ```
-^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(staging|[0-9]+))?$
+^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$
 ```
 
-Growing the set means editing one alternation in one pattern.
-
-Considered and rejected: a distinct leading sigil per environment (e.g.
-`$account/angel` for staging). `$`, `~`, `!`, and `;` all collide with shell
-expansion or syntax, so pasted URLs break silently in terminals; a changed
-sigil visually mutates the account token (reads as a different namespace, not
-a different environment); it is unpronounceable; and versions would still
-need the `@suffix`, leaving two grammars where one suffices. `@` is the rare
-symbol that is both URL-legal and shell-inert — it is effectively the only
-good sigil available, so it is spent on the account namespace alone.
+Growing the set means editing one alternation in one pattern. The suffix
+vocabulary is under review — see PD 0001, which also records the rejected
+alternatives.
 
 Consequences:
 - Account handles and Angel names must never contain `@`.
 - `@<account>` names an **Account** (Personal or Family), not a human — one
   login enters one Account, and a Family handle is shared by its members.
-- Staging and production stay independently addressed, matching the
-  exact-promotion model's independent environment bindings.
+- Preview and production stay independently addressed, matching the
+  exact-promotion model's independent environment bindings — though they
+  share Connections by default (PD 0003).
 
 ## Hosts
 
@@ -132,7 +131,7 @@ removes the collision by construction, but two rules keep it safe:
 
 ## Open questions
 
-1. Does staging need more company (per-PR previews, a third environment), and
+1. Does preview need more company (per-PR builds, a third environment), and
    if so, which names join the closed suffix alternation?
 2. What does the apex dispatcher look like — one worker routing marketing vs
    `@` pages, or marketing on Pages with a route carve-out?
