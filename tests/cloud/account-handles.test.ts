@@ -205,6 +205,43 @@ describe("handle directory policy (PD 0004)", () => {
     }
   });
 
+  test("unclaimable names never touch storage: no over-long Durable Object keys", async () => {
+    // Durable Object storage keys cap at 2 KiB; an unclaimable name must be
+    // rejected or missed before any storage read, on claim and resolve alike.
+    const storage = new Map<string, unknown>();
+    const guard = (key: string) => {
+      if (key.length > 2048) throw new Error("over-long Durable Object storage key");
+    };
+    const registry = new AccountRegistry({
+      storage: {
+        get: async (key: string) => { guard(key); return storage.get(key); },
+        put: async (key: string | Record<string, unknown>, value?: unknown) => {
+          if (typeof key === "object") {
+            for (const [entryKey, entryValue] of Object.entries(key)) {
+              guard(entryKey);
+              storage.set(entryKey, structuredClone(entryValue));
+            }
+          } else {
+            guard(key);
+            storage.set(key, structuredClone(value));
+          }
+        },
+      },
+    } as never, { ACCOUNT_ID: "acct_demo" } as never);
+    const long = "a".repeat(4000);
+    const claim = JSON.parse(await registry.dispatchJson({
+      operation: "claim_handle",
+      accountId: "acct_m1",
+      handle: long,
+    } as never));
+    expect(claim).toMatchObject({ ok: false, status: 400 });
+    const resolved = JSON.parse(await registry.dispatchJson({
+      operation: "resolve_handle",
+      handle: long,
+    } as never));
+    expect(resolved).toMatchObject({ ok: false, status: 404 });
+  });
+
   test("Object.prototype names are ordinary handles, not phantom claims", async () => {
     const directory = directoryRegistry();
     expect(await directory.resolve("constructor")).toMatchObject({ ok: false, status: 404 });

@@ -19,7 +19,9 @@ import type {
 } from "../management-contract";
 import { DEMO_ACCOUNT } from "../demo-fixtures";
 import {
+  ACCOUNT_HANDLE_PATTERN,
   claimAccountHandle,
+  classifyAccountHandle,
   resolveAccountHandle,
   HandleError,
   type HandleAccountRecord,
@@ -301,6 +303,12 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   // One storage key per claimed name and per Account: resolution reads one or
   // two keys, and no single record grows with the platform.
   private async claimHandle(accountId: string, handle: string): Promise<HandleClaim> {
+    // Validate before any storage access: Durable Object keys cap at 2 KiB,
+    // so an unclaimable name must never become a storage key probe.
+    const classification = classifyAccountHandle(handle);
+    if (!classification.ok) {
+      throw new HandleError(classification.kind === "invalid" ? 400 : 403, classification.message);
+    }
     const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
     const record = await this.ctx.storage.get<HandleAccountRecord>(`account:${accountId}`);
     const { account, changed } = claimAccountHandle({ accountId, handle, owner, account: record });
@@ -314,6 +322,9 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   }
 
   private async resolveHandle(handle: string): Promise<HandleResolution> {
+    // An unclaimable name is by definition unclaimed — answer without ever
+    // building it into a storage key.
+    if (!ACCOUNT_HANDLE_PATTERN.test(handle)) throw new RegistryError(404, "unknown handle");
     const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
     const record = owner === undefined
       ? undefined
