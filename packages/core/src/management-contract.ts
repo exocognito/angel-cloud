@@ -79,6 +79,7 @@ export interface ManagementEnvironmentView {
 
 export interface EnsureAngelResponse {
   angel: ManagementAngelView;
+  /** Present only when this ensure call created the Angel; the CLI announces creation from its presence. */
   keys?: Record<DeploymentEnvironment, string>;
 }
 
