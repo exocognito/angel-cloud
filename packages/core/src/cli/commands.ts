@@ -64,6 +64,7 @@ async function publish(angelId: string, dependencies: AngelCommandDependencies):
     throw new Error("ensure Angel response does not match angel.json");
   }
   if (ensured.keys !== undefined) {
+    output(dependencies)(`created new Angel ${ensured.angel.slug} — the previous Angel, if any, is still deployed`);
     output(dependencies)(`staging key: ${ensured.keys.staging}`);
     output(dependencies)(`production key: ${ensured.keys.production}`);
   }

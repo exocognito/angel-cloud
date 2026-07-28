@@ -271,11 +271,15 @@ describe("Angel management commands", () => {
       const body = await request.clone().json();
       expect(request.headers.get("idempotency-key")).toBe(await expectedIdempotencyKey(request, body));
     }
-    expect(output.join("\n")).toContain("ak_staging_once");
-    expect(output.join("\n")).toContain("ak_production_once");
+    const createdLine = output.findIndex((line) => line.includes("created new Angel golden-assistant"));
+    const stagingKeyLine = output.findIndex((line) => line.includes("ak_staging_once"));
+    const productionKeyLine = output.findIndex((line) => line.includes("ak_production_once"));
+    expect(createdLine).toBeGreaterThanOrEqual(0);
+    expect(stagingKeyLine).toBeGreaterThan(createdLine);
+    expect(productionKeyLine).toBeGreaterThan(createdLine);
   });
 
-  test("does not print Angel keys when ensure does not return them", async () => {
+  test("does not announce creation or print keys when ensure reuses an existing Angel", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
       jsonResponse(connections()),
@@ -294,6 +298,7 @@ describe("Angel management commands", () => {
     });
 
     expect(output.join("\n")).not.toMatch(/key/i);
+    expect(output.join("\n")).not.toMatch(/created/i);
   });
 
   test("promotes the exact active staged deployment without building or publishing a Version", async () => {
