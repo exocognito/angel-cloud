@@ -68,14 +68,16 @@ Angel names sit in MCP configs exactly as handles do, so the same reasoning
 appears to apply. It does not, because **renaming an Angel is not an
 operation that exists.**
 
-`ensureAngel` (`src/management.ts:213-240`) finds an Angel by slug and creates
-a new one when there is no match. Editing `name:` in `ANGEL.yaml` and running
-`angel publish` therefore does not rename anything — it publishes a second
-Angel with its own environments and its own freshly minted keys, and leaves
-the original deployed, live, and still bound to its Connections.
+The CLI already refuses an inconsistent name: the built artifact must match
+the folder and `angel.json`, checked three times over. Renaming means changing
+all three together, and `ensureAngel` (`src/management.ts:213-240`) then finds
+no Angel with the new slug and creates one, with its own environments and its
+own freshly minted keys. The original stays deployed, live, and bound to its
+Connections.
 
-That is a sharper problem than a broken URL and it is not a naming-policy
-question. It is tracked in [#13](https://github.com/exocognito/angel-cloud/issues/13).
+So there is nothing to alias, because there is no rename to alias. That is a
+missing operation rather than a naming-policy question, and it is tracked in
+[#13](https://github.com/exocognito/angel-cloud/issues/13).
 
 ## Open
 
