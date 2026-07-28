@@ -429,12 +429,11 @@ describe("Angel management commands", () => {
     ]);
     expect(await bodies(api.requests)).toEqual([undefined]);
     expect(api.requests[0]?.headers.get("authorization")).toBe("Bearer management-secret");
-    const key = api.requests[0]?.headers.get("idempotency-key");
-    expect(key).toBeTruthy();
     // The delete key must never derive from method+path+body: a deterministic
     // key collides across delete -> recreate -> delete and replays the first
-    // response instead of deleting again.
-    expect(key).not.toBe(await expectedIdempotencyKey(api.requests[0]!, {}));
+    // response instead of deleting again. A random UUID is not a 64-hex digest.
+    const key = api.requests[0]?.headers.get("idempotency-key");
+    expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     expect(output).toEqual(["deleted golden-assistant (ang_golden)"]);
   });
 
