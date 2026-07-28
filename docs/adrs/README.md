@@ -7,17 +7,27 @@ They are kept verbatim. An ADR states what was decided and why, on a date — it
 is not a description of the system today. Where the world has since moved, the
 change is recorded below rather than edited into the record.
 
-| ADR | Decision | Still current? |
-| --- | --- | --- |
-| 0001 | Separate portable policy (`ANGEL.yaml`) from deployment (`angel.json`) | Yes |
-| 0002 | Authenticated multi-connection selection | Yes |
-| 0003 | Immutable version promotion | Yes |
-| 0004 | Repository ownership at the artifact boundary | Partly — see below |
-| 0005 | Derive execution from the same reviewed spec as policy | Yes — being implemented now |
+These records cover how the system is built. Decisions about what the product
+does — URL grammar, defaults, what a stranger sees — live in
+[product decisions](../product-decisions/README.md).
 
-ADR 0005 is the design of record for the sealed-request-template work in
-flight. It never merged in the comparison repo; it is recovered here from that
-repo's `docs/adr-0005-spec-derived-execution` branch, unchanged.
+`Implemented` tracks the code, not the decision. The two columns are separate
+because a decision can be settled and unbuilt for months, and that gap is
+exactly what used to go missing.
+
+| ADR | Decision | Still current? | Implemented | Tracked |
+| --- | --- | --- | --- | --- |
+| 0001 | Separate portable policy (`ANGEL.yaml`) from deployment (`angel.json`) | Yes | Yes | — |
+| 0002 | Authenticated multi-connection selection | Yes | Yes | — |
+| 0003 | Immutable version promotion | Yes | Yes | — |
+| 0004 | Repository ownership at the artifact boundary | Partly — see below | Yes | — |
+| 0005 | Derive execution from the same reviewed spec as policy | Yes | Yes — the Broker executes only the sealed template (`src/workers/broker.ts:185`); the compiler side ships in `@smcllns/angel-core` | — |
+
+ADR 0005 is the design of record for the sealed-request-template work. It
+never merged in the comparison repo; it is recovered here from that repo's
+`docs/adr-0005-spec-derived-execution` branch, unchanged. It was nearly lost
+with that archive — the first of three near-misses that produced the
+product-decisions convention.
 
 ## What has changed since
 

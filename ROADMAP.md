@@ -20,6 +20,17 @@ place to last on 2026-07-24 for that reason.
   ticks its box here and closes the issue in the same change
   (`Closes #NN`). Issue references are written as explicit links because
   GitHub does not auto-link `#NN` inside repository markdown files.
+- **Every issue link below is currently broken.** Issues #21–#32 stayed in the
+  private `exocognito/angel-cloud-history` repository when the clean-history
+  cut created this public one, so the numbers resolve to nothing here and the
+  URLs 404 for anyone without access to the private repo. Moving them is an
+  open task. Until then, read the links as pointing at
+  `exocognito/angel-cloud-history`.
+- This list sequences **milestones**. Decisions that are agreed but not yet
+  built are indexed separately, with a build status each, in
+  [docs/adrs](docs/adrs/README.md) and
+  [docs/product-decisions](docs/product-decisions/README.md). Anything that
+  shapes the product belongs in one of those before it belongs here.
 
 ## Shortform
 
