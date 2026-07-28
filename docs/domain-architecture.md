@@ -103,11 +103,15 @@ content and never changes, regardless of what `dash.` becomes.
 ## Apex rules
 
 The apex is shared between marketing paths and `@handle` pages. The `@` sigil
-removes the collision by construction, but two rules keep it safe:
+removes the collision by construction, and two further rules keep it safe:
 
 - Non-`@` top-level paths belong to the product (`/pricing`, `/docs`,
-  `/blog`, …). The handle registry additionally reserves those words so no
-  Account can squat a product path even without its sigil.
+  `/blog`, …). `@pricing` and `/pricing` are different paths, so a handle
+  cannot reach a product path and the registry needs no product-word list.
+  What it does reserve is **authority words** — `admin`, `support`, `official`
+  and the like. That risk is impersonation rather than collision: it works
+  because the sigil marks the name as an Account, and the Account is called
+  `support`.
 - `angelmcp.ai/docs` and `angelmcp.ai/llms.txt` redirect to `docs.angelmcp.ai`
   and `docs.angelmcp.ai/llms.txt` — the docs host is canonical, and the apex
   paths exist only so the reserved words resolve to one place.
