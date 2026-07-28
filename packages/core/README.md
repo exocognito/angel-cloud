@@ -10,7 +10,9 @@ This package owns the portable Angel standard:
   `angel deploy --prod` client.
 
 The CLI treats `angel.json.target` as an opaque HTTPS origin. It does not know
-Cloudflare, Angel Cloud, OAuth, or any hosted product. A compatible hosted or
+Angel Cloud, OAuth, or any hosted product. Its one Cloudflare-specific feature
+is the optional `ANGEL_ACCESS_TOKEN` service token for control planes behind
+Cloudflare Access (see Management credentials). A compatible hosted or
 self-hosted control plane implements the management contract exported by this
 package.
 
@@ -63,7 +65,8 @@ whitespace and no other keys:
 {"cf-access-client-id":"<id>","cf-access-client-secret":"<secret>"}
 ```
 
-The CLI rejects anything else — including a trailing newline — instead of
+Both values must be non-empty strings, themselves free of surrounding
+whitespace. The CLI rejects anything else — including a trailing newline — instead of
 trimming, because the value is a credential and silent normalisation hides
 mistakes. Secret managers often end output with a newline; strip it when
 exporting:
