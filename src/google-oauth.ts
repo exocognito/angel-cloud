@@ -26,14 +26,19 @@ export function googleConsentScopes(providerScopes: readonly string[]): string[]
 }
 
 // Scopes are space-joined into the authorize URL, so a value containing
-// whitespace would smuggle extra scopes past whoever reviewed the list.
+// whitespace would smuggle extra scopes past whoever reviewed the list. The
+// bounds keep one registration from bloating the Account's single custody
+// durable value (real Google scope lists are far smaller than either limit).
+const MAX_PROVIDER_SCOPES = 64;
+const MAX_PROVIDER_SCOPE_LENGTH = 256;
+
 export function parseProviderScopes(value: unknown): string[] {
-  if (!Array.isArray(value) || value.length === 0) {
-    throw new Error("scopes must be a non-empty array of scope strings");
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_PROVIDER_SCOPES) {
+    throw new Error(`scopes must be an array of 1 to ${MAX_PROVIDER_SCOPES} scope strings`);
   }
   for (const scope of value) {
-    if (typeof scope !== "string" || !/^[\x21-\x7e]+$/.test(scope)) {
-      throw new Error("scopes entries must be non-empty strings without whitespace");
+    if (typeof scope !== "string" || scope.length > MAX_PROVIDER_SCOPE_LENGTH || !/^[\x21-\x7e]+$/.test(scope)) {
+      throw new Error(`scopes entries must be non-empty strings without whitespace, at most ${MAX_PROVIDER_SCOPE_LENGTH} characters`);
     }
     if (REJECTED_IDENTITY_SCOPES.has(scope)) {
       throw new Error(`scopes must not include identity scopes (every consent requests them): ${scope}`);

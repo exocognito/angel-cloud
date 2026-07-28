@@ -82,6 +82,17 @@ describe("Google OAuth custody boundary", () => {
     }
   });
 
+  test("parseProviderScopes bounds entry count and entry length", () => {
+    // The list persists into the Account's single custody durable value and
+    // space-joins into the authorize URL; one bad registration must not be
+    // able to bloat either.
+    const scope = (index: number) => `https://www.googleapis.com/auth/scope.${index}`;
+    expect(parseProviderScopes(Array.from({ length: 64 }, (_, index) => scope(index)))).toHaveLength(64);
+    expect(() => parseProviderScopes(Array.from({ length: 65 }, (_, index) => scope(index)))).toThrow(/scopes/);
+    expect(parseProviderScopes([`https://www.googleapis.com/auth/${"a".repeat(256 - 32)}`])).toHaveLength(1);
+    expect(() => parseProviderScopes([`https://www.googleapis.com/auth/${"a".repeat(257)}`])).toThrow(/scopes/);
+  });
+
   test("parseProviderScopes rejects malformed scope lists", () => {
     const malformed: unknown[] = [
       undefined,
