@@ -19,6 +19,15 @@ export const ACCOUNT_HANDLE_MAX_LENGTH = 32;
 export const ACCOUNT_HANDLE_PATTERN = /^[a-z][a-z0-9-]{3,31}$/;
 
 /**
+ * The internal identifier shape. Its `_` is outside the handle grammar, so
+ * this test and ACCOUNT_HANDLE_GRAMMAR can never both accept one string —
+ * request-path segments stay unambiguous by shape.
+ */
+export function isInternalAccountId(id: string): boolean {
+  return id.startsWith("acct_");
+}
+
+/**
  * Authority words, reserved against impersonation — `@support/password-reset`
  * reads as platform-issued precisely because the sigil marks an Account.
  * Product paths (`pricing`, `docs`, `blog`) are NOT here: `@pricing` and
@@ -59,15 +68,16 @@ export function classifyAccountHandle(handle: string): HandleClassification {
       message: `handle must match ${ACCOUNT_HANDLE_GRAMMAR.source} and be at most ${ACCOUNT_HANDLE_MAX_LENGTH} characters`,
     };
   }
-  if (handle.length <= 3) {
+  if (RESERVED_ACCOUNT_HANDLES.has(handle)) {
+    return { ok: false, kind: "reserved", message: `"${handle}" is reserved for the platform` };
+  }
+  if (!ACCOUNT_HANDLE_PATTERN.test(handle)) {
+    // Grammar-valid but under the pattern's four-character floor.
     return {
       ok: false,
       kind: "reserved",
       message: "one-to-three-character handles are reserved for the platform",
     };
-  }
-  if (RESERVED_ACCOUNT_HANDLES.has(handle)) {
-    return { ok: false, kind: "reserved", message: `"${handle}" is reserved for the platform` };
   }
   return { ok: true };
 }
@@ -78,20 +88,10 @@ export class HandleError extends Error {
   }
 }
 
+/** An Account's naming history: the current handle and its one retired name. */
 export interface HandleAccountRecord {
   handle: string;
   retiredHandle: string | null;
-}
-
-export interface HandleDirectoryState {
-  schemaVersion: 1;
-  /** Every name ever claimed, mapped to its Account — entries are never removed. */
-  claims: Record<string, string>;
-  accounts: Record<string, HandleAccountRecord>;
-}
-
-export function emptyHandleDirectoryState(): HandleDirectoryState {
-  return { schemaVersion: 1, claims: {}, accounts: {} };
 }
 
 export interface HandleClaim {
@@ -108,27 +108,36 @@ export interface HandleResolution {
 
 /**
  * Claim `handle` for `accountId`, enforcing PD 0004: platform-wide
- * uniqueness, names never released, one rename ever. Pure — returns the next
- * state, throws HandleError (400 invalid, 403 reserved, 409 conflict).
+ * uniqueness, names never released, one rename ever.
+ *
+ * Pure over the two directory entries the decision needs — `owner` is the
+ * Account currently holding `handle` (from the per-handle key) and `account`
+ * is the claiming Account's record (from the per-account key). The store
+ * keys one entry per name and per Account, so no record ever accumulates the
+ * whole platform and prototype names like `constructor` are ordinary keys.
+ * Throws HandleError: 400 invalid, 403 reserved, 409 conflict.
  */
-export function claimAccountHandle(
-  state: HandleDirectoryState,
-  accountId: string,
-  handle: string,
-): { state: HandleDirectoryState; account: HandleClaim } {
+export function claimAccountHandle(input: {
+  accountId: string;
+  handle: string;
+  owner: string | undefined;
+  account: HandleAccountRecord | undefined;
+}): { account: HandleClaim; changed: boolean } {
+  const { accountId, handle, owner, account } = input;
   const classification = classifyAccountHandle(handle);
   if (!classification.ok) {
     throw new HandleError(classification.kind === "invalid" ? 400 : 403, classification.message);
   }
-  const record = state.accounts[accountId];
-  if (record?.handle === handle) {
-    return { state, account: { accountId, handle, retiredHandle: record.retiredHandle } };
+  if (account?.handle === handle) {
+    return {
+      account: { accountId, handle, retiredHandle: account.retiredHandle },
+      changed: false,
+    };
   }
-  const owner = state.claims[handle];
   if (owner !== undefined && owner !== accountId) {
     throw new HandleError(409, "handle is taken, and handles are never released");
   }
-  if (record !== undefined && record.retiredHandle !== null) {
+  if (account !== undefined && account.retiredHandle !== null) {
     throw new HandleError(409, "an Account renames once, ever");
   }
   if (owner === accountId) {
@@ -136,26 +145,25 @@ export function claimAccountHandle(
     // second rename, which the cap forbids.
     throw new HandleError(409, "an Account renames once, ever");
   }
-  const next = structuredClone(state);
-  next.claims[handle] = accountId;
-  next.accounts[accountId] = {
-    handle,
-    retiredHandle: record === undefined ? null : record.handle,
-  };
   return {
-    state: next,
-    account: { accountId, handle, retiredHandle: next.accounts[accountId]!.retiredHandle },
+    account: {
+      accountId,
+      handle,
+      retiredHandle: account === undefined ? null : account.handle,
+    },
+    changed: true,
   };
 }
 
-/** Resolve any claimed name — current or retired — to its Account. */
+/**
+ * Resolve a claimed name — current or retired — to its Account. `owner` is
+ * the per-handle entry for `handle`; `account` is that owner's record.
+ */
 export function resolveAccountHandle(
-  state: HandleDirectoryState,
   handle: string,
+  owner: string | undefined,
+  account: HandleAccountRecord | undefined,
 ): HandleResolution | null {
-  const accountId = state.claims[handle];
-  if (accountId === undefined) return null;
-  const record = state.accounts[accountId];
-  if (record === undefined) return null;
-  return { accountId, canonicalHandle: record.handle, retired: record.handle !== handle };
+  if (owner === undefined || account === undefined) return null;
+  return { accountId: owner, canonicalHandle: account.handle, retired: account.handle !== handle };
 }

@@ -4,10 +4,7 @@ import {
   ACCOUNT_HANDLE_PATTERN,
   RESERVED_ACCOUNT_HANDLES,
   classifyAccountHandle,
-  claimAccountHandle,
-  emptyHandleDirectoryState,
-  resolveAccountHandle,
-  HandleError,
+  isInternalAccountId,
   HANDLE_DIRECTORY_REGISTRY,
 } from "../../src/handles";
 
@@ -100,95 +97,12 @@ describe("account handle grammar", () => {
       expect(classifyAccountHandle(handle)).toEqual({ ok: true });
     }
   });
-});
 
-describe("handle directory policy (PD 0004)", () => {
-  test("first claim binds the handle and resolves canonically", () => {
-    const { state, account } = claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", "smcllns");
-    expect(account).toEqual({ accountId: "acct_m1", handle: "smcllns", retiredHandle: null });
-    expect(resolveAccountHandle(state, "smcllns")).toEqual({
-      accountId: "acct_m1",
-      canonicalHandle: "smcllns",
-      retired: false,
-    });
-  });
-
-  test("an unknown handle resolves to nothing", () => {
-    expect(resolveAccountHandle(emptyHandleDirectoryState(), "nobody-here")).toBeNull();
-  });
-
-  test("re-claiming the current handle is a no-op", () => {
-    const first = claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", "smcllns");
-    const second = claimAccountHandle(first.state, "acct_m1", "smcllns");
-    expect(second.account).toEqual(first.account);
-    expect(second.state).toEqual(first.state);
-  });
-
-  test("a handle held by another Account cannot be claimed", () => {
-    const { state } = claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", "smcllns");
-    expect(() => claimAccountHandle(state, "acct_demo", "smcllns")).toThrow(HandleError);
-    try {
-      claimAccountHandle(state, "acct_demo", "smcllns");
-    } catch (error) {
-      expect((error as HandleError).status).toBe(409);
-    }
-  });
-
-  test("a rename retires the old handle, which keeps resolving to the same Account", () => {
-    const first = claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", "smcllns");
-    const renamed = claimAccountHandle(first.state, "acct_m1", "sam-collins");
-    expect(renamed.account).toEqual({
-      accountId: "acct_m1",
-      handle: "sam-collins",
-      retiredHandle: "smcllns",
-    });
-    expect(resolveAccountHandle(renamed.state, "sam-collins")).toEqual({
-      accountId: "acct_m1",
-      canonicalHandle: "sam-collins",
-      retired: false,
-    });
-    expect(resolveAccountHandle(renamed.state, "smcllns")).toEqual({
-      accountId: "acct_m1",
-      canonicalHandle: "sam-collins",
-      retired: true,
-    });
-  });
-
-  test("a retired handle is never released to another Account", () => {
-    const { state } = claimAccountHandle(
-      claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", "smcllns").state,
-      "acct_m1",
-      "sam-collins",
-    );
-    expect(() => claimAccountHandle(state, "acct_demo", "smcllns")).toThrow(HandleError);
-  });
-
-  test("one rename, ever: a second rename is rejected, including back to the retired handle", () => {
-    const renamed = claimAccountHandle(
-      claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", "smcllns").state,
-      "acct_m1",
-      "sam-collins",
-    );
-    for (const next of ["third-name", "smcllns"]) {
-      try {
-        claimAccountHandle(renamed.state, "acct_m1", next);
-        throw new Error("expected rejection");
-      } catch (error) {
-        expect(error).toBeInstanceOf(HandleError);
-        expect((error as HandleError).status).toBe(409);
-      }
-    }
-  });
-
-  test("claims carry the validation statuses: 400 invalid, 403 reserved", () => {
-    for (const [handle, status] of [["Bad_Handle", 400], ["support", 403], ["sam", 403]] as const) {
-      try {
-        claimAccountHandle(emptyHandleDirectoryState(), "acct_m1", handle);
-        throw new Error("expected rejection");
-      } catch (error) {
-        expect(error).toBeInstanceOf(HandleError);
-        expect((error as HandleError).status).toBe(status);
-      }
+  test("recognizes internal acct_* identifiers, which the grammar can never match", () => {
+    expect(isInternalAccountId("acct_m1")).toBe(true);
+    expect(isInternalAccountId("acct_demo")).toBe(true);
+    for (const value of ["smcllns", "m1", "acct-m1", ""]) {
+      expect(isInternalAccountId(value)).toBe(false);
     }
   });
 });
@@ -198,50 +112,110 @@ function directoryRegistry() {
   const registry = new AccountRegistry({
     storage: {
       get: async (key: string) => storage.get(key),
-      put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      put: async (key: string | Record<string, unknown>, value?: unknown) => {
+        if (typeof key === "object") {
+          for (const [entryKey, entryValue] of Object.entries(key)) {
+            storage.set(entryKey, structuredClone(entryValue));
+          }
+        } else {
+          storage.set(key, structuredClone(value));
+        }
+      },
     },
   } as never, { ACCOUNT_ID: "acct_demo" } as never);
-  return { registry, storage };
+  const claim = async (accountId: string, handle: string) =>
+    JSON.parse(await registry.dispatchJson({ operation: "claim_handle", accountId, handle } as never));
+  const resolve = async (handle: string) =>
+    JSON.parse(await registry.dispatchJson({ operation: "resolve_handle", handle } as never));
+  return { registry, storage, claim, resolve };
 }
 
-describe("AccountRegistry handle operations", () => {
-  test("claims and resolves through the registry, persisting directory state", async () => {
-    const { registry, storage } = directoryRegistry();
-    const claim = JSON.parse(await registry.dispatchJson({
-      operation: "claim_handle",
-      accountId: "acct_m1",
-      handle: "smcllns",
-    } as never));
-    expect(claim).toEqual({
+describe("handle directory policy (PD 0004)", () => {
+  test("first claim binds the handle, persists per-key entries, and resolves canonically", async () => {
+    const directory = directoryRegistry();
+    expect(await directory.claim("acct_m1", "smcllns")).toEqual({
       ok: true,
       value: { accountId: "acct_m1", handle: "smcllns", retiredHandle: null },
     });
-    expect(storage.get("handles")).toMatchObject({ claims: { smcllns: "acct_m1" } });
-
-    const resolved = JSON.parse(await registry.dispatchJson({
-      operation: "resolve_handle",
-      handle: "smcllns",
-    } as never));
-    expect(resolved).toEqual({
+    // One key per claimed name and per account: no single record accumulates
+    // the whole platform, and resolution reads exactly one key.
+    expect(directory.storage.get("handle:smcllns")).toBe("acct_m1");
+    expect(directory.storage.get("account:acct_m1")).toEqual({ handle: "smcllns", retiredHandle: null });
+    expect(await directory.resolve("smcllns")).toEqual({
       ok: true,
       value: { accountId: "acct_m1", canonicalHandle: "smcllns", retired: false },
     });
   });
 
-  test("maps policy failures to statuses and unknown handles to 404", async () => {
-    const { registry } = directoryRegistry();
-    const reserved = JSON.parse(await registry.dispatchJson({
-      operation: "claim_handle",
-      accountId: "acct_m1",
-      handle: "support",
-    } as never));
-    expect(reserved).toMatchObject({ ok: false, status: 403 });
+  test("an unknown handle resolves to 404", async () => {
+    const directory = directoryRegistry();
+    expect(await directory.resolve("nobody-here")).toMatchObject({ ok: false, status: 404 });
+  });
 
-    const missing = JSON.parse(await registry.dispatchJson({
-      operation: "resolve_handle",
-      handle: "nobody-here",
-    } as never));
-    expect(missing).toMatchObject({ ok: false, status: 404 });
+  test("re-claiming the current handle is a no-op", async () => {
+    const directory = directoryRegistry();
+    const first = await directory.claim("acct_m1", "smcllns");
+    const second = await directory.claim("acct_m1", "smcllns");
+    expect(second).toEqual(first);
+  });
+
+  test("a handle held by another Account cannot be claimed", async () => {
+    const directory = directoryRegistry();
+    await directory.claim("acct_m1", "smcllns");
+    expect(await directory.claim("acct_demo", "smcllns")).toMatchObject({ ok: false, status: 409 });
+  });
+
+  test("a rename retires the old handle, which keeps resolving to the same Account", async () => {
+    const directory = directoryRegistry();
+    await directory.claim("acct_m1", "smcllns");
+    expect(await directory.claim("acct_m1", "sam-collins")).toEqual({
+      ok: true,
+      value: { accountId: "acct_m1", handle: "sam-collins", retiredHandle: "smcllns" },
+    });
+    expect(await directory.resolve("sam-collins")).toEqual({
+      ok: true,
+      value: { accountId: "acct_m1", canonicalHandle: "sam-collins", retired: false },
+    });
+    expect(await directory.resolve("smcllns")).toEqual({
+      ok: true,
+      value: { accountId: "acct_m1", canonicalHandle: "sam-collins", retired: true },
+    });
+  });
+
+  test("a retired handle is never released to another Account", async () => {
+    const directory = directoryRegistry();
+    await directory.claim("acct_m1", "smcllns");
+    await directory.claim("acct_m1", "sam-collins");
+    expect(await directory.claim("acct_demo", "smcllns")).toMatchObject({ ok: false, status: 409 });
+  });
+
+  test("one rename, ever: a second rename is rejected, including back to the retired handle", async () => {
+    const directory = directoryRegistry();
+    await directory.claim("acct_m1", "smcllns");
+    await directory.claim("acct_m1", "sam-collins");
+    for (const next of ["third-name", "smcllns"]) {
+      expect(await directory.claim("acct_m1", next)).toMatchObject({ ok: false, status: 409 });
+    }
+  });
+
+  test("claims carry the validation statuses: 400 invalid, 403 reserved", async () => {
+    const directory = directoryRegistry();
+    for (const [handle, status] of [["Bad_Handle", 400], ["support", 403], ["sam", 403]] as const) {
+      expect(await directory.claim("acct_m1", handle)).toMatchObject({ ok: false, status });
+    }
+  });
+
+  test("Object.prototype names are ordinary handles, not phantom claims", async () => {
+    const directory = directoryRegistry();
+    expect(await directory.resolve("constructor")).toMatchObject({ ok: false, status: 404 });
+    expect(await directory.claim("acct_m1", "constructor")).toEqual({
+      ok: true,
+      value: { accountId: "acct_m1", handle: "constructor", retiredHandle: null },
+    });
+    expect(await directory.resolve("constructor")).toEqual({
+      ok: true,
+      value: { accountId: "acct_m1", canonicalHandle: "constructor", retired: false },
+    });
   });
 });
 
@@ -346,6 +320,21 @@ describe("Control handle routes", () => {
     expect(response.status).toBe(401);
   });
 
+  test("a rename pushes the new binding and re-pushes the retired one, in order", async () => {
+    const harness = controlHarness();
+    for (const handle of ["smcllns", "sam-collins"]) {
+      await handleControlRequest(new Request(
+        "https://control.test/v1/accounts/acct_demo/handle",
+        { method: "PUT", headers: managementHeaders, body: JSON.stringify({ handle }) },
+      ), harness.env);
+    }
+    expect(harness.gatewayPushes.map((push) => push.body)).toEqual([
+      { handle: "smcllns", accountId: "acct_demo" },
+      { handle: "sam-collins", accountId: "acct_demo" },
+      { handle: "smcllns", accountId: "acct_demo" },
+    ]);
+  });
+
   test("GET /v1/handles/{handle} resolves current and retired names, 404 for unknown", async () => {
     const harness = controlHarness();
     for (const handle of ["smcllns", "sam-collins"]) {
@@ -368,6 +357,34 @@ describe("Control handle routes", () => {
       { headers: managementHeaders },
     ), harness.env);
     expect(unknown.status).toBe(404);
+  });
+
+  test("GET /v1/handles/{handle} does not resolve another Account's handle", async () => {
+    const harness = controlHarness();
+    // Another Account's claim, planted directly in the shared directory.
+    await harness.directory.registry.dispatchJson({
+      operation: "claim_handle",
+      accountId: "acct_other",
+      handle: "somebody-else",
+    } as never);
+    const response = await handleControlRequest(new Request(
+      "https://control.test/v1/handles/somebody-else",
+      { headers: managementHeaders },
+    ), harness.env);
+    expect(response.status).toBe(404);
+  });
+
+  test("refuses to start with a handle-shaped ACCOUNT_ID", async () => {
+    const harness = controlHarness();
+    (harness.env as { ACCOUNT_ID: string }).ACCOUNT_ID = "m1";
+    const response = await handleControlRequestReal(new Request(
+      "https://control.test/v1/handles/smcllns",
+      { headers: managementHeaders },
+    ), harness.env as never, async () => ({ accountId: "m1", subject: "test-access-subject" }));
+    expect(response.status).toBe(500);
+    expect(await response.json()).toMatchObject({
+      error: expect.stringContaining("acct_"),
+    });
   });
 
   test("a handle names the Account on /v1/accounts paths", async () => {
@@ -402,6 +419,21 @@ describe("Control handle routes", () => {
       handle: "smcllns",
     } as never));
     expect(resolved).toMatchObject({ ok: true, value: { accountId: "acct_demo" } });
+  });
+
+  test("a diverged Gateway binding (409) is named as such, not presented as retryable", async () => {
+    const harness = controlHarness();
+    harness.env.GATEWAY = {
+      fetch: async () => Response.json({ error: "handle is bound to another Account" }, { status: 409 }),
+    };
+    const response = await handleControlRequest(new Request(
+      "https://control.test/v1/accounts/acct_demo/handle",
+      { method: "PUT", headers: managementHeaders, body: JSON.stringify({ handle: "smcllns" }) },
+    ), harness.env);
+    expect(response.status).toBe(500);
+    const body = await response.json() as { error: string };
+    expect(body.error).toContain("diverge");
+    expect(body.error).not.toContain("retry the request");
   });
 });
 
@@ -523,5 +555,94 @@ describe("Gateway handle resolution on the MCP request path", () => {
     const response = await handleGatewayRequest(initialize("acct_m1"), env);
     expect(response.status).toBe(200);
     expect(names).toEqual(["acct_m1:angel_demo:production"]);
+  });
+
+  test("a percent-encoded handle segment resolves after decoding; malformed encoding is 400", async () => {
+    const { env, names } = await gatewayEnv({ smcllns: "acct_m1" });
+    const encoded = await handleGatewayRequest(initialize("sm%63llns"), env);
+    expect(encoded.status).toBe(200);
+    expect(names).toEqual(["acct_m1:angel_demo:production"]);
+
+    const malformed = await handleGatewayRequest(initialize("sm%zzllns"), env);
+    expect(malformed.status).toBe(400);
+  });
+
+  test("an unbound Object.prototype name is 404, not a phantom Account", async () => {
+    const storage = new Map<string, unknown>();
+    const directory = new HandleDirectory({
+      storage: {
+        get: async (key: string) => storage.get(key),
+        put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      },
+    } as never, {} as never);
+    const { env, names } = await gatewayEnv({});
+    (env as { HANDLES: unknown }).HANDLES = { getByName: () => directory };
+    const response = await handleGatewayRequest(initialize("constructor"), env);
+    expect(response.status).toBe(404);
+    expect(names).toEqual([]);
+  });
+});
+
+describe("rename end to end: Control pushes feed the Gateway replica", () => {
+  test("after a rename, the retired coordinate answers MCP 200 on the canonical runtime", async () => {
+    const harness = controlHarness();
+    for (const handle of ["smcllns", "sam-collins"]) {
+      await handleControlRequest(new Request(
+        "https://control.test/v1/accounts/acct_demo/handle",
+        { method: "PUT", headers: managementHeaders, body: JSON.stringify({ handle }) },
+      ), harness.env);
+    }
+
+    // Apply exactly what Control pushed to a real Gateway directory.
+    const storage = new Map<string, unknown>();
+    const directory = new HandleDirectory({
+      storage: {
+        get: async (key: string) => storage.get(key),
+        put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      },
+    } as never, {} as never);
+    for (const push of harness.gatewayPushes) {
+      const { handle, accountId } = push.body as { handle: string; accountId: string };
+      expect(await directory.bind(handle, accountId)).toBe("bound");
+    }
+
+    const gateNames: string[] = [];
+    const state = { gatewayKeyHash: await sha256Hex("angel-key") };
+    const env = {
+      CONTROL_GATEWAY_TOKEN: "control-gateway",
+      GATEWAY_BROKER_INVOKE_TOKEN: "gateway-broker-invoke",
+      GATES: {
+        getByName(name: string) {
+          gateNames.push(name);
+          return { snapshot: async () => state };
+        },
+      },
+      HANDLES: { getByName: () => directory },
+    } as never;
+    for (const segment of ["sam-collins", "smcllns"]) {
+      const response = await handleGatewayRequest(new Request(
+        `https://gateway.test/v1/a/${segment}/angel_demo/production/mcp`,
+        {
+          method: "POST",
+          headers: {
+            accept: "application/json, text/event-stream",
+            "content-type": "application/json",
+            authorization: "Bearer angel-key",
+          },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "initialize",
+            params: { protocolVersion: "2025-03-26", capabilities: {}, clientInfo: { name: "t", version: "1" } },
+          }),
+        },
+      ), env);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("location")).toBeNull();
+    }
+    expect(gateNames).toEqual([
+      "acct_demo:angel_demo:production",
+      "acct_demo:angel_demo:production",
+    ]);
   });
 });

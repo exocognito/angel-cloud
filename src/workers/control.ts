@@ -26,7 +26,7 @@ import {
   type ConnectionSummary,
   type ProviderAppSummary,
 } from "../provider-management";
-import { ACCOUNT_HANDLE_GRAMMAR, HANDLE_DIRECTORY_REGISTRY } from "../handles";
+import { ACCOUNT_HANDLE_GRAMMAR, HANDLE_DIRECTORY_REGISTRY, isInternalAccountId } from "../handles";
 
 export { AccountRegistry };
 
@@ -86,6 +86,12 @@ export async function handleControlRequest(
     );
     if (env.CONTROL_RESPONSE_KEK.trim() === "") {
       throw new HttpError(500, "Control response replay key must be non-empty");
+    }
+    // The handle/id split relies on internal ids carrying the `acct_` prefix,
+    // which the handle grammar cannot express. A handle-shaped ACCOUNT_ID
+    // would silently 404 every resolution, so refuse to serve with one.
+    if (typeof env.ACCOUNT_ID !== "string" || !isInternalAccountId(env.ACCOUNT_ID)) {
+      throw new HttpError(500, "ACCOUNT_ID must be an internal acct_* identifier");
     }
     if (isProviderPath) {
       return await providerRequest(request, env, accessIdentity);
@@ -161,7 +167,13 @@ async function handleRoutes(
   const get = matchPath(url.pathname, /^\/v1\/handles\/([^/]+)$/);
   if (get !== null && request.method === "GET") {
     const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
-    return Response.json(await registryValue(directory, { operation: "resolve_handle", handle: get[0]! }));
+    const resolution = await registryValue(directory, { operation: "resolve_handle", handle: get[0]! }) as {
+      accountId: string;
+    };
+    // Scoped like every other account route: another Account's handle is 404,
+    // so the directory never doubles as a public enumeration surface.
+    requireAuthenticatedAccount(resolution.accountId, identity.accountId);
+    return Response.json(resolution);
   }
   return null;
 }
@@ -175,6 +187,11 @@ async function pushHandleBinding(env: ControlRequestEnv, handle: string, account
     },
     body: JSON.stringify({ handle, accountId }),
   });
+  if (response.status === 409) {
+    // The replica already binds this name to a different Account: the two
+    // directories have diverged, which no retry can fix.
+    throw new RequestError(500, "handle directories have diverged: the Gateway binds this name to a different Account; operator intervention required");
+  }
   if (!response.ok) {
     throw new RequestError(502, "handle claimed, but the Gateway binding push failed; retry the request");
   }
@@ -195,7 +212,7 @@ async function withCanonicalAccountSegment(url: URL, env: ControlRequestEnv): Pr
 }
 
 async function canonicalAccountId(env: ControlRequestEnv, segment: string): Promise<string> {
-  if (!ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
+  if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
   const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
   try {
     const resolution = await registryValue(directory, { operation: "resolve_handle", handle: segment }) as {

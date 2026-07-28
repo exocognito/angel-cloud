@@ -32,7 +32,7 @@ import {
   requireInternalRequest,
 } from "./protocol";
 import { DurableObject } from "cloudflare:workers";
-import { ACCOUNT_HANDLE_GRAMMAR } from "../handles";
+import { ACCOUNT_HANDLE_GRAMMAR, isInternalAccountId } from "../handles";
 
 export { GateRuntime };
 
@@ -46,18 +46,17 @@ const HANDLE_DIRECTORY_INSTANCE = "directory";
  * name can never move to a different Account.
  */
 export class HandleDirectory extends DurableObject {
+  // One storage key per name: the hot-path resolve reads exactly one key, and
+  // prototype names like `constructor` are ordinary keys, never phantoms.
   async bind(handle: string, accountId: string): Promise<"bound" | "conflict"> {
-    const bindings = await this.ctx.storage.get<Record<string, string>>("bindings") ?? {};
-    const existing = bindings[handle];
+    const existing = await this.ctx.storage.get<string>(`handle:${handle}`);
     if (existing !== undefined) return existing === accountId ? "bound" : "conflict";
-    bindings[handle] = accountId;
-    await this.ctx.storage.put("bindings", bindings);
+    await this.ctx.storage.put(`handle:${handle}`, accountId);
     return "bound";
   }
 
   async resolve(handle: string): Promise<string | null> {
-    const bindings = await this.ctx.storage.get<Record<string, string>>("bindings") ?? {};
-    return bindings[handle] ?? null;
+    return await this.ctx.storage.get<string>(`handle:${handle}`) ?? null;
   }
 }
 
@@ -87,8 +86,14 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
         if (request.method !== "POST") return mcpMethodNotAllowed();
         const presentedKey = bearer(request);
         if (presentedKey === undefined || presentedKey === "") return invalidAngelKey();
-        const [, accountSegment, angelId, environment] = mcpMatch;
-        const accountId = await resolveAccountSegment(env, accountSegment!);
+        const [, rawAccountSegment, angelId, environment] = mcpMatch;
+        let accountSegment: string;
+        try {
+          accountSegment = decodeURIComponent(rawAccountSegment!);
+        } catch {
+          return Response.json({ error: "malformed account segment encoding" }, { status: 400 });
+        }
+        const accountId = await resolveAccountSegment(env, accountSegment);
         if (accountId === null) {
           return Response.json({ error: "unknown account handle" }, { status: 404 });
         }
@@ -224,13 +229,14 @@ async function bindHandle(request: Request, env: GatewayEnv): Promise<Response> 
 }
 
 /**
- * Resolve the account path segment. The handle grammar forbids `_`, so an
- * internal `acct_*` id can never be mistaken for a handle; a handle-shaped
- * segment — current or retired — resolves to its Account and is answered
- * directly, with no redirect (PD 0004).
+ * Resolve the account path segment. Internal `acct_*` ids pass through
+ * untouched — checked positively, not just by grammar exclusion, so a
+ * misconfigured id can never be silently reclassified as a handle. A
+ * handle-shaped segment — current or retired — resolves to its Account and is
+ * answered directly, with no redirect (PD 0004).
  */
 async function resolveAccountSegment(env: GatewayEnv, segment: string): Promise<string | null> {
-  if (!ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
+  if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
   return env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).resolve(segment);
 }
 

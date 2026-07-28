@@ -20,11 +20,10 @@ import type {
 import { DEMO_ACCOUNT } from "../demo-fixtures";
 import {
   claimAccountHandle,
-  emptyHandleDirectoryState,
   resolveAccountHandle,
   HandleError,
+  type HandleAccountRecord,
   type HandleClaim,
-  type HandleDirectoryState,
   type HandleResolution,
 } from "../handles";
 import { ServiceGateFleet } from "./service-gate-fleet";
@@ -299,18 +298,27 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     }
   }
 
+  // One storage key per claimed name and per Account: resolution reads one or
+  // two keys, and no single record grows with the platform.
   private async claimHandle(accountId: string, handle: string): Promise<HandleClaim> {
-    const current = await this.ctx.storage.get<HandleDirectoryState>("handles")
-      ?? emptyHandleDirectoryState();
-    const { state, account } = claimAccountHandle(current, accountId, handle);
-    await this.ctx.storage.put("handles", state);
+    const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
+    const record = await this.ctx.storage.get<HandleAccountRecord>(`account:${accountId}`);
+    const { account, changed } = claimAccountHandle({ accountId, handle, owner, account: record });
+    if (changed) {
+      await this.ctx.storage.put({
+        [`handle:${handle}`]: accountId,
+        [`account:${accountId}`]: { handle: account.handle, retiredHandle: account.retiredHandle },
+      });
+    }
     return account;
   }
 
   private async resolveHandle(handle: string): Promise<HandleResolution> {
-    const state = await this.ctx.storage.get<HandleDirectoryState>("handles")
-      ?? emptyHandleDirectoryState();
-    const resolution = resolveAccountHandle(state, handle);
+    const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
+    const record = owner === undefined
+      ? undefined
+      : await this.ctx.storage.get<HandleAccountRecord>(`account:${owner}`);
+    const resolution = resolveAccountHandle(handle, owner, record);
     if (resolution === null) throw new RegistryError(404, "unknown handle");
     return resolution;
   }
