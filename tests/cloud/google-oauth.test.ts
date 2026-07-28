@@ -189,6 +189,39 @@ describe("Google OAuth custody boundary", () => {
       .rejects.toThrow(/omitted a required scope/);
   });
 
+  test("a partial grant's fresh refresh token is revoked, not dropped", async () => {
+    const idToken = await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true });
+    const calendar = "https://www.googleapis.com/auth/calendar.readonly";
+    const input = {
+      clientId,
+      clientSecret: "secret",
+      code: "code",
+      codeVerifier: "verifier",
+      redirectUri: "https://control.test/callback",
+      requiredScopes: [calendar],
+    };
+    const partialGrant = { idToken, token: { refresh_token: "partial-refresh", scope: "openid email" } };
+
+    // Success path: the floor failure revokes the token Google just issued —
+    // otherwise the user keeps a live grant with no Connection to manage it.
+    const revoked: string[] = [];
+    const inner = googleFetcher(partialGrant);
+    await expect(exchangeGoogleCode(input, async (request, init) => {
+      if (new URL(request.toString()).pathname === "/revoke") {
+        revoked.push(new URLSearchParams(String(init?.body ?? "")).get("token") ?? "");
+        return new Response(null, { status: 200 });
+      }
+      return inner(request, init);
+    })).rejects.toThrow(/omitted a required scope/);
+    expect(revoked).toEqual(["partial-refresh"]);
+
+    // Cleanup failure surfaces both errors rather than hiding either.
+    await expect(exchangeGoogleCode(input, async (request, init) => {
+      if (new URL(request.toString()).pathname === "/revoke") return new Response("no", { status: 500 });
+      return inner(request, init);
+    })).rejects.toThrow(/omitted a required scope.*cleanup failed/);
+  });
+
   test("rejects an unverified identity, wrong audience, expired token, or missing refresh token", async () => {
     const cases = [
       { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: false }), token: { refresh_token: "refresh" } },

@@ -132,9 +132,20 @@ export async function exchangeGoogleCode(
   const scopes = parseGrantedScopes(token.scope);
   // The floor is what this Provider App was configured to request — a partial
   // grant (the user unchecked a box on the consent screen) fails here rather
-  // than surfacing later as a Connection that cannot run its operations.
+  // than surfacing later as a Connection that cannot run its operations. The
+  // refresh token Google just issued is revoked first: nothing will ever
+  // store it, and dropping it would leave the user a live grant to clean up
+  // by hand in their Google account settings.
   if (input.requiredScopes.some((scope) => !scopes.includes(scope))) {
-    throw new Error("Google OAuth response omitted a required scope");
+    const failure = new Error("Google OAuth response omitted a required scope");
+    try {
+      await revokeGoogleRefreshToken(token.refresh_token, fetcher);
+    } catch (cleanupError) {
+      throw new Error(`${failure.message}; Google OAuth grant cleanup failed: ${
+        cleanupError instanceof Error ? cleanupError.message : "unknown error"
+      }`);
+    }
+    throw failure;
   }
   const identity = await verifyGoogleIdToken(token.id_token, input.clientId, fetcher);
   return {
