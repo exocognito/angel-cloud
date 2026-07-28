@@ -2,7 +2,9 @@
 
 - Status: Agreed
 - Date: 2026-07-28
-- Implemented: No
+- Implemented: Partly — grammar, reservation, uniqueness, one-rename cap, and
+  MCP resolution of retired handles are built; the 301 for human-facing pages
+  waits on the first account-addressed page ([#11](https://github.com/exocognito/angel-cloud/issues/11))
 - Tracked: [#12](https://github.com/exocognito/angel-cloud/issues/12)
 
 ## Decision

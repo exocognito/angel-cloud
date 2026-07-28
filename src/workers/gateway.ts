@@ -26,11 +26,40 @@ import {
 import {
   dispatchGate,
   errorResponse,
+  HttpError,
+  requireBearerToken,
   requireDistinctRoleCredentials,
   requireInternalRequest,
 } from "./protocol";
+import { DurableObject } from "cloudflare:workers";
+import { ACCOUNT_HANDLE_GRAMMAR } from "../handles";
 
 export { GateRuntime };
+
+/** Name of the single HandleDirectory instance in the HANDLES namespace. */
+const HANDLE_DIRECTORY_INSTANCE = "directory";
+
+/**
+ * Replica of the Control-side handle directory, pushed by Control on every
+ * claim, so handle resolution on the MCP request path stays inside this
+ * worker. Bindings are append-only — PD 0004 never releases a name — and a
+ * name can never move to a different Account.
+ */
+export class HandleDirectory extends DurableObject {
+  async bind(handle: string, accountId: string): Promise<"bound" | "conflict"> {
+    const bindings = await this.ctx.storage.get<Record<string, string>>("bindings") ?? {};
+    const existing = bindings[handle];
+    if (existing !== undefined) return existing === accountId ? "bound" : "conflict";
+    bindings[handle] = accountId;
+    await this.ctx.storage.put("bindings", bindings);
+    return "bound";
+  }
+
+  async resolve(handle: string): Promise<string | null> {
+    const bindings = await this.ctx.storage.get<Record<string, string>>("bindings") ?? {};
+    return bindings[handle] ?? null;
+  }
+}
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -50,12 +79,19 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
         if (input.gate !== "gateway") return Response.json({ error: "wrong gate" }, { status: 400 });
         return Response.json(await dispatchGate(env.GATES, input));
       }
+      if (url.pathname === "/internal/handles") {
+        return await bindHandle(request, env);
+      }
       const mcpMatch = /^\/v1\/a\/([^/]+)\/([^/]+)\/(staging|production)\/mcp$/.exec(url.pathname);
       if (mcpMatch) {
         if (request.method !== "POST") return mcpMethodNotAllowed();
         const presentedKey = bearer(request);
         if (presentedKey === undefined || presentedKey === "") return invalidAngelKey();
-        const [, accountId, angelId, environment] = mcpMatch;
+        const [, accountSegment, angelId, environment] = mcpMatch;
+        const accountId = await resolveAccountSegment(env, accountSegment!);
+        if (accountId === null) {
+          return Response.json({ error: "unknown account handle" }, { status: 404 });
+        }
         const runtimeId = `${accountId}:${angelId}:${environment}`;
         const runtime = env.GATES.getByName(runtimeId);
         const state = await runtime.snapshot("gateway");
@@ -163,6 +199,39 @@ interface RuntimeIdentity {
   accountId: string;
   angelId: string;
   environment: string;
+}
+
+/** Control pushes handle claims here; the token is the existing control role. */
+async function bindHandle(request: Request, env: GatewayEnv): Promise<Response> {
+  await requireBearerToken(request, env.CONTROL_GATEWAY_TOKEN, "unauthorized internal request");
+  if (request.method !== "POST") throw new HttpError(405, "method not allowed");
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw new HttpError(400, "internal request must be an object");
+  }
+  const handle = (body as { handle?: unknown }).handle;
+  const accountId = (body as { accountId?: unknown }).accountId;
+  if (typeof handle !== "string" || handle === "" || typeof accountId !== "string" || accountId === "") {
+    throw new HttpError(400, "handle and accountId are required");
+  }
+  const outcome = await env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).bind(handle, accountId);
+  if (outcome === "conflict") {
+    return Response.json({ error: "handle is bound to another Account" }, { status: 409 });
+  }
+  return Response.json({ handle, accountId });
+}
+
+/**
+ * Resolve the account path segment. The handle grammar forbids `_`, so an
+ * internal `acct_*` id can never be mistaken for a handle; a handle-shaped
+ * segment — current or retired — resolves to its Account and is answered
+ * directly, with no redirect (PD 0004).
+ */
+async function resolveAccountSegment(env: GatewayEnv, segment: string): Promise<string | null> {
+  if (!ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
+  return env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).resolve(segment);
 }
 
 interface InvocationPayload {

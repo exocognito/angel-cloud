@@ -18,6 +18,15 @@ import type {
   ManagementState,
 } from "../management-contract";
 import { DEMO_ACCOUNT } from "../demo-fixtures";
+import {
+  claimAccountHandle,
+  emptyHandleDirectoryState,
+  resolveAccountHandle,
+  HandleError,
+  type HandleClaim,
+  type HandleDirectoryState,
+  type HandleResolution,
+} from "../handles";
 import { ServiceGateFleet } from "./service-gate-fleet";
 import {
   emptyProviderManagementState,
@@ -59,7 +68,17 @@ export type DemoAccountRegistryCommand =
       keyId?: string;
     };
 
-export type AccountRegistryCommand = DemoAccountRegistryCommand | ManagementCommand | ProviderRegistryCommand;
+// Handle directory commands are only ever dispatched to the singleton
+// HANDLE_DIRECTORY_REGISTRY instance, which holds the platform-wide claims.
+export type HandleRegistryCommand =
+  | { operation: "claim_handle"; accountId: string; handle: string }
+  | { operation: "resolve_handle"; handle: string };
+
+export type AccountRegistryCommand =
+  | DemoAccountRegistryCommand
+  | ManagementCommand
+  | ProviderRegistryCommand
+  | HandleRegistryCommand;
 
 type RegistryResult =
   | { ok: true; value: unknown; status?: number }
@@ -83,6 +102,10 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
           return { ok: true, value: await this.action(command) };
         case "key_action":
           return { ok: true, value: await this.keyAction(command) };
+        case "claim_handle":
+          return { ok: true, value: await this.claimHandle(command.accountId, command.handle) };
+        case "resolve_handle":
+          return { ok: true, value: await this.resolveHandle(command.handle) };
         case "ensure_angel":
           return {
             ok: true,
@@ -261,7 +284,11 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
           };
       }
     } catch (error) {
-      if (error instanceof RegistryError || error instanceof ManagementError) {
+      if (
+        error instanceof RegistryError
+        || error instanceof ManagementError
+        || error instanceof HandleError
+      ) {
         return { ok: false, status: error.status, error: error.message };
       }
       return {
@@ -270,6 +297,22 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
         error: error instanceof Error ? error.message : "control operation failed",
       };
     }
+  }
+
+  private async claimHandle(accountId: string, handle: string): Promise<HandleClaim> {
+    const current = await this.ctx.storage.get<HandleDirectoryState>("handles")
+      ?? emptyHandleDirectoryState();
+    const { state, account } = claimAccountHandle(current, accountId, handle);
+    await this.ctx.storage.put("handles", state);
+    return account;
+  }
+
+  private async resolveHandle(handle: string): Promise<HandleResolution> {
+    const state = await this.ctx.storage.get<HandleDirectoryState>("handles")
+      ?? emptyHandleDirectoryState();
+    const resolution = resolveAccountHandle(state, handle);
+    if (resolution === null) throw new RegistryError(404, "unknown handle");
+    return resolution;
   }
 
   private async reset(): Promise<DemoView> {
