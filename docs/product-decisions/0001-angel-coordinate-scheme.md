@@ -60,6 +60,13 @@ exist as an address.
 - Staging and production stay independently addressed, matching the
   exact-promotion model in [ADR 0003](../adrs/0003-immutable-version-promotion.md).
 
+## Blocked on
+
+Account handles do not exist. Today's identifiers are `acct_demo` and
+`acct_m1` — opaque, underscored, and matching nothing in the grammar above.
+Tracked in [#12](https://github.com/exocognito/angel-cloud/issues/12), which
+must land first.
+
 ## What runs instead today
 
 The Gateway serves one route:
