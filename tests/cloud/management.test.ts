@@ -160,9 +160,11 @@ describe("ManagementControl", () => {
       requirement("gmail", "gmail", ["gmail.users.messages.list", "gmail.users.drafts.create"]),
     ]);
     const version = await publish(control, ensured.angel.id, artifact);
+    // The 409 names the uncovered operation and the scopes that would cover
+    // it, so the operator knows what to grant without reading the registry.
     await expect(stage(control, ensured.angel.id, version, artifact.digest, {
       gmail: ["con_work_google"],
-    })).rejects.toThrow(/scope/);
+    })).rejects.toThrow(/gmail\.users\.drafts\.create \(needs one of: .*gmail\.compose/);
   });
 
   test("accepts a binding whose broader grant covers every bound operation through the registry", async () => {

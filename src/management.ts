@@ -480,9 +480,12 @@ export class ManagementControl {
           return !accepted.some((scope) => granted.includes(scope));
         });
         if (uncovered.length > 0) {
+          const detail = uncovered
+            .map((tool) => `${tool} (needs one of: ${(operations[tool]?.scopes ?? []).join(", ")})`)
+            .join("; ");
           throw new ManagementError(
             409,
-            `Connection for binding ${id} is missing a scope for: ${uncovered.join(", ")}`,
+            `Connection for binding ${id} is missing a scope for: ${detail}`,
           );
         }
       }
