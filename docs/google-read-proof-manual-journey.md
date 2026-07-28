@@ -40,7 +40,7 @@ monitoring yet.
    and Docs APIs. Never put its secret in this repository or the acceptance
    workflow.
 3. **Sam in a browser — consent and Connection.** Start a Google authorization
-   for that Provider App, complete the fixed read-only consent screen, and
+   for that Provider App, complete the default read-only consent screen, and
    create the Connection with the nickname used by the local deployment config.
    Confirm the selected Connection is healthy. Do not copy or expose an
    internal Connection ID; revoke and reauthorize are actions on this selected

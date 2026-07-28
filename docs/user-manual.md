@@ -33,8 +33,8 @@ An **Angel** is a reviewable, statically constrained toolbox: it exposes to an
 agent only the operations you allow, with guards on their arguments, and nothing
 else. An inbox agent can list and read messages — and cannot send, delete, or
 change settings, because those operations do not exist in its toolbox. (An
-operation your Connection lacks the Google scope for still deploys, and then
-fails at the provider — see [Milestone 1](#milestone-1-what-is-live).)
+operation your Connection lacks the Google scope for is rejected when you
+deploy — see [Milestone 1](#milestone-1-what-is-live).)
 
 **Angel Cloud** is the hosted runtime for Angels. You write a short policy file,
 build it into an artifact on your machine, and publish that artifact to your
@@ -78,7 +78,8 @@ platform-owned Google OAuth app, provider operations outside the reviewed
 adapter registry, and production multi-tenancy. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
 Connection must already hold the Google scope it needs. An operation that clears
-the first bar but not the second publishes and deploys, then fails at Google.
+the first bar but not the second publishes, but deploying it is rejected until
+a Connection's grant covers it.
 Each Provider App carries its own consent set
 ([which scopes](faq.md#which-google-scopes-are-requested)). For the full list,
 see [what is not built yet](faq.md#what-is-not-built-yet).
@@ -230,11 +231,11 @@ settings). The build rejects duplicate tools.
 The executable surface is the reviewed adapter registry shipped with
 `@smcllns/angel-core`: every artifact tool carries a request template derived
 from a reviewed provider spec, publish rejects any operation the registry
-cannot derive, and the Broker executes exactly the sealed template. One
-boundary remains: the hosted consent flow still requests read-only Google
-scopes, so a write Angel publishes but its deployment is rejected until a
-Connection grants every required scope — expanding the consent surface is the
-next step.
+cannot derive, and the Broker executes exactly the sealed template. The
+consent flow requests each Provider App's configured scope set
+([which scopes](faq.md#which-google-scopes-are-requested)), so a write Angel
+publishes and binds once a Connection's grant covers each bound operation —
+deployment is rejected until one does.
 
 ### Argument guards
 
@@ -323,10 +324,10 @@ The dashboard form has no scopes field and always registers the default set;
 a custom set means calling `POST /api/provider-apps` directly from the same
 Access-authenticated browser origin.
 
-The Provider App list exposes its display name, provider, client-ID suffix, and
-scope set. It never returns the stored client secret — a stored Provider App
-keeps its client secret write-only, and its safe summary reads without leaking
-it.
+The dashboard row shows a Provider App's display name, provider, and client-ID
+suffix; the `GET /api/provider-apps` response carries those plus the scope set.
+Neither returns the stored client secret — a stored Provider App keeps its
+client secret write-only, and its safe summary reads without leaking it.
 
 ### Authorize a Connection
 
