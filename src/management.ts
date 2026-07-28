@@ -1,5 +1,6 @@
 import type { GateFleet } from "./control";
 import type { DeploymentEnvironment, HostedVersionContent } from "./domain";
+import { migrateInstalledAvailability } from "./gate";
 import type {
   GateAvailability,
   GateAvailabilityCommand,
@@ -395,6 +396,21 @@ export class ManagementControl {
     // the projected event genuinely happened. Re-stamped on each convergence so a
     // repair overwrites any earlier (never-effective) value.
     this.stamp(deployment.id);
+    // connectionRefs are minted per deployment, but the environment's stored
+    // availability outlives the deployment that keyed it. Migrate it exactly as
+    // the gates just did at install — remap connection overrides onto the new
+    // refs via the stable connectionId, drop overrides for tools or Connections
+    // the new deployment no longer serves — so reads keep resolving and the
+    // recorded availability matches what the gates now enforce (issue #1).
+    const previousActiveId = environmentState.activeDeploymentId;
+    if (previousActiveId !== null && previousActiveId !== deployment.id) {
+      environmentState.availability = migrateInstalledAvailability(
+        environmentState.availability,
+        version.artifact.tools,
+        this.deployment(angelId, previousActiveId).runtimeBindings,
+        deployment.runtimeBindings,
+      );
+    }
     environmentState.activeDeploymentId = deployment.id;
     environmentState.pendingDeploymentId = null;
     environmentState.repair = null;
