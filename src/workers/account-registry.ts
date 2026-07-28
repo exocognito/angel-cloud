@@ -92,6 +92,16 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
               command.mutation,
             ),
           };
+        case "delete_angel":
+          return {
+            ok: true,
+            value: await (await this.management()).deleteAngel(
+              command.accountId,
+              command.slug,
+              command.input,
+              command.mutation,
+            ),
+          };
         case "get_angel_by_slug":
           return {
             ok: true,
@@ -274,11 +284,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
 
   private async reset(): Promise<DemoView> {
     const existing = await this.ctx.storage.get<ManagementState>("management");
-    const slugs = new Set([
-      "gmail-inbox-zero",
-      "golden-assistant",
-      ...(existing?.angels.map((angel) => angel.slug) ?? []),
-    ]);
+    const slugs = new Set(existing?.angels.map((angel) => angel.slug) ?? []);
     for (const slug of slugs) {
       const fleet = this.managementFleet(slug);
       for (const gate of ["broker", "gateway"] as const) {

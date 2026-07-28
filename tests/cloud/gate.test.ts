@@ -532,14 +532,27 @@ describe("PolicyGate named runtime keys", () => {
     expect(gate.snapshot().gatewayKeyHashes).toEqual([await sha256Hex("ak_legacy")]);
   });
 
-  test("reconcileGatewayKeys refuses a broker gate and an empty set", async () => {
+  test("reconcileGatewayKeys refuses a broker gate and a malformed hash", async () => {
     const broker = new PolicyGate(createPolicyGateState("broker"));
     expect(() => broker.reconcileGatewayKeys([("a".repeat(64))]))
       .toThrow(/broker gate has no runtime keys/);
 
     const gate = await gatewayWithKeys(["ak_one"]);
-    expect(() => gate.reconcileGatewayKeys([])).toThrow(/at least one/);
     expect(() => gate.reconcileGatewayKeys(["not-a-hash"])).toThrow(/SHA-256/);
+  });
+
+  test("reconcileGatewayKeys to an empty set locks the gate: no key authenticates", async () => {
+    // Angel deletion revokes every key before tearing the gates down; an empty
+    // reconcile is that revocation, and it must reject previously valid keys
+    // immediately.
+    const gate = await gatewayWithKeys(["ak_one"]);
+    expect(await gate.evaluate(evalInput("ak_one"))).toMatchObject({ allowed: true });
+
+    expect(gate.reconcileGatewayKeys([])).toEqual([]);
+
+    expect(await gate.evaluate(evalInput("ak_one")))
+      .toMatchObject({ allowed: false, reason: "unauthorized" });
+    expect(gate.snapshot().gatewayKeyHashes).toEqual([]);
   });
 
   test("install rejects a broker gate that is handed gateway key hashes", async () => {

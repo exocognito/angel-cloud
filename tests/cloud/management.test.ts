@@ -564,7 +564,9 @@ class FakeFleet {
     private failGatewayAvailabilityOnce: boolean,
   ) {}
 
-  async reset(): Promise<void> {}
+  async reset(gate: GateKind, environment: "staging" | "production"): Promise<void> {
+    this.events.push(`reset:${gate}:${environment}`);
+  }
 
   async reconcileKeys(
     gate: GateKind,
@@ -1029,3 +1031,208 @@ function freshDependencies(harness: ReturnType<typeof managementHarness>): Manag
     now: () => MANAGEMENT_NOW,
   };
 }
+
+describe("ManagementControl delete", () => {
+  const deletePath = "/v1/accounts/acct_personal/angels/golden-assistant";
+
+  async function stagedGolden(harness: ReturnType<typeof managementHarness>) {
+    const ensured = await ensure(harness.control);
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, ensured.angel.id, artifact);
+    const staged = await stage(harness.control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_personal_google"],
+    });
+    return { ensured, artifact, version, staged };
+  }
+
+  async function promoteGolden(
+    harness: ReturnType<typeof managementHarness>,
+    deployed: Awaited<ReturnType<typeof stagedGolden>>,
+  ) {
+    const body = {
+      stagedDeploymentId: deployed.staged.id,
+      expectedDigest: deployed.staged.digest,
+      bindings: { gmail: ["con_personal_google"] },
+    };
+    return harness.control.promoteProduction(
+      deployed.ensured.angel.id,
+      body,
+      mutation("POST", `/v1/angels/${deployed.ensured.angel.id}/environments/production/promotions`, "promote", body),
+    );
+  }
+
+  test("revokes keys, then resets Broker before Gateway in both environments, and drops all Angel state", async () => {
+    const harness = managementHarness();
+    const deployed = await stagedGolden(harness);
+    harness.fleets.events.length = 0;
+
+    const response = await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-1", {}),
+    );
+
+    expect(response).toEqual({ id: deployed.ensured.angel.id, slug: "golden-assistant", deleted: true });
+    expect(harness.fleets.events).toEqual([
+      "reconcile_keys:gateway:staging",
+      "reconcile_keys:gateway:production",
+      "reset:broker:staging",
+      "reset:broker:production",
+      "reset:gateway:staging",
+      "reset:gateway:production",
+    ]);
+    const fleet = harness.fleets.forAngel(deployed.ensured.angel.id);
+    expect(fleet.keyHashes.get("gateway:staging")).toEqual([]);
+    expect(fleet.keyHashes.get("gateway:production")).toEqual([]);
+    expect(() => harness.control.getAngelBySlug(account.id, "golden-assistant"))
+      .toThrow(ManagementError);
+    const state = harness.control.exportState();
+    expect(state.angels).toEqual([]);
+    expect(state.versions).toEqual([]);
+    expect(state.deployments).toEqual([]);
+    expect(Object.keys(state.timestamps ?? {})).toEqual([]);
+  });
+
+  test("frees the slug for immediate reuse", async () => {
+    const harness = managementHarness();
+    const first = await ensure(harness.control);
+
+    await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-1", {}),
+    );
+    const second = await harness.control.ensureAngel(
+      account.id,
+      "golden-assistant",
+      mutation("PUT", deletePath, "ensure-2", {}),
+    );
+
+    expect(second.angel.id).not.toBe(first.angel.id);
+    expect(second.keys).toBeDefined();
+  });
+
+  test("replays a delete on the same Idempotency-Key and rejects different input under it", async () => {
+    const harness = managementHarness();
+    await ensure(harness.control);
+
+    const first = await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-same", {}),
+    );
+    const eventsAfterFirst = [...harness.fleets.events];
+    const replay = await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-same", {}),
+    );
+
+    // The replay returns the committed response without a second teardown.
+    expect(replay).toEqual(first);
+    expect(harness.fleets.events).toEqual(eventsAfterFirst);
+
+    // The same key with different input is a hard conflict.
+    await expect(harness.control.deleteAngel(
+      account.id,
+      "other",
+      {},
+      mutation("DELETE", "/v1/accounts/acct_personal/angels/other", "delete-same", {}),
+    )).rejects.toMatchObject({ status: 409 });
+
+    // A fresh delete of the gone coordinate 404s: hard delete, no tombstone.
+    await expect(harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-again", {}),
+    )).rejects.toMatchObject({ status: 404 });
+  });
+
+  test("refuses a live production Angel without the slug confirmation and proceeds with it", async () => {
+    const harness = managementHarness();
+    const deployed = await stagedGolden(harness);
+    await promoteGolden(harness, deployed);
+    harness.fleets.events.length = 0;
+
+    await expect(harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-unconfirmed", {}),
+    )).rejects.toMatchObject({ status: 409 });
+    expect(harness.fleets.events).toEqual([]);
+    expect(harness.control.getAngelBySlug(account.id, "golden-assistant").id)
+      .toBe(deployed.ensured.angel.id);
+
+    await expect(harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      { confirm: "wrong-slug" },
+      mutation("DELETE", deletePath, "delete-mismatch", { confirm: "wrong-slug" }),
+    )).rejects.toMatchObject({ status: 400 });
+
+    const response = await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      { confirm: "golden-assistant" },
+      mutation("DELETE", deletePath, "delete-confirmed", { confirm: "golden-assistant" }),
+    );
+    expect(response.deleted).toBe(true);
+    expect(harness.control.listAngels()).toEqual([]);
+  });
+
+  test("deletes a staging-only Angel without confirmation", async () => {
+    const harness = managementHarness();
+    await stagedGolden(harness);
+
+    const response = await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-staging-only", {}),
+    );
+
+    expect(response.deleted).toBe(true);
+  });
+
+  test("leaves other Angels and shared Connections untouched", async () => {
+    const harness = managementHarness();
+    const doomed = await stagedGolden(harness);
+    const keeperEnsure = await harness.control.ensureAngel(
+      account.id,
+      "keeper",
+      mutation("PUT", "/v1/accounts/acct_personal/angels/keeper", "ensure-keeper", {}),
+    );
+    const keeperArtifact = await versionArtifact("keeper", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const keeperVersion = await publish(harness.control, keeperEnsure.angel.id, keeperArtifact);
+    await stage(harness.control, keeperEnsure.angel.id, keeperVersion, keeperArtifact.digest, {
+      gmail: ["con_personal_google"],
+    });
+    const keeperBefore = harness.control.getAngel(keeperEnsure.angel.id);
+    const connectionsBefore = harness.control.listConnections(account.id);
+
+    await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-doomed", {}),
+    );
+
+    expect(harness.control.getAngel(keeperEnsure.angel.id)).toEqual(keeperBefore);
+    expect(harness.control.listConnections(account.id)).toEqual(connectionsBefore);
+    const state = harness.control.exportState();
+    expect(state.angels.map((angel) => angel.slug)).toEqual(["keeper"]);
+    expect(state.versions.map((version) => version.angelId)).toEqual([keeperEnsure.angel.id]);
+    expect(state.deployments.map((deployment) => deployment.angelId)).toEqual([keeperEnsure.angel.id]);
+    expect(state.versions.find((version) => version.angelId === doomed.ensured.angel.id)).toBeUndefined();
+  });
+});

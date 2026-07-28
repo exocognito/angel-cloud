@@ -14,6 +14,8 @@ import type {
   AgentKey,
   AgentKeyView,
   CreateKeyResponse,
+  DeleteAngelRequest,
+  DeleteAngelResponse,
   DeployStagingRequest,
   EnsureAngelResponse,
   ManagementAngel,
@@ -237,6 +239,67 @@ export class ManagementControl {
         angel: this.angelView(angel),
         keys: { staging: staging.plaintext, production: production.plaintext },
       };
+    });
+  }
+
+  /**
+   * Hard-delete an Angel: nothing survives, the coordinate 404s afterwards, and
+   * the slug is immediately reusable. Teardown follows ADR 0003's disable path —
+   * keys revoked first (nothing authenticates mid-teardown), Broker closed
+   * before Gateway, partial state visible and repairable by calling delete
+   * again (every step is idempotent).
+   */
+  async deleteAngel(
+    accountId: string,
+    slug: string,
+    input: DeleteAngelRequest,
+    mutation: MutationIdentity,
+  ): Promise<DeleteAngelResponse> {
+    this.assertAccount(accountId);
+    requiredSlug(slug);
+    return this.mutate(mutation, false, async () => {
+      const angel = this.state.angels.find((candidate) => candidate.slug === slug);
+      if (angel === undefined) throw new ManagementError(404, "not found");
+      if (input.confirm !== undefined && input.confirm !== slug) {
+        throw new ManagementError(400, "confirm must equal the Angel slug");
+      }
+      if (angel.environments.production.activeDeploymentId !== null && input.confirm !== slug) {
+        throw new ManagementError(
+          409,
+          `deleting an Angel with a live production deployment requires confirm: "${slug}"`,
+        );
+      }
+      const fleet = this.dependencies.fleetFor(angel.id, angel.slug);
+      const environments = ["staging", "production"] as const;
+      // 1. Revoke every key: the Gateway holds the runtime keys, and an empty
+      //    reconcile locks it — no key authenticates from here on.
+      for (const environment of environments) {
+        for (const key of keysOf(angel.environments[environment])) {
+          if (key.status === "active") {
+            key.status = "revoked";
+            key.revokedAt = this.now();
+          }
+        }
+        await fleet.reconcileKeys("gateway", environment, []);
+      }
+      await this.dependencies.checkpoint.persist(this.exportState());
+      // 2. Broker closes first, 3. Gateway second.
+      for (const environment of environments) await fleet.reset("broker", environment);
+      for (const environment of environments) await fleet.reset("gateway", environment);
+      // 4. Drop the Angel with its Deployments and Versions. Connections are
+      //    referenced only from Deployment bindings, so dropping the
+      //    Deployments releases them.
+      const dropped = new Set([
+        ...this.state.versions.filter((version) => version.angelId === angel.id).map((version) => version.id),
+        ...this.state.deployments
+          .filter((deployment) => deployment.angelId === angel.id)
+          .map((deployment) => deployment.id),
+      ]);
+      this.state.angels = this.state.angels.filter((candidate) => candidate.id !== angel.id);
+      this.state.versions = this.state.versions.filter((version) => version.angelId !== angel.id);
+      this.state.deployments = this.state.deployments.filter((deployment) => deployment.angelId !== angel.id);
+      for (const id of dropped) delete this.state.timestamps?.[id];
+      return { id: angel.id, slug: angel.slug, deleted: true as const };
     });
   }
 
