@@ -106,6 +106,33 @@ describe("Broker CredentialVault", () => {
     }
   });
 
+  test("lists a pre-scope stored Provider App with the default scope set", async () => {
+    const context = vaultContext("acct_a");
+    const seeded = new CredentialVault(context as never, { CREDENTIAL_KEK: VALID_KEK } as never);
+    await request(seeded, "/provider-apps", {
+      accountId: "acct_a",
+      providerAppId: "app_google",
+      provider: "google",
+      displayName: "Family Google",
+      clientId: "client-id.apps.googleusercontent.com",
+      clientSecret: "provider-app-secret",
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+    // Rewrite durable state to the pre-scope record shape, then read it
+    // through a fresh vault instance as an upgraded deployment would.
+    const persisted = context.values.get("custody") as { accounts: Record<string, { providerApps: Record<string, Record<string, unknown>> }> };
+    delete persisted.accounts.acct_a!.providerApps.app_google!.scopes;
+    const upgraded = new CredentialVault(context as never, { CREDENTIAL_KEK: VALID_KEK } as never);
+
+    const list = await upgraded.fetch(new Request("https://vault.internal/provider-apps"));
+    expect(await list.json()).toEqual([
+      expect.objectContaining({
+        id: "app_google",
+        scopes: ["https://www.googleapis.com/auth/documents.readonly", "https://www.googleapis.com/auth/gmail.readonly"],
+      }),
+    ]);
+  });
+
   test("stores a Provider App posted without scopes with the default set (old-Control compatibility)", async () => {
     const vault = new CredentialVault(vaultContext("acct_a") as never, { CREDENTIAL_KEK: VALID_KEK } as never);
     const app = await request(vault, "/provider-apps", {
@@ -154,7 +181,7 @@ function vaultContext(name: string, barrier = false) {
   const firstGetGate = new Promise<void>((resolve) => { releaseFirstGet = resolve; });
   let gets = 0;
   let tail = Promise.resolve();
-  return { id: { name }, firstGetStarted: firstGet, releaseFirstGet, blockConcurrencyWhile: <T>(callback: () => Promise<T>) => {
+  return { id: { name }, values, firstGetStarted: firstGet, releaseFirstGet, blockConcurrencyWhile: <T>(callback: () => Promise<T>) => {
     const run = tail.then(callback);
     tail = run.then(() => undefined, () => undefined);
     return run;
