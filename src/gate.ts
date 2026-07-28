@@ -837,19 +837,26 @@ export function migrateInstalledAvailability(
         const folded = tool.toUpperCase();
         const previous = previousBindings.filter((binding) => binding.tool.toUpperCase() === folded);
         const next = nextBindings.filter((binding) => binding.tool.toUpperCase() === folded);
-        const nextRefByConnection = new Map(next.map((binding) => [binding.connectionId, binding.connectionRef]));
+        const nextRefsByConnection = new Map<string, string[]>();
+        for (const binding of next) {
+          const refs = nextRefsByConnection.get(binding.connectionId) ?? [];
+          refs.push(binding.connectionRef);
+          nextRefsByConnection.set(binding.connectionId, refs);
+        }
         const nextRefs = new Set(next.map((binding) => binding.connectionRef));
         const surviving = Object.fromEntries(
           Object.entries(refOverrides)
             .flatMap(([ref, enabled]) => {
+              // A ref that is still bound stays as-is — the migration is a
+              // no-op on refs the next deployment keeps (including a re-run).
+              if (nextRefs.has(ref)) return [[ref, enabled] as const];
               const connectionId = previous
                 .find((binding) => binding.connectionRef === ref)?.connectionId;
-              // A ref absent from the previous bindings but present in the next
-              // ones is already current — re-running the migration is a no-op.
-              const nextRef = connectionId === undefined
-                ? (nextRefs.has(ref) ? ref : undefined)
-                : nextRefByConnection.get(connectionId);
-              return nextRef === undefined ? [] : [[nextRef, enabled] as const];
+              if (connectionId === undefined) return [];
+              // Fan out to every ref the Connection now serves the tool under:
+              // the override targets the Connection, not one of its refs.
+              return (nextRefsByConnection.get(connectionId) ?? [])
+                .map((nextRef) => [nextRef, enabled] as const);
             })
             .sort(([left], [right]) => left.localeCompare(right)),
         );

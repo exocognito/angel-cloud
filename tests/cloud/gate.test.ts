@@ -482,6 +482,63 @@ describe("PolicyGate policy and availability", () => {
     });
   });
 
+  test("keeps an override on its own ref when a Connection serves one tool under several refs", async () => {
+    const key = "ak_stable_gateway_key";
+    const gate = new PolicyGate(createPolicyGateState("gateway"));
+    const artifact = await compileHostedAngel(v1Source);
+    // One Connection bound to the same tool under two refs — permitted by
+    // assertBindings, never emitted by the in-repo control planes.
+    const doubled: GateToolBinding[] = [
+      ...bindings,
+      {
+        tool: "gmail.users.messages.list",
+        connectionRef: "arc_google_alt",
+        connectionId: "con_google",
+        provider: "gmail",
+        identityLabel: "Golden Google",
+      },
+    ];
+    await gate.install({
+      accountId: "acct_personal",
+      angelId: "golden-research-assistant",
+      environment: "production",
+      deploymentId: "dep_v1",
+      version: 1,
+      artifact,
+      bindings: doubled,
+      gatewayKeyHash: await sha256Hex(key),
+    });
+    gate.changeAvailability({
+      kind: "tool_connection",
+      tool: "gmail.users.messages.list",
+      connectionRef: "arc_google",
+      enabled: false,
+      expectedRevision: 0,
+    });
+
+    // Reinstalling the same deployment must leave the override on arc_google,
+    // not migrate it onto the Connection's other ref.
+    await gate.install({
+      accountId: "acct_personal",
+      angelId: "golden-research-assistant",
+      environment: "production",
+      deploymentId: "dep_v1",
+      version: 1,
+      artifact,
+      bindings: doubled,
+      gatewayKeyHash: await sha256Hex(key),
+    });
+
+    expect(gate.availability()).toEqual({
+      defaultEnabled: true,
+      overrides: {},
+      connectionOverrides: {
+        "gmail.users.messages.list": { arc_google: false },
+      },
+      revision: 1,
+    });
+  });
+
   test("the broker independently applies the same policy without an agent key", async () => {
     const artifact = await compileHostedAngel(v1Source);
     const broker = new PolicyGate(createPolicyGateState("broker"));
