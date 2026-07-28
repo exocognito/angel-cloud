@@ -79,7 +79,7 @@ adapter registry, and production multi-tenancy. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
 Connection must already hold the Google scope it needs. An operation that clears
 the first bar but not the second publishes and deploys, then fails at Google.
-The consent set is fixed in the Control worker for now
+Each Provider App carries its own consent set
 ([which scopes](faq.md#which-google-scopes-are-requested)). For the full list,
 see [what is not built yet](faq.md#what-is-not-built-yet).
 
@@ -319,6 +319,9 @@ the deployed `/oauth/google/callback` URL on that Google OAuth client. A
 `POST /api/provider-apps` body may name the OAuth scopes the app consents to;
 without them Angel Cloud requests the read-only default grant for identity,
 Gmail, and Docs ([which scopes](faq.md#which-google-scopes-are-requested)).
+The dashboard form has no scopes field and always registers the default set;
+a custom set means calling `POST /api/provider-apps` directly from the same
+Access-authenticated browser origin.
 
 The Provider App list exposes its display name, provider, client-ID suffix, and
 scope set. It never returns the stored client secret — a stored Provider App

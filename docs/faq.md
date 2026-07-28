@@ -241,16 +241,20 @@ reliable scheduled acceptance needs a Production OAuth app.
 
 ### Which Google scopes are requested?
 
-Each Provider App carries its own scope set, chosen when you register it
-through the management API; the consent flow requests that set plus the
-identity scopes `openid` and `email`
+Each Provider App carries its own scope set, chosen when you register it with
+`POST /api/provider-apps` on the Access-authenticated Control origin; the
+consent flow requests that set plus the identity scopes `openid` and `email`
 ([authorize a Connection](user-manual.md#authorize-a-connection)). A Provider
-App registered without scopes gets the read-only default:
+App registered without scopes — including every one saved through the
+dashboard form, which sends none — gets the read-only default:
 `https://www.googleapis.com/auth/documents.readonly` and
-`https://www.googleapis.com/auth/gmail.readonly`. Changing scopes means
-registering a Provider App with a different set — no code change, no deploy.
-Each Connection records the scopes Google actually granted it, and the
-Broker's reach is bounded by them.
+`https://www.googleapis.com/auth/gmail.readonly`.
+
+Changing scopes needs no code change and no deploy, but a Provider App is
+immutable once stored: register a new Provider App with the new set, authorize
+new Connections through it, and rebind deployments that should use them.
+Existing Connections keep the scopes Google granted them, and the Broker's
+reach is bounded by those grants.
 
 The Version still controls which pinned operations an agent can invoke; a
 broader OAuth grant does not add a tool to an Angel. The converse now bites,
