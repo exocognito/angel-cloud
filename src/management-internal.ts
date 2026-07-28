@@ -192,11 +192,19 @@ export interface RevokeKeyResponse {
 export interface EncryptedReplayRecord {
   fingerprint: string;
   ciphertext: string;
+  /**
+   * Canonical mutation path, recorded so Angel deletion can purge the dead
+   * Angel's records. Absent on records persisted before deletion existed —
+   * those cannot be purged and simply age in place.
+   */
+  path?: string;
 }
 
 export interface JsonReplayRecord {
   fingerprint: string;
   responseJson: string;
+  /** See {@link EncryptedReplayRecord.path}. */
+  path?: string;
 }
 
 export type IdempotencyRecord = EncryptedReplayRecord | JsonReplayRecord;

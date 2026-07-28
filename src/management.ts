@@ -263,7 +263,14 @@ export class ManagementControl {
       if (input.confirm !== undefined && input.confirm !== slug) {
         throw new ManagementError(400, "confirm must equal the Angel slug");
       }
-      if (angel.environments.production.activeDeploymentId !== null && input.confirm !== slug) {
+      // A production deployment that is pending repair may already be serving
+      // at both gates (only the final persist was lost), so pending demands
+      // the confirmation exactly like active.
+      const production = angel.environments.production;
+      if (
+        (production.activeDeploymentId !== null || production.pendingDeploymentId !== null)
+        && input.confirm !== slug
+      ) {
         throw new ManagementError(
           409,
           `deleting an Angel with a live production deployment requires confirm: "${slug}"`,
@@ -271,8 +278,10 @@ export class ManagementControl {
       }
       const fleet = this.dependencies.fleetFor(angel.id, angel.slug);
       const environments = ["staging", "production"] as const;
-      // 1. Revoke every key: the Gateway holds the runtime keys, and an empty
-      //    reconcile locks it — no key authenticates from here on.
+      // 1. Revoke every key — recorded and persisted BEFORE touching any gate
+      //    (persist-then-act, like deploy's repair marker), then pushed: the
+      //    Gateway holds the runtime keys, and an empty reconcile locks it, so
+      //    no key authenticates from here on.
       for (const environment of environments) {
         for (const key of keysOf(angel.environments[environment])) {
           if (key.status === "active") {
@@ -280,9 +289,9 @@ export class ManagementControl {
             key.revokedAt = this.now();
           }
         }
-        await fleet.reconcileKeys("gateway", environment, []);
       }
       await this.dependencies.checkpoint.persist(this.exportState());
+      for (const environment of environments) await fleet.reconcileKeys("gateway", environment, []);
       // 2. Broker closes first, 3. Gateway second.
       for (const environment of environments) await fleet.reset("broker", environment);
       for (const environment of environments) await fleet.reset("gateway", environment);
@@ -299,6 +308,19 @@ export class ManagementControl {
       this.state.versions = this.state.versions.filter((version) => version.angelId !== angel.id);
       this.state.deployments = this.state.deployments.filter((deployment) => deployment.angelId !== angel.id);
       for (const id of dropped) delete this.state.timestamps?.[id];
+      // 5. Purge the dead Angel's idempotency records so the coordinate is
+      //    genuinely reusable: the pinned CLI derives its Idempotency-Key from
+      //    method+path+body, and a surviving ensure record would replay the
+      //    dead Angel's sealed response (stale id, spent keys) instead of
+      //    creating a fresh one. The delete's own record is stored after this
+      //    runs, so its replay remains available.
+      const coordinatePath = `/v1/accounts/${accountId}/angels/${slug}`;
+      for (const [key, record] of Object.entries(this.state.idempotency)) {
+        if (record.path === undefined) continue;
+        if (record.path === coordinatePath || record.path.startsWith(`/v1/angels/${angel.id}/`)) {
+          delete this.state.idempotency[key];
+        }
+      }
       return { id: angel.id, slug: angel.slug, deleted: true as const };
     });
   }
@@ -600,9 +622,10 @@ export class ManagementControl {
 
     const response = await action();
     const responseJson = JSON.stringify(response);
+    const path = canonicalPath(mutation.path);
     this.state.idempotency[key] = encrypted
-      ? { fingerprint, ciphertext: await this.dependencies.replayVault.seal(responseJson) }
-      : { fingerprint, responseJson };
+      ? { fingerprint, ciphertext: await this.dependencies.replayVault.seal(responseJson), path }
+      : { fingerprint, responseJson, path };
     await this.dependencies.checkpoint.persist(this.exportState());
     return structuredClone(response);
   }

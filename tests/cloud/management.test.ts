@@ -494,6 +494,7 @@ const MANAGEMENT_NOW = "2026-07-22T12:00:00.000Z";
 function managementHarness(options: {
   failGatewayOnce?: boolean;
   failGatewayAvailabilityOnce?: boolean;
+  failGatewayResetOnce?: boolean;
   connections?: ManagementConnection[];
   now?: () => string;
 } = {}) {
@@ -501,6 +502,7 @@ function managementHarness(options: {
   const fleets = new FakeFleetFactory(
     options.failGatewayOnce ?? false,
     options.failGatewayAvailabilityOnce ?? false,
+    options.failGatewayResetOnce ?? false,
   );
   let sequence = 0;
   const dependencies: ManagementDependencies = {
@@ -539,14 +541,21 @@ class FakeFleetFactory {
   constructor(
     private failGatewayOnce: boolean,
     private failGatewayAvailabilityOnce: boolean,
+    private failGatewayResetOnce = false,
   ) {}
 
   forAngel(angelId: string): FakeFleet {
     let fleet = this.fleets.get(angelId);
     if (!fleet) {
-      fleet = new FakeFleet(this.events, this.failGatewayOnce, this.failGatewayAvailabilityOnce);
+      fleet = new FakeFleet(
+        this.events,
+        this.failGatewayOnce,
+        this.failGatewayAvailabilityOnce,
+        this.failGatewayResetOnce,
+      );
       this.failGatewayOnce = false;
       this.failGatewayAvailabilityOnce = false;
+      this.failGatewayResetOnce = false;
       this.fleets.set(angelId, fleet);
     }
     return fleet;
@@ -562,9 +571,14 @@ class FakeFleet {
     private readonly events: string[],
     private failGatewayOnce: boolean,
     private failGatewayAvailabilityOnce: boolean,
+    private failGatewayResetOnce = false,
   ) {}
 
   async reset(gate: GateKind, environment: "staging" | "production"): Promise<void> {
+    if (gate === "gateway" && this.failGatewayResetOnce) {
+      this.failGatewayResetOnce = false;
+      throw new Error("injected Gateway reset failure");
+    }
     this.events.push(`reset:${gate}:${environment}`);
   }
 
@@ -1096,7 +1110,7 @@ describe("ManagementControl delete", () => {
     expect(Object.keys(state.timestamps ?? {})).toEqual([]);
   });
 
-  test("frees the slug for immediate reuse", async () => {
+  test("frees the slug for immediate reuse, even under the CLI's deterministic ensure key", async () => {
     const harness = managementHarness();
     const first = await ensure(harness.control);
 
@@ -1106,14 +1120,93 @@ describe("ManagementControl delete", () => {
       {},
       mutation("DELETE", deletePath, "delete-1", {}),
     );
-    const second = await harness.control.ensureAngel(
-      account.id,
-      "golden-assistant",
-      mutation("PUT", deletePath, "ensure-2", {}),
-    );
+    // The pinned CLI derives the Idempotency-Key from method+path+body, so the
+    // ensure after a delete arrives under the SAME key as the original ensure.
+    // It must create a fresh Angel, not replay the dead one's sealed response.
+    const second = await ensure(harness.control);
 
     expect(second.angel.id).not.toBe(first.angel.id);
     expect(second.keys).toBeDefined();
+    expect(second.keys!.staging).not.toBe(first.keys!.staging);
+  });
+
+  test("purges the Angel's idempotency records on delete but keeps the delete replay", async () => {
+    const harness = managementHarness();
+    await stagedGolden(harness);
+
+    await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-1", {}),
+    );
+
+    // The ensure/publish/stage records addressed the dead Angel; only the
+    // delete's own record survives so its replay stays available.
+    expect(Object.keys(harness.control.exportState().idempotency)).toEqual(["delete-1"]);
+  });
+
+  test("requires confirmation when a production deployment is pending repair", async () => {
+    const seed = managementHarness();
+    const deployed = await stagedGolden(seed);
+    await promoteGolden(seed, deployed);
+    // A production deploy that converged at both gates but lost its final
+    // persist leaves pendingDeploymentId set and activeDeploymentId null while
+    // the Angel is genuinely serving — deletion must still demand the slug.
+    const state = seed.control.exportState();
+    const production = state.angels[0]!.environments.production;
+    production.pendingDeploymentId = production.activeDeploymentId;
+    production.activeDeploymentId = null;
+    production.repair = "gateway";
+    const control = ManagementControl.restore(state, freshDependencies(seed));
+
+    await expect(control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-pending", {}),
+    )).rejects.toMatchObject({ status: 409 });
+
+    const response = await control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      { confirm: "golden-assistant" },
+      mutation("DELETE", deletePath, "delete-pending-confirmed", { confirm: "golden-assistant" }),
+    );
+    expect(response.deleted).toBe(true);
+  });
+
+  test("a failed gate teardown leaves the Angel visible and a retried delete completes", async () => {
+    const harness = managementHarness({ failGatewayResetOnce: true });
+    const deployed = await stagedGolden(harness);
+
+    await expect(harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-fails", {}),
+    )).rejects.toThrow("injected Gateway reset failure");
+
+    // Partial state is visible: the Angel is still listed, with its keys
+    // already revoked in recorded state.
+    const angel = harness.control.getAngelBySlug(account.id, "golden-assistant");
+    expect(angel.id).toBe(deployed.ensured.angel.id);
+    const partial = harness.control.exportState();
+    for (const environment of ["staging", "production"] as const) {
+      expect(partial.angels[0]!.environments[environment].keys!.every((key) => key.status === "revoked"))
+        .toBe(true);
+    }
+
+    // No idempotency record was stored for the failed attempt, so a retry
+    // (fresh key — the client saw an error, not a lost response) repairs.
+    const retried = await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-retry", {}),
+    );
+    expect(retried.deleted).toBe(true);
+    expect(harness.control.listAngels()).toEqual([]);
   });
 
   test("replays a delete on the same Idempotency-Key and rejects different input under it", async () => {
