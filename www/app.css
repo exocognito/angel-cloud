@@ -255,7 +255,7 @@ a { color: var(--link); }
 .angel-list { display: grid; gap: 14px; }
 .environment-dot { background: var(--ink-3); border-radius: 50%; display: inline-block; height: 8px; width: 8px; }
 .environment-dot.production { background: var(--good); }
-.environment-dot.staging { background: var(--accent); }
+.environment-dot.preview { background: var(--accent); }
 
 .empty-state { color: var(--ink-3); line-height: 1.5; padding: 18px 16px; }
 
@@ -431,7 +431,7 @@ button.rail-item { -webkit-appearance: none; appearance: none; width: 100%; text
 .decision-eyebrow.calm { color: var(--ink-3); }
 
 /* Per-environment badge — the reader always sees which environment a stratum
-   belongs to, reinforcing that staging and production never blend. */
+   belongs to, reinforcing that preview and production never blend. */
 .environment-badge { align-items: center; background: var(--card-2); border: 1px solid var(--line-2); border-radius: 999px; color: var(--ink-2); display: inline-flex; font-size: 10.5px; font-weight: 700; gap: 6px; margin-left: 10px; padding: 4px 10px; text-transform: uppercase; }
 .decision-card .environment-badge { margin-left: 10px; vertical-align: middle; }
 

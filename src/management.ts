@@ -1,5 +1,6 @@
 import type { GateFleet } from "./control";
-import type { DeploymentEnvironment, HostedVersionContent } from "./domain";
+import type { HostedVersionContent } from "./domain";
+import { HOSTED_ENVIRONMENTS, type HostedEnvironment } from "./environments";
 import type {
   GateAvailability,
   GateAvailabilityCommand,
@@ -14,17 +15,17 @@ import type {
   AgentKey,
   AgentKeyView,
   CreateKeyResponse,
-  DeployStagingRequest,
-  EnsureAngelResponse,
+  DeployRequest,
+  HostedAngelView,
+  HostedDeploymentView,
+  HostedEnsureAngelResponse,
+  HostedEnvironmentView,
   ManagementAngel,
-  ManagementAngelView,
   ManagementAvailabilityChange,
   ManagementAvailabilityView,
   ManagementConnection,
   ManagementDeployment,
-  ManagementDeploymentView,
   ManagementEnvironment,
-  ManagementEnvironmentView,
   ManagementState,
   MutationIdentity,
   PromoteProductionRequest,
@@ -111,6 +112,25 @@ export function createManagementState(input: {
   };
 }
 
+/**
+ * Migrate a state persisted before the PD 0003 rename: the second
+ * environment's record key and recorded deployment environments move from
+ * `staging` to `preview`. Same on-read pattern as the named-keys migration;
+ * the migrated shape persists on the next checkpoint.
+ */
+function migrateLegacyPreviewSpelling(state: ManagementState): void {
+  for (const angel of state.angels) {
+    const environments = angel.environments as Record<string, ManagementEnvironment>;
+    if (environments.preview === undefined && environments.staging !== undefined) {
+      environments.preview = environments.staging;
+      delete environments.staging;
+    }
+  }
+  for (const deployment of state.deployments) {
+    if ((deployment.environment as string) === "staging") deployment.environment = "preview";
+  }
+}
+
 export class ManagementControl {
   private readonly state: ManagementState;
 
@@ -118,8 +138,9 @@ export class ManagementControl {
     if (state.schemaVersion !== 1) throw new Error("unsupported management state schema");
     this.state = structuredClone(state);
     this.state.timestamps ??= {};
+    migrateLegacyPreviewSpelling(this.state);
     for (const angel of this.state.angels) {
-      for (const environment of ["staging", "production"] as const) {
+      for (const environment of HOSTED_ENVIRONMENTS) {
         const environmentState = angel.environments[environment];
         environmentState.availability ??= defaultAvailability();
         environmentState.pendingAvailability ??= null;
@@ -152,7 +173,7 @@ export class ManagementControl {
     return structuredClone(this.state);
   }
 
-  listAngels(): ManagementAngelView[] {
+  listAngels(): HostedAngelView[] {
     return this.state.angels.map((angel) => this.angelView(angel));
   }
 
@@ -171,11 +192,11 @@ export class ManagementControl {
     this.state.connections = structuredClone([...connections]);
   }
 
-  getAngel(angelId: string): ManagementAngelView {
+  getAngel(angelId: string): HostedAngelView {
     return this.angelView(this.angel(angelId));
   }
 
-  getAngelBySlug(accountId: string, slug: string): ManagementAngelView {
+  getAngelBySlug(accountId: string, slug: string): HostedAngelView {
     this.assertAccount(accountId);
     const angel = this.state.angels.find((candidate) => candidate.slug === slug);
     if (angel === undefined) throw new ManagementError(404, "not found");
@@ -187,7 +208,7 @@ export class ManagementControl {
     return structuredClone(this.version(angelId, versionId));
   }
 
-  getEnvironment(angelId: string, environment: DeploymentEnvironment): ManagementEnvironmentView {
+  getEnvironment(angelId: string, environment: HostedEnvironment): HostedEnvironmentView {
     const state = this.angel(angelId).environments[environment];
     // NOTE: named `keys` are deliberately NOT surfaced here. This response is the
     // angel-core `/v1` ManagementEnvironmentView, which the pinned @smcllns/angel-core
@@ -206,7 +227,7 @@ export class ManagementControl {
   }
 
   /** Read the named keys for an environment (repo-local; not part of the /v1 view). */
-  listKeys(angelId: string, environment: DeploymentEnvironment): AgentKeyView[] {
+  listKeys(angelId: string, environment: HostedEnvironment): AgentKeyView[] {
     return environmentKeyViews(this.angel(angelId).environments[environment]);
   }
 
@@ -214,28 +235,28 @@ export class ManagementControl {
     accountId: string,
     slug: string,
     mutation: MutationIdentity,
-  ): Promise<EnsureAngelResponse> {
+  ): Promise<HostedEnsureAngelResponse> {
     this.assertAccount(accountId);
     requiredSlug(slug);
     return this.mutate(mutation, true, async () => {
       const existing = this.state.angels.find((candidate) => candidate.slug === slug);
       if (existing) return { angel: this.angelView(existing) };
 
-      const staging = await this.environmentKey("staging");
+      const preview = await this.environmentKey("preview");
       const production = await this.environmentKey("production");
       const angel: ManagementAngel = {
         id: this.dependencies.randomId("ang"),
         accountId,
         slug,
         environments: {
-          staging: staging.environment,
+          preview: preview.environment,
           production: production.environment,
         },
       };
       this.state.angels.push(angel);
       return {
         angel: this.angelView(angel),
-        keys: { staging: staging.plaintext, production: production.plaintext },
+        keys: { preview: preview.plaintext, production: production.plaintext },
       };
     });
   }
@@ -265,18 +286,47 @@ export class ManagementControl {
     });
   }
 
-  async deployStaging(
+  async deployPreview(
     angelId: string,
-    input: DeployStagingRequest,
+    input: DeployRequest,
     mutation: MutationIdentity,
-  ): Promise<ManagementDeploymentView> {
+  ): Promise<HostedDeploymentView> {
     this.angel(angelId);
     return this.mutate(mutation, false, async () => {
       const version = this.version(angelId, input.versionId);
       if (version.digest !== input.expectedDigest) {
         throw new ManagementError(409, "expected digest does not match Version");
       }
-      return this.deploy(angelId, "staging", version, input.bindings);
+      // PD 0005: preview binds its own Connections. A preview deploy with no
+      // bindings fails and names the two ways forward; sharing production's
+      // credentials is a thing the caller asks for by sending them.
+      if (version.artifact.bindingRequirements.length > 0 && Object.keys(input.bindings).length === 0) {
+        throw new ManagementError(
+          400,
+          "preview has no Connection bindings: bind a Connection to preview, or pass production's bindings explicitly to share its credentials",
+        );
+      }
+      return this.deploy(angelId, "preview", version, input.bindings);
+    });
+  }
+
+  /**
+   * PD 0003 point 1: publishing goes live. Deploys a published Version
+   * directly to production in one step, with no preview leg. Promotion of an
+   * exact previewed deployment stays available separately.
+   */
+  async deployProduction(
+    angelId: string,
+    input: DeployRequest,
+    mutation: MutationIdentity,
+  ): Promise<HostedDeploymentView> {
+    this.angel(angelId);
+    return this.mutate(mutation, false, async () => {
+      const version = this.version(angelId, input.versionId);
+      if (version.digest !== input.expectedDigest) {
+        throw new ManagementError(409, "expected digest does not match Version");
+      }
+      return this.deploy(angelId, "production", version, input.bindings);
     });
   }
 
@@ -284,12 +334,12 @@ export class ManagementControl {
     angelId: string,
     input: PromoteProductionRequest,
     mutation: MutationIdentity,
-  ): Promise<ManagementDeploymentView> {
+  ): Promise<HostedDeploymentView> {
     const angel = this.angel(angelId);
     return this.mutate(mutation, false, async () => {
-      const stagedId = angel.environments.staging.activeDeploymentId;
+      const stagedId = angel.environments.preview.activeDeploymentId;
       if (stagedId === null || stagedId !== input.stagedDeploymentId) {
-        throw new ManagementError(409, "promotion requires the active staged deployment");
+        throw new ManagementError(409, "promotion requires the active preview deployment");
       }
       const staged = this.deployment(angelId, stagedId);
       if (staged.digest !== input.expectedDigest) {
@@ -306,7 +356,7 @@ export class ManagementControl {
 
   async changeAvailability(
     angelId: string,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     input: ManagementAvailabilityChange,
     mutation: MutationIdentity,
   ): Promise<ManagementAvailabilityView> {
@@ -346,10 +396,10 @@ export class ManagementControl {
 
   private async deploy(
     angelId: string,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     version: PublishedAngelVersion,
     bindings: Readonly<Record<string, readonly string[]>>,
-  ): Promise<ManagementDeploymentView> {
+  ): Promise<HostedDeploymentView> {
     const angel = this.angel(angelId);
     const environmentState = angel.environments[environment];
     if (environmentState.pendingAvailability !== null) {
@@ -544,7 +594,7 @@ export class ManagementControl {
     return structuredClone(response);
   }
 
-  private async environmentKey(environment: DeploymentEnvironment): Promise<{
+  private async environmentKey(environment: HostedEnvironment): Promise<{
     plaintext: string;
     environment: ManagementEnvironment;
   }> {
@@ -569,7 +619,7 @@ export class ManagementControl {
    * plaintext is returned to the caller exactly once and is NEVER persisted.
    */
   private async mintKey(
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     name: string,
   ): Promise<{ plaintext: string; key: AgentKey }> {
     const plaintext = this.dependencies.randomId(`ak_${environment}`);
@@ -594,7 +644,7 @@ export class ManagementControl {
 
   async createKey(
     angelId: string,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     input: { name: string },
     mutation: MutationIdentity,
   ): Promise<CreateKeyResponse> {
@@ -611,7 +661,7 @@ export class ManagementControl {
 
   async rotateKey(
     angelId: string,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     input: { keyId: string },
     mutation: MutationIdentity,
   ): Promise<RotateKeyResponse> {
@@ -638,7 +688,7 @@ export class ManagementControl {
 
   async revokeKey(
     angelId: string,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     input: { keyId: string },
     mutation: MutationIdentity,
   ): Promise<RevokeKeyResponse> {
@@ -684,7 +734,7 @@ export class ManagementControl {
    */
   private async reconcileKeys(
     angel: ManagementAngel,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
   ): Promise<void> {
     const hashes = activeKeyHashes(angel.environments[environment]);
     if (hashes.length === 0) throw new Error("an environment must retain at least one active key");
@@ -731,13 +781,13 @@ export class ManagementControl {
     };
   }
 
-  private angelView(angel: ManagementAngel): ManagementAngelView {
+  private angelView(angel: ManagementAngel): HostedAngelView {
     return {
       id: angel.id,
       accountId: angel.accountId,
       slug: angel.slug,
       environments: {
-        staging: this.getEnvironment(angel.id, "staging"),
+        preview: this.getEnvironment(angel.id, "preview"),
         production: this.getEnvironment(angel.id, "production"),
       },
     };
@@ -745,7 +795,7 @@ export class ManagementControl {
 
   private availabilityView(
     angelId: string,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     availability: GateAvailability,
   ): ManagementAvailabilityView {
     const angel = this.angel(angelId);
@@ -877,7 +927,7 @@ function installationMatches(
     && installation.policyDigest === deployment.digest;
 }
 
-function deploymentView(deployment: ManagementDeployment): ManagementDeploymentView {
+function deploymentView(deployment: ManagementDeployment): HostedDeploymentView {
   const { runtimeBindings: _runtimeBindings, ...view } = deployment;
   return structuredClone(view);
 }
@@ -956,7 +1006,7 @@ function applyAvailability(current: GateAvailability, command: GateAvailabilityC
 async function reconcileAvailabilityGate(
   fleet: GateFleet,
   gate: GateKind,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
   command: GateAvailabilityCommand,
   target: GateAvailability,
 ): Promise<void> {

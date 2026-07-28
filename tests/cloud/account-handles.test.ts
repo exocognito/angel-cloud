@@ -275,6 +275,26 @@ function controlHarness() {
         return {
           async dispatchJson(input: unknown) {
             accountCommands.push(input);
+            const operation = (input as { operation: string }).operation;
+            // The Worker rewrites angel views into the legacy dialect, so this
+            // read must return a view-shaped value.
+            if (operation === "get_angel_by_slug") {
+              const view = (environment: string) => ({
+                environment,
+                keyFingerprint: "sha256:stub",
+                activeDeployment: null,
+                pendingDeployment: null,
+                repair: null,
+                availability: { defaultEnabled: true, toolOverrides: {}, connectionOverrides: {}, revision: 0 },
+                pendingAvailability: null,
+              });
+              return JSON.stringify({ ok: true, value: {
+                id: "ang_1",
+                accountId: "acct_demo",
+                slug: "golden-assistant",
+                environments: { preview: view("preview"), production: view("production") },
+              } });
+            }
             return JSON.stringify({ ok: true, value: { routed: true } });
           },
         };
@@ -509,11 +529,15 @@ describe("Control handle routes", () => {
       { headers: managementHeaders },
     ), harness.env);
     expect(response.status).toBe(200);
-    expect(harness.accountCommands).toEqual([{
-      operation: "get_angel_by_slug",
-      accountId: "acct_demo",
-      slug: "golden-assistant",
-    }]);
+    expect(harness.accountCommands).toEqual([
+      // The claim also pushes the display copy to the Account's registry.
+      { operation: "record_handle", accountId: "acct_demo", handle: "smcllns" },
+      {
+        operation: "get_angel_by_slug",
+        accountId: "acct_demo",
+        slug: "golden-assistant",
+      },
+    ]);
   });
 
   test("surfaces a failed Gateway binding push as a 502 after the claim commits", async () => {

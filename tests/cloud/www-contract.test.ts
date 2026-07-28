@@ -81,10 +81,10 @@ describe("Angel Cloud deployable demo UI contract", () => {
 
   // Angel fixtures for executing the health logic against representative shapes.
   const alignedEnv = () => ({ gateAlignment: { installation: "aligned", availability: "aligned" }, pendingAvailabilityRepair: null });
-  const healthyAngel = () => ({ enabled: true, environments: { staging: alignedEnv(), production: alignedEnv() } });
-  const driftedAngel = () => ({ enabled: true, environments: { staging: alignedEnv(), production: { gateAlignment: { installation: "aligned", availability: "mismatched" }, pendingAvailabilityRepair: null } } });
-  const pendingRepairAngel = () => ({ enabled: true, environments: { staging: { ...alignedEnv(), pendingAvailabilityRepair: { action: "pause_all" } }, production: alignedEnv() } });
-  const disabledAngel = () => ({ enabled: false, environments: { staging: alignedEnv(), production: alignedEnv() } });
+  const healthyAngel = () => ({ enabled: true, environments: { preview: alignedEnv(), production: alignedEnv() } });
+  const driftedAngel = () => ({ enabled: true, environments: { preview: alignedEnv(), production: { gateAlignment: { installation: "aligned", availability: "mismatched" }, pendingAvailabilityRepair: null } } });
+  const pendingRepairAngel = () => ({ enabled: true, environments: { preview: { ...alignedEnv(), pendingAvailabilityRepair: { action: "pause_all" } }, production: alignedEnv() } });
+  const disabledAngel = () => ({ enabled: false, environments: { preview: alignedEnv(), production: alignedEnv() } });
 
   test("exposes exactly the WP-IA top-level and per-angel surfaces", () => {
     const html = source("index.html");
@@ -245,7 +245,7 @@ describe("Angel Cloud deployable demo UI contract", () => {
     const js = source("app.js");
     expect(html).toContain('id="angel-list"');
     expect(html).toContain('id="angel-rail-list"');
-    expect(js).toContain('root.schema !== "angelmcp.demo.v3"');
+    expect(js).toContain('root.schema !== "angelmcp.demo.v4"');
     expect(js).not.toContain('angelmcp.demo.v2');
     expect(js).toContain('const root = exact(value, ["schema", "account", "angels"]');
     expect(js).toContain('angels: list(root.angels, "response.angels", validateAngel)');
@@ -379,7 +379,7 @@ describe("Angel Cloud deployable demo UI contract", () => {
     const html = source("index.html");
     const js = source("app.js");
     expect(html).toContain("Promote exact staged Version");
-    expect(html).toContain('data-environment="staging"');
+    expect(html).toContain('data-environment="preview"');
     expect(html).toContain('data-environment="production"');
     expect(js).toContain("keyFingerprint");
     expect(js).toContain("The production key fingerprint stays stable across promotions.");
@@ -406,11 +406,11 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(segButtons).toHaveLength(2);
     for (const button of segButtons) {
       expect(button.attrs).toContain('type="button"');
-      expect(/\bdata-environment="(staging|production)"/.test(button.attrs)).toBe(true);
+      expect(/\bdata-environment="(preview|production)"/.test(button.attrs)).toBe(true);
       expect(/\baria-pressed="(true|false)"/.test(button.attrs)).toBe(true);
     }
     // Accessible names come from the visible button text.
-    expect(segButtons.map((b) => b.label).sort()).toEqual(["Production", "Staging"]);
+    expect(segButtons.map((b) => b.label).sort()).toEqual(["Preview", "Production"]);
     // The renderer keeps aria-pressed in sync with the active environment (so the
     // toggle exposes its state, not just a visual .on class).
     const seam = js.slice(js.indexOf("function renderEnvironmentSeam()"), js.indexOf("function renderConnectionToggle"));
@@ -497,13 +497,13 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).not.toContain('Object.hasOwn(angelValue, "endpoints")');
     expect(js).toContain('endpoints: {');
     // Endpoints must validate as absolute http(s) URLs, not merely non-empty strings.
-    expect(js).toContain('httpUrl(endpoints.staging,');
+    expect(js).toContain('httpUrl(endpoints.preview,');
     expect(js).toContain('httpUrl(endpoints.production,');
     expect(js).toContain("const HTTP_URL_PATTERN =");
-    // lifecycle is validated per environment with strict staging/production separation.
+    // lifecycle is validated per environment with strict preview/production separation.
     expect(js).toContain("validateLifecycleEvent");
     expect(js).toContain('lifecycle: list(environment.lifecycle,');
-    expect(js).toContain('validateEnvironment(environments.staging, `${path}.environments.staging`, "staging")');
+    expect(js).toContain('validateEnvironment(environments.preview, `${path}.environments.preview`, "preview")');
     expect(js).toContain('validateEnvironment(environments.production, `${path}.environments.production`, "production")');
     // real-vs-derived discriminator: derived events must carry a null timestamp.
     expect(js).toContain('["recorded", "derived"]');
@@ -907,11 +907,11 @@ describe("Angel Cloud deployable demo UI contract", () => {
     const feed = js.slice(js.indexOf("function renderRequestFeed()"), js.indexOf("function renderActivity()"));
     expect(feed).toContain("event.environment === activeEnvironment");
     // The staged→production promotion is a production-only decision, never shown
-    // in the staging feed, so staging and production decisions never interleave.
+    // in the preview feed, so preview and production decisions never interleave.
     const card = js.slice(js.indexOf("function renderDecisionCard()"), js.indexOf("function renderLifecycle()"));
     expect(card).toContain('activeEnvironment === "production" && ready !== null');
     // Separation copy is preserved verbatim.
-    expect(html).toContain("Staging and production Activity never mix.");
+    expect(html).toContain("Preview and production Activity never mix.");
   });
 
   test("WP-B: the Activity notification dot reflects the real needs-decision signal, not a fabricated count", () => {
@@ -1018,17 +1018,17 @@ describe("Angel Cloud deployable demo UI contract", () => {
 
   // EXECUTE the wedge copy: environment-labelled versions must ALWAYS render,
   // with promotion readiness appended — never substituted. Substitution would
-  // blur which environment owns which Version exactly when staging is ahead.
+  // blur which environment owns which Version exactly when preview is ahead.
   test("EXECUTES homeVersionWedgeText() so readiness never hides per-environment versions", () => {
     const { homeVersionWedgeText } = loadPure(source("app.js"), ["versionLabel", "homeVersionWedgeText"]) as {
       homeVersionWedgeText: (angel: unknown) => string;
     };
-    const angelAt = (production: number | null, staging: number | null, ready: { toVersion: number } | null) =>
-      ({ environments: { production: { version: production }, staging: { version: staging } }, readyForProduction: ready });
-    expect(homeVersionWedgeText(angelAt(1, 1, null))).toBe("prod version 1 · staging version 1");
+    const angelAt = (production: number | null, preview: number | null, ready: { toVersion: number } | null) =>
+      ({ environments: { production: { version: production }, preview: { version: preview } }, readyForProduction: ready });
+    expect(homeVersionWedgeText(angelAt(1, 1, null))).toBe("prod version 1 · preview version 1");
     expect(homeVersionWedgeText(angelAt(1, 2, { toVersion: 2 })))
-      .toBe("prod version 1 · staging version 2 · Version 2 ready for exact promotion");
-    expect(homeVersionWedgeText(angelAt(null, 1, null))).toBe("prod no active version · staging version 1");
+      .toBe("prod version 1 · preview version 2 · Version 2 ready for exact promotion");
+    expect(homeVersionWedgeText(angelAt(null, 1, null))).toBe("prod no active version · preview version 1");
   });
 
   // EXECUTE the ambient-hero copy so a degraded fleet cannot silently render the
@@ -1068,14 +1068,14 @@ describe("Angel Cloud deployable demo UI contract", () => {
       connections: [{ apps: ["Slack"] }],
       environments: {
         production: { tools: [{ app: "Gmail" }, { app: "Google Docs" }, { app: "Gmail" }] },
-        staging: { tools: [] },
+        preview: { tools: [] },
       },
     };
     // Distinct, sorted apps from the REAL production tools.
     expect(homeApps(angel)).toEqual(["Gmail", "Google Docs"]);
     expect(homeToolCount(angel)).toBe(3);
     // With nothing deployed, apps fall back to the Angel's Connections.
-    expect(homeApps({ connections: [{ apps: ["Slack"] }], environments: { production: { tools: [] }, staging: { tools: [] } } })).toEqual(["Slack"]);
+    expect(homeApps({ connections: [{ apps: ["Slack"] }], environments: { production: { tools: [] }, preview: { tools: [] } } })).toEqual(["Slack"]);
     // Accent is a stable hex chosen deterministically from the id.
     expect(angelAccent("gmail-inbox-zero")).toBe(angelAccent("gmail-inbox-zero"));
     expect(angelAccent("gmail-inbox-zero")).toMatch(/^#[0-9a-f]{6}$/);
@@ -1231,7 +1231,7 @@ describe("Angel Cloud deployable demo UI contract", () => {
     const DOC_COMMANDS = [
       // Doc step 4 — copy the safe example config.
       "cp angels/google-read-proof/angel.example.json angels/google-read-proof/angel.json",
-      // Doc step 5 — publish to staging with management + Access tokens.
+      // Doc step 5 — publish to preview with management + Access tokens.
       `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel publish google-read-proof`,
       // Doc step 6 — promote the exact staged deploy to production.
       `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel deploy google-read-proof --prod`,

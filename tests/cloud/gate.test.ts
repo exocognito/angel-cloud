@@ -151,7 +151,7 @@ describe("PolicyGate installation", () => {
     await expect(new PolicyGate(createPolicyGateState("broker")).install({
       accountId: "acct_personal",
       angelId: "golden-research-assistant",
-      environment: "staging",
+      environment: "preview",
       deploymentId: "dep_bad_digest",
       version: 1,
       artifact: { ...artifact, digest: "0".repeat(64) },
@@ -161,7 +161,7 @@ describe("PolicyGate installation", () => {
     await expect(new PolicyGate(createPolicyGateState("broker")).install({
       accountId: "acct_personal",
       angelId: "golden-research-assistant",
-      environment: "staging",
+      environment: "preview",
       deploymentId: "dep_missing_binding",
       version: 1,
       artifact,
@@ -216,7 +216,7 @@ describe("PolicyGate installation", () => {
     await expect(gate.install({
       accountId: "acct_personal",
       angelId: "golden-research-assistant",
-      environment: "staging",
+      environment: "preview",
       deploymentId: "dep_altered",
       version: 1,
       artifact: altered,

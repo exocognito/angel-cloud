@@ -419,7 +419,7 @@ describe("one-time plaintext reveal path (create success → rendered once → g
     expect(h.getKeysBusy()).toBe(false);
   });
 
-  test("a reveal minted for production never paints as a staging key after a mid-flight switch; it routes back to production (finding #3)", async () => {
+  test("a reveal minted for production never paints as a preview key after a mid-flight switch; it routes back to production (finding #3)", async () => {
     const { h, setFetch } = loadKeysHarness();
     h.setDemoState(structuredClone(view));
     h.setActiveAngel(view.angels[0]!.id);
@@ -427,8 +427,8 @@ describe("one-time plaintext reveal path (create success → rendered once → g
 
     setFetch((url) => {
       if (url === "/api/demo/action") {
-        // The operator switches to staging WHILE the request is in flight.
-        h.setActiveEnvironment("staging");
+        // The operator switches to preview WHILE the request is in flight.
+        h.setActiveEnvironment("preview");
         return Promise.resolve(okJson({
           key: { id: "key_prod", name: "Prod key", fingerprint: "abcabcabcabc", status: "active", createdAt: DEMO_NOW, revokedAt: null },
           plaintext: "ak_production_secret_do_not_leak",
@@ -440,7 +440,7 @@ describe("one-time plaintext reveal path (create success → rendered once → g
 
     await h.performKeyMutation("create_key", { name: "Prod key" });
 
-    // Completion happens while live env is staging: the secret is NOT painted here.
+    // Completion happens while live env is preview: the secret is NOT painted here.
     expect(h.keysHost.children.length).toBeGreaterThan(0);
     expect(keysHostPlaintext(h)).toBeUndefined();
     // It is held, tagged to the production context it was minted for.
@@ -571,10 +571,10 @@ async function deployAngel(
   const publishBody = { artifact, expectedDigest: artifact.digest };
   const version = await harness.control.publishVersion(ensured.angel.id, publishBody, mutation(`publish-${slug}`, publishBody));
   const stagingBody = { versionId: version.id, expectedDigest: version.digest, bindings };
-  const staging = await harness.control.deployStaging(ensured.angel.id, stagingBody, mutation(`stage-${slug}`, stagingBody));
-  const productionBody = { stagedDeploymentId: staging.id, expectedDigest: staging.digest, bindings };
+  const preview = await harness.control.deployPreview(ensured.angel.id, stagingBody, mutation(`stage-${slug}`, stagingBody));
+  const productionBody = { stagedDeploymentId: preview.id, expectedDigest: preview.digest, bindings };
   await harness.control.promoteProduction(ensured.angel.id, productionBody, mutation(`promote-${slug}`, productionBody));
-  return { angelId: ensured.angel.id, version, staging };
+  return { angelId: ensured.angel.id, version, preview };
 }
 
 function checkedArtifact(slug: string): ManagementVersionArtifact {

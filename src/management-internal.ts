@@ -1,11 +1,41 @@
 import type {
-  DeploymentEnvironment,
+  DeployStagingRequest,
+  ManagementAngelView,
   ManagementAvailabilityChange,
   ManagementBindingMap,
+  ManagementDeploymentView,
+  ManagementEnvironmentView,
   ManagementVersionArtifact,
   PublishedAngelVersion,
 } from "@smcllns/angel-core";
+import type { HostedEnvironment } from "./environments";
 import type { GateAvailability, GateAvailabilityCommand, GateToolBinding } from "./gate";
+
+/**
+ * Hosted twins of the core `/v1` view types. The pinned core contract still
+ * spells the second environment `staging`; hosted state and every new surface
+ * spell it `preview`, and the control Worker translates back to the legacy
+ * spelling only on the legacy-dialect `/v1` routes.
+ */
+export interface HostedEnvironmentView extends Omit<ManagementEnvironmentView, "environment"> {
+  environment: HostedEnvironment;
+}
+
+export interface HostedAngelView extends Omit<ManagementAngelView, "environments"> {
+  environments: Record<HostedEnvironment, HostedEnvironmentView>;
+}
+
+export interface HostedDeploymentView extends Omit<ManagementDeploymentView, "environment"> {
+  environment: HostedEnvironment;
+}
+
+export interface HostedEnsureAngelResponse {
+  angel: HostedAngelView;
+  keys?: Record<HostedEnvironment, string>;
+}
+
+/** A direct deploy of a published Version into an environment. */
+export type DeployRequest = DeployStagingRequest;
 
 /**
  * A named runtime key for a single environment. The plaintext secret is never
@@ -45,13 +75,13 @@ export interface ManagementAngel {
   id: string;
   accountId: string;
   slug: string;
-  environments: Record<DeploymentEnvironment, ManagementEnvironment>;
+  environments: Record<HostedEnvironment, ManagementEnvironment>;
 }
 
 export interface ManagementDeployment {
   id: string;
   angelId: string;
-  environment: DeploymentEnvironment;
+  environment: HostedEnvironment;
   versionId: string;
   version: number;
   digest: string;
@@ -110,16 +140,22 @@ export type ManagementCommand =
       mutation: MutationIdentity;
     }
   | {
-      operation: "deploy_staging";
+      operation: "deploy_preview";
       angelId: string;
       input: { versionId: string; expectedDigest: string; bindings: ManagementBindingMap };
       mutation: MutationIdentity;
     }
-  | { operation: "get_environment"; angelId: string; environment: DeploymentEnvironment }
+  | {
+      operation: "deploy_production";
+      angelId: string;
+      input: { versionId: string; expectedDigest: string; bindings: ManagementBindingMap };
+      mutation: MutationIdentity;
+    }
+  | { operation: "get_environment"; angelId: string; environment: HostedEnvironment }
   | {
       operation: "change_availability";
       angelId: string;
-      environment: DeploymentEnvironment;
+      environment: HostedEnvironment;
       input: ManagementAvailabilityChange;
       mutation: MutationIdentity;
     }
@@ -132,21 +168,21 @@ export type ManagementCommand =
   | {
       operation: "create_key";
       angelId: string;
-      environment: DeploymentEnvironment;
+      environment: HostedEnvironment;
       input: { name: string };
       mutation: MutationIdentity;
     }
   | {
       operation: "rotate_key";
       angelId: string;
-      environment: DeploymentEnvironment;
+      environment: HostedEnvironment;
       input: { keyId: string };
       mutation: MutationIdentity;
     }
   | {
       operation: "revoke_key";
       angelId: string;
-      environment: DeploymentEnvironment;
+      environment: HostedEnvironment;
       input: { keyId: string };
       mutation: MutationIdentity;
     };
@@ -190,7 +226,12 @@ export type StoredManagementConnection = import("@smcllns/angel-core").Managemen
 
 export interface ManagementState {
   schemaVersion: 1;
-  account: { id: string; name: string };
+  /**
+   * `handle` is a display copy of the Account's claimed handle, pushed by the
+   * control Worker on every successful claim so views can build the PD 0001
+   * coordinate. The handle directory stays the authority.
+   */
+  account: { id: string; name: string; handle?: string };
   connections: StoredManagementConnection[];
   angels: ManagementAngel[];
   versions: PublishedAngelVersion[];

@@ -1,6 +1,10 @@
-import type { DeploymentEnvironment } from "../domain";
+import { canonicalEnvironment, type HostedEnvironment } from "../environments";
 import type {
-  DeployStagingRequest,
+  DeployRequest,
+  HostedAngelView,
+  HostedDeploymentView,
+  HostedEnsureAngelResponse,
+  HostedEnvironmentView,
   ManagementBindingMap,
   ManagementAvailabilityChange,
   ManagementCommand,
@@ -106,7 +110,7 @@ export async function handleControlRequest(
         accessIdentity.accountId,
       );
       const registry = env.ACCOUNTS.getByName(routed.accountId);
-      return registryResponse(await registry.dispatchJson(routed.command));
+      return registryResponse(await registry.dispatchJson(routed.command), routed.translate);
     }
 
     const registry = env.ACCOUNTS.getByName(accessIdentity.accountId);
@@ -147,6 +151,13 @@ async function handleRoutes(
   identity: AccessIdentity,
 ): Promise<Response | null> {
   const set = matchPath(url.pathname, /^\/v1\/accounts\/([^/]+)\/handle$/);
+  if (set !== null && request.method === "GET") {
+    const accountId = await canonicalAccountId(env, set[0]!);
+    requireAuthenticatedAccount(accountId, identity.accountId);
+    const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
+    const record = await registryValue(directory, { operation: "account_handle", accountId });
+    return Response.json(record);
+  }
   if (set !== null && request.method === "PUT") {
     const accountId = await canonicalAccountId(env, set[0]!);
     requireAuthenticatedAccount(accountId, identity.accountId);
@@ -162,6 +173,13 @@ async function handleRoutes(
     // Push current and retired bindings so a lost earlier push self-heals.
     await pushHandleBinding(env, claim.handle, claim.accountId);
     if (claim.retiredHandle !== null) await pushHandleBinding(env, claim.retiredHandle, claim.accountId);
+    // Display copy for the Account's own views (coordinate endpoints); the
+    // directory above stays the authority and this re-push self-heals too.
+    await registryValue(env.ACCOUNTS.getByName(accountId), {
+      operation: "record_handle",
+      accountId,
+      handle: claim.handle,
+    });
     return Response.json(claim);
   }
   const get = matchPath(url.pathname, /^\/v1\/handles\/([^/]+)$/);
@@ -591,11 +609,11 @@ function parseAction(value: unknown): AccountRegistryCommand {
   if (keyAction !== null) return keyAction;
   const actions: DemoAction[] = ["promote", "pause_all", "resume_all", "pause_tool", "resume_tool"];
   if (!actions.includes(body.action as DemoAction)) throw new RequestError(400, "invalid action");
-  if (body.environment !== "staging" && body.environment !== "production") {
-    throw new RequestError(400, "environment must be staging or production");
+  if (body.environment !== "preview" && body.environment !== "production") {
+    throw new RequestError(400, "environment must be preview or production");
   }
   const action = body.action as DemoAction;
-  const environment = body.environment as DeploymentEnvironment;
+  const environment = body.environment as HostedEnvironment;
   const angelId = requiredString(body.angelId, "angelId");
   if (action === "pause_tool" || action === "resume_tool") {
     const keys = ["angelId", "action", "environment", "tool"];
@@ -647,11 +665,11 @@ function parseKeyAction(body: Record<string, unknown>): AccountRegistryCommand |
   if (action !== "create_key" && action !== "rotate_key" && action !== "revoke_key") {
     return null;
   }
-  if (body.environment !== "staging" && body.environment !== "production") {
-    throw new RequestError(400, "environment must be staging or production");
+  if (body.environment !== "preview" && body.environment !== "production") {
+    throw new RequestError(400, "environment must be preview or production");
   }
   const angelId = requiredString(body.angelId, "angelId");
-  const environment = body.environment as DeploymentEnvironment;
+  const environment = body.environment as HostedEnvironment;
   // A per-attempt token the client generates once and REUSES on retry, so a lost
   // response can replay the same committed mutation instead of duplicating it.
   const idempotencyToken = requiredString(body.idempotencyToken, "idempotencyToken");
@@ -685,14 +703,17 @@ function boundedKeyName(value: unknown): string {
   return name;
 }
 
-function registryResponse(serialized: string): Response {
+function registryResponse(
+  serialized: string,
+  translate?: (value: unknown) => unknown,
+): Response {
   const result: unknown = JSON.parse(serialized);
   if (!isRecord(result) || typeof result.ok !== "boolean") {
     throw new Error("Account registry returned an invalid response");
   }
   if (result.ok) {
     const status = typeof result.status === "number" ? result.status : 200;
-    return Response.json(result.value, { status });
+    return Response.json(translate === undefined ? result.value : translate(result.value), { status });
   }
   if (typeof result.status !== "number" || typeof result.error !== "string") {
     throw new Error("Account registry returned an invalid error");
@@ -727,20 +748,35 @@ async function managementCommand(
   request: Request,
   url: URL,
   authenticatedAccountId: string,
-): Promise<{ accountId: string; command: ManagementCommand }> {
+): Promise<{
+  accountId: string;
+  command: ManagementCommand;
+  /**
+   * Rewrites a successful response into the pinned CLI's legacy dialect,
+   * where the second environment is still spelled `staging`. Present on the
+   * legacy-spelled routes and on the spelling-neutral routes the pinned CLI
+   * validates exactly; new `preview`-spelled routes answer canonically.
+   */
+  translate?: (value: unknown) => unknown;
+}> {
   const accountAngel = matchPath(url.pathname, /^\/v1\/accounts\/([^/]+)\/angels\/([^/]+)$/);
   if (accountAngel) {
     const accountId = accountAngel[0]!;
     const slug = accountAngel[1]!;
     requireAuthenticatedAccount(accountId, authenticatedAccountId);
     if (request.method === "GET") {
-      return { accountId, command: { operation: "get_angel_by_slug", accountId, slug } };
+      return {
+        accountId,
+        command: { operation: "get_angel_by_slug", accountId, slug },
+        translate: (value) => legacyAngelView(value as HostedAngelView),
+      };
     }
     if (request.method === "PUT") {
       const mutation = await managementMutation(request, url, []);
       return {
         accountId,
         command: { operation: "ensure_angel", accountId, slug, mutation },
+        translate: legacyEnsureResponse,
       };
     }
     throw new RequestError(404, "not found");
@@ -778,7 +814,7 @@ async function managementCommand(
 
   const environment = matchPath(
     url.pathname,
-    /^\/v1\/angels\/([^/]+)\/environments\/(staging|production)$/,
+    /^\/v1\/angels\/([^/]+)\/environments\/(staging|preview|production)$/,
   );
   if (environment && request.method === "GET") {
     return {
@@ -786,37 +822,45 @@ async function managementCommand(
       command: {
         operation: "get_environment",
         angelId: environment[0]!,
-        environment: environment[1]! as DeploymentEnvironment,
+        environment: canonicalEnvironment(environment[1]!)!,
       },
+      ...(environment[1] === "staging" ? { translate: legacyEnvironmentView } : {}),
     };
   }
 
-  const staging = matchPath(
+  const deployments = matchPath(
     url.pathname,
-    /^\/v1\/angels\/([^/]+)\/environments\/staging\/deployments$/,
+    /^\/v1\/angels\/([^/]+)\/environments\/(staging|preview|production)\/deployments$/,
   );
-  if (staging && request.method === "POST") {
+  if (deployments && request.method === "POST") {
     const mutation = await managementMutation(
       request,
       url,
       ["versionId", "expectedDigest", "bindings"],
     );
     const body = mutation.body as Record<string, unknown>;
-    const input: DeployStagingRequest = {
+    const input: DeployRequest = {
       versionId: requiredString(body.versionId, "versionId"),
       expectedDigest: requiredString(body.expectedDigest, "expectedDigest"),
       bindings: parseBindings(body.bindings),
     };
     mutation.body = input;
+    const canonical = canonicalEnvironment(deployments[1]!)!;
     return {
       accountId: authenticatedAccountId,
-      command: { operation: "deploy_staging", angelId: staging[0]!, input, mutation },
+      command: {
+        operation: canonical === "preview" ? "deploy_preview" : "deploy_production",
+        angelId: deployments[0]!,
+        input,
+        mutation,
+      },
+      ...(deployments[1] === "staging" ? { translate: legacyDeploymentView } : {}),
     };
   }
 
   const availability = matchPath(
     url.pathname,
-    /^\/v1\/angels\/([^/]+)\/environments\/(staging|production)\/availability$/,
+    /^\/v1\/angels\/([^/]+)\/environments\/(staging|preview|production)\/availability$/,
   );
   if (availability && request.method === "POST") {
     const raw = record(await requestJsonAfterIdempotency(request));
@@ -832,7 +876,7 @@ async function managementCommand(
       command: {
         operation: "change_availability",
         angelId: availability[0]!,
-        environment: availability[1]! as DeploymentEnvironment,
+        environment: canonicalEnvironment(availability[1]!)!,
         input,
         mutation,
       },
@@ -841,7 +885,7 @@ async function managementCommand(
 
   const keys = matchPath(
     url.pathname,
-    /^\/v1\/angels\/([^/]+)\/environments\/(staging|production)\/keys$/,
+    /^\/v1\/angels\/([^/]+)\/environments\/(staging|preview|production)\/keys$/,
   );
   if (keys && request.method === "POST") {
     const mutation = await managementMutation(request, url, ["name"]);
@@ -853,7 +897,7 @@ async function managementCommand(
       command: {
         operation: "create_key",
         angelId: keys[0]!,
-        environment: keys[1]! as DeploymentEnvironment,
+        environment: canonicalEnvironment(keys[1]!)!,
         input,
         mutation,
       },
@@ -862,7 +906,7 @@ async function managementCommand(
 
   const keyRotation = matchPath(
     url.pathname,
-    /^\/v1\/angels\/([^/]+)\/environments\/(staging|production)\/keys\/([^/]+)\/rotations$/,
+    /^\/v1\/angels\/([^/]+)\/environments\/(staging|preview|production)\/keys\/([^/]+)\/rotations$/,
   );
   if (keyRotation && request.method === "POST") {
     const mutation = await managementMutation(request, url, []);
@@ -873,7 +917,7 @@ async function managementCommand(
       command: {
         operation: "rotate_key",
         angelId: keyRotation[0]!,
-        environment: keyRotation[1]! as DeploymentEnvironment,
+        environment: canonicalEnvironment(keyRotation[1]!)!,
         input,
         mutation,
       },
@@ -882,7 +926,7 @@ async function managementCommand(
 
   const keyRevocation = matchPath(
     url.pathname,
-    /^\/v1\/angels\/([^/]+)\/environments\/(staging|production)\/keys\/([^/]+)\/revocations$/,
+    /^\/v1\/angels\/([^/]+)\/environments\/(staging|preview|production)\/keys\/([^/]+)\/revocations$/,
   );
   if (keyRevocation && request.method === "POST") {
     const mutation = await managementMutation(request, url, []);
@@ -893,7 +937,7 @@ async function managementCommand(
       command: {
         operation: "revoke_key",
         angelId: keyRevocation[0]!,
-        environment: keyRevocation[1]! as DeploymentEnvironment,
+        environment: canonicalEnvironment(keyRevocation[1]!)!,
         input,
         mutation,
       },
@@ -1126,4 +1170,45 @@ function stringList(value: unknown, label: string): string[] {
 function requiredBoolean(value: unknown, label: string): boolean {
   if (typeof value !== "boolean") throw new RequestError(400, `${label} must be boolean`);
   return value;
+}
+
+/**
+ * The pinned @smcllns/angel-core CLI validates `/v1` responses with exact
+ * key sets and environment values that still spell the second environment
+ * `staging`. These rewrites keep that dialect byte-compatible on the legacy
+ * routes while internal state and new routes spell `preview`.
+ */
+function legacyEnvironmentSpelling(environment: HostedEnvironment): string {
+  return environment === "preview" ? "staging" : environment;
+}
+
+function legacyEnvironmentView(value: unknown): unknown {
+  const view = value as HostedEnvironmentView;
+  return { ...view, environment: legacyEnvironmentSpelling(view.environment) };
+}
+
+function legacyDeploymentView(value: unknown): unknown {
+  const view = value as HostedDeploymentView;
+  return { ...view, environment: legacyEnvironmentSpelling(view.environment) };
+}
+
+function legacyAngelView(view: HostedAngelView): unknown {
+  const { environments, ...rest } = view;
+  return {
+    ...rest,
+    environments: {
+      staging: legacyEnvironmentView(environments.preview),
+      production: environments.production,
+    },
+  };
+}
+
+function legacyEnsureResponse(value: unknown): unknown {
+  const response = value as HostedEnsureAngelResponse;
+  return {
+    angel: legacyAngelView(response.angel),
+    ...(response.keys === undefined ? {} : {
+      keys: { staging: response.keys.preview, production: response.keys.production },
+    }),
+  };
 }

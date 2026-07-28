@@ -47,7 +47,7 @@ describe("ServiceGateFleet", () => {
     const result = await dispatchGate(namespace as never, {
       operation: "reset",
       gate: "broker",
-      runtimeId: "acct:angel:staging",
+      runtimeId: "acct:angel:preview",
     });
 
     expect(result).toBeNull();
@@ -76,7 +76,7 @@ describe("ServiceGateFleet", () => {
     });
 
     await fleet.snapshot("gateway", "production");
-    await fleet.reset("broker", "staging");
+    await fleet.reset("broker", "preview");
 
     expect(calls).toEqual([
       {
@@ -94,7 +94,7 @@ describe("ServiceGateFleet", () => {
         input: {
           operation: "reset",
           gate: "broker",
-          runtimeId: "acct_demo:golden-research-assistant:staging",
+          runtimeId: "acct_demo:golden-research-assistant:preview",
         },
       },
     ]);
@@ -111,7 +111,7 @@ describe("ServiceGateFleet", () => {
       broker: failing,
     });
 
-    await expect(fleet.snapshot("gateway", "staging")).rejects.toThrow("gate exploded");
+    await expect(fleet.snapshot("gateway", "preview")).rejects.toThrow("gate exploded");
   });
 });
 
@@ -442,7 +442,7 @@ describe("Worker role credentials", () => {
 
 describe("control Worker routing", () => {
   test("protects assets and private APIs with Access before routing", async () => {
-    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v3" } });
+    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
     (env as Record<string, unknown>).ACCESS_REQUIRED = "true";
     const response = await handleControlRequest(new Request("https://demo.test/"), env);
     expect(response.status).toBe(401);
@@ -450,7 +450,7 @@ describe("control Worker routing", () => {
   });
 
   test("returns 401 only for authentication rejection and 500 for verifier failure", async () => {
-    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v3" } });
+    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
     const rejected = await handleControlRequestReal(new Request("https://demo.test/"), env as never, async () => {
       throw new AccessAuthenticationError("invalid assertion");
     });
@@ -465,7 +465,7 @@ describe("control Worker routing", () => {
   });
 
   test("uses the verified Access identity for owner state and actions without a demo bearer", async () => {
-    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v3" } });
+    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
     const state = await handleControlRequest(
       new Request("https://demo.test/api/demo/state"),
       env,
@@ -500,7 +500,7 @@ describe("control Worker routing", () => {
     const revoke = await handleControlRequest(new Request("https://demo.test/api/demo/action", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ angelId: "golden-assistant", action: "revoke_key", environment: "staging", keyId: "key_1", idempotencyToken: "tok-revoke" }),
+      body: JSON.stringify({ angelId: "golden-assistant", action: "revoke_key", environment: "preview", keyId: "key_1", idempotencyToken: "tok-revoke" }),
     }), env);
 
     expect([create.status, rotate.status, revoke.status]).toEqual([200, 200, 200]);
@@ -509,7 +509,7 @@ describe("control Worker routing", () => {
     // worker never synthesizes a per-request UUID (finding #1/#2).
     expect(env.calls[0]).toEqual({ operation: "key_action", action: "create_key", angelId: "golden-assistant", environment: "production", idempotencyToken: "tok-create", name: "CI" });
     expect(env.calls[1]).toEqual({ operation: "key_action", action: "rotate_key", angelId: "golden-assistant", environment: "production", idempotencyToken: "tok-rotate", keyId: "key_1" });
-    expect(env.calls[2]).toEqual({ operation: "key_action", action: "revoke_key", angelId: "golden-assistant", environment: "staging", idempotencyToken: "tok-revoke", keyId: "key_1" });
+    expect(env.calls[2]).toEqual({ operation: "key_action", action: "revoke_key", angelId: "golden-assistant", environment: "preview", idempotencyToken: "tok-revoke", keyId: "key_1" });
   });
 
   test("rejects a malformed or unbounded key action body before dispatch", async () => {
@@ -536,7 +536,7 @@ describe("control Worker routing", () => {
       // 65 astral code points → over the 64 CODE-POINT bound (130 UTF-16 units).
       { angelId: "golden-assistant", action: "create_key", environment: "production", name: "🚀".repeat(65), idempotencyToken: "t" },
       // Extra field (exact-keys enforcement).
-      { angelId: "golden-assistant", action: "revoke_key", environment: "staging", keyId: "key_1", idempotencyToken: "t", extra: true },
+      { angelId: "golden-assistant", action: "revoke_key", environment: "preview", keyId: "key_1", idempotencyToken: "t", extra: true },
     ];
     for (const body of cases) {
       const response = await post(body);
@@ -653,7 +653,7 @@ describe("control Worker routing", () => {
   });
 
   test("forwards reset and exact v3 action commands to the Account registry", async () => {
-    const view = { schema: "angelmcp.demo.v3" };
+    const view = { schema: "angelmcp.demo.v4" };
     const env = controlEnv({ ok: true, value: view });
     const reset = await handleControlRequest(new Request("https://demo.test/api/demo/reset", {
       method: "POST",
@@ -728,7 +728,7 @@ describe("control Worker routing", () => {
     const bodies = [
       { action: "pause_all", environment: "production" },
       { angelId: "golden-assistant", action: "pause_tool", environment: "production" },
-      { angelId: "golden-assistant", action: "promote", environment: "staging" },
+      { angelId: "golden-assistant", action: "promote", environment: "preview" },
       { angelId: "golden-assistant", action: "pause_all", environment: "production", extra: true },
     ];
     for (const body of bodies) {
@@ -780,8 +780,8 @@ describe("AccountRegistry", () => {
     const view = valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
 
     expect(view).toEqual({
-      schema: "angelmcp.demo.v3",
-      account: { id: "acct_demo", name: "Personal" },
+      schema: "angelmcp.demo.v4",
+      account: { id: "acct_demo", name: "Personal", handle: null },
       angels: [],
     });
     expect(resets).toHaveLength(8);
@@ -879,7 +879,7 @@ describe("AccountRegistry", () => {
     expect(result).toEqual({
       ok: false,
       status: 409,
-      error: "no staged Version has compatible production bindings",
+      error: "no previewed Version has compatible production bindings",
     });
   });
 
@@ -1009,7 +1009,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
   };
   const stagingBody = { versionId: version.id, expectedDigest: version.digest, bindings };
   const staged = valueOf(await registry.dispatchJson({
-    operation: "deploy_staging",
+    operation: "deploy_preview",
     angelId: ensure.angel.id,
     input: stagingBody,
     mutation: registryMutation("stage-golden", stagingBody),

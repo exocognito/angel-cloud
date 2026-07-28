@@ -19,7 +19,7 @@ import { angelEndpoint, assertDemoView, buildDemoView, type DemoView } from "../
 
 const GATEWAY_BASE_URL = "https://gw.test";
 
-describe("angelmcp.demo.v3 projection", () => {
+describe("angelmcp.demo.v4 projection", () => {
   test("projects two management-published Angels without leaking runtime refs or key hashes", async () => {
     const harness = demoHarness();
     await deployAngel(harness, "gmail-inbox-zero", {
@@ -48,7 +48,7 @@ describe("angelmcp.demo.v3 projection", () => {
       { gatewayBaseUrl: GATEWAY_BASE_URL },
     );
 
-    expect(view.schema).toBe("angelmcp.demo.v3");
+    expect(view.schema).toBe("angelmcp.demo.v4");
     // The producer validates its own output against the exact v3 validator.
     expect(() => assertDemoView(view)).not.toThrow();
     expect(view.angels.map((angel) => angel.id)).toEqual([
@@ -60,23 +60,23 @@ describe("angelmcp.demo.v3 projection", () => {
     // Endpoints are first-class per-environment schema, deterministically derived
     // from the real gateway base URL + account/angel/environment (not fabricated).
     expect(goldenView.endpoints).toEqual({
-      staging: `${GATEWAY_BASE_URL}/v1/a/acct_demo/golden-assistant/staging/mcp`,
+      preview: `${GATEWAY_BASE_URL}/v1/a/acct_demo/golden-assistant/preview/mcp`,
       production: `${GATEWAY_BASE_URL}/v1/a/acct_demo/golden-assistant/production/mcp`,
     });
 
     // Lifecycle events keep strict per-environment separation: production carries a
-    // production_promotion, never a staging_deploy, and vice versa.
+    // production_promotion, never a preview_deploy, and vice versa.
     const productionLifecycle = goldenView.environments.production.lifecycle;
     expect(productionLifecycle.map((event) => event.kind)).toEqual([
       "version_published",
       "production_promotion",
     ]);
     expect(productionLifecycle.every((event) => event.environment === "production")).toBe(true);
-    expect(productionLifecycle.some((event) => event.kind === "staging_deploy")).toBe(false);
-    const stagingLifecycle = goldenView.environments.staging.lifecycle;
+    expect(productionLifecycle.some((event) => event.kind === "preview_deploy")).toBe(false);
+    const stagingLifecycle = goldenView.environments.preview.lifecycle;
     expect(stagingLifecycle.map((event) => event.kind)).toEqual([
       "version_published",
-      "staging_deploy",
+      "preview_deploy",
     ]);
     expect(stagingLifecycle.some((event) => event.kind === "production_promotion")).toBe(false);
 
@@ -160,7 +160,7 @@ describe("angelmcp.demo.v3 projection", () => {
       expectedDigest: version.digest,
       bindings: stagingBindings,
     };
-    const staging = await harness.control.deployStaging(
+    const preview = await harness.control.deployPreview(
       golden.angelId,
       stagingBody,
       mutation("stage-golden-v2", stagingBody),
@@ -173,9 +173,9 @@ describe("angelmcp.demo.v3 projection", () => {
     );
     const angel = view.angels[0]!;
 
-    expect(angel.environments.staging.bindings[1]!.connectionIds).toEqual(["con_work_google"]);
+    expect(angel.environments.preview.bindings[1]!.connectionIds).toEqual(["con_work_google"]);
     expect(angel.readyForProduction).toMatchObject({
-      stagedDeploymentId: staging.id,
+      stagedDeploymentId: preview.id,
       expectedDigest: version.digest,
       bindings: {
         "gdocs-read": ["con_personal_google"],
@@ -224,15 +224,22 @@ function loadBrowserValidator(): DemoValidator {
 
 describe("endpoint construction fails closed on unusable gateway config", () => {
   test("angelEndpoint encodes path segments against an absolute origin", () => {
-    expect(angelEndpoint("https://gw.test/", "acct demo", "golden/assistant", "staging")).toBe(
-      "https://gw.test/v1/a/acct%20demo/golden%2Fassistant/staging/mcp",
+    expect(angelEndpoint("https://gw.test/", "acct demo", null, "golden/assistant", "preview")).toBe(
+      "https://gw.test/v1/a/acct%20demo/golden%2Fassistant/preview/mcp",
+    );
+    // With a handle the endpoint is the PD 0001 coordinate.
+    expect(angelEndpoint("https://gw.test/", "acct_demo", "smcllns", "golden-assistant", "production")).toBe(
+      "https://gw.test/@smcllns/golden-assistant",
+    );
+    expect(angelEndpoint("https://gw.test/", "acct_demo", "smcllns", "golden-assistant", "preview")).toBe(
+      "https://gw.test/@smcllns/golden-assistant@preview",
     );
   });
 
-  const badBases = ["", "   ", "/v1/a/x/y/staging/mcp", "gateway.example", "ftp://gw.test", "http://:", "http://x:abc", "http://%", "http://"];
+  const badBases = ["", "   ", "/v1/a/x/y/preview/mcp", "gateway.example", "ftp://gw.test", "http://:", "http://x:abc", "http://%", "http://"];
   for (const bad of badBases) {
     test(`angelEndpoint throws on a non-absolute-http(s) base: ${JSON.stringify(bad)}`, () => {
-      expect(() => angelEndpoint(bad, "acct_demo", "golden-assistant", "staging")).toThrow(/gateway base URL/);
+      expect(() => angelEndpoint(bad, "acct_demo", null, "golden-assistant", "preview")).toThrow(/gateway base URL/);
     });
   }
 
@@ -288,7 +295,7 @@ describe("endpoint construction fails closed on unusable gateway config", () => 
       (_angelId, slug) => harness.fleets.get(slug)!,
       { gatewayBaseUrl: GATEWAY_BASE_URL },
     );
-    expect(view.schema).toBe("angelmcp.demo.v3");
+    expect(view.schema).toBe("angelmcp.demo.v4");
     expect(view.angels).toEqual([]);
     expect(() => assertDemoView(view)).not.toThrow();
   });
@@ -316,7 +323,7 @@ describe("both validators enforce the exact v3 contract over one fixture matrix"
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const productionLifecycle = (v: any) => v.angels[0].environments.production.lifecycle;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stagingLifecycle = (v: any) => v.angels[0].environments.staging.lifecycle;
+  const stagingLifecycle = (v: any) => v.angels[0].environments.preview.lifecycle;
 
   test("both validators accept the exact v3 view", () => {
     expect(() => assertDemoView(clone())).not.toThrow();
@@ -353,26 +360,26 @@ describe("both validators enforce the exact v3 contract over one fixture matrix"
     { name: "missing first-class endpoints", mutate: (v) => { delete v.angels[0].endpoints; } },
     { name: "endpoint that is a relative path (not absolute)", mutate: (v) => { v.angels[0].endpoints.production = "/v1/a/acct_demo/golden-assistant/production/mcp"; } },
     { name: "endpoint without a scheme", mutate: (v) => { v.angels[0].endpoints.production = "gateway.example/v1/a/x/y/production/mcp"; } },
-    { name: "endpoint with a non-http(s) scheme", mutate: (v) => { v.angels[0].endpoints.staging = "ftp://gw.test/x"; } },
+    { name: "endpoint with a non-http(s) scheme", mutate: (v) => { v.angels[0].endpoints.preview = "ftp://gw.test/x"; } },
     { name: "endpoint with an empty authority (http://:)", mutate: (v) => { v.angels[0].endpoints.production = "http://:/mcp"; } },
     { name: "endpoint with no host (http://)", mutate: (v) => { v.angels[0].endpoints.production = "http://"; } },
     { name: "endpoint with a non-numeric port (http://x:abc)", mutate: (v) => { v.angels[0].endpoints.production = "http://x:abc/mcp"; } },
-    { name: "endpoint with a malformed host (http://%)", mutate: (v) => { v.angels[0].endpoints.staging = "http://%"; } },
+    { name: "endpoint with a malformed host (http://%)", mutate: (v) => { v.angels[0].endpoints.preview = "http://%"; } },
     { name: "endpoint host that is a bare dot (http://.)", mutate: (v) => { v.angels[0].endpoints.production = "http://./mcp"; } },
     { name: "endpoint host that is a bare hyphen (http://-)", mutate: (v) => { v.angels[0].endpoints.production = "http://-/mcp"; } },
     { name: "endpoint host with an empty interior label (http://foo..bar)", mutate: (v) => { v.angels[0].endpoints.production = "http://foo..bar/mcp"; } },
-    { name: "endpoint host with a trailing dot (http://foo.)", mutate: (v) => { v.angels[0].endpoints.staging = "http://foo./mcp"; } },
+    { name: "endpoint host with a trailing dot (http://foo.)", mutate: (v) => { v.angels[0].endpoints.preview = "http://foo./mcp"; } },
     { name: "environment missing its lifecycle field", mutate: (v) => { delete v.angels[0].environments.production.lifecycle; } },
     // (a) Environment interleaved across the boundary, KIND left valid-for-both so
     //     ONLY the environment-vs-container rule can reject it.
     { name: "lifecycle event environment != its container (kind left valid)", mutate: (v) => {
         const event = productionLifecycle(v).find((e: { kind: string }) => e.kind === "version_published");
-        event.environment = "staging";
+        event.environment = "preview";
       } },
     // (b) Kind wrong-for-environment, ENVIRONMENT left matching the container so
     //     ONLY the kind-vs-environment rule can reject it.
     { name: "lifecycle kind wrong for its environment (environment left matching)", mutate: (v) => {
-        const event = stagingLifecycle(v).find((e: { kind: string }) => e.kind === "staging_deploy");
+        const event = stagingLifecycle(v).find((e: { kind: string }) => e.kind === "preview_deploy");
         event.kind = "production_promotion";
       } },
     { name: "recorded event with a null timestamp", mutate: (v) => {
@@ -450,7 +457,7 @@ describe("both validators enforce the exact v3 contract over one fixture matrix"
   // tightened DNS-label pattern must never regress these.
   const legitimateEndpoints = [
     "http://localhost:8787/v1/mcp",
-    "https://gw.example.com/v1/a/x/y/staging/mcp",
+    "https://gw.example.com/v1/a/x/y/preview/mcp",
     "http://gateway-worker/v1/mcp",
     "http://127.0.0.1:8787/v1/mcp",
   ];
@@ -536,14 +543,14 @@ async function deployAngel(
     mutation(`publish-${slug}`, publishBody),
   );
   const stagingBody = { versionId: version.id, expectedDigest: version.digest, bindings };
-  const staging = await harness.control.deployStaging(
+  const preview = await harness.control.deployPreview(
     ensured.angel.id,
     stagingBody,
     mutation(`stage-${slug}`, stagingBody),
   );
   const productionBody = {
-    stagedDeploymentId: staging.id,
-    expectedDigest: staging.digest,
+    stagedDeploymentId: preview.id,
+    expectedDigest: preview.digest,
     bindings,
   };
   await harness.control.promoteProduction(
@@ -551,7 +558,7 @@ async function deployAngel(
     productionBody,
     mutation(`promote-${slug}`, productionBody),
   );
-  return { angelId: ensured.angel.id, version, staging };
+  return { angelId: ensured.angel.id, version, preview };
 }
 
 function checkedArtifact(slug: string): ManagementVersionArtifact {
@@ -593,7 +600,7 @@ function mutation(idempotencyKey: string, body: unknown): MutationIdentity {
   return { method: "POST", path: `/demo/${idempotencyKey}`, idempotencyKey, body };
 }
 
-describe("angelmcp.demo.v3 recorded/derived timestamps and named keys", () => {
+describe("angelmcp.demo.v4 recorded/derived timestamps and named keys", () => {
   const goldenBindings: ManagementBindingMap = {
     "gdocs-read": ["con_personal_google"],
     "gmail-read-and-draft": ["con_personal_google", "con_work_google"],
@@ -612,7 +619,7 @@ describe("angelmcp.demo.v3 recorded/derived timestamps and named keys", () => {
     );
     const events = [
       ...view.angels[0]!.environments.production.lifecycle,
-      ...view.angels[0]!.environments.staging.lifecycle,
+      ...view.angels[0]!.environments.preview.lifecycle,
     ];
     expect(events.length).toBeGreaterThan(0);
     for (const event of events) expect(event).toMatchObject({ source: "derived", at: null });
