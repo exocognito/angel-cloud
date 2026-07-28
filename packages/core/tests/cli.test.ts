@@ -411,6 +411,137 @@ describe("Angel management commands", () => {
     }
   });
 
+  test("deletes an Angel through the management API with a fresh idempotency key", async () => {
+    const api = fakeApi([
+      jsonResponse({ id: "ang_golden", slug: "golden-assistant", deleted: true }),
+    ]);
+    const output: string[] = [];
+
+    await runAngelCommand(["delete", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: (line) => output.push(line),
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(api.requests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toEqual([
+      "DELETE /v1/accounts/acct_demo/angels/golden-assistant",
+    ]);
+    expect(await bodies(api.requests)).toEqual([undefined]);
+    expect(api.requests[0]?.headers.get("authorization")).toBe("Bearer management-secret");
+    const key = api.requests[0]?.headers.get("idempotency-key");
+    expect(key).toBeTruthy();
+    // The delete key must never derive from method+path+body: a deterministic
+    // key collides across delete -> recreate -> delete and replays the first
+    // response instead of deleting again.
+    expect(key).not.toBe(await expectedIdempotencyKey(api.requests[0]!, {}));
+    expect(output).toEqual(["deleted golden-assistant (ang_golden)"]);
+  });
+
+  test("mints a different idempotency key for each delete attempt", async () => {
+    const api = fakeApi([
+      jsonResponse({ id: "ang_golden", slug: "golden-assistant", deleted: true }),
+      jsonResponse({ id: "ang_golden_2", slug: "golden-assistant", deleted: true }),
+    ]);
+    const repoRoot = commandRepo();
+    const dependencies = {
+      repoRoot,
+      fetch: api.fetch,
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    };
+
+    await runAngelCommand(["delete", "golden-assistant"], dependencies);
+    await runAngelCommand(["delete", "golden-assistant"], dependencies);
+
+    const keys = api.requests.map((request) => request.headers.get("idempotency-key"));
+    expect(keys[0]).toBeTruthy();
+    expect(keys[1]).toBeTruthy();
+    expect(keys[0]).not.toBe(keys[1]);
+  });
+
+  test("surfaces the live-production refusal and says how to confirm", async () => {
+    const refusal = 'deleting an Angel with a live production deployment requires confirm: "golden-assistant"';
+    const api = fakeApi([jsonResponse({ error: refusal }, 409)]);
+
+    const attempt = runAngelCommand(["delete", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    await expect(attempt).rejects.toThrow(refusal);
+    await expect(attempt).rejects.toThrow("angel delete golden-assistant --confirm golden-assistant");
+  });
+
+  test("passes the typed slug confirmation through to the API", async () => {
+    const api = fakeApi([
+      jsonResponse({ id: "ang_golden", slug: "golden-assistant", deleted: true }),
+    ]);
+    const output: string[] = [];
+
+    await runAngelCommand(["delete", "golden-assistant", "--confirm", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: (line) => output.push(line),
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(api.requests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toEqual([
+      "DELETE /v1/accounts/acct_demo/angels/golden-assistant",
+    ]);
+    expect(await bodies(api.requests)).toEqual([{ confirm: "golden-assistant" }]);
+    expect(api.requests[0]?.headers.get("idempotency-key")).toBeTruthy();
+    expect(output).toEqual(["deleted golden-assistant (ang_golden)"]);
+  });
+
+  test("surfaces the API's 404 for an unknown Angel without a retry hint", async () => {
+    const api = fakeApi([jsonResponse({ error: "not found" }, 404)]);
+
+    const attempt = runAngelCommand(["delete", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    await expect(attempt).rejects.toThrow("DELETE /v1/accounts/acct_demo/angels/golden-assistant failed (HTTP 404): not found");
+    await expect(attempt).rejects.not.toThrow("--confirm");
+  });
+
+  test("rejects a delete response that is not the exact contract shape", async () => {
+    for (const body of [
+      { id: "ang_golden", slug: "golden-assistant", deleted: false },
+      { id: "ang_golden", slug: "golden-assistant" },
+      { id: "ang_golden", slug: "golden-assistant", deleted: true, extra: "no" },
+    ]) {
+      const api = fakeApi([jsonResponse(body)]);
+      await expect(runAngelCommand(["delete", "golden-assistant"], {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/response schema error/);
+    }
+  });
+
+  test("lists delete in the usage string and rejects malformed delete invocations", async () => {
+    for (const args of [
+      ["delete"],
+      ["delete", "golden-assistant", "--confirm"],
+      ["delete", "golden-assistant", "--force"],
+      ["delete", "golden-assistant", "--confirm", "golden-assistant", "extra"],
+    ]) {
+      await expect(runAngelCommand(args, {
+        repoRoot: commandRepo(),
+        fetch: fakeApi([]).fetch,
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/usage: .*angel delete <angel> \[--confirm <slug>\]/);
+    }
+  });
+
   test("uses an explicit injected deployment-config loader without weakening the file-backed default", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([

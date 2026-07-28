@@ -82,6 +82,12 @@ export interface EnsureAngelResponse {
   keys?: Record<DeploymentEnvironment, string>;
 }
 
+export interface DeleteAngelResponse {
+  id: string;
+  slug: string;
+  deleted: true;
+}
+
 export interface PublishVersionRequest {
   artifact: ManagementVersionArtifact;
   expectedDigest: string;
