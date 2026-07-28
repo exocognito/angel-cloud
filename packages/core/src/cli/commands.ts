@@ -48,7 +48,8 @@ export async function runAngelCommand(
   }
   if (
     command === "delete" && angelId !== undefined
-    && flags.length === 2 && flags[0] === "--confirm" && flags[1] !== undefined
+    && flags.length === 2 && flags[0] === "--confirm"
+    && flags[1] !== undefined && flags[1] !== ""
   ) {
     await deleteAngel(angelId, flags[1], dependencies);
     return;

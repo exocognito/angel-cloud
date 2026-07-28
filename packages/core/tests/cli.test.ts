@@ -530,6 +530,7 @@ describe("Angel management commands", () => {
     for (const args of [
       ["delete"],
       ["delete", "golden-assistant", "--confirm"],
+      ["delete", "golden-assistant", "--confirm", ""],
       ["delete", "golden-assistant", "--force"],
       ["delete", "golden-assistant", "--confirm", "golden-assistant", "extra"],
     ]) {
