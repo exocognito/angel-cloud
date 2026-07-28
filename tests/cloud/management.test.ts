@@ -1161,9 +1161,17 @@ describe("ManagementControl delete", () => {
       fingerprint: "d".repeat(64),
       ciphertext: await seed.vault.seal(JSON.stringify({ angel: { id: ensured.angel.id } })),
     };
+    // Another Angel's record whose response merely MENTIONS the slug (a key
+    // named after it) must survive: the purge matches the opaque Angel id, not
+    // prose.
     state.idempotency["legacy-other"] = {
       fingerprint: "e".repeat(64),
-      responseJson: JSON.stringify({ key: { id: "key_other" }, plaintext: "ak_other" }),
+      responseJson: JSON.stringify({ key: { id: "key_other", name: "golden-assistant" }, plaintext: "ak_other" }),
+    };
+    // A sealed record the vault cannot open is unattributable and is purged.
+    state.idempotency["legacy-unopenable"] = {
+      fingerprint: "c".repeat(64),
+      ciphertext: "not-a-sealed-payload",
     };
     const control = ManagementControl.restore(state, freshDependencies(seed));
 

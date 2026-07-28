@@ -501,9 +501,11 @@ convergence — the request must repeat the slug in the body —
 `{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose production is
 empty deletes without a body; a live staging deployment does not require
 confirmation. Replaying the same `Idempotency-Key` returns the original
-response; a fresh delete of an already-deleted slug returns `404`. If a gate
-call fails mid-teardown the Angel stays visible with its keys revoked — call
-delete again to finish.
+response; a fresh delete of an already-deleted slug returns `404`. Mint a fresh
+key per delete (as the `uuidgen` above does) — a key derived from
+method+path+body would collide across delete → recreate → delete and replay the
+first response instead of deleting again. If a gate call fails mid-teardown the
+Angel stays visible with its keys revoked — call delete again to finish.
 
 ## Connect an agent
 
@@ -671,7 +673,7 @@ Transport and platform errors:
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
 | `403` | Disallowed `Origin`. |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
-| `409` | Digest, idempotency, staging, revision, or pending-repair conflict. |
+| `409` | Digest, idempotency, staging, revision, or pending-repair conflict, or a delete missing its [slug confirmation](#delete-an-angel). |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |

@@ -195,7 +195,8 @@ export interface EncryptedReplayRecord {
   /**
    * Canonical mutation path, recorded so Angel deletion can purge the dead
    * Angel's records. Absent on records persisted before deletion existed —
-   * those cannot be purged and simply age in place.
+   * deletion purges those only when the stored response contains the dead
+   * Angel's id (or cannot be opened at all); the rest age in place.
    */
   path?: string;
 }

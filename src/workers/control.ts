@@ -1010,7 +1010,14 @@ function parseBindings(value: unknown): ManagementBindingMap {
 function matchPath(pathname: string, pattern: RegExp): string[] | null {
   const match = pattern.exec(pathname);
   if (!match) return null;
-  return match.slice(1).map((value) => decodeURIComponent(value));
+  return match.slice(1).map((value) => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      // A malformed percent-encoding is the client's error, not a server fault.
+      throw new RequestError(400, "request path must be percent-decodable");
+    }
+  });
 }
 
 function requiredString(value: unknown, label: string): string {

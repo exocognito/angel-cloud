@@ -289,6 +289,16 @@ describe("management resource routes", () => {
     expect(unkeyed.status).toBe(400);
     expect(missingKey.calls).toEqual([]);
 
+    // A malformed percent-encoding in the path is the client's error, not a
+    // server fault.
+    const malformed = managementEnv();
+    const undecodable = await handleControlRequest(new Request(
+      "https://cloud.test/v1/accounts/acct_personal/angels/%zz",
+      { method: "DELETE", headers: managementHeaders("delete-malformed") },
+    ), malformed as never);
+    expect(undecodable.status).toBe(400);
+    expect(malformed.calls).toEqual([]);
+
     // The management credential stays bound to its configured Account.
     const crossAccount = managementEnv();
     const crossed = await handleControlRequest(new Request(

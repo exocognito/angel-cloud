@@ -315,10 +315,11 @@ export class ManagementControl {
       //    creating a fresh one. The delete's own record is stored after this
       //    runs, so its replay remains available.
       //    Records persisted before deletion existed carry no `path`; those are
-      //    purged only when their stored response references the dead Angel, so
-      //    a different Angel's replay protection survives. A sealed legacy
-      //    record that cannot be opened is unattributable and purged — losing
-      //    it is strictly safer than replaying a dead Angel's response.
+      //    purged only when their stored response contains the dead Angel's
+      //    opaque id (never the slug — prose can mention it), so a different
+      //    Angel's replay protection survives. A sealed legacy record that
+      //    cannot be opened is unattributable and purged — losing it is
+      //    strictly safer than replaying a dead Angel's response.
       const coordinatePath = `/v1/accounts/${accountId}/angels/${slug}`;
       for (const [key, record] of Object.entries(this.state.idempotency)) {
         let purge: boolean;
@@ -328,7 +329,7 @@ export class ManagementControl {
           const response = "ciphertext" in record
             ? await this.dependencies.replayVault.open(record.ciphertext).catch(() => null)
             : record.responseJson;
-          purge = response === null || response.includes(angel.id) || response.includes(`"${slug}"`);
+          purge = response === null || response.includes(angel.id);
         }
         if (purge) delete this.state.idempotency[key];
       }
