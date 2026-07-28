@@ -91,7 +91,7 @@ export interface DemoAgentKeyView {
  * interleaved.
  */
 export interface DemoLifecycleEvent {
-  kind: "version_published" | "preview_deploy" | "production_promotion";
+  kind: "version_published" | "preview_deploy" | "production_promotion" | "production_deploy";
   environment: HostedEnvironment;
   version: number;
   deploymentId: string | null;
@@ -449,7 +449,13 @@ function lifecycleEvents(
   timestamps: Record<string, string>,
 ): DemoLifecycleEvent[] {
   if (deployment === null) return [];
-  const deployKind = environment === "preview" ? "preview_deploy" : "production_promotion";
+  // A production deployment without recorded provenance predates one-step
+  // deploys and could only have been a promotion.
+  const deployKind = environment === "preview"
+    ? "preview_deploy"
+    : deployment.provenance === "direct"
+    ? "production_deploy"
+    : "production_promotion";
   return [
     {
       kind: "version_published",
@@ -889,7 +895,7 @@ function validateDemoLifecycleEvent(
   );
   const kind = demoOneOf(
     event.kind,
-    ["version_published", "preview_deploy", "production_promotion"] as const,
+    ["version_published", "preview_deploy", "production_promotion", "production_deploy"] as const,
     `${path}.kind`,
   );
   // Strict per-environment separation: an event's environment must equal the
@@ -899,9 +905,11 @@ function validateDemoLifecycleEvent(
   if (eventEnvironment !== environment) {
     demoFail(`${path}.environment`, `must equal ${environment} (no cross-environment lifecycle)`);
   }
-  const expectedDeployKind = environment === "preview" ? "preview_deploy" : "production_promotion";
-  if (kind !== "version_published" && kind !== expectedDeployKind) {
-    demoFail(`${path}.kind`, `must be version_published or ${expectedDeployKind} in ${environment}`);
+  const expectedDeployKinds: readonly string[] = environment === "preview"
+    ? ["preview_deploy"]
+    : ["production_promotion", "production_deploy"];
+  if (kind !== "version_published" && !expectedDeployKinds.includes(kind)) {
+    demoFail(`${path}.kind`, `must be version_published or ${expectedDeployKinds.join("/")} in ${environment}`);
   }
   // version_published is version-scoped (no deployment id); a deploy/promotion
   // names its deployment.

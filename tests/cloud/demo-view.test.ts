@@ -473,6 +473,47 @@ describe("both validators enforce the exact v3 contract over one fixture matrix"
   }
 });
 
+describe("production lifecycle provenance", () => {
+  test("a promotion reads as production_promotion and a direct deploy as production_deploy", async () => {
+    const harness = demoHarness();
+    // Promoted Angel: preview deploy then exact promotion.
+    await deployAngel(harness, "gmail-inbox-zero", { gmail: ["con_personal_google"] });
+    // Directly deployed Angel: one-step production deploy, no preview leg.
+    const ensured = await harness.control.ensureAngel("acct_demo", "golden-assistant", mutation("ensure-direct", {}));
+    const artifact = checkedArtifact("golden-assistant");
+    const version = await harness.control.publishVersion(
+      ensured.angel.id,
+      { artifact, expectedDigest: artifact.digest },
+      mutation("publish-direct", { artifact, expectedDigest: artifact.digest }),
+    );
+    await harness.control.deployProduction(
+      ensured.angel.id,
+      {
+        versionId: version.id,
+        expectedDigest: version.digest,
+        bindings: {
+          "gdocs-read": ["con_personal_google"],
+          "gmail-read-and-draft": ["con_personal_google"],
+        },
+      },
+      mutation("deploy-direct", {}),
+    );
+
+    const view = await buildDemoView(
+      harness.control.exportState(),
+      (_angelId, slug) => harness.fleets.get(slug)!,
+      { gatewayBaseUrl: GATEWAY_BASE_URL },
+    );
+    const promoted = view.angels.find((angel) => angel.id === "gmail-inbox-zero")!;
+    const direct = view.angels.find((angel) => angel.id === "golden-assistant")!;
+    expect(promoted.environments.production.lifecycle.map((event) => event.kind))
+      .toEqual(["version_published", "production_promotion"]);
+    expect(direct.environments.production.lifecycle.map((event) => event.kind))
+      .toEqual(["version_published", "production_deploy"]);
+    expect(() => assertDemoView(view)).not.toThrow();
+  });
+});
+
 function demoHarness() {
   const fleets = new Map<string, MemoryGateFleet>();
   let id = 0;

@@ -96,6 +96,9 @@ describe("management state renames staging to preview", () => {
     expect(Object.keys(state.angels[0]!.environments).sort()).toEqual(["preview", "production"]);
     expect(state.deployments.every((deployment) => (deployment.environment as string) !== "staging")).toBe(true);
     expect(restored.getEnvironment(ensured.angel.id, "preview").activeDeployment).not.toBeNull();
+    // Pre-rename idempotency records replay old-spelling responses, so the
+    // migration drops them; the mutations re-execute idempotently instead.
+    expect(state.idempotency).toEqual({});
   });
 
   test("preview deploys install gates under the preview environment", async () => {
@@ -136,6 +139,17 @@ describe("management state renames staging to preview", () => {
       status: 400,
       message: "preview has no Connection bindings: bind a Connection to preview, or pass production's bindings explicitly to share its credentials",
     });
+  });
+});
+
+describe("Angel slugs match the coordinate grammar", () => {
+  test("a digit-leading slug is rejected: the coordinate could never address it", async () => {
+    const { control } = harness();
+    await expect(control.ensureAngel(account.id, "1password-helper", mutation("ensure-digit")))
+      .rejects.toMatchObject({
+        status: 400,
+        message: "Angel slug must start with a letter and use lowercase letters, numbers, and hyphens",
+      });
   });
 });
 

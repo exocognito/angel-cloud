@@ -10,6 +10,7 @@ import {
   ManagementControl,
   ManagementError,
   createManagementState,
+  migrateLegacyPreviewSpelling,
 } from "../management";
 import type {
   ManagementCommand,
@@ -515,6 +516,10 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   private async view(state?: ManagementState): Promise<DemoView> {
     const managementState = state ?? await this.ctx.storage.get<ManagementState>("management");
     if (managementState === undefined) throw new RegistryError(409, "demo Account is not initialized");
+    // This read path skips ManagementControl.restore, so apply the same
+    // pre-rename migration a restore would; the migrated shape persists on
+    // the next mutation's checkpoint.
+    migrateLegacyPreviewSpelling(managementState);
     return buildDemoView(
       managementState,
       (_angelId, slug) => this.managementFleet(slug),

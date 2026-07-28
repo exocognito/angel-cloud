@@ -87,6 +87,13 @@ export interface ManagementDeployment {
   digest: string;
   bindings: Record<string, string[]>;
   runtimeBindings: GateToolBinding[];
+  /**
+   * How a production deployment came to be: an exact promotion of a previewed
+   * deployment, or a direct one-step deploy. Absent on records persisted
+   * before one-step deploys existed — those could only be promotions.
+   * Internal provenance for views; never surfaced on the /v1 contract.
+   */
+  provenance?: "promotion" | "direct";
 }
 
 export interface ManagementEnvironment {

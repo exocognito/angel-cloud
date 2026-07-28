@@ -185,7 +185,7 @@ function validateLifecycleEvent(value, path, environmentName) {
   );
   const kind = oneOf(
     event.kind,
-    ["version_published", "preview_deploy", "production_promotion"],
+    ["version_published", "preview_deploy", "production_promotion", "production_deploy"],
     `${path}.kind`,
   );
   // Strict per-environment separation: an event's environment must equal the
@@ -195,9 +195,11 @@ function validateLifecycleEvent(value, path, environmentName) {
   if (eventEnvironment !== environmentName) {
     fail(`${path}.environment`, `must equal ${environmentName} (no cross-environment lifecycle)`);
   }
-  const expectedDeployKind = environmentName === "preview" ? "preview_deploy" : "production_promotion";
-  if (kind !== "version_published" && kind !== expectedDeployKind) {
-    fail(`${path}.kind`, `must be version_published or ${expectedDeployKind} in ${environmentName}`);
+  const expectedDeployKinds = environmentName === "preview"
+    ? ["preview_deploy"]
+    : ["production_promotion", "production_deploy"];
+  if (kind !== "version_published" && !expectedDeployKinds.includes(kind)) {
+    fail(`${path}.kind`, `must be version_published or ${expectedDeployKinds.join("/")} in ${environmentName}`);
   }
   // version_published is version-scoped (no deployment id); a deploy/promotion names its deployment.
   const deploymentId = kind === "version_published"
@@ -2114,6 +2116,7 @@ function paintEnvironmentBadge(host) {
 function lifecycleLabel(kind) {
   if (kind === "version_published") return "Version published";
   if (kind === "preview_deploy") return "Deployed to preview";
+  if (kind === "production_deploy") return "Deployed to production";
   return "Promoted to production";
 }
 

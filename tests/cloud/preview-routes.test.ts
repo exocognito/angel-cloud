@@ -114,6 +114,49 @@ describe("management routes speak preview; staging stays a served legacy dialect
   });
 });
 
+describe("pre-rename persisted state served by the worker", () => {
+  test("a staging-keyed persisted state still renders the demo view and replays ensure safely", async () => {
+    const h = await deployedHarness();
+
+    // Rewrite the persisted management state into its pre-rename shape:
+    // environments keyed `staging`, deployments recorded as "staging", and
+    // idempotency records whose stored responses carry the old spellings.
+    const persisted = structuredClone(h.storage.get("management")) as {
+      angels: Array<{ environments: Record<string, unknown> }>;
+      deployments: Array<{ environment: string }>;
+      idempotency: Record<string, unknown>;
+    };
+    for (const angel of persisted.angels) {
+      angel.environments.staging = angel.environments.preview;
+      delete angel.environments.preview;
+    }
+    for (const deployment of persisted.deployments) {
+      if (deployment.environment === "preview") deployment.environment = "staging";
+    }
+    expect(Object.keys(persisted.idempotency).length).toBeGreaterThan(0);
+    h.storage.set("management", persisted);
+
+    // The dashboard read must migrate on read, not crash.
+    const state = await h.request("GET", "/api/demo/state");
+    expect(state.status).toBe(200);
+    const view = await state.json() as { schema: string; angels: Array<{ environments: Record<string, unknown> }> };
+    expect(view.schema).toBe("angelmcp.demo.v4");
+    expect(Object.keys(view.angels[0]!.environments).sort()).toEqual(["preview", "production"]);
+
+    // A pre-rename idempotency key replays nothing stale: the records are
+    // dropped at migration and the mutation re-executes idempotently.
+    const ensured = await h.request(
+      "PUT",
+      `/v1/accounts/${ACCOUNT_ID}/angels/golden-assistant`,
+      {},
+      "ensure-1",
+    );
+    expect(ensured.status).toBe(200);
+    const body = await ensured.json() as { angel: { environments: Record<string, unknown> } };
+    expect(Object.keys(body.angel.environments).sort()).toEqual(["production", "staging"]);
+  });
+});
+
 describe("account handle read-back", () => {
   test("GET /v1/accounts/{account}/handle returns the current claim and 404 before any claim", async () => {
     const h = await harness();
@@ -219,7 +262,7 @@ async function harness() {
   if (published.status !== 200) throw new Error(`publish failed: ${await published.text()}`);
   const version = await published.json() as { id: string; digest: string };
 
-  return { request, angelId: angel.id, versionId: version.id, digest: version.digest, gatewayRequests };
+  return { request, angelId: angel.id, versionId: version.id, digest: version.digest, gatewayRequests, storage };
 }
 
 /** A harness with a preview deployment already installed. */

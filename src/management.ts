@@ -117,18 +117,31 @@ export function createManagementState(input: {
  * environment's record key and recorded deployment environments move from
  * `staging` to `preview`. Same on-read pattern as the named-keys migration;
  * the migrated shape persists on the next checkpoint.
+ *
+ * Pre-rename idempotency records are dropped when the rename fires: their
+ * stored responses carry the old spellings, so replaying one would hand a
+ * stale-dialect body to the response translation. Every management mutation
+ * is idempotent by construction (ensure returns the existing Angel, publish
+ * returns the existing digest's Version), so re-executing beats replaying a
+ * shape the current code can no longer speak.
  */
-function migrateLegacyPreviewSpelling(state: ManagementState): void {
+export function migrateLegacyPreviewSpelling(state: ManagementState): void {
+  let renamed = false;
   for (const angel of state.angels) {
     const environments = angel.environments as Record<string, ManagementEnvironment>;
     if (environments.preview === undefined && environments.staging !== undefined) {
       environments.preview = environments.staging;
       delete environments.staging;
+      renamed = true;
     }
   }
   for (const deployment of state.deployments) {
-    if ((deployment.environment as string) === "staging") deployment.environment = "preview";
+    if ((deployment.environment as string) === "staging") {
+      deployment.environment = "preview";
+      renamed = true;
+    }
   }
+  if (renamed) state.idempotency = {};
 }
 
 export class ManagementControl {
@@ -326,7 +339,7 @@ export class ManagementControl {
       if (version.digest !== input.expectedDigest) {
         throw new ManagementError(409, "expected digest does not match Version");
       }
-      return this.deploy(angelId, "production", version, input.bindings);
+      return this.deploy(angelId, "production", version, input.bindings, "direct");
     });
   }
 
@@ -350,6 +363,7 @@ export class ManagementControl {
         "production",
         this.version(angelId, staged.versionId),
         input.bindings,
+        "promotion",
       );
     });
   }
@@ -399,6 +413,7 @@ export class ManagementControl {
     environment: HostedEnvironment,
     version: PublishedAngelVersion,
     bindings: Readonly<Record<string, readonly string[]>>,
+    provenance?: "promotion" | "direct",
   ): Promise<HostedDeploymentView> {
     const angel = this.angel(angelId);
     const environmentState = angel.environments[environment];
@@ -419,6 +434,7 @@ export class ManagementControl {
         digest: version.digest,
         bindings: normalizedBindings,
         runtimeBindings: this.runtimeBindings(version, normalizedBindings),
+        ...(provenance === undefined ? {} : { provenance }),
       };
       this.state.deployments.push(deployment);
       environmentState.pendingDeploymentId = deployment.id;
@@ -928,13 +944,18 @@ function installationMatches(
 }
 
 function deploymentView(deployment: ManagementDeployment): HostedDeploymentView {
-  const { runtimeBindings: _runtimeBindings, ...view } = deployment;
+  // provenance is internal view data; the /v1 contract's exact-validated
+  // deployment shape must not grow a field.
+  const { runtimeBindings: _runtimeBindings, provenance: _provenance, ...view } = deployment;
   return structuredClone(view);
 }
 
 function requiredSlug(value: string): string {
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(value)) {
-    throw new ManagementError(400, "Angel slug must be lowercase letters, numbers, and hyphens");
+  // The PD 0001 coordinate grammar (`/@handle/angel`) requires a letter-led
+  // angel segment; a digit-led slug would be a valid Angel the coordinate
+  // could never address.
+  if (!/^[a-z][a-z0-9-]*$/.test(value)) {
+    throw new ManagementError(400, "Angel slug must start with a letter and use lowercase letters, numbers, and hyphens");
   }
   return value;
 }
