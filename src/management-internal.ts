@@ -199,6 +199,13 @@ export interface EncryptedReplayRecord {
    * Angel's id (or cannot be opened at all); the rest age in place.
    */
   path?: string;
+  /**
+   * The Angel this mutation addressed, when it addressed one. Lets Angel
+   * deletion purge records whose path carries no Angel identity (the
+   * dashboard's `/api/demo/action`). Absent on pre-deletion records and on
+   * mutations that are not Angel-scoped.
+   */
+  angelId?: string;
 }
 
 export interface JsonReplayRecord {
@@ -206,6 +213,8 @@ export interface JsonReplayRecord {
   responseJson: string;
   /** See {@link EncryptedReplayRecord.path}. */
   path?: string;
+  /** See {@link EncryptedReplayRecord.angelId}. */
+  angelId?: string;
 }
 
 export type IdempotencyRecord = EncryptedReplayRecord | JsonReplayRecord;

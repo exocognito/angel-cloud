@@ -1185,6 +1185,55 @@ describe("ManagementControl delete", () => {
     expect(Object.keys(control.exportState().idempotency).sort()).toEqual(["delete-1", "legacy-other"]);
   });
 
+  test("purges dashboard-path records owned by the dead Angel", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    // Dashboard mutations run under /api/demo/action, so the coordinate and
+    // /v1/angels/<id>/ path rules never match them — the owning Angel id on
+    // the record has to carry the purge, or a sealed shown-once key response
+    // outlives its Angel.
+    await harness.control.createKey(
+      ensured.angel.id,
+      "production",
+      { name: "Dashboard key" },
+      mutation("POST", "/api/demo/action", "demo-key-1", { name: "Dashboard key" }),
+    );
+
+    await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-1", {}),
+    );
+
+    expect(Object.keys(harness.control.exportState().idempotency)).toEqual(["delete-1"]);
+  });
+
+  test("keeps earlier delete receipts: a stale delete key replays instead of deleting the recreated Angel", async () => {
+    const harness = managementHarness();
+    const first = await ensure(harness.control);
+    const staleDelete = mutation("DELETE", deletePath, "delete-k1", {});
+
+    const original = await harness.control.deleteAngel(account.id, "golden-assistant", {}, staleDelete);
+    await ensure(harness.control);
+    await harness.control.deleteAngel(
+      account.id,
+      "golden-assistant",
+      {},
+      mutation("DELETE", deletePath, "delete-k2", {}),
+    );
+    const third = await ensure(harness.control);
+
+    // A very delayed retry of the FIRST delete must replay its committed
+    // response — never run a fresh destructive delete against whichever Angel
+    // now holds the slug.
+    const replayed = await harness.control.deleteAngel(account.id, "golden-assistant", {}, staleDelete);
+
+    expect(replayed).toEqual(original);
+    expect(replayed.id).toBe(first.angel.id);
+    expect(harness.control.getAngelBySlug(account.id, "golden-assistant").id).toBe(third.angel.id);
+  });
+
   test("purges records stored under a percent-encoded coordinate path", async () => {
     const harness = managementHarness();
     // A client may percent-encode the coordinate; routing decodes it, so the

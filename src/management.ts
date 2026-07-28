@@ -18,6 +18,7 @@ import type {
   DeleteAngelResponse,
   DeployStagingRequest,
   EnsureAngelResponse,
+  IdempotencyRecord,
   ManagementAngel,
   ManagementAngelView,
   ManagementAvailabilityChange,
@@ -320,11 +321,19 @@ export class ManagementControl {
       //    Angel's replay protection survives. A sealed legacy record that
       //    cannot be opened is unattributable and purged — losing it is
       //    strictly safer than replaying a dead Angel's response.
+      //    Earlier deletes' receipts at the coordinate path are exempt: a
+      //    receipt replay is inert (it reports the original committed delete
+      //    and touches nothing), while purging one would turn a very delayed
+      //    retry into a fresh destructive delete of the slug's new holder.
       const coordinatePath = `/v1/accounts/${accountId}/angels/${slug}`;
       for (const [key, record] of Object.entries(this.state.idempotency)) {
         let purge: boolean;
         if (record.path !== undefined) {
-          purge = record.path === coordinatePath || record.path.startsWith(`/v1/angels/${angel.id}/`);
+          purge = (
+            record.path === coordinatePath
+            || record.path.startsWith(`/v1/angels/${angel.id}/`)
+            || record.angelId === angel.id
+          ) && !isDeleteReceipt(record);
         } else {
           const response = "ciphertext" in record
             ? await this.dependencies.replayVault.open(record.ciphertext).catch(() => null)
@@ -359,7 +368,7 @@ export class ManagementControl {
       this.state.versions.push(version);
       this.stamp(version.id);
       return structuredClone(version);
-    });
+    }, angelId);
   }
 
   async deployStaging(
@@ -374,7 +383,7 @@ export class ManagementControl {
         throw new ManagementError(409, "expected digest does not match Version");
       }
       return this.deploy(angelId, "staging", version, input.bindings);
-    });
+    }, angelId);
   }
 
   async promoteProduction(
@@ -398,7 +407,7 @@ export class ManagementControl {
         this.version(angelId, staged.versionId),
         input.bindings,
       );
-    });
+    }, angel.id);
   }
 
   async changeAvailability(
@@ -438,7 +447,7 @@ export class ManagementControl {
       environmentState.availabilityChangedAt = this.now();
       await this.dependencies.checkpoint.persist(this.exportState());
       return this.availabilityView(angelId, environment, environmentState.availability);
-    });
+    }, angelId);
   }
 
   private async deploy(
@@ -613,6 +622,7 @@ export class ManagementControl {
     mutation: MutationIdentity,
     encrypted: boolean,
     action: () => Promise<T>,
+    ownerAngelId?: string,
   ): Promise<T> {
     const key = mutation.idempotencyKey.trim();
     if (key === "") throw new ManagementError(400, "Idempotency-Key must be non-empty");
@@ -635,9 +645,10 @@ export class ManagementControl {
     const response = await action();
     const responseJson = JSON.stringify(response);
     const path = canonicalPath(mutation.path);
+    const owner = ownerAngelId === undefined ? {} : { angelId: ownerAngelId };
     this.state.idempotency[key] = encrypted
-      ? { fingerprint, ciphertext: await this.dependencies.replayVault.seal(responseJson), path }
-      : { fingerprint, responseJson, path };
+      ? { fingerprint, ciphertext: await this.dependencies.replayVault.seal(responseJson), path, ...owner }
+      : { fingerprint, responseJson, path, ...owner };
     await this.dependencies.checkpoint.persist(this.exportState());
     return structuredClone(response);
   }
@@ -704,7 +715,7 @@ export class ManagementControl {
       keysOf(environmentState).push(minted.key);
       await this.reconcileKeys(angel, environment);
       return { key: keyView(minted.key), plaintext: minted.plaintext };
-    });
+    }, angel.id);
   }
 
   async rotateKey(
@@ -731,7 +742,7 @@ export class ManagementControl {
       this.syncLegacyKey(environmentState);
       await this.reconcileKeys(angel, environment);
       return { key: keyView(minted.key), revokedKeyId: previous.id, plaintext: minted.plaintext };
-    });
+    }, angel.id);
   }
 
   async revokeKey(
@@ -760,7 +771,7 @@ export class ManagementControl {
       this.syncLegacyKey(environmentState);
       await this.reconcileKeys(angel, environment);
       return { key: keyView(target) };
-    });
+    }, angel.id);
   }
 
   /**
@@ -874,6 +885,17 @@ export class ManagementControl {
 export class ManagementError extends Error {
   constructor(readonly status: number, message: string) {
     super(message);
+  }
+}
+
+function isDeleteReceipt(record: IdempotencyRecord): boolean {
+  if (!("responseJson" in record)) return false;
+  try {
+    const response: unknown = JSON.parse(record.responseJson);
+    return typeof response === "object" && response !== null
+      && (response as { deleted?: unknown }).deleted === true;
+  } catch {
+    return false;
   }
 }
 
