@@ -47,6 +47,31 @@ The checked-in `ANGEL.yaml` files are the primary policy artifacts. Deployment
 identities belong in untracked `angel.json` files; safe examples use
 `angel.example.json`.
 
+## Management credentials
+
+`angel publish` and `angel deploy --prod` read two environment variables:
+
+- `ANGEL_MANAGEMENT_TOKEN` (required) — bearer token for the management API.
+- `ANGEL_ACCESS_TOKEN` (optional) — service token for a control plane behind
+  Cloudflare Access, sent as the `CF-Access-Client-ID` and
+  `CF-Access-Client-Secret` headers.
+
+`ANGEL_ACCESS_TOKEN` must be exactly this JSON object, with no surrounding
+whitespace and no other keys:
+
+```json
+{"cf-access-client-id":"<id>","cf-access-client-secret":"<secret>"}
+```
+
+The CLI rejects anything else — including a trailing newline — instead of
+trimming, because the value is a credential and silent normalisation hides
+mistakes. Secret managers often end output with a newline; strip it when
+exporting:
+
+```sh
+export ANGEL_ACCESS_TOKEN=$(op read "op://<vault>/<item>/credential" | jq -c . | tr -d '\n\r')
+```
+
 ## Distribution
 
 The source repository remains private for Milestone 0. The package is published
