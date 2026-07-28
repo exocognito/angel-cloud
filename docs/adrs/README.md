@@ -33,10 +33,16 @@ product-decisions convention.
 
 **ADR 0003's environment model is partly superseded.**
 [PD 0003](../product-decisions/0003-preview-is-opt-in.md), 2026-07-28, moves
-the second environment off the default publish path, renames it `preview`, and
-makes it share production Connections by default — close to the "copy staging
-bindings automatically" that 0003 rejected. The digest-pinned promotion of
-exact bytes, which is the heart of the record, is unchanged.
+the second environment off the default publish path and renames it `preview`.
+The digest-pinned promotion of exact bytes, which is the heart of the record,
+is unchanged.
+
+That same record also made preview share production Connections by default —
+close to the "copy staging bindings automatically" that 0003 rejected — and
+[PD 0005](../product-decisions/0005-preview-binds-its-own-connections.md)
+withdrew it the same day. **ADR 0003's binding-isolation stance stands as
+written.** Preview binds its own Connections; sharing production's is
+available and must be asked for.
 
 **The artifact format is `angel.version.v2`.** ADRs 0001 and 0004 name
 `angel.version.v1`. The compiler emits v2 and validation rejects anything else.

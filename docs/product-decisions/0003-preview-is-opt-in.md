@@ -1,9 +1,16 @@
 # PD 0003: Publishing goes live; preview is opt-in and shares credentials
 
-- Status: Agreed
+- Status: Partly superseded by [0005](0005-preview-binds-its-own-connections.md)
 - Date: 2026-07-28
 - Implemented: No
 - Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
+
+> **Point 3 was reversed the same day it was agreed.** Preview binds its own
+> Connections; it does not inherit production's. See
+> [PD 0005](0005-preview-binds-its-own-connections.md), which also retires "The
+> hazard this creates" below. Points 1 and 2 — publish goes live, the second
+> environment is called `preview` — stand as written. The text below is kept
+> verbatim, including the part that no longer holds.
 
 ## Decision
 
