@@ -167,18 +167,19 @@ export class ManagementClient {
       headers.set("CF-Access-Client-ID", accessHeaders["CF-Access-Client-ID"]);
       headers.set("CF-Access-Client-Secret", accessHeaders["CF-Access-Client-Secret"]);
     }
-    if (options.idempotencyKey !== undefined) {
-      headers.set("idempotency-key", options.idempotencyKey);
+    // Every mutation needs an Idempotency-Key, body or not. Callers that must
+    // not replay across resource recreation (delete) pass an explicit key;
+    // everything else derives one from the mutation identity.
+    if (method !== "GET") {
+      headers.set(
+        "idempotency-key",
+        options.idempotencyKey
+          ?? await sha256Hex(canonicalJson({ method, path: canonicalPath, body: body ?? {} })),
+      );
     }
     let serializedBody: string | undefined;
     if (body !== undefined) {
       headers.set("content-type", "application/json");
-      if (options.idempotencyKey === undefined) {
-        headers.set(
-          "idempotency-key",
-          await sha256Hex(canonicalJson({ method, path: canonicalPath, body })),
-        );
-      }
       serializedBody = JSON.stringify(body);
     }
     const response = await this.options.fetch(`${this.options.target}${canonicalPath}`, {
