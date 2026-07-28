@@ -24,8 +24,9 @@ describe("Broker CredentialVault", () => {
       displayName: "Family Google",
       clientId: "client-id.apps.googleusercontent.com",
       clientSecret: "provider-app-secret",
+      scopes: ["gmail.readonly", "documents.readonly"],
     });
-    expect(app).toEqual({ id: "app_google", accountId: "acct_a", provider: "google", displayName: "Family Google", clientIdSuffix: "usercontent.com" });
+    expect(app).toEqual({ id: "app_google", accountId: "acct_a", provider: "google", displayName: "Family Google", clientIdSuffix: "usercontent.com", scopes: ["documents.readonly", "gmail.readonly"] });
 
     const connection = await request(vault, "/connections", {
       accountId: "acct_a",
@@ -48,7 +49,7 @@ describe("Broker CredentialVault", () => {
     const response = await vault.fetch(new Request("https://vault.internal/provider-apps", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ accountId: "acct_b", providerAppId: "app", provider: "google", displayName: "x", clientId: "id", clientSecret: "secret" }),
+      body: JSON.stringify({ accountId: "acct_b", providerAppId: "app", provider: "google", displayName: "x", clientId: "id", clientSecret: "secret", scopes: ["gmail.readonly"] }),
     }));
     expect(response.status).toBe(403);
   });
@@ -63,16 +64,53 @@ describe("Broker CredentialVault", () => {
     const response = await vault.fetch(new Request("https://vault.internal/provider-apps", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ accountId: "acct_a", providerAppId: "app", provider: "google", displayName: "x", clientId: "id", clientSecret: "secret", extra: true }),
+      body: JSON.stringify({ accountId: "acct_a", providerAppId: "app", provider: "google", displayName: "x", clientId: "id", clientSecret: "secret", scopes: ["gmail.readonly"], extra: true }),
     }));
     expect(response.status).toBe(400);
+  });
+
+  test("Provider App scopes round-trip through the lease and list routes", async () => {
+    const vault = new CredentialVault(vaultContext("acct_a") as never, { CREDENTIAL_KEK: VALID_KEK } as never);
+    await request(vault, "/provider-apps", {
+      accountId: "acct_a",
+      providerAppId: "app_google",
+      provider: "google",
+      displayName: "Family Google",
+      clientId: "client-id.apps.googleusercontent.com",
+      clientSecret: "provider-app-secret",
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+
+    const lease = await vault.fetch(new Request("https://vault.internal/provider-apps/app_google/lease"));
+    expect(await lease.json()).toMatchObject({
+      clientId: "client-id.apps.googleusercontent.com",
+      clientSecret: "provider-app-secret",
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+
+    const list = await vault.fetch(new Request("https://vault.internal/provider-apps"));
+    expect(await list.json()).toEqual([
+      expect.objectContaining({ id: "app_google", scopes: ["https://www.googleapis.com/auth/calendar.readonly"] }),
+    ]);
+  });
+
+  test("rejects a Provider App registration with a malformed scope list", async () => {
+    const vault = new CredentialVault(vaultContext("acct_a") as never, { CREDENTIAL_KEK: VALID_KEK } as never);
+    for (const scopes of [undefined, "gmail.readonly", [], [""], ["two scopes"], [42]]) {
+      const response = await vault.fetch(new Request("https://vault.internal/provider-apps", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ accountId: "acct_a", providerAppId: "app", provider: "google", displayName: "x", clientId: "id", clientSecret: "secret", scopes }),
+      }));
+      expect(response.status).toBe(400);
+    }
   });
 
   test("preserves concurrent provider-app writes in durable storage", async () => {
     const context = vaultContext("acct_a", true);
     const vault = new CredentialVault(context as never, { CREDENTIAL_KEK: VALID_KEK } as never);
     const writes = Promise.all(["one", "two"].map((name) => request(vault, "/provider-apps", {
-      accountId: "acct_a", providerAppId: `app_${name}`, provider: "google", displayName: name, clientId: `${name}.id`, clientSecret: `${name}-secret`,
+      accountId: "acct_a", providerAppId: `app_${name}`, provider: "google", displayName: name, clientId: `${name}.id`, clientSecret: `${name}-secret`, scopes: ["gmail.readonly"],
     })));
     await context.firstGetStarted;
     context.releaseFirstGet();

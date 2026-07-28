@@ -1,5 +1,7 @@
 import { describe, expect, mock, test } from "bun:test";
-import { GOOGLE_CONSENT_SCOPES } from "../../src/google-oauth";
+import { DEFAULT_GOOGLE_PROVIDER_SCOPES, googleConsentScopes } from "../../src/google-oauth";
+
+const DEFAULT_CONSENT = googleConsentScopes(DEFAULT_GOOGLE_PROVIDER_SCOPES);
 
 mock.module("cloudflare:workers", () => ({
   DurableObject: class {
@@ -19,7 +21,7 @@ describe("Broker custody lifecycle routes", () => {
     const vault = {
       async fetch(input: string | Request) {
         expect(new URL(requestUrl(input)).pathname).toBe("/provider-apps/app_google/lease");
-        return Response.json({ clientId: "client-id", clientSecret: "provider-secret" });
+        return Response.json({ clientId: "client-id", clientSecret: "provider-secret", scopes: ["https://www.googleapis.com/auth/calendar.readonly"] });
       },
     };
     const response = await handleBrokerRequest(new Request("https://broker.internal/internal/oauth/authorize", {
@@ -37,6 +39,59 @@ describe("Broker custody lifecycle routes", () => {
     expect(authorizationUrl.searchParams.get("code_challenge")).toBe("challenge");
     expect(authorizationUrl.searchParams.get("access_type")).toBe("offline");
     expect(authorizationUrl.searchParams.get("prompt")).toBe("consent");
+    // The consent request carries the Provider App's configured scopes, not a
+    // compiled constant.
+    expect(authorizationUrl.searchParams.get("scope")?.split(" ")).toEqual([
+      "openid",
+      "email",
+      "https://www.googleapis.com/auth/calendar.readonly",
+    ]);
+  });
+
+  test("registers a Provider App by forwarding its scope set to the vault", async () => {
+    let stored: unknown;
+    const vault = {
+      async fetch(input: string | Request) {
+        const request = vaultRequest(input);
+        expect(new URL(request.url).pathname).toBe("/provider-apps");
+        stored = await request.json();
+        return Response.json({ ok: true });
+      },
+    };
+    const response = await handleBrokerRequest(new Request("https://broker.internal/internal/provider-apps", {
+      method: "POST",
+      headers: { authorization: "Bearer control-broker", "content-type": "application/json" },
+      body: JSON.stringify({ accountId: "acct_a", providerAppId: "app_google", provider: "google", displayName: "Family", clientId: "client-id", clientSecret: "secret", scopes: ["https://www.googleapis.com/auth/calendar.readonly"] }),
+    }), brokerEnv(vault), () => ({}));
+
+    expect(response.status).toBe(200);
+    expect(stored).toMatchObject({ scopes: ["https://www.googleapis.com/auth/calendar.readonly"] });
+  });
+
+  test("exchange fails closed when the grant misses a configured Provider App scope", async () => {
+    const idToken = await signedGoogleIdToken();
+    const vault = {
+      async fetch(input: string | Request) {
+        const path = new URL(requestUrl(input)).pathname;
+        if (path.endsWith("/lease")) {
+          return Response.json({ clientId: "client-id", clientSecret: "client-secret", scopes: ["https://www.googleapis.com/auth/calendar.readonly"] });
+        }
+        throw new Error(`custody must not be written for a partial grant: ${path}`);
+      },
+    };
+    const response = await handleBrokerRequest(new Request("https://broker.internal/internal/oauth/exchange", {
+      method: "POST",
+      headers: { authorization: "Bearer control-broker", "content-type": "application/json" },
+      body: JSON.stringify({ accountId: "acct_a", providerAppId: "app_google", connectionId: "con_google", nickname: "family-google", flow: "create", code: "code", codeVerifier: "verifier", redirectUri: "https://control.test/callback" }),
+    }), brokerEnv(vault), () => ({}), async (input) => {
+      const path = new URL(input.toString()).pathname;
+      if (path === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: DEFAULT_CONSENT.join(" ") });
+      if (path === "/revoke") return new Response(null, { status: 204 });
+      return Response.json({ keys: [publicJwk] });
+    });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "Google OAuth response omitted a required scope" });
   });
 
   test("healthy removal revokes upstream before delete and preserves custody on revoke failure", async () => {
@@ -125,7 +180,7 @@ describe("Broker custody lifecycle routes", () => {
         const request = vaultRequest(input);
         const path = new URL(request.url).pathname;
         calls.push(`${request.method} ${path}`);
-        if (path.endsWith("/lease")) return Response.json({ clientId: "client-id", clientSecret: "client-secret" });
+        if (path.endsWith("/lease")) return Response.json({ clientId: "client-id", clientSecret: "client-secret", scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] });
         if (path.endsWith("/reauth")) {
           expect(request.method).toBe("POST");
           const candidate = await request.json() as { refreshToken?: string };
@@ -142,7 +197,7 @@ describe("Broker custody lifecycle routes", () => {
     }), brokerEnv(vault), () => ({}), async (input, init) => {
       const url = new URL(input.toString());
       calls.push(`FETCH ${url.pathname}`);
-      if (url.pathname === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: GOOGLE_CONSENT_SCOPES.join(" ") });
+      if (url.pathname === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: DEFAULT_CONSENT.join(" ") });
       if (url.pathname === "/revoke") {
         const body = await googleRequest(input, init).text();
         expect(body).toContain("new-refresh-token");
@@ -162,7 +217,7 @@ describe("Broker custody lifecycle routes", () => {
     const vault = {
       async fetch(input: string | Request) {
         const path = new URL(requestUrl(input)).pathname;
-        if (path.endsWith("/lease")) return Response.json({ clientId: "client-id", clientSecret: "client-secret" });
+        if (path.endsWith("/lease")) return Response.json({ clientId: "client-id", clientSecret: "client-secret", scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] });
         if (path.endsWith("/reauth")) return Response.json({ error: "same Google identity required" }, { status: 409 });
         return Response.json({ error: "unexpected vault request" }, { status: 500 });
       },
@@ -173,7 +228,7 @@ describe("Broker custody lifecycle routes", () => {
       body: JSON.stringify({ accountId: "acct_a", providerAppId: "app_google", connectionId: "con_google", nickname: "family-google", flow: "reauth", code: "code", codeVerifier: "verifier", redirectUri: "https://control.test/callback" }),
     }), brokerEnv(vault), () => ({}), async (input) => {
       const path = new URL(input.toString()).pathname;
-      if (path === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: GOOGLE_CONSENT_SCOPES.join(" ") });
+      if (path === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: DEFAULT_CONSENT.join(" ") });
       if (path === "/revoke") return new Response("upstream revoke failed", { status: 503 });
       return Response.json({ keys: [publicJwk] });
     });

@@ -315,12 +315,15 @@ in the page. There is no headless API for this step.
 
 On the **Connections** page, under **Google custody**, add a private app
 nickname, a display name, and your Google OAuth client ID and secret. Configure
-the deployed `/oauth/google/callback` URL on that Google OAuth client. Angel
-Cloud requests a fixed read-only grant for identity, Gmail, and Docs.
+the deployed `/oauth/google/callback` URL on that Google OAuth client. A
+`POST /api/provider-apps` body may name the OAuth scopes the app consents to;
+without them Angel Cloud requests the read-only default grant for identity,
+Gmail, and Docs ([which scopes](faq.md#which-google-scopes-are-requested)).
 
-The Provider App list exposes its display name, provider, and client-ID suffix.
-It never returns the stored client secret — a stored Provider App keeps its
-client secret write-only, and its safe summary reads without leaking it.
+The Provider App list exposes its display name, provider, client-ID suffix, and
+scope set. It never returns the stored client secret — a stored Provider App
+keeps its client secret write-only, and its safe summary reads without leaking
+it.
 
 ### Authorize a Connection
 

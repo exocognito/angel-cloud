@@ -14,7 +14,13 @@ import {
   requireDistinctRoleCredentials,
   requireInternalRequest,
 } from "./protocol";
-import { buildGoogleAuthorizeUrl, exchangeGoogleCode, revokeGoogleRefreshToken, type GoogleFetch } from "../google-oauth";
+import {
+  buildGoogleAuthorizeUrl,
+  exchangeGoogleCode,
+  parseProviderScopes,
+  revokeGoogleRefreshToken,
+  type GoogleFetch,
+} from "../google-oauth";
 import {
   createGoogleProvider,
   GoogleRefreshAuthorizationError,
@@ -94,6 +100,7 @@ export async function handleBrokerRequest(
           state: input.state,
           codeChallenge: input.codeChallenge,
           redirectUri: input.redirectUri,
+          scopes: parseProviderScopes(app.scopes),
         }),
       });
     }
@@ -108,6 +115,7 @@ export async function handleBrokerRequest(
         code: input.code,
         codeVerifier: input.codeVerifier,
         redirectUri: input.redirectUri,
+        requiredScopes: parseProviderScopes(app.scopes),
       }, fetcher);
       const path = input.flow === "reauth"
         ? `https://vault.internal/connections/${encodeURIComponent(input.connectionId)}/reauth`
@@ -223,7 +231,7 @@ export async function handleBrokerRequest(
 }
 
 function parseProviderApp(value: unknown) {
-  const body = exactRecord(value, ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret"]);
+  const body = exactRecord(value, ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret", "scopes"]);
   if (body.provider !== "google") throw new Error("provider must be google");
   return {
     accountId: stringField(body.accountId, "accountId"),
@@ -232,6 +240,7 @@ function parseProviderApp(value: unknown) {
     displayName: stringField(body.displayName, "displayName"),
     clientId: stringField(body.clientId, "clientId"),
     clientSecret: stringField(body.clientSecret, "clientSecret"),
+    scopes: parseProviderScopes(body.scopes),
   };
 }
 

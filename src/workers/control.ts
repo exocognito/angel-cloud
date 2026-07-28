@@ -20,6 +20,7 @@ import {
   requireDistinctRoleCredentials,
 } from "./protocol";
 import { AccessAuthenticationError, authenticateAccessRequest, type AccessIdentity } from "../access";
+import { DEFAULT_GOOGLE_PROVIDER_SCOPES, parseProviderScopes } from "../google-oauth";
 import { issueOAuthState, type OAuthStateRecord } from "../oauth-state";
 import {
   managementConnectionsFromProviderSummaries,
@@ -345,9 +346,11 @@ function parseProviderAppRequest(value: unknown): {
   displayName: string;
   clientId: string;
   clientSecret: string;
+  scopes: string[];
 } {
   const body = record(value);
-  exactKeys(body, ["providerAppId", "provider", "displayName", "clientId", "clientSecret"]);
+  const baseKeys = ["providerAppId", "provider", "displayName", "clientId", "clientSecret"];
+  exactKeys(body, "scopes" in body ? [...baseKeys, "scopes"] : baseKeys);
   if (body.provider !== "google") throw new RequestError(400, "provider must be google");
   return {
     providerAppId: requiredString(body.providerAppId, "providerAppId"),
@@ -355,7 +358,17 @@ function parseProviderAppRequest(value: unknown): {
     displayName: requiredString(body.displayName, "displayName"),
     clientId: requiredString(body.clientId, "clientId"),
     clientSecret: requiredString(body.clientSecret, "clientSecret"),
+    // Registration without scopes keeps the historical default consent set.
+    scopes: "scopes" in body ? parseRequestScopes(body.scopes) : [...DEFAULT_GOOGLE_PROVIDER_SCOPES],
   };
+}
+
+function parseRequestScopes(value: unknown): string[] {
+  try {
+    return parseProviderScopes(value);
+  } catch (error) {
+    throw new RequestError(400, error instanceof Error ? error.message : "scopes is invalid");
+  }
 }
 
 function parseCreateAuthorizationRequest(value: unknown): { providerAppId: string; nickname: string } {
@@ -379,12 +392,15 @@ function parseConnectionSummary(value: unknown): ConnectionSummary {
 
 function isProviderAppSummary(value: unknown): value is ProviderAppSummary {
   if (!isRecord(value)) return false;
-  return Object.keys(value).sort().join(",") === "accountId,clientIdSuffix,displayName,id,provider"
+  return Object.keys(value).sort().join(",") === "accountId,clientIdSuffix,displayName,id,provider,scopes"
     && typeof value.id === "string"
     && typeof value.accountId === "string"
     && value.provider === "google"
     && typeof value.displayName === "string"
-    && typeof value.clientIdSuffix === "string";
+    && typeof value.clientIdSuffix === "string"
+    && Array.isArray(value.scopes)
+    && value.scopes.length > 0
+    && value.scopes.every((scope) => typeof scope === "string" && scope !== "");
 }
 
 function isConnectionSummary(value: unknown): value is ConnectionSummary {

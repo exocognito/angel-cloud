@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import {
-  GOOGLE_CONSENT_SCOPES,
-  GOOGLE_PROVIDER_SCOPES,
+  DEFAULT_GOOGLE_PROVIDER_SCOPES,
   buildGoogleAuthorizeUrl,
   exchangeGoogleCode,
+  googleConsentScopes,
+  parseProviderScopes,
   revokeGoogleRefreshToken,
   type GoogleJwk,
   type GoogleJwks,
@@ -18,35 +19,88 @@ const keyPair = await crypto.subtle.generateKey(
 const publicJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey) as unknown as GoogleJwk;
 
 describe("Google OAuth custody boundary", () => {
-  test("authorize URL requests the fixed offline consent scopes with PKCE", () => {
+  test("authorize URL requests the Provider App's scopes plus identity scopes with PKCE", () => {
     const url = new URL(buildGoogleAuthorizeUrl({
       clientId,
       redirectUri: "https://control.test/oauth/google/callback",
       state: "opaque-state",
       codeChallenge: "challenge",
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
     }));
 
     expect(url.searchParams.get("access_type")).toBe("offline");
     expect(url.searchParams.get("prompt")).toBe("consent");
     expect(url.searchParams.get("state")).toBe("opaque-state");
     expect(url.searchParams.get("code_challenge")).toBe("challenge");
-    expect(url.searchParams.get("scope")?.split(" ")).toEqual([...GOOGLE_CONSENT_SCOPES]);
+    expect(url.searchParams.get("scope")?.split(" ")).toEqual([
+      "openid",
+      "email",
+      "https://www.googleapis.com/auth/calendar.readonly",
+    ]);
+  });
+
+  test("authorize URL does not repeat an identity scope the Provider App already lists", () => {
+    const url = new URL(buildGoogleAuthorizeUrl({
+      clientId,
+      redirectUri: "https://control.test/oauth/google/callback",
+      state: "opaque-state",
+      codeChallenge: "challenge",
+      scopes: ["email", ...DEFAULT_GOOGLE_PROVIDER_SCOPES],
+    }));
+
+    expect(url.searchParams.get("scope")?.split(" ")).toEqual([
+      "openid",
+      "email",
+      ...DEFAULT_GOOGLE_PROVIDER_SCOPES,
+    ]);
+  });
+
+  test("parseProviderScopes deduplicates, sorts, and copies a valid scope list", () => {
+    const scopes = parseProviderScopes([
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/gmail.readonly",
+    ]);
+    expect(scopes).toEqual([
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/gmail.readonly",
+    ]);
+  });
+
+  test("parseProviderScopes rejects malformed scope lists", () => {
+    const malformed: unknown[] = [
+      undefined,
+      null,
+      "https://www.googleapis.com/auth/gmail.readonly",
+      [],
+      [42],
+      [""],
+      ["https://www.googleapis.com/auth/gmail.readonly", ""],
+      ["two scopes glued together"],
+      ["tab\tscope"],
+      ["newline\nscope"],
+    ];
+    for (const candidate of malformed) {
+      expect(() => parseProviderScopes(candidate)).toThrow(/scopes/);
+    }
   });
 
   test("exchanges a code only after verifying Google identity and requires a refresh token", async () => {
     const idToken = await sign({ aud: clientId, sub: "google-stable-sub", email: "sam@example.test", email_verified: true });
     const calls: Request[] = [];
+    const consentScopes = googleConsentScopes(DEFAULT_GOOGLE_PROVIDER_SCOPES);
     const result = await exchangeGoogleCode({
       clientId,
       clientSecret: "provider-secret",
       code: "google-code",
       codeVerifier: "verifier",
       redirectUri: "https://control.test/oauth/google/callback",
+      requiredScopes: DEFAULT_GOOGLE_PROVIDER_SCOPES,
     }, async (input, init) => {
       const request = makeRequest(input, init);
       calls.push(request);
       if (new URL(input.toString()).hostname === "oauth2.googleapis.com") {
-        return Response.json({ refresh_token: "refresh-token", id_token: idToken, scope: GOOGLE_CONSENT_SCOPES.join(" ") });
+        return Response.json({ refresh_token: "refresh-token", id_token: idToken, scope: consentScopes.join(" ") });
       }
       return Response.json({ keys: [{ ...publicJwk, kid: "google-key", alg: "RS256", use: "sig" }] } satisfies GoogleJwks);
     });
@@ -56,7 +110,7 @@ describe("Google OAuth custody boundary", () => {
       email: "sam@example.test",
       refreshToken: "refresh-token",
       // The stored grant is what Google actually reported, not a constant.
-      grantedScopes: [...GOOGLE_CONSENT_SCOPES].sort(),
+      grantedScopes: [...consentScopes].sort(),
     });
     const exchange = calls[0]!;
     const form = new URLSearchParams(await exchange.clone().text());
@@ -73,7 +127,7 @@ describe("Google OAuth custody boundary", () => {
 
   test("accepts API scopes from the access token when identity is proven by the signed id_token", async () => {
     const idToken = await sign({ aud: clientId, sub: "google-stable-sub", email: "sam@example.test", email_verified: true });
-    const providerScopes = [...GOOGLE_PROVIDER_SCOPES];
+    const providerScopes = [...DEFAULT_GOOGLE_PROVIDER_SCOPES];
 
     const result = await exchangeGoogleCode({
       clientId,
@@ -81,6 +135,7 @@ describe("Google OAuth custody boundary", () => {
       code: "google-code",
       codeVerifier: "verifier",
       redirectUri: "https://control.test/oauth/google/callback",
+      requiredScopes: providerScopes,
     }, async (input) => {
       if (new URL(input.toString()).hostname === "oauth2.googleapis.com") {
         return Response.json({ refresh_token: "refresh-token", id_token: idToken, scope: providerScopes.join(" ") });
@@ -91,6 +146,34 @@ describe("Google OAuth custody boundary", () => {
     expect(result.grantedScopes).toEqual([...providerScopes].sort());
   });
 
+  test("the grant floor is the Provider App's configured scopes, not a compiled constant", async () => {
+    const idToken = await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true });
+    const calendar = "https://www.googleapis.com/auth/calendar.readonly";
+
+    // A grant covering the configured set succeeds even though it covers none
+    // of the historical default scopes.
+    const result = await exchangeGoogleCode({
+      clientId,
+      clientSecret: "secret",
+      code: "code",
+      codeVerifier: "verifier",
+      redirectUri: "https://control.test/callback",
+      requiredScopes: [calendar],
+    }, googleFetcher({ idToken, token: { refresh_token: "refresh", scope: `openid email ${calendar}` } }));
+    expect(result.grantedScopes).toContain(calendar);
+
+    // A grant missing a configured scope fails, whatever else it includes.
+    await expect(exchangeGoogleCode({
+      clientId,
+      clientSecret: "secret",
+      code: "code",
+      codeVerifier: "verifier",
+      redirectUri: "https://control.test/callback",
+      requiredScopes: [calendar],
+    }, googleFetcher({ idToken, token: { refresh_token: "refresh", scope: googleConsentScopes(DEFAULT_GOOGLE_PROVIDER_SCOPES).join(" ") } })))
+      .rejects.toThrow(/omitted a required scope/);
+  });
+
   test("rejects an unverified identity, wrong audience, expired token, or missing refresh token", async () => {
     const cases = [
       { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: false }), token: { refresh_token: "refresh" } },
@@ -98,11 +181,11 @@ describe("Google OAuth custody boundary", () => {
       { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true, exp: 1 }), token: { refresh_token: "refresh" } },
       { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true }), token: {} },
       { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true }), token: { refresh_token: "refresh", scope: "openid email" } },
-      { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true }), token: { refresh_token: "refresh", scope: GOOGLE_PROVIDER_SCOPES[0] } },
-      { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true }), token: { refresh_token: "refresh", scope: GOOGLE_PROVIDER_SCOPES[1] } },
+      { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true }), token: { refresh_token: "refresh", scope: DEFAULT_GOOGLE_PROVIDER_SCOPES[0] } },
+      { idToken: await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true }), token: { refresh_token: "refresh", scope: DEFAULT_GOOGLE_PROVIDER_SCOPES[1] } },
     ];
     for (const candidate of cases) {
-      await expect(exchangeGoogleCode({ clientId, clientSecret: "secret", code: "code", codeVerifier: "verifier", redirectUri: "https://control.test/callback" }, googleFetcher(candidate)))
+      await expect(exchangeGoogleCode({ clientId, clientSecret: "secret", code: "code", codeVerifier: "verifier", redirectUri: "https://control.test/callback", requiredScopes: DEFAULT_GOOGLE_PROVIDER_SCOPES }, googleFetcher(candidate)))
         .rejects.toThrow(/Google OAuth/);
     }
   });
@@ -127,7 +210,7 @@ function googleFetcher(candidate: { idToken: string; token: Record<string, unkno
       return Response.json({
         ...candidate.token,
         id_token: candidate.idToken,
-        scope: candidate.token.scope ?? GOOGLE_CONSENT_SCOPES.join(" "),
+        scope: candidate.token.scope ?? googleConsentScopes(DEFAULT_GOOGLE_PROVIDER_SCOPES).join(" "),
       });
     }
     return Response.json({ keys: [{ ...publicJwk, kid: "google-key", alg: "RS256", use: "sig" }] } satisfies GoogleJwks);

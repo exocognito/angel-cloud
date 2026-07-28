@@ -1,3 +1,4 @@
+import { GENERATED_ADAPTERS } from "@smcllns/angel-core";
 import type { OAuthStateRecord } from "./oauth-state";
 import type { ManagementConnection } from "./management-contract";
 
@@ -7,6 +8,7 @@ export interface ProviderAppSummary {
   provider: "google";
   displayName: string;
   clientIdSuffix: string;
+  scopes: string[];
 }
 
 export interface ConnectionSummary {
@@ -59,10 +61,7 @@ export function managementConnectionsFromProviderSummaries(
       throw new Error(`Connection nickname already exists: ${summary.nickname}`);
     }
     nicknames.add(summary.nickname);
-    const providers = [
-      ...(summary.grantedScopes.includes("https://www.googleapis.com/auth/gmail.readonly") ? ["gmail"] : []),
-      ...(summary.grantedScopes.includes("https://www.googleapis.com/auth/documents.readonly") ? ["docs"] : []),
-    ];
+    const providers = providersForGrantedScopes(summary.grantedScopes);
     return {
       id: summary.id,
       accountId: summary.accountId,
@@ -74,6 +73,15 @@ export function managementConnectionsFromProviderSummaries(
       health: summary.health === "healthy" ? "healthy" as const : "error" as const,
     };
   });
+}
+
+// A Connection carries a provider label when its grant can run at least one of
+// that provider's registry operations. Derived from the adapter registry, so a
+// provider added there labels Connections without touching this file.
+export function providersForGrantedScopes(grantedScopes: readonly string[]): string[] {
+  return Object.keys(GENERATED_ADAPTERS).sort().filter((provider) =>
+    Object.values(GENERATED_ADAPTERS[provider]!.operations)
+      .some((operation) => operation.scopes.some((scope) => grantedScopes.includes(scope))));
 }
 
 export function reconcileManagementConnections(

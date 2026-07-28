@@ -241,12 +241,15 @@ reliable scheduled acceptance needs a Production OAuth app.
 
 ### Which Google scopes are requested?
 
-The consent flow requests a fixed read-only set for identity, Gmail, and Docs:
-`openid`, `email`, `https://www.googleapis.com/auth/gmail.readonly`, and
-`https://www.googleapis.com/auth/documents.readonly`
-([authorize a Connection](user-manual.md#authorize-a-connection)). That set is
-compiled into the Control worker today, so changing it needs a code change and a
-deploy. Each Connection records the scopes Google actually granted it, and the
+Each Provider App carries its own scope set, chosen when you register it
+through the management API; the consent flow requests that set plus the
+identity scopes `openid` and `email`
+([authorize a Connection](user-manual.md#authorize-a-connection)). A Provider
+App registered without scopes gets the read-only default:
+`https://www.googleapis.com/auth/documents.readonly` and
+`https://www.googleapis.com/auth/gmail.readonly`. Changing scopes means
+registering a Provider App with a different set — no code change, no deploy.
+Each Connection records the scopes Google actually granted it, and the
 Broker's reach is bounded by them.
 
 The Version still controls which pinned operations an agent can invoke; a
