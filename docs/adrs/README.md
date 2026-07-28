@@ -19,7 +19,7 @@ exactly what used to go missing.
 | --- | --- | --- | --- | --- |
 | 0001 | Separate portable policy (`ANGEL.yaml`) from deployment (`angel.json`) | Yes | Yes | — |
 | 0002 | Authenticated multi-connection selection | Yes | Yes | — |
-| 0003 | Immutable version promotion | Yes | Yes | — |
+| 0003 | Immutable version promotion | Partly — see below | Yes | — |
 | 0004 | Repository ownership at the artifact boundary | Partly — see below | Yes | — |
 | 0005 | Derive execution from the same reviewed spec as policy | Yes | Yes — the Broker executes only the sealed template (`src/workers/broker.ts:185`); the compiler side ships in `@smcllns/angel-core` | — |
 
@@ -30,6 +30,13 @@ with that archive — the first of three near-misses that produced the
 product-decisions convention.
 
 ## What has changed since
+
+**ADR 0003's environment model is partly superseded.**
+[PD 0003](../product-decisions/0003-preview-is-opt-in.md), 2026-07-28, moves
+the second environment off the default publish path, renames it `preview`, and
+makes it share production Connections by default — close to the "copy staging
+bindings automatically" that 0003 rejected. The digest-pinned promotion of
+exact bytes, which is the heart of the record, is unchanged.
 
 **The artifact format is `angel.version.v2`.** ADRs 0001 and 0004 name
 `angel.version.v1`. The compiler emits v2 and validation rejects anything else.

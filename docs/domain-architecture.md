@@ -22,9 +22,10 @@ Every surface addresses an Angel with one coordinate:
 
 - `@smcllns/inbox-zero` — production. Bare means production; the URL people
   say most often stays shortest.
-- `@smcllns/inbox-zero@staging` — staging.
+- `@smcllns/inbox-zero@preview` — preview, the opt-in second environment.
 - `@smcllns/inbox-zero@3` — reserved extension: pinned immutable Version 3,
-  for the rollback/preview work already on the deferred punch list. A pinned
+  for the rollback and inspection work already on the deferred punch list
+  (unrelated to the `@preview` environment). A pinned
   Version carries no environment (see below); the bare URL is always the
   only address that means "whatever production runs now".
 
@@ -32,7 +33,7 @@ The grammar follows npm's `@scope/name@tag`. The leading `@` is the account
 sigil everywhere; the trailing `@suffix` is the environment axis.
 
 The suffix is **one axis, not two**. An environment is a mutable pointer to a
-Version (staging points at the staged Version, production at the promoted
+Version (preview points at the previewed Version, production at the promoted
 one), so the suffix always answers the single question "which deployment
 pointer, or which pinned snapshot?" — the combination "Version N *in*
 environment E" does not exist as an address. Invocation targets an
@@ -46,13 +47,13 @@ anything else must be a name from the closed environment list, and
 are reserved and invalid as suffixes — production has exactly one spelling,
 the bare coordinate — so every Angel has one canonical production URL.
 
-The suffix set is closed and product-defined — today just `staging` (bare =
-production), with room for a small fixed set later (e.g. per-PR previews).
+The suffix set is closed and product-defined — today just `preview` (bare =
+production), with room for a small fixed set later (e.g. per-PR builds).
 The canonical validation pattern, to be reused verbatim wherever coordinates
 are parsed:
 
 ```
-^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(staging|[0-9]+))?$
+^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$
 ```
 
 Growing the set means editing one alternation in one pattern. The suffix
@@ -63,8 +64,9 @@ Consequences:
 - Account handles and Angel names must never contain `@`.
 - `@<account>` names an **Account** (Personal or Family), not a human — one
   login enters one Account, and a Family handle is shared by its members.
-- Staging and production stay independently addressed, matching the
-  exact-promotion model's independent environment bindings.
+- Preview and production stay independently addressed, matching the
+  exact-promotion model's independent environment bindings — though they
+  share Connections by default (PD 0003).
 
 ## Hosts
 
@@ -129,7 +131,7 @@ removes the collision by construction, but two rules keep it safe:
 
 ## Open questions
 
-1. Does staging need more company (per-PR previews, a third environment), and
+1. Does preview need more company (per-PR builds, a third environment), and
    if so, which names join the closed suffix alternation?
 2. What does the apex dispatcher look like — one worker routing marketing vs
    `@` pages, or marketing on Pages with a route carve-out?

@@ -13,7 +13,8 @@ One coordinate addresses an Angel on every surface:
 @<account>/<angel>[@<environment-or-version>]
 ```
 
-`@smcllns/inbox-zero` is production. `@smcllns/inbox-zero@staging` is staging.
+`@smcllns/inbox-zero` is production. `@smcllns/inbox-zero@staging` is the
+second environment — renamed `@preview` on 2026-07-28, see Amended below.
 `@smcllns/inbox-zero@3` is pinned Version 3.
 
 Bare means production. `latest` and `production` are reserved and invalid as
@@ -76,8 +77,9 @@ This gap has no dependency on owning `angelmcp.ai`. The coordinate would work
 on the current `workers.dev` host today, so the two are separable and only
 the host move is tracked.
 
-## Open
+## Amended
 
-The suffix vocabulary is under review. `@staging` is operator language; the
-same slot could read `@preview` without touching the grammar, the one-axis
-rule, or anything above. Whatever wins edits one alternation in one pattern.
+The suffix vocabulary was left open here and settled on 2026-07-28 by
+[PD 0003](0003-preview-is-opt-in.md): the slot reads `@preview`, not
+`@staging`. The grammar, the one-axis rule, and everything else above are
+unaffected — it edits one alternation in one pattern.
