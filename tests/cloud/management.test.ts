@@ -46,6 +46,16 @@ const connections = [
     grantedScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
     health: "healthy" as const,
   },
+  {
+    id: "con_broad_google",
+    accountId: account.id,
+    nickname: "broad-google",
+    identityLabel: "sam@broad.example",
+    credential: "google_oauth" as const,
+    providers: ["gmail"],
+    grantedScopes: ["https://www.googleapis.com/auth/gmail.modify"],
+    health: "healthy" as const,
+  },
 ];
 
 describe("ManagementControl", () => {
@@ -153,6 +163,21 @@ describe("ManagementControl", () => {
     await expect(stage(control, ensured.angel.id, version, artifact.digest, {
       gmail: ["con_work_google"],
     })).rejects.toThrow(/scope/);
+  });
+
+  test("accepts a binding whose broader grant covers every bound operation through the registry", async () => {
+    const { control } = managementHarness();
+    const ensured = await ensure(control);
+    // The artifact's spec-derived consent is gmail.readonly, but gmail.modify
+    // is an accepted scope for messages.list in the registry — the floor is
+    // whether the grant can run each bound operation, not the literal set.
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(control, ensured.angel.id, artifact);
+    await expect(stage(control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_broad_google"],
+    })).resolves.toBeDefined();
   });
 
   test("rejects an artifact whose sealed request disagrees with the reviewed registry", async () => {

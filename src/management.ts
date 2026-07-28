@@ -8,7 +8,7 @@ import type {
   GateToolBinding,
 } from "./gate";
 import { sha256Hex } from "@smcllns/angel-core";
-import { canonicalJson, validateArtifactAdapters } from "@smcllns/angel-core";
+import { GENERATED_ADAPTERS, canonicalJson, validateArtifactAdapters } from "@smcllns/angel-core";
 import type { StoredManagementConnection } from "./management-internal";
 import type {
   AgentKey,
@@ -469,14 +469,20 @@ export class ManagementControl {
         ) {
           throw new ManagementError(404, `Connection for binding ${id} not found`);
         }
-        // Granted scopes must cover the requirement's spec-derived consent —
-        // a write Angel must fail here, not at Google after deployment.
+        // The grant must be able to run every bound operation — judged
+        // against the registry's accepted scopes per operation, so a broader
+        // grant than the artifact's spec-derived consent still binds. A write
+        // Angel must fail here, not at Google after deployment.
         const granted = connection.grantedScopes ?? [];
-        const missing = requirement.requiredScopes.filter((scope) => !granted.includes(scope));
-        if (missing.length > 0) {
+        const operations = GENERATED_ADAPTERS[requirement.provider]?.operations ?? {};
+        const uncovered = requirement.tools.filter((tool) => {
+          const accepted = operations[tool]?.scopes ?? [];
+          return !accepted.some((scope) => granted.includes(scope));
+        });
+        if (uncovered.length > 0) {
           throw new ManagementError(
             409,
-            `Connection for binding ${id} is missing required scopes: ${missing.join(", ")}`,
+            `Connection for binding ${id} is missing a scope for: ${uncovered.join(", ")}`,
           );
         }
       }
