@@ -144,11 +144,13 @@ describe("the PD 0001 coordinate answers MCP", () => {
     expect(response.status).toBe(404);
   });
 
-  test("non-POST methods on the coordinate get 405", async () => {
+  // GET and HEAD on the coordinate now serve the public Angel page (PD 0002),
+  // covered in public-angel-page.test.ts. Every other non-POST method stays 405.
+  test("non-POST, non-page methods on the coordinate get 405", async () => {
     const { env } = await coordinateEnv({ resolutions: { smcllns: "acct_m1" } });
     const response = await handleGatewayRequest(new Request(
       "https://gateway.example/@smcllns/golden-assistant",
-      { method: "GET", headers: { accept } },
+      { method: "DELETE", headers: { accept } },
     ), env);
     expect(response.status).toBe(405);
   });

@@ -4,6 +4,8 @@
     "types/gateway.d.ts",
     "src/domain.ts",
     "src/gate.ts",
+    "src/public-angel-page.ts",
+    "src/tool-labels.ts",
     "src/workers/gate-object.ts",
     "src/workers/protocol.ts",
     "src/workers/gateway.ts"
