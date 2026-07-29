@@ -12,7 +12,7 @@ mock.module("cloudflare:workers", () => ({
 }));
 
 const { handleControlRequest } = await import("../../src/workers/control");
-const { reconcileManagementConnections } = await import("../../src/provider-management");
+const { managementConnectionsFromProviderSummaries, reconcileManagementConnections } = await import("../../src/provider-management");
 
 describe("Provider custody reconciliation", () => {
   test("authorize accepts a nickname and generates the opaque Connection ID", async () => {
@@ -117,6 +117,32 @@ describe("Provider custody reconciliation", () => {
       ...expected,
       health: "error",
     }]);
+  });
+
+  test("provider labels come from the adapter registry, not a literal scope list", () => {
+    const providersFor = (grantedScopes: string[]) => managementConnectionsFromProviderSummaries("acct_m1", [{
+      id: "con_x",
+      accountId: "acct_m1",
+      nickname: "x",
+      providerAppId: "app_google",
+      provider: "google",
+      displayName: "x@example.test",
+      grantedScopes,
+      health: "healthy",
+    }])[0]!.providers;
+
+    expect(providersFor(["https://www.googleapis.com/auth/gmail.readonly"])).toEqual(["gmail"]);
+    expect(providersFor(["https://www.googleapis.com/auth/documents.readonly"])).toEqual(["docs"]);
+    expect(providersFor([
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/documents.readonly",
+    ])).toEqual(["docs", "gmail"]);
+    // A broader grant than the historical constants still labels the provider:
+    // gmail.modify can run registry gmail operations even though it is not the
+    // readonly scope the old literal check looked for.
+    expect(providersFor(["https://www.googleapis.com/auth/gmail.modify"])).toEqual(["gmail"]);
+    // A grant no registry operation accepts labels nothing.
+    expect(providersFor(["openid", "email"])).toEqual([]);
   });
 
   test("reconciliation handles an empty Account and rejects mixed-account summaries", () => {

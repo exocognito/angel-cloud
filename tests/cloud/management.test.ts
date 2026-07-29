@@ -17,6 +17,7 @@ import {
   AesGcmResponseReplayVault,
   ManagementControl,
   ManagementError,
+  bindingOperationGaps,
   createManagementState,
   type ManagementDependencies,
   type ResponseReplayVault,
@@ -45,6 +46,28 @@ const connections = [
     credential: "google_oauth" as const,
     providers: ["gmail"],
     grantedScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+    health: "healthy" as const,
+  },
+  {
+    id: "con_broad_google",
+    accountId: account.id,
+    nickname: "broad-google",
+    identityLabel: "sam@broad.example",
+    credential: "google_oauth" as const,
+    providers: ["gmail"],
+    grantedScopes: ["https://www.googleapis.com/auth/gmail.modify"],
+    health: "healthy" as const,
+  },
+  {
+    id: "con_unlabeled_google",
+    accountId: account.id,
+    nickname: "unlabeled-google",
+    identityLabel: "sam@unlabeled.example",
+    credential: "google_oauth" as const,
+    // A grant no registry operation accepts — possible now that a Provider
+    // App can consent to out-of-registry scopes.
+    providers: [],
+    grantedScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
     health: "healthy" as const,
   },
 ];
@@ -151,9 +174,86 @@ describe("ManagementControl", () => {
       requirement("gmail", "gmail", ["gmail.users.messages.list", "gmail.users.drafts.create"]),
     ]);
     const version = await publish(control, ensured.angel.id, artifact);
+    // The 409 names the uncovered operation and the scopes that would cover
+    // it, so the operator knows what to grant without reading the registry.
     await expect(stage(control, ensured.angel.id, version, artifact.digest, {
       gmail: ["con_work_google"],
-    })).rejects.toThrow(/scope/);
+    })).rejects.toThrow(/gmail\.users\.drafts\.create \(needs one of: .*gmail\.compose/);
+  });
+
+  test("the binding floor separates registry-absent operations from scope gaps", () => {
+    const readonly = ["https://www.googleapis.com/auth/gmail.readonly"];
+    // A stored Version can carry an operation the deployed registry no longer
+    // ships (core version skew); that is a registry mismatch, not a scope gap.
+    expect(bindingOperationGaps("gmail", ["gmail.users.vanished"], readonly)).toEqual({
+      unknown: ["gmail.users.vanished"],
+      uncovered: [],
+    });
+    expect(bindingOperationGaps("gmail", ["gmail.users.drafts.create"], readonly)).toEqual({
+      unknown: [],
+      uncovered: [{
+        tool: "gmail.users.drafts.create",
+        accepted: [
+          "https://mail.google.com/",
+          "https://www.googleapis.com/auth/gmail.addons.current.action.compose",
+          "https://www.googleapis.com/auth/gmail.compose",
+          "https://www.googleapis.com/auth/gmail.modify",
+        ],
+      }],
+    });
+    expect(bindingOperationGaps("gmail", ["gmail.users.messages.list"], readonly)).toEqual({
+      unknown: [],
+      uncovered: [],
+    });
+  });
+
+  test("registry-mismatch guidance wins over the provider-label 409 under version skew", async () => {
+    const seed = managementHarness();
+    const ensured = await ensure(seed.control);
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(seed.control, ensured.angel.id, artifact);
+    // Simulate a Version published against an older registry that still
+    // shipped an operation the deployed registry no longer carries.
+    const skewed = seed.control.exportState();
+    skewed.versions[0]!.artifact.bindingRequirements[0]!.tools.push("gmail.users.vanished");
+    const control = ManagementControl.restore(skewed, seed.dependencies);
+    // Even when the bound Connection also lacks the provider label, the
+    // actionable diagnosis is the republish, not a futile reauthorization.
+    await expect(stage(control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_unlabeled_google"],
+    })).rejects.toThrow(/absent from the deployed adapter registry/);
+  });
+
+  test("a healthy Connection with no usable scope for the provider gets a 409, not a 404", async () => {
+    const { control } = managementHarness();
+    const ensured = await ensure(control);
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(control, ensured.angel.id, artifact);
+    // The Connection exists and is healthy — hiding it behind "not found"
+    // would misdiagnose an out-of-registry consent as a missing record. The
+    // per-operation 409 names the scopes that would fix it.
+    await expect(stage(control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_unlabeled_google"],
+    })).rejects.toThrow(/gmail\.users\.messages\.list \(needs one of:/);
+  });
+
+  test("accepts a binding whose broader grant covers every bound operation through the registry", async () => {
+    const { control } = managementHarness();
+    const ensured = await ensure(control);
+    // The artifact's spec-derived consent is gmail.readonly, but gmail.modify
+    // is an accepted scope for messages.list in the registry — the floor is
+    // whether the grant can run each bound operation, not the literal set.
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(control, ensured.angel.id, artifact);
+    await expect(stage(control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_broad_google"],
+    })).resolves.toBeDefined();
   });
 
   test("rejects an artifact whose sealed request disagrees with the reviewed registry", async () => {

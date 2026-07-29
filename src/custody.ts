@@ -1,3 +1,5 @@
+import { DEFAULT_GOOGLE_PROVIDER_SCOPES, parseProviderScopes } from "./google-oauth";
+
 export interface EncryptedValue {
   version: 1;
   algorithm: "AES-GCM";
@@ -12,6 +14,9 @@ export interface StoredProviderApp {
   displayName: string;
   clientId: string;
   clientSecret: EncryptedValue;
+  // Absent on records stored before scopes became configurable; those read as
+  // DEFAULT_GOOGLE_PROVIDER_SCOPES, the set that was compiled in at the time.
+  scopes?: string[];
 }
 
 export interface StoredConnection {
@@ -45,6 +50,7 @@ export interface StoreProviderAppInput {
   displayName: string;
   clientId: string;
   clientSecret: string;
+  scopes: string[];
 }
 
 export interface StoreConnectionInput {
@@ -65,6 +71,7 @@ export interface ProviderAppSummary {
   provider: "google";
   displayName: string;
   clientIdSuffix: string;
+  scopes: string[];
 }
 
 export interface ProviderAppCredentialLease {
@@ -73,6 +80,7 @@ export interface ProviderAppCredentialLease {
   provider: "google";
   clientId: string;
   clientSecret: string;
+  scopes: string[];
 }
 
 export interface ConnectionSummary {
@@ -134,6 +142,7 @@ export class EnvelopeCustody {
     validateText(input.displayName, "displayName");
     validateText(input.clientId, "clientId");
     validateText(input.clientSecret, "clientSecret");
+    const scopes = parseProviderScopes(input.scopes);
     const { account, dek } = await this.accountForWrite(input.accountId);
     if (account.providerApps[input.providerAppId] !== undefined) {
       throw new Error(`Provider App already exists: ${input.providerAppId}`);
@@ -149,6 +158,7 @@ export class EnvelopeCustody {
         input.clientSecret,
         providerAppAad(input.accountId, input.providerAppId),
       ),
+      scopes,
     };
     return this.getProviderApp(input.accountId, input.providerAppId);
   }
@@ -266,6 +276,7 @@ export class EnvelopeCustody {
       provider: record.provider,
       displayName: record.displayName,
       clientIdSuffix: record.clientId.slice(-15),
+      scopes: [...(record.scopes ?? DEFAULT_GOOGLE_PROVIDER_SCOPES)],
     };
   }
 
@@ -282,6 +293,7 @@ export class EnvelopeCustody {
       provider: providerApp.provider,
       clientId: providerApp.clientId,
       clientSecret: await decryptText(dek, providerApp.clientSecret, providerAppAad(accountId, providerAppId)),
+      scopes: [...(providerApp.scopes ?? DEFAULT_GOOGLE_PROVIDER_SCOPES)],
     };
   }
 
@@ -516,7 +528,14 @@ function validateState(state: CustodyState): void {
       if (
         !isRecord(providerApp) || providerApp.id !== id || providerApp.accountId !== accountId ||
         providerApp.provider !== "google" || typeof providerApp.displayName !== "string" ||
-        typeof providerApp.clientId !== "string"
+        typeof providerApp.clientId !== "string" ||
+        // scopes is absent on pre-scope records and a non-empty string list on
+        // everything stored since.
+        (providerApp.scopes !== undefined && (
+          !Array.isArray(providerApp.scopes) ||
+          providerApp.scopes.length === 0 ||
+          !providerApp.scopes.every((scope) => typeof scope === "string" && scope !== "")
+        ))
       ) {
         throw new CustodyIntegrityError("Stored custody state is malformed");
       }

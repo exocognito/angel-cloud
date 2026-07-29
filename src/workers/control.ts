@@ -24,6 +24,7 @@ import {
   requireDistinctRoleCredentials,
 } from "./protocol";
 import { AccessAuthenticationError, authenticateAccessRequest, type AccessIdentity } from "../access";
+import { DEFAULT_GOOGLE_PROVIDER_SCOPES, parseProviderScopes } from "../google-oauth";
 import { issueOAuthState, type OAuthStateRecord } from "../oauth-state";
 import {
   managementConnectionsFromProviderSummaries,
@@ -416,7 +417,7 @@ async function providerConnection(
 async function brokerProviderApps(env: ControlRequestEnv, accountId: string): Promise<ProviderAppSummary[]> {
   const value = await brokerJson(env, `/internal/provider-apps?accountId=${encodeURIComponent(accountId)}`, "GET");
   if (!Array.isArray(value) || !value.every(isProviderAppSummary)) throw new Error("Broker returned an invalid Provider App list");
-  return value;
+  return value.map(withDefaultScopes);
 }
 
 async function reconcileProviderConnections(
@@ -494,9 +495,11 @@ function parseProviderAppRequest(value: unknown): {
   displayName: string;
   clientId: string;
   clientSecret: string;
+  scopes: string[];
 } {
   const body = record(value);
-  exactKeys(body, ["providerAppId", "provider", "displayName", "clientId", "clientSecret"]);
+  const baseKeys = ["providerAppId", "provider", "displayName", "clientId", "clientSecret"];
+  exactKeys(body, "scopes" in body ? [...baseKeys, "scopes"] : baseKeys);
   if (body.provider !== "google") throw new RequestError(400, "provider must be google");
   return {
     providerAppId: requiredString(body.providerAppId, "providerAppId"),
@@ -504,7 +507,17 @@ function parseProviderAppRequest(value: unknown): {
     displayName: requiredString(body.displayName, "displayName"),
     clientId: requiredString(body.clientId, "clientId"),
     clientSecret: requiredString(body.clientSecret, "clientSecret"),
+    // Registration without scopes keeps the historical default consent set.
+    scopes: "scopes" in body ? parseRequestScopes(body.scopes) : [...DEFAULT_GOOGLE_PROVIDER_SCOPES],
   };
+}
+
+function parseRequestScopes(value: unknown): string[] {
+  try {
+    return parseProviderScopes(value);
+  } catch (error) {
+    throw new RequestError(400, error instanceof Error ? error.message : "scopes is invalid");
+  }
 }
 
 function parseCreateAuthorizationRequest(value: unknown): { providerAppId: string; nickname: string } {
@@ -518,7 +531,7 @@ function parseCreateAuthorizationRequest(value: unknown): { providerAppId: strin
 
 function parseProviderAppSummary(value: unknown): ProviderAppSummary {
   if (!isRecord(value) || !isProviderAppSummary(value)) throw new Error("Broker returned an invalid Provider App summary");
-  return value;
+  return withDefaultScopes(value);
 }
 
 function parseConnectionSummary(value: unknown): ConnectionSummary {
@@ -526,14 +539,27 @@ function parseConnectionSummary(value: unknown): ConnectionSummary {
   return value;
 }
 
-function isProviderAppSummary(value: unknown): value is ProviderAppSummary {
+// A pre-scope Broker (rollback, or the window before its deploy) emits the
+// old five-key summary; read it as carrying the historical default set.
+function isProviderAppSummary(value: unknown): value is Omit<ProviderAppSummary, "scopes"> & { scopes?: string[] } {
   if (!isRecord(value)) return false;
-  return Object.keys(value).sort().join(",") === "accountId,clientIdSuffix,displayName,id,provider"
+  const keys = Object.keys(value).sort().join(",");
+  return (
+    keys === "accountId,clientIdSuffix,displayName,id,provider"
+    || (keys === "accountId,clientIdSuffix,displayName,id,provider,scopes"
+      && Array.isArray(value.scopes)
+      && value.scopes.length > 0
+      && value.scopes.every((scope) => typeof scope === "string" && scope !== ""))
+  )
     && typeof value.id === "string"
     && typeof value.accountId === "string"
     && value.provider === "google"
     && typeof value.displayName === "string"
     && typeof value.clientIdSuffix === "string";
+}
+
+function withDefaultScopes(summary: Omit<ProviderAppSummary, "scopes"> & { scopes?: string[] }): ProviderAppSummary {
+  return { ...summary, scopes: summary.scopes ?? [...DEFAULT_GOOGLE_PROVIDER_SCOPES] };
 }
 
 function isConnectionSummary(value: unknown): value is ConnectionSummary {

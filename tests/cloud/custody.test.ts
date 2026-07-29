@@ -5,6 +5,7 @@ import {
   EnvelopeCustody,
   type CustodyState,
 } from "../../src/custody";
+import { DEFAULT_GOOGLE_PROVIDER_SCOPES } from "../../src/google-oauth";
 
 const KEK = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
 const OTHER_KEK = Uint8Array.from({ length: 32 }, (_, index) => 255 - index);
@@ -18,6 +19,7 @@ async function populatedCustody(): Promise<EnvelopeCustody> {
     displayName: "Family Google",
     clientId: "client-id.apps.googleusercontent.com",
     clientSecret: "provider-app-secret",
+    scopes: ["gmail.readonly", "documents.readonly"],
   });
   await custody.storeConnection({
     accountId: "acct_a",
@@ -43,6 +45,7 @@ describe("envelope credential custody", () => {
       provider: "google",
       displayName: "Family Google",
       clientIdSuffix: "usercontent.com",
+      scopes: ["documents.readonly", "gmail.readonly"],
     });
     expect(custody.getConnection("acct_a", "con_google")).toEqual({
       id: "con_google",
@@ -93,8 +96,34 @@ describe("envelope credential custody", () => {
       provider: "google",
       clientId: "client-id.apps.googleusercontent.com",
       clientSecret: "provider-app-secret",
+      scopes: ["documents.readonly", "gmail.readonly"],
     });
     expect(JSON.stringify(custody.getProviderApp("acct_a", "app_google"))).not.toContain("provider-app-secret");
+  });
+
+  test("a pre-scope stored Provider App reads with the default scope set", async () => {
+    const original = await populatedCustody();
+    const persisted = JSON.parse(JSON.stringify(original.exportState())) as CustodyState;
+    delete (persisted.accounts.acct_a!.providerApps.app_google as unknown as Record<string, unknown>).scopes;
+    const restored = await EnvelopeCustody.create(KEK, persisted);
+
+    expect(restored.getProviderApp("acct_a", "app_google").scopes).toEqual([...DEFAULT_GOOGLE_PROVIDER_SCOPES]);
+    expect((await restored.leaseProviderApp("acct_a", "app_google")).scopes).toEqual([...DEFAULT_GOOGLE_PROVIDER_SCOPES]);
+  });
+
+  test("storing a Provider App rejects malformed scope lists", async () => {
+    const custody = await EnvelopeCustody.create(KEK);
+    for (const scopes of [undefined, "gmail.readonly", [], [""], ["two scopes"], [42]]) {
+      await expect(custody.storeProviderApp({
+        accountId: "acct_a",
+        providerAppId: "app_bad",
+        provider: "google",
+        displayName: "Bad",
+        clientId: "bad.apps.googleusercontent.com",
+        clientSecret: "secret",
+        scopes: scopes as string[],
+      })).rejects.toThrow(/scopes/);
+    }
   });
 
   test("each Account has one wrapped DEK and every secret encryption uses a fresh nonce", async () => {
@@ -111,6 +140,7 @@ describe("envelope credential custody", () => {
         displayName: providerAppId,
         clientId: `${providerAppId}.apps.googleusercontent.com`,
         clientSecret: "same-secret",
+        scopes: ["gmail.readonly"],
       });
     }
 
@@ -178,6 +208,7 @@ describe("envelope credential custody", () => {
       displayName: "Other Google",
       clientId: "other.apps.googleusercontent.com",
       clientSecret: "other-secret",
+      scopes: ["gmail.readonly"],
     });
     const before = await custody.leaseConnection("acct_a", "con_google");
     for (const input of [

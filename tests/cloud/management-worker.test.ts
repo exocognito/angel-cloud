@@ -484,6 +484,99 @@ describe("management resource routes", () => {
 });
 
 describe("AccountRegistry management persistence", () => {
+  test("the demo state read reconciles Connections from the Broker before building the view", async () => {
+    const storage = new Map<string, unknown>();
+    let brokerReads = 0;
+    const brokerGates = keyGateService("broker", []);
+    const env = {
+      ...registryEnv(),
+      GATEWAY_BASE_URL: "https://gateway.test",
+      GATEWAY: keyGateService("gateway", []),
+      BROKER: {
+        fetch: async (input: string | URL | Request, init?: RequestInit) => {
+          const url = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url);
+          if (url.pathname !== "/internal/connections") return brokerGates.fetch(input, init);
+          brokerReads += 1;
+          // The Broker is the custody source of truth; a revocation there must
+          // reach the demo view on the next state read, not the next refresh.
+          return Response.json(fixtureConnectionSummaries("acct_demo").map((summary) => ({ ...summary, health: "revoked" })));
+        },
+      },
+    };
+    const registry = new AccountRegistry({
+      storage: {
+        get: async (key: string) => storage.get(key),
+        put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      },
+    } as never, env as never);
+    valueOf(await registry.dispatchJson({
+      operation: "ensure_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      mutation: { method: "PUT", path: "/v1/accounts/acct_demo/angels/golden-assistant", idempotencyKey: "ensure-state", body: {} },
+    }));
+
+    valueOf(await registry.dispatchJson({ operation: "state" }));
+
+    expect(brokerReads).toBe(1);
+    const providers = storage.get("providers") as { connections: { health: string }[] };
+    expect(providers.connections.length).toBeGreaterThan(0);
+    expect(providers.connections.every((connection) => connection.health === "revoked")).toBe(true);
+  });
+
+  test("a Broker outage degrades the state read to the stored view instead of blanking the dashboard", async () => {
+    const storage = new Map<string, unknown>();
+    let brokerHealthy = true;
+    const brokerGates = keyGateService("broker", []);
+    const env = {
+      ...registryEnv(),
+      GATEWAY_BASE_URL: "https://gateway.test",
+      GATEWAY: keyGateService("gateway", []),
+      BROKER: {
+        fetch: async (input: string | URL | Request, init?: RequestInit) => {
+          const url = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url);
+          if (url.pathname !== "/internal/connections") return brokerGates.fetch(input, init);
+          if (!brokerHealthy) return Response.json({ error: "broker down" }, { status: 503 });
+          return Response.json(fixtureConnectionSummaries("acct_demo"));
+        },
+      },
+    };
+    const registry = new AccountRegistry({
+      storage: {
+        get: async (key: string) => storage.get(key),
+        put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      },
+    } as never, env as never);
+    valueOf(await registry.dispatchJson({
+      operation: "ensure_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      mutation: { method: "PUT", path: "/v1/accounts/acct_demo/angels/golden-assistant", idempotencyKey: "ensure-outage", body: {} },
+    }));
+    valueOf(await registry.dispatchJson({ operation: "state" }));
+
+    // The stored view still serves — the operator keeps Pause all and the
+    // activity feed; the custody panel reports the Broker failure separately.
+    brokerHealthy = false;
+    const degraded = JSON.parse(await registry.dispatchJson({ operation: "state" })) as { ok: boolean };
+    expect(degraded.ok).toBe(true);
+  });
+
+  test("a state read of an uninitialized demo Account stays a 409 and writes nothing", async () => {
+    const storage = new Map<string, unknown>();
+    const registry = new AccountRegistry({
+      storage: {
+        get: async (key: string) => storage.get(key),
+        put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      },
+    } as never, { ...registryEnv(), GATEWAY_BASE_URL: "https://gateway.test" } as never);
+
+    const result = JSON.parse(await registry.dispatchJson({ operation: "state" })) as { ok: boolean; status?: number };
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe(409);
+    expect(storage.size).toBe(0);
+  });
+
   test("persists encrypted ensure replay state and dispatches resource reads", async () => {
     const storage = new Map<string, unknown>();
     const registry = new AccountRegistry({

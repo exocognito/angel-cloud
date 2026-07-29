@@ -12,6 +12,7 @@ mock.module("cloudflare:workers", () => ({
 }));
 
 const { handleControlRequest } = await import("../../src/workers/control");
+const { DEFAULT_GOOGLE_PROVIDER_SCOPES } = await import("../../src/google-oauth");
 
 describe("Access-authenticated browser Provider API", () => {
   test("lists, creates, authorizes, and completes a callback with a fixed server URI", async () => {
@@ -106,6 +107,61 @@ describe("Access-authenticated browser Provider API", () => {
     expect(harness.brokerRequests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toContain("POST /internal/oauth/remove");
   });
 
+  test("a Provider App created without scopes gets the default set; a configured set passes through", async () => {
+    const harness = makeHarness("access-user");
+    const unconfigured = await request(harness, "/api/provider-apps", "POST", {
+      providerAppId: "app_google",
+      provider: "google",
+      displayName: "Family Google",
+      clientId: "client-id",
+      clientSecret: "secret",
+    });
+    expect(unconfigured.status).toBe(200);
+    expect(await providerAppCreateBody(harness, 0)).toMatchObject({ scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] });
+
+    const configured = await request(harness, "/api/provider-apps", "POST", {
+      providerAppId: "app_calendar",
+      provider: "google",
+      displayName: "Calendar Google",
+      clientId: "client-id",
+      clientSecret: "secret",
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+    expect(configured.status).toBe(200);
+    expect(await providerAppCreateBody(harness, 1)).toMatchObject({
+      scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    });
+  });
+
+  test("accepts a pre-scope Broker's five-key Provider App summaries and defaults their scopes", async () => {
+    const harness = makeHarness("access-user");
+    // A rolled-back or not-yet-deployed Broker still emits the old shape;
+    // the Connections page must keep working through that window.
+    const { scopes: _scopes, ...legacyApp } = harness.app;
+    harness.legacyBrokerApp = legacyApp;
+    const listed = await request(harness, "/api/provider-apps");
+    expect(listed.status).toBe(200);
+    expect(await listed.json()).toEqual([
+      { ...legacyApp, scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] },
+    ]);
+  });
+
+  test("rejects a Provider App registration with a malformed scope list", async () => {
+    for (const scopes of ["gmail.readonly", [], [""], ["two scopes"], [42], [null]]) {
+      const harness = makeHarness("access-user");
+      const response = await request(harness, "/api/provider-apps", "POST", {
+        providerAppId: "app_google",
+        provider: "google",
+        displayName: "Family Google",
+        clientId: "client-id",
+        clientSecret: "secret",
+        scopes,
+      });
+      expect(response.status).toBe(400);
+      expect(harness.brokerRequests).toHaveLength(0);
+    }
+  });
+
   test("rejects a non-HTTPS or non-origin Control base URL", async () => {
     for (const baseUrl of ["http://control.test", "https://control.test/base", "https://control.test/?unsafe=1", "https://user:pass@control.test"]) {
       const harness = makeHarness("access-user");
@@ -119,13 +175,20 @@ describe("Access-authenticated browser Provider API", () => {
 
 type Harness = ReturnType<typeof makeHarness>;
 
+async function providerAppCreateBody(harness: Harness, index: number): Promise<Record<string, unknown>> {
+  const creates = harness.brokerRequests.filter((request) =>
+    request.method === "POST" && new URL(request.url).pathname === "/internal/provider-apps");
+  return await creates[index]!.clone().json() as Record<string, unknown>;
+}
+
 function makeHarness(subject: string) {
-  const app = { id: "app_google", accountId: "acct_m1", provider: "google" as const, displayName: "Family Google", clientIdSuffix: "client-id" };
+  const app = { id: "app_google", accountId: "acct_m1", provider: "google" as const, displayName: "Family Google", clientIdSuffix: "client-id", scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] };
   const connection = { id: "con_google", accountId: "acct_m1", nickname: "family-google", providerAppId: "app_google", provider: "google" as const, displayName: "sam@example.test", grantedScopes: ["openid", "email"], health: "healthy" as const };
   const states = new Map<string, { accessSubject: string; providerAppId: string; connectionId: string; nickname: string; codeVerifier: string; redirectUri: string; flow: "create" | "reauth" }>();
   const brokerRequests: Request[] = [];
   const registryCommands: unknown[] = [];
   let savedConnection: typeof connection | undefined;
+  let legacyBrokerApp: unknown;
   let authorizationState = "";
   let codeVerifier = "";
   let authorizationBody: Record<string, unknown> | undefined;
@@ -176,7 +239,7 @@ function makeHarness(subject: string) {
         const request = serviceRequest(input, init);
         brokerRequests.push(request.clone());
         const path = new URL(request.url).pathname;
-        if (path === "/internal/provider-apps") return request.method === "GET" ? Response.json([app]) : Response.json(app);
+        if (path === "/internal/provider-apps") return request.method === "GET" ? Response.json([legacyBrokerApp ?? app]) : Response.json(app);
         if (path === "/internal/connections") return Response.json([connection]);
         if (path === "/internal/oauth/authorize") {
           authorizationBody = await request.clone().json() as Record<string, unknown>;
@@ -205,6 +268,7 @@ function makeHarness(subject: string) {
     get codeVerifier() { return codeVerifier; },
     set subject(value: string) { subject = value; },
     get subject() { return subject; },
+    set legacyBrokerApp(value: unknown) { legacyBrokerApp = value; },
   };
 }
 

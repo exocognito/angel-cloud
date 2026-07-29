@@ -100,6 +100,24 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     try {
       switch (command.operation) {
         case "state":
+          // The Broker is the custody source of truth: promotion readiness and
+          // provider labels are computed from Connection health and granted
+          // scopes, so the view should render from a fresh copy. Only for an
+          // initialized Account — reconciling first would silently create
+          // management state and erase the "not initialized" 409 — and only
+          // best-effort: a Broker outage must not blank the dashboard, which
+          // carries the Pause all safety controls; the custody panel surfaces
+          // the same Broker failure through /api/connections, which stays
+          // fail-closed. (/api/connections also reconciles — the duplication
+          // per dashboard load is deliberate, so each surface stays correct
+          // without the other.)
+          if (await this.ctx.storage.get("management") !== undefined) {
+            try {
+              await this.reconcileFromBroker();
+            } catch {
+              // Serve the stored view; staleness is visible via the custody panel.
+            }
+          }
           return { ok: true, value: await this.view() };
         case "reset":
           return { ok: true, value: await this.reset() };

@@ -33,8 +33,8 @@ An **Angel** is a reviewable, statically constrained toolbox: it exposes to an
 agent only the operations you allow, with guards on their arguments, and nothing
 else. An inbox agent can list and read messages — and cannot send, delete, or
 change settings, because those operations do not exist in its toolbox. (An
-operation your Connection lacks the Google scope for still deploys, and then
-fails at the provider — see [Milestone 1](#milestone-1-what-is-live).)
+operation your Connection lacks the Google scope for is rejected when you
+deploy — see [Milestone 1](#milestone-1-what-is-live).)
 
 **Angel Cloud** is the hosted runtime for Angels. You write a short policy file,
 build it into an artifact on your machine, and publish that artifact to your
@@ -78,8 +78,9 @@ platform-owned Google OAuth app, provider operations outside the reviewed
 adapter registry, and production multi-tenancy. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
 Connection must already hold the Google scope it needs. An operation that clears
-the first bar but not the second publishes and deploys, then fails at Google.
-The consent set is fixed in the Control worker for now
+the first bar but not the second publishes, but deploying it is rejected until
+a Connection's grant covers it.
+Each Provider App carries its own consent set
 ([which scopes](faq.md#which-google-scopes-are-requested)). For the full list,
 see [what is not built yet](faq.md#what-is-not-built-yet).
 
@@ -234,11 +235,11 @@ settings). The build rejects duplicate tools.
 The executable surface is the reviewed adapter registry shipped with
 `@smcllns/angel-core`: every artifact tool carries a request template derived
 from a reviewed provider spec, publish rejects any operation the registry
-cannot derive, and the Broker executes exactly the sealed template. One
-boundary remains: the hosted consent flow still requests read-only Google
-scopes, so a write Angel publishes but its deployment is rejected until a
-Connection grants every required scope — expanding the consent surface is the
-next step.
+cannot derive, and the Broker executes exactly the sealed template. The
+consent flow requests each Provider App's configured scope set
+([which scopes](faq.md#which-google-scopes-are-requested)), so a write Angel
+publishes and binds once a Connection's grant covers each bound operation —
+deployment is rejected until one does.
 
 ### Argument guards
 
@@ -253,8 +254,10 @@ Example from the checked-in `gmail-inbox-zero` Angel: `messages.modify` and
 `threads.modify` are allowed, but `addLabelIds` and `removeLabelIds` both carry
 `forbiddenValues: [TRASH, SPAM, SENT]` — a policy that lets the agent relabel and
 archive but never trash, spam, or fake a send. This illustrates guard semantics;
-in Milestone 1 only the two read operations above reach real Google, so a
-`modify` call fails closed at the provider. The field `angel_connection` is
+any registry operation reaches real Google once a Connection's grant covers it,
+though only the two read operations above carry a credentialed acceptance
+proof. A `modify` deployment bound to a read-only grant is rejected at deploy
+time. The field `angel_connection` is
 reserved by the platform; you cannot declare or guard it
 ([why](faq.md#can-i-declare-or-guard-angel_connection-in-my-own-policy)).
 
@@ -321,11 +324,42 @@ in the page. There is no headless API for this step.
 
 On the **Connections** page, under **Google custody**, add a private app
 nickname, a display name, and your Google OAuth client ID and secret. Configure
-the deployed `/oauth/google/callback` URL on that Google OAuth client. Angel
-Cloud requests a fixed read-only grant for identity, Gmail, and Docs.
+the deployed `/oauth/google/callback` URL on that Google OAuth client. A
+`POST /api/provider-apps` body may name the OAuth scopes the app consents to;
+without them Angel Cloud requests the read-only default grant for identity,
+Gmail, and Docs ([which scopes](faq.md#which-google-scopes-are-requested)).
+The dashboard form has no scopes field and always registers the default set;
+a custom set means calling `POST /api/provider-apps` directly from the same
+Access-authenticated browser origin — for example, from the dashboard page's
+devtools console:
 
-The Provider App list exposes its display name, provider, and client-ID suffix.
-It never returns the stored client secret — a stored Provider App keeps its
+```js
+await fetch("/api/provider-apps", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    providerAppId: "app_gmail_write",
+    provider: "google",
+    displayName: "Gmail write Google",
+    clientId: "<your OAuth client ID>",
+    clientSecret: "<your OAuth client secret>",
+    scopes: ["https://www.googleapis.com/auth/gmail.modify"],
+  }),
+});
+```
+
+This one registers a Gmail write consent, so a draft-writing Angel can deploy
+against a Connection authorized through it. Pick scopes the adapter registry
+can use — it ships Gmail and Docs today, so a scope outside those (say,
+Calendar) is granted by Google but usable by no operation. `scopes` takes 1 to
+64 entries, each a whitespace-free string of at most 256 characters. Identity
+scopes (`openid`, `email`, `profile`, and the `userinfo` URLs) are rejected;
+every consent requests `openid` and `email` itself, and the profile scopes are
+not available. The stored set is deduplicated and sorted.
+
+The dashboard row shows a Provider App's display name, provider, and client-ID
+suffix; the `GET /api/provider-apps` response carries those plus the scope set.
+Neither returns the stored client secret — a stored Provider App keeps its
 client secret write-only, and its safe summary reads without leaking it.
 
 ### Authorize a Connection
@@ -335,6 +369,14 @@ authorization. Complete Google consent in the same Access-authenticated browser
 flow. The callback binds the grant to the Account, Access subject, Provider App,
 Connection, nickname, and fixed redirect URI. A healthy Connection shows its
 provider-derived identity label and granted scopes.
+
+A failed authorization — a consent screen approved with a scope unchecked, or
+a custody rejection such as a duplicate nickname — stores nothing, but the
+grant you approved stays live in your Google account. Angel Cloud never
+revokes it automatically, because Google revocation is grant-wide: removing
+the app's access under Google Account permissions cuts off every Connection
+that Google account holds through the same OAuth client. Usually the right
+move is to just re-run the authorization.
 
 The management nickname is for you and `angel.json`; agents never see it. They
 see a provider-derived label such as `gmail - Google identity` plus an opaque
@@ -633,7 +675,10 @@ Angel detail has four panes:
 - **Activity** pins a "Needs decision" card for an exact promotion or a pending
   gate repair, then shows the deploy and Version lifecycle and the request feed
   with its gate receipts (a call the Gateway denies never reaches the Broker, so
-  it carries no Broker receipt).
+  it carries no Broker receipt). The promote card is withheld when the
+  production bindings could not run the staged Version — a bound Connection is
+  unhealthy, no granted scope covers a bound operation, or the Version predates
+  the current artifact format; `angel deploy --prod` returns the exact reason.
 - **Settings** holds Availability — environment-scoped **Pause all** and
   **Resume all** — and the immutable Version history with each Version's full
   `sha256` digest.

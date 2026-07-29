@@ -10,7 +10,7 @@ import type {
   GateToolBinding,
 } from "./gate";
 import { sha256Hex } from "@smcllns/angel-core";
-import { canonicalJson, validateArtifactAdapters } from "@smcllns/angel-core";
+import { GENERATED_ADAPTERS, canonicalJson, validateArtifactAdapters } from "@smcllns/angel-core";
 import type { StoredManagementConnection } from "./management-internal";
 import type {
   AgentKey,
@@ -114,6 +114,26 @@ export function createManagementState(input: {
     idempotency: {},
     timestamps: {},
   };
+}
+
+// The deploy floor's per-operation verdicts against the shipped registry. An
+// operation the registry no longer carries (a Version published against a
+// different @smcllns/angel-core) is a registry mismatch, reported apart from
+// scope gaps so it prompts a republish rather than a futile reauthorization.
+export function bindingOperationGaps(
+  provider: string,
+  tools: readonly string[],
+  granted: readonly string[],
+): { unknown: string[]; uncovered: { tool: string; accepted: string[] }[] } {
+  const operations = GENERATED_ADAPTERS[provider]?.operations ?? {};
+  const unknown: string[] = [];
+  const uncovered: { tool: string; accepted: string[] }[] = [];
+  for (const tool of tools) {
+    const accepted = operations[tool]?.scopes;
+    if (accepted === undefined) unknown.push(tool);
+    else if (!accepted.some((scope) => granted.includes(scope))) uncovered.push({ tool, accepted: [...accepted] });
+  }
+  return { unknown, uncovered };
 }
 
 /**
@@ -715,18 +735,37 @@ export class ManagementControl {
         if (
           connection.accountId !== this.state.account.id
           || connection.credential !== requirement.credential
-          || !connection.providers.includes(requirement.provider)
         ) {
           throw new ManagementError(404, `Connection for binding ${id} not found`);
         }
-        // Granted scopes must cover the requirement's spec-derived consent —
-        // a write Angel must fail here, not at Google after deployment.
-        const granted = connection.grantedScopes ?? [];
-        const missing = requirement.requiredScopes.filter((scope) => !granted.includes(scope));
-        if (missing.length > 0) {
+        // The grant must be able to run every bound operation — judged
+        // against the registry's accepted scopes per operation, so a broader
+        // grant than the artifact's spec-derived consent still binds. A write
+        // Angel must fail here, not at Google after deployment. The unknown
+        // check runs first: registry skew needs a republish, and any other
+        // diagnosis for it sends the operator somewhere futile.
+        const gaps = bindingOperationGaps(
+          requirement.provider,
+          requirement.tools,
+          connection.grantedScopes ?? [],
+        );
+        if (gaps.unknown.length > 0) {
           throw new ManagementError(
             409,
-            `Connection for binding ${id} is missing required scopes: ${missing.join(", ")}`,
+            `binding ${id} names operations absent from the deployed adapter registry:`
+              + ` ${gaps.unknown.join(", ")} — republish the Version against the current registry`,
+          );
+        }
+        // No separate provider-label check: labels derive from grantedScopes
+        // through the same registry, so a label miss is exactly "every tool
+        // uncovered" — and the per-operation 409 below names the fix.
+        if (gaps.uncovered.length > 0) {
+          const detail = gaps.uncovered
+            .map(({ tool, accepted }) => `${tool} (needs one of: ${accepted.join(", ")})`)
+            .join("; ");
+          throw new ManagementError(
+            409,
+            `Connection for binding ${id} is missing a scope for: ${detail}`,
           );
         }
       }

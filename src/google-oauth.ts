@@ -1,13 +1,54 @@
-export const GOOGLE_PROVIDER_SCOPES = [
-  "https://www.googleapis.com/auth/gmail.readonly",
+// The scope set a Provider App gets when its registration names none. Only a
+// default — each Provider App carries its own set, and consent requests that.
+export const DEFAULT_GOOGLE_PROVIDER_SCOPES: readonly string[] = [
   "https://www.googleapis.com/auth/documents.readonly",
-] as const;
+  "https://www.googleapis.com/auth/gmail.readonly",
+];
 
-export const GOOGLE_CONSENT_SCOPES = [
+const GOOGLE_IDENTITY_SCOPES = ["openid", "email"] as const;
+
+// Identity scopes a Provider App must not configure: consent always adds what
+// it needs, and Google reports the aliases back rewritten (email ->
+// .../userinfo.email), so a configured alias would fail every exchange's
+// floor check with no way to edit the Provider App.
+const REJECTED_IDENTITY_SCOPES = new Set([
   "openid",
   "email",
-  ...GOOGLE_PROVIDER_SCOPES,
-] as const;
+  "profile",
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/userinfo.profile",
+]);
+
+// Every consent needs the identity scopes: exchangeGoogleCode verifies the
+// subject and email from the id_token they produce.
+export function googleConsentScopes(providerScopes: readonly string[]): string[] {
+  return [...new Set<string>([...GOOGLE_IDENTITY_SCOPES, ...providerScopes])];
+}
+
+// Scopes are space-joined into the authorize URL, so a value containing
+// whitespace would smuggle extra scopes past whoever reviewed the list. The
+// bounds keep one registration from bloating the Account's single custody
+// durable value (real Google scope lists are far smaller than either limit).
+const MAX_PROVIDER_SCOPES = 64;
+const MAX_PROVIDER_SCOPE_LENGTH = 256;
+
+export function parseProviderScopes(value: unknown): string[] {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_PROVIDER_SCOPES) {
+    throw new Error(`scopes must be an array of 1 to ${MAX_PROVIDER_SCOPES} scope strings`);
+  }
+  for (const scope of value) {
+    if (typeof scope !== "string" || scope.length > MAX_PROVIDER_SCOPE_LENGTH || !/^[\x21-\x7e]+$/.test(scope)) {
+      throw new Error(`scopes entries must be non-empty strings without whitespace, at most ${MAX_PROVIDER_SCOPE_LENGTH} characters`);
+    }
+    if (REJECTED_IDENTITY_SCOPES.has(scope)) {
+      throw new Error(
+        `identity scopes are reserved — consent requests openid and email itself,`
+          + ` and the profile scopes are not available: ${scope}`,
+      );
+    }
+  }
+  return [...new Set<string>(value)].sort();
+}
 
 const GOOGLE_AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
@@ -32,6 +73,7 @@ export interface GoogleCodeExchangeInput {
   code: string;
   codeVerifier: string;
   redirectUri: string;
+  requiredScopes: readonly string[];
 }
 
 export interface GoogleConnectionCredential {
@@ -48,13 +90,14 @@ export function buildGoogleAuthorizeUrl(input: {
   redirectUri: string;
   state: string;
   codeChallenge: string;
+  scopes: readonly string[];
 }): string {
   const url = new URL(GOOGLE_AUTHORIZATION_URL);
   url.search = new URLSearchParams({
     client_id: input.clientId,
     redirect_uri: input.redirectUri,
     response_type: "code",
-    scope: GOOGLE_CONSENT_SCOPES.join(" "),
+    scope: googleConsentScopes(input.scopes).join(" "),
     access_type: "offline",
     prompt: "consent",
     state: input.state,
@@ -95,8 +138,22 @@ export async function exchangeGoogleCode(
     throw new Error("Google OAuth response did not include an id_token");
   }
   const scopes = parseGrantedScopes(token.scope);
-  if (GOOGLE_PROVIDER_SCOPES.some((scope) => !scopes.includes(scope))) {
-    throw new Error("Google OAuth response omitted a required scope");
+  // The floor is what this Provider App was configured to request — a partial
+  // grant (the user unchecked a box on the consent screen) fails here rather
+  // than surfacing later as a Connection that cannot run its operations. The
+  // fresh refresh token is deliberately NOT revoked: Google's revoke endpoint
+  // invalidates the whole client+user grant, which would silently break every
+  // healthy Connection this Google account already authorized through the
+  // same Provider App. The un-stored grant is the user's to remove, and the
+  // error says where.
+  if (input.requiredScopes.some((scope) => !scopes.includes(scope))) {
+    throw new Error(
+      "Google OAuth response omitted a required scope; the grant was not stored"
+      + " — re-run consent approving every requested scope. The unused grant"
+      + " stays live; removing the app's access under Google Account"
+      + " permissions also cuts off every Connection this Google account holds"
+      + " through the same OAuth client",
+    );
   }
   const identity = await verifyGoogleIdToken(token.id_token, input.clientId, fetcher);
   return {

@@ -14,7 +14,14 @@ import {
   requireDistinctRoleCredentials,
   requireInternalRequest,
 } from "./protocol";
-import { buildGoogleAuthorizeUrl, exchangeGoogleCode, revokeGoogleRefreshToken, type GoogleFetch } from "../google-oauth";
+import {
+  DEFAULT_GOOGLE_PROVIDER_SCOPES,
+  buildGoogleAuthorizeUrl,
+  exchangeGoogleCode,
+  parseProviderScopes,
+  revokeGoogleRefreshToken,
+  type GoogleFetch,
+} from "../google-oauth";
 import {
   createGoogleProvider,
   GoogleRefreshAuthorizationError,
@@ -94,6 +101,7 @@ export async function handleBrokerRequest(
           state: input.state,
           codeChallenge: input.codeChallenge,
           redirectUri: input.redirectUri,
+          scopes: parseProviderScopes(app.scopes),
         }),
       });
     }
@@ -108,6 +116,7 @@ export async function handleBrokerRequest(
         code: input.code,
         codeVerifier: input.codeVerifier,
         redirectUri: input.redirectUri,
+        requiredScopes: parseProviderScopes(app.scopes),
       }, fetcher);
       const path = input.flow === "reauth"
         ? `https://vault.internal/connections/${encodeURIComponent(input.connectionId)}/reauth`
@@ -128,12 +137,18 @@ export async function handleBrokerRequest(
         }),
       }));
       if (!stored.ok) {
-        try {
-          await revokeGoogleRefreshToken(credentials.refreshToken, fetcher);
-        } catch (cleanupError) {
-          const custodyError = await responseError(stored);
-          throw new Error(`${custodyError}; Google OAuth grant cleanup failed: ${errorMessage(cleanupError)}`);
-        }
+        // Deliberately no automatic revocation: Google's revoke endpoint
+        // invalidates the whole client+user grant, which would kill the
+        // account's sibling healthy Connections over a duplicate nickname or
+        // an identity-mismatched reauth. The un-stored grant is the user's to
+        // remove, and the error says where.
+        const custodyError = await responseError(stored);
+        return Response.json({
+          error: `${custodyError}; the Google grant was not stored — retry.`
+            + " The unused grant stays live; removing the app's access under"
+            + " Google Account permissions also cuts off every Connection this"
+            + " Google account holds through the same OAuth client",
+        }, { status: stored.status });
       }
       return vaultResponse(stored);
     }
@@ -223,7 +238,10 @@ export async function handleBrokerRequest(
 }
 
 function parseProviderApp(value: unknown) {
-  const body = exactRecord(value, ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret"]);
+  // scopes is absent from a pre-scope Control's POST during a deploy window
+  // (Broker deploys before Control); absent means the historical default.
+  const keys = ["accountId", "providerAppId", "provider", "displayName", "clientId", "clientSecret"];
+  const body = exactRecord(value, isRecord(value) && "scopes" in value ? [...keys, "scopes"] : keys);
   if (body.provider !== "google") throw new Error("provider must be google");
   return {
     accountId: stringField(body.accountId, "accountId"),
@@ -232,6 +250,7 @@ function parseProviderApp(value: unknown) {
     displayName: stringField(body.displayName, "displayName"),
     clientId: stringField(body.clientId, "clientId"),
     clientSecret: stringField(body.clientSecret, "clientSecret"),
+    scopes: "scopes" in body ? parseProviderScopes(body.scopes) : [...DEFAULT_GOOGLE_PROVIDER_SCOPES],
   };
 }
 
@@ -311,10 +330,6 @@ async function responseError(response: Response): Promise<string> {
     // The status remains useful when a private service returns malformed JSON.
   }
   return `Credential Vault request failed with status ${response.status}`;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "unknown cleanup error";
 }
 
 function parseInvokeRequest(value: unknown): InvokeRequest {

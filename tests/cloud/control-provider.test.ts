@@ -14,7 +14,7 @@ describe("Control Provider App and Connection custody routes", () => {
           ? input
           : new globalThis.Request(input.toString(), init);
         brokerRequests.push(request);
-        return Response.json({ id: "app_google", accountId: "acct_m1", provider: "google", displayName: "Family Google", clientIdSuffix: "usercontent.com" });
+        return Response.json({ id: "app_google", accountId: "acct_m1", provider: "google", displayName: "Family Google", clientIdSuffix: "usercontent.com", scopes: ["https://www.googleapis.com/auth/gmail.readonly"] });
       },
     });
     const response = await handleControlRequest(new Request("https://control.test/api/provider-apps", {
@@ -24,7 +24,7 @@ describe("Control Provider App and Connection custody routes", () => {
     }), env, accessVerifier);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ id: "app_google", accountId: "acct_m1", provider: "google", displayName: "Family Google", clientIdSuffix: "usercontent.com" });
+    expect(await response.json()).toEqual({ id: "app_google", accountId: "acct_m1", provider: "google", displayName: "Family Google", clientIdSuffix: "usercontent.com", scopes: ["https://www.googleapis.com/auth/gmail.readonly"] });
     expect(brokerRequests[0]!.headers.get("authorization")).toBe("Bearer control-broker");
     expect(await brokerRequests[0]!.clone().json()).toMatchObject({ clientSecret: "provider-app-secret" });
     expect(brokerRequests[0]!.headers.get("authorization")).toBe("Bearer control-broker");

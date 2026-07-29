@@ -244,13 +244,20 @@ reliable scheduled acceptance needs a Production OAuth app.
 
 ### Which Google scopes are requested?
 
-The consent flow requests a fixed read-only set for identity, Gmail, and Docs:
-`openid`, `email`, `https://www.googleapis.com/auth/gmail.readonly`, and
-`https://www.googleapis.com/auth/documents.readonly`
-([authorize a Connection](user-manual.md#authorize-a-connection)). That set is
-compiled into the Control worker today, so changing it needs a code change and a
-deploy. Each Connection records the scopes Google actually granted it, and the
-Broker's reach is bounded by them.
+Each Provider App carries its own scope set, chosen when you register it with
+`POST /api/provider-apps` on the Access-authenticated Control origin; the
+consent flow requests that set plus the identity scopes `openid` and `email`
+([authorize a Connection](user-manual.md#authorize-a-connection)). A Provider
+App registered without scopes — including every one saved through the
+dashboard form, which sends none — gets the read-only default:
+`https://www.googleapis.com/auth/documents.readonly` and
+`https://www.googleapis.com/auth/gmail.readonly`.
+
+Changing scopes needs no code change and no deploy, but a Provider App is
+immutable once stored: register a new Provider App with the new set, authorize
+new Connections through it, and rebind deployments that should use them.
+Existing Connections keep the scopes Google granted them, and the Broker's
+reach is bounded by those grants.
 
 The Version still controls which pinned operations an agent can invoke; a
 broader OAuth grant does not add a tool to an Angel. The converse now bites,
@@ -295,9 +302,9 @@ Composition (`angels:` instead of `tools:`) is optional — a single Angel listi
 tools from several providers is valid
 ([composing Angels](user-manual.md#composing-angels)). Compose when parts need
 independent review or reuse, or when the same provider needs different rules per
-identity — one Connection read-only while another may draft, once that operation
-ships. That takes two children with different allowlists, bound to different
-Connections.
+identity — one Connection read-only while another, authorized through a Provider
+App whose scope set covers drafting, may draft. That takes two children with
+different allowlists, bound to different Connections.
 
 ### How do I roll back?
 
