@@ -95,7 +95,7 @@
         </div>
         <div class="rounded-lg border border-slate-200 bg-white p-3">
           <iframe id="ui-frame" src="https://angelmcp-docs-demo.sam-633.workers.dev/demo/" title="Angel Cloud dashboard — public demo" style="display:block;margin:0 auto;width:100%;height:680px;border:1px solid #e7e5e4;border-radius:8px;transition:width .25s ease"></iframe>
-          <p class="text-xs text-slate-500 pt-2 px-1">The same page anyone can open at <code>/demo/</code>. Reads work; every change is refused.</p>
+          <p class="text-xs text-slate-500 pt-2 px-1">Once <code>/demo/</code> is up, this is the same page anyone can open: reads work, every change is refused. Until then the frame is blank.</p>
         </div>
       </section>
 
@@ -186,12 +186,12 @@
               <div class="text-xs border border-stone-200 rounded divide-y divide-stone-100">
                 <div class="px-3 py-3 space-y-1.5">
                   <div class="flex items-center justify-between"><span class="font-medium text-sm">gmail-inbox-zero</span><span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span></div>
-                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-12 shrink-0">as</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Work Google</span></div>
+                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-20 shrink-0">agent as</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Work Google</span></div>
                   <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-12 shrink-0">tools</span><span class="rounded bg-stone-100 px-1.5 py-0.5">2 read</span><span class="rounded bg-stone-100 px-1.5 py-0.5">1 allowed</span></div>
                 </div>
                 <div class="px-3 py-3 space-y-1.5">
                   <div class="flex items-center justify-between"><span class="font-medium text-sm">inbox-read</span><span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span></div>
-                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-12 shrink-0">as</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span></div>
+                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-20 shrink-0">agent as</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span></div>
                   <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-12 shrink-0">tools</span><span class="rounded bg-stone-100 px-1.5 py-0.5">1 read</span></div>
                 </div>
               </div>
@@ -236,25 +236,25 @@
             <div class="slide-stack">
               <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 1 · Charter card (dataroom)</p>
-                <p class="text-xs text-slate-400">angelmcp.ai/@smcllns/inbox-read</p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <p class="text-xs text-slate-400">angelmcp.ai/@acme/inbox-read</p>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700 italic">"Read bounded Gmail search results. Never create, edit, send, or delete."</p>
                 <div class="flex gap-2 text-xs"><span class="rounded bg-stone-200 px-2 py-1">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-2 py-1">read-only</span></div>
               </article>
               <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 2 · Full policy view (dataroom)</p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700 italic">Charter, plus every tool with its argument guards expanded, the Version number, and the full policy digest — the page <em>is</em> the audit.</p>
                 <p class="text-xs font-mono text-slate-400">v3 · sha256 4c1f0a92…</p>
               </article>
               <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 3 · Dual surface (dataroom)</p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700">Same coordinate, content-negotiated: browsers get the rendered page, <code>Accept: application/json</code> gets the machine-readable charter and tools.</p>
               </article>
               <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 4 · Progressive charter <span class="badge-illus">new · illustrative</span></p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700">Take 1's charter card as the fold, with Take 2's full guard-and-digest detail behind a single "Show the full policy" disclosure — one page serves both the friend deciding to trust it and the auditor verifying it.</p>
                 <div class="flex gap-2 text-xs items-center"><span class="rounded bg-stone-200 px-2 py-1">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-2 py-1">read-only</span><span class="text-accent underline underline-offset-2">Show the full policy ▾</span></div>
               </article>
@@ -315,8 +315,8 @@
             <div class="w-[260px] rounded-[2rem] border-[6px] border-slate-800 bg-white overflow-hidden shadow-lg">
               <div class="bg-slate-800 h-6 flex items-center justify-center"><span class="w-16 h-1.5 rounded-full bg-slate-600"></span></div>
               <div class="p-4 space-y-3 text-[11px]">
-                <p class="text-slate-400 truncate">angelmcp.ai/@smcllns/inbox-read</p>
-                <h4 class="font-serif text-lg leading-tight">@smcllns/inbox-read</h4>
+                <p class="text-slate-400 truncate">angelmcp.ai/@acme/inbox-read</p>
+                <h4 class="font-serif text-lg leading-tight">@acme/inbox-read</h4>
                 <p class="text-slate-600 italic leading-snug">"Read bounded Gmail search results. Never create, edit, send, or delete."</p>
                 <div class="flex gap-1.5 flex-wrap"><span class="rounded bg-stone-100 px-1.5 py-0.5">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-1.5 py-0.5">read-only</span></div>
                 <div class="border-t border-stone-100 pt-2 text-slate-400">Readable by anyone · no login · v3</div>

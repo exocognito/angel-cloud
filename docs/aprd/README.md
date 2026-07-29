@@ -44,10 +44,14 @@ why [docs-site](../../docs-site/README.md) documents no `/demo/` path yet.
 
 ## Hosting
 
-`./publish.sh` uploads each page over its own stable URL. Those URLs are the
+`PUBLISH=1 ./publish.sh` uploads each page over its own stable URL. A bare
+`./publish.sh` prints the six targets and stops — replacing live pages people
+already hold links to should take a deliberate second word. Those URLs are the
 identity of each page — the script never mints new ones, so a link shared once
 keeps working. `DRY_RUN=<dir> ./publish.sh` stages the rewritten pages without
-uploading, which is the way to check a change before it ships.
+uploading, which is the way to check a change before it ships. The target must
+be an empty directory — staging into this one would overwrite the committed
+pages with their hosted rewrites.
 
 Both modes need the six page URLs, in an untracked `urls.env` beside the script
 (`APRD_URL_DATAROOM`, `APRD_URL_HUB`, `APRD_URL_ENGINEERING`, `APRD_URL_DESIGN`,

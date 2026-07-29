@@ -146,7 +146,7 @@
             <tr>
               <td class="py-3 pr-4"><strong>Handle</strong></td>
               <td class="py-3 pr-4"><span data-dev>The Account's public name in the coordinate <code>@handle/angel[@preview]</code>. Permanent, one rename, never released. <span class="badge-change">change</span></span><span data-user>The public name in an Angel's address. It's yours for good — one change allowed, and it's never handed to anyone else afterwards.</span></td>
-              <td class="py-3 pr-4">"the Account handle"; "@sam/inbox-zero"</td>
+              <td class="py-3 pr-4">"the Account handle"; "@acme/inbox-zero"</td>
               <td class="py-3">"username"; "slug"; "vanity URL"</td>
             </tr>
           </tbody>
@@ -242,7 +242,7 @@
 <span class="p">building angels/inbox-read/ANGEL.yaml … digest 4c1f0a92…</span>
 <span class="y">created new Angel inbox-read</span> <span class="p">(this publish created it — a typo&#39;d name creates, never renames)</span>
 <span class="g">✓ published Version 1 · deployed to production</span>
-<span class="g">✓ live at https://mcp.angelmcp.ai/@smcllns/inbox-read</span></pre>
+<span class="g">✓ live at https://mcp.angelmcp.ai/@acme/inbox-read</span></pre>
           <div class="rounded-r-lg bg-amber-50 p-4 text-sm text-amber-900 shadow-[inset_4px_0_0_0_theme(colors.amber.500)]" data-normative>
             <span class="badge-norm">normative</span>
             <span data-dev>&nbsp;One-time key reveal: plaintext environment keys appear exactly once, at creation/mint/rotate, beside the only Copy control, with a save-it-now warning. The server stores only hash + fingerprint; no API reads plaintext back. The "created new Angel" line is normative copy intent (angel-core#7): creation must be announced before keys print.</span>
@@ -266,7 +266,7 @@
         <!-- Flow C: agent call -->
         <div class="space-y-2">
           <h3 class="font-serif text-xl">C · An agent calls the Angel</h3>
-          <pre class="code">POST https://mcp.angelmcp.ai/@smcllns/inbox-read        ← bare coordinate = production
+          <pre class="code">POST https://mcp.angelmcp.ai/@acme/inbox-read        ← bare coordinate = production
 Authorization: Bearer ak_production_9f2…
 
 {"jsonrpc":"2.0","id":7,"method":"tools/call","params":{
@@ -292,20 +292,20 @@ Authorization: Bearer ak_production_9f2…
             <div class="slide-stack">
               <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 1 · Charter card</p>
-                <p class="text-xs text-slate-400">angelmcp.ai/@smcllns/inbox-read</p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <p class="text-xs text-slate-400">angelmcp.ai/@acme/inbox-read</p>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700 italic">"Read bounded Gmail search results. Never create, edit, send, or delete."</p>
                 <div class="flex gap-2 text-xs"><span class="rounded bg-stone-100 px-2 py-1">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-2 py-1">read-only</span></div>
               </article>
               <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 2 · Full policy view</p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700 italic">Charter, plus every tool with its argument guards expanded, the Version number, and the full policy digest — the page <em>is</em> the audit.</p>
                 <p class="text-xs font-mono text-slate-400">v3 · sha256 4c1f0a92…</p>
               </article>
               <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
                 <p class="text-xs uppercase tracking-wider text-slate-400">Take 3 · Dual surface</p>
-                <h4 class="font-serif text-2xl">@smcllns/inbox-read</h4>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
                 <p class="text-slate-700">Same coordinate, content-negotiated: browsers get the rendered page, <code>Accept: application/json</code> gets machine-readable charter + tools — the self-hosted worker's <code>/tools</code> precedent, folded into one route.</p>
               </article>
             </div>
@@ -329,8 +329,8 @@ Authorization: Bearer ak_production_9f2…
         <div class="space-y-2">
           <h3 class="font-serif text-xl">F · The live dashboard, embedded <span class="badge-change">change</span></h3>
           <p class="text-sm text-slate-600">
-            <span data-dev>This is not a mock, and it is not a snapshot: the frame loads the deployed public demo at <code>/demo/</code>, which <code>docs-site/build.sh</code> assembles from the real <code>www/</code> shell (<code>index.html</code> + <code>app.css</code> + <code>app.js</code>, copied verbatim) over an <code>angelmcp.demo.v3</code> state generated by the production projection code (<code>buildDemoView</code> + <code>assertDemoView</code>) across the checked-in artifacts. Change the dashboard and this frame changes on the next docs deploy — there is no second copy to refresh. The build step that assembles that page lands with <a class="text-indigo-600 hover:underline" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a>, which is why the tag reads <span class="badge-change">change</span> rather than observed — and why the frame below may be empty. <code>/demo/</code> exists only while the last deploy of the docs worker came from a branch carrying that step; a deploy from any other branch removes it, which has already happened once. The frame becomes reliable when #21 is on <code>main</code>. Two Angels are deployed and one tool+Connection tuple is paused so the availability story shows. No Cloudflare Access login is involved and nothing reads from the live deployment. Reads work; mutations return 403 and every input is sealed. The Desktop/Mobile toggle resizes the frame, so the app's own CSS breakpoints (760/640/390px) respond exactly as they do live.</span>
-            <span data-user>This is the actual product dashboard, running on generated sample data — not your account, no login, and nothing you click touches the live system. It is the same page anyone can visit at <code>/demo/</code>, so it always shows the current product rather than an old picture of it. If the frame below is blank, the page is not currently deployed — see the note above; it is not a fault in your browser. Click around — switch screens, densities, environments. The toggle shows the same product on a desktop and on a phone; what you see is what ships, not an artist's impression.</span>
+            <span data-dev>This is not a mock, and it is not a snapshot: the frame loads the deployed public demo at <code>/demo/</code>, which <code>docs-site/build.sh</code> will assemble from the real <code>www/</code> shell (<code>index.html</code> + <code>app.css</code> + <code>app.js</code>, copied verbatim) over an <code>angelmcp.demo.v3</code> state generated by the production projection code (<code>buildDemoView</code> + <code>assertDemoView</code>) across the checked-in artifacts. Change the dashboard and this frame changes on the next docs deploy — there is no second copy to refresh. The build step that assembles that page lands with <a class="text-indigo-600 hover:underline" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a>, which is why the tag reads <span class="badge-change">change</span> rather than observed — and why the frame below may be empty. <code>/demo/</code> exists only while the last deploy of the docs worker came from a branch carrying that step; a deploy from any other branch removes it, which has already happened once. The frame becomes reliable when #21 is on <code>main</code>. Two Angels are deployed and one tool+Connection tuple is paused so the availability story shows. No Cloudflare Access login is involved and nothing reads from the live deployment. Reads work; mutations return 403 and every input is sealed. The Desktop/Mobile toggle resizes the frame, so the app's own CSS breakpoints (760/640/390px) respond exactly as they do live.</span>
+            <span data-user>This is the actual product dashboard, running on generated sample data — not your account, no login, and nothing you click touches the live system. It is meant to be the same page anyone can visit at <code>/demo/</code>, so it always shows the current product rather than an old picture of it. That page is not up yet: it arrives with the change tagged above, and until then any redeploy of the docs site removes it. <strong>So the frame below may be blank — that is expected, not a fault in your browser.</strong> When it does load, click around: switch screens, densities, environments. The toggle shows the same product on a desktop and on a phone; what you see is what ships, not an artist's impression.</span>
           </p>
           <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white w-fit px-1 py-1 text-sm" role="tablist" aria-label="Dashboard viewport">
             <button id="vp-desktop" type="button" class="rounded-full px-3 py-1">Desktop</button>
@@ -449,7 +449,7 @@ HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefau
 
           <div>
             <h4 class="font-medium">S8 · Anyone → public Angel page <span class="badge-change">new (PD 0002 / #11)</span></h4>
-            <p class="text-sm text-slate-600"><span data-dev>Read-only, no auth, at the bare coordinate on the apex. Must have no path to Broker, custody, or keys (I14). Served by the future apex dispatcher; shape open (FAQ). Docs host <code>docs.angelmcp.ai</code> (settled) ships separately and sooner.</span><span data-user>What the user notices: an Angel's address works in a normal browser and shows what it does — the first time "just send them the link" becomes true.</span></p>
+            <p class="text-sm text-slate-600"><span data-dev>Read-only, no auth, at the bare coordinate on the apex. Must have no path to Broker, custody, or keys (I14). Served by the future apex dispatcher; shape open (FAQ). Docs host <code>docs.angelmcp.ai</code> (settled) ships separately and sooner.</span><span data-user>What the user notices: an Angel's address works in a normal browser and shows its charter and the tools it allows — the first time "just send them the link" becomes true.</span></p>
           </div>
         </div>
       </section>
@@ -465,7 +465,7 @@ HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefau
         <div class="space-y-4">
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
             <h4 class="font-medium">E1 · One command to live <span class="text-xs text-slate-400">G3, I2, I9 · <span class="badge-change">change</span></span></h4>
-            <p class="text-sm text-slate-700"><span data-dev><strong>Given</strong> a fresh <code>angels/inbox-read/</code> with valid <code>ANGEL.yaml</code> + <code>angel.json</code> and one healthy Connection. <strong>When</strong> <code>angel publish inbox-read</code>. <strong>Then</strong>: "created new Angel" is announced; both environment keys print exactly once; production answers <code>tools/list</code> at <code>/@smcllns/inbox-read</code> with the published digest in <code>x-angel-policy-digest</code>. Re-running publish with unchanged source returns the same Version and prints no keys.</span><span data-user>You write one short file and run one command — your Angel is live, with an address you can paste into any agent app. The key is shown once: copy it right then, it is never shown again. Run the same command twice and nothing duplicates.</span></p>
+            <p class="text-sm text-slate-700"><span data-dev><strong>Given</strong> a fresh <code>angels/inbox-read/</code> with valid <code>ANGEL.yaml</code> + <code>angel.json</code> and one healthy Connection. <strong>When</strong> <code>angel publish inbox-read</code>. <strong>Then</strong>: "created new Angel" is announced; both environment keys print exactly once; production answers <code>tools/list</code> at <code>/@acme/inbox-read</code> with the published digest in <code>x-angel-policy-digest</code>. Re-running publish with unchanged source returns the same Version and prints no keys.</span><span data-user>You write one short file and run one command — your Angel is live, with an address you can paste into any agent app. The key is shown once: copy it right then, it is never shown again. Run the same command twice and nothing duplicates.</span></p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
@@ -510,7 +510,7 @@ HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefau
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
             <h4 class="font-medium">E10 · Handles hold their meaning <span class="text-xs text-slate-400">I12, G5 · <span class="badge-change">change</span></span></h4>
-            <p class="text-sm text-slate-700"><span data-dev><strong>Given</strong> <code>acct_m1</code> handled <code>@smcllns</code>, renamed once to <code>@sam0</code>. <strong>Then</strong>: MCP at <code>/@smcllns/google-read-proof</code> → 200, same Account, no redirect; the page → 301 to <code>@sam0/…</code>; a second rename → refused; registering <code>support</code> (reserved) or <code>abc</code> (&lt;4 chars) → rejected; no other Account can ever take <code>smcllns</code>.</span><span data-user>Say you rename @smcllns to @sam0. Every old link and every agent still configured with @smcllns keeps working and still reaches you — and nobody else can ever register @smcllns. You get exactly one rename, so choose carefully.</span></p>
+            <p class="text-sm text-slate-700"><span data-dev><strong>Given</strong> <code>acct_m1</code> handled <code>@acme</code>, renamed once to <code>@acme2</code>. <strong>Then</strong>: MCP at <code>/@acme/google-read-proof</code> → 200, same Account, no redirect; the page → 301 to <code>@acme2/…</code>; a second rename → refused; registering <code>support</code> (reserved) or <code>abc</code> (&lt;4 chars) → rejected; no other Account can ever take <code>acme</code>.</span><span data-user>Say you rename @acme to @acme2. Every old link and every agent still configured with @acme keeps working and still reaches you — and nobody else can ever register @acme. You get exactly one rename, so choose carefully.</span></p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
@@ -525,7 +525,7 @@ HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefau
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
             <h4 class="font-medium">E13 · Agent-only onboarding <span class="text-xs text-slate-400">G4 · <span class="badge-change">change</span> · manual acceptance</span></h4>
-            <p class="text-sm text-slate-700"><span data-dev><strong>Given</strong> an agent with only <code>docs.angelmcp.ai</code> — no repo, no prior context. <strong>Then</strong> it can walk a user from an empty directory to a promoted Angel answering MCP calls using the documented API/CLI path; <code>llms.txt</code> and <code>SKILL.md</code> resolve unauthenticated at stable URLs; docs state which steps need which credential. npm and (directionally) curl install paths are both documented.</span><span data-user>A user tells their AI assistant 'set up an Angel for me', and using only our public docs site it does the whole thing — no GitHub account, no cloning our code, no support ticket.</span></p>
+            <p class="text-sm text-slate-700"><span data-dev><strong>Given</strong> an agent with only <code>docs.angelmcp.ai</code> — no repo, no prior context. <strong>Then</strong> it can walk a user from an empty directory to a promoted Angel the agent can call over MCP using the documented API/CLI path; <code>llms.txt</code> and <code>SKILL.md</code> resolve unauthenticated at stable URLs; docs state which steps need which credential. npm and (directionally) curl install paths are both documented.</span><span data-user>A user tells their AI assistant 'set up an Angel for me', and using only our public docs site it does the whole thing — no GitHub account, no cloning our code, no support ticket.</span></p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
@@ -555,7 +555,7 @@ HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefau
 
         <h3 class="font-serif text-xl pt-2">Design feedback (2026-07-28)</h3>
         <ul class="list-disc pl-5 space-y-2 text-slate-700 leading-relaxed">
-          <li><span data-dev><strong>Home list density buries the Connection axis.</strong> The list view leads with tool chips (“What it can do”) and gives the accounts an Angel is enabled for no column at all. Sam’s call: the identities an agent may act <em>as</em> through an Angel and the tools it is allowed are co-equal, different, top-level facts — the list view must present both. Fold into the next dashboard design pass.</span><span data-user>The Angel list currently answers “what can it do?” but not “on whose accounts?” — and both matter equally at a glance. Noted for the next design pass.</span></li>
+          <li><span data-dev><strong>Home list density buries the Connection axis.</strong> The list view leads with tool chips (“What it can do”) and gives the accounts an Angel is enabled for no column at all. Sam’s call: the identities an agent may act <em>as</em> through an Angel and the tools it is allowed are co-equal, different, top-level facts — the list view must present both. Fold into the next dashboard design pass.</span><span data-user>The Angel list currently answers “which tools?” but not “on whose accounts?” — and both matter equally at a glance. Noted for the next design pass.</span></li>
         </ul>
 
         <h3 class="font-serif text-xl pt-2">Suspicious — flagged for Sam to check <span class="badge-illus">not classified</span></h3>

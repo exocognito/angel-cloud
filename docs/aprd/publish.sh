@@ -95,6 +95,20 @@ if [[ ! -x "$uploader" ]]; then
   exit 1
 fi
 
+# Uploading overwrites six live pages that people already hold links to, so it is
+# opt-in. A reviewer ran this script to inspect it and published for real; the
+# default is now to stage and stop, and the six targets are printed before any
+# request is made.
+if [[ "${PUBLISH:-}" != "1" ]]; then
+  echo "publish: would replace these six pages:" >&2
+  for url in "$dataroom" "$hub" "$engineering" "$design" "$marketing" "$support"; do
+    echo "  $url" >&2
+  done
+  echo "Nothing was uploaded. Re-run with PUBLISH=1 to replace them," >&2
+  echo "or DRY_RUN=<empty-dir> to write the rewritten pages to disk instead." >&2
+  exit 0
+fi
+
 upload() {
   local file="$1" url="$2"
   printf '%-16s ' "$(basename "$file" .html)"
