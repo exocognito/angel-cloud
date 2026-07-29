@@ -1,6 +1,6 @@
 {
   "name": "@smcllns/angel-core",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Portable Angel policy compiler, artifact contract, and target-neutral CLI",
   "type": "module",
   "types": "src/index.ts",

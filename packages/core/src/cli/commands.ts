@@ -144,6 +144,7 @@ async function deployProduction(
   });
   if (
     promoted.environment !== "production"
+    || promoted.angelId !== angel.id
     || promoted.versionId !== preview.activeDeployment.versionId
     || promoted.digest !== preview.activeDeployment.digest
   ) {

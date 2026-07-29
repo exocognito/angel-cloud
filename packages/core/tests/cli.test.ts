@@ -612,6 +612,47 @@ describe("Angel management commands", () => {
     expect(api.requests.some((request) => new URL(request.url).pathname.endsWith("/versions"))).toBe(false);
   });
 
+  test("rejects a promotion response for a different Angel", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(managementAngel("staging")),
+      jsonResponse(previewEnvironment(artifact.digest)),
+      jsonResponse(connections()),
+      jsonResponse({ ...productionDeployment(artifact), angelId: "ang_other" }),
+    ]);
+
+    await expect(runAngelCommand(["deploy", "golden-assistant", "--prod"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow("production deployment response does not match the active preview deployment");
+    expect(api.requests).toHaveLength(4);
+  });
+
+  test("rejects an ensure response whose angel and keys spell different dialects", async () => {
+    const artifact = versionArtifact();
+    for (const keys of [
+      { preview: "ak_preview_once", production: "ak_production_once" },
+      { staging: "ak_preview_once", production: "ak_production_once" },
+    ]) {
+      const spelling = "preview" in keys ? "staging" : "preview";
+      const api = fakeApi([
+        jsonResponse(connections()),
+        jsonResponse({ angel: managementAngel(spelling as "staging" | "preview"), keys }),
+      ]);
+      await expect(runAngelCommand(["publish", "golden-assistant"], {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/response schema error/);
+      expect(api.requests).toHaveLength(2);
+    }
+  });
+
   test("stops promotion when preview has no active deployment", async () => {
     const api = fakeApi([
       jsonResponse(managementAngel("staging")),

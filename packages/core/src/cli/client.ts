@@ -223,6 +223,11 @@ function ensureResponse(value: unknown): EnsureAngelResponse {
   }
   const angel = managementAngel(root.angel);
   if (root.keys === undefined) return { angel };
+  const angelEnvironments = record(root.angel, "angel").environments;
+  if (secondEnvironmentDialect(root.keys, "keys")
+    !== secondEnvironmentDialect(angelEnvironments, "angel.environments")) {
+    throw new Error("ensure response must spell angel and keys in one dialect");
+  }
   const responseKeys = secondEnvironmentRecord(root.keys, "keys");
   return {
     angel,
@@ -259,13 +264,16 @@ function secondEnvironmentRecord(
   label: string,
 ): { preview: unknown; production: unknown } {
   const candidate = record(value, label);
-  const keys = Object.keys(candidate).sort().join(",");
-  if (keys === "preview,production") {
+  if (secondEnvironmentDialect(candidate, label) === "canonical") {
     return { preview: candidate.preview, production: candidate.production };
   }
-  if (keys === "production,staging") {
-    return { preview: legacyPreview(candidate.staging, `${label}.staging`), production: candidate.production };
-  }
+  return { preview: legacyPreview(candidate.staging, `${label}.staging`), production: candidate.production };
+}
+
+function secondEnvironmentDialect(value: unknown, label: string): "legacy" | "canonical" {
+  const keys = Object.keys(record(value, label)).sort().join(",");
+  if (keys === "preview,production") return "canonical";
+  if (keys === "production,staging") return "legacy";
   throw new Error(`${label} must contain exactly preview, production`);
 }
 
