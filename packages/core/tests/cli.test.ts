@@ -192,32 +192,75 @@ describe("Angel management commands", () => {
     expect(api.requests[0]?.headers.has("x-angel-access")).toBe(false);
   });
 
-  test("rejects malformed Access service-token JSON before sending a request", async () => {
-    for (const accessToken of [
-      "",
-      "not-json",
-      JSON.stringify({ "cf-access-client-id": "client-id" }),
-      JSON.stringify({
-        "cf-access-client-id": "client-id",
-        "cf-access-client-secret": "client-secret",
-        extra: "not-allowed",
-      }),
-      JSON.stringify({
-        "cf-access-client-id": 123,
-        "cf-access-client-secret": "client-secret",
-      }),
-      JSON.stringify({
-        "cf-access-client-id": " client-id",
-        "cf-access-client-secret": "client-secret",
-      }),
-    ]) {
+  test("rejects an Access token with surrounding whitespace, such as a trailing newline", async () => {
+    const exactToken = JSON.stringify({
+      "cf-access-client-id": "client-id",
+      "cf-access-client-secret": "client-secret",
+    });
+    for (const accessToken of [`${exactToken}\n`, `${exactToken}\r\n`, ` ${exactToken}`]) {
       const api = fakeApi([jsonResponse([])]);
       await expect(new ManagementClient({
         target: "https://cloud.example",
         token: "management-secret",
         accessToken,
         fetch: api.fetch,
-      }).listConnections("acct_demo")).rejects.toThrow(/Access token/);
+      }).listConnections("acct_demo")).rejects.toThrow(
+        "Access token must be exact non-empty JSON without surrounding whitespace",
+      );
+      expect(api.requests).toHaveLength(0);
+    }
+  });
+
+  test("rejects malformed Access service-token JSON before sending a request", async () => {
+    const cases: [string, string][] = [
+      ["", "Access token must be exact non-empty JSON without surrounding whitespace"],
+      ["not-json", "Access token must be valid JSON"],
+      ["null", "Access token must be a two-key JSON object"],
+      ["42", "Access token must be a two-key JSON object"],
+      [JSON.stringify("token"), "Access token must be a two-key JSON object"],
+      ["[]", "Access token must be a two-key JSON object"],
+      [
+        JSON.stringify({ "cf-access-client-id": "client-id" }),
+        "Access token must contain exactly cf-access-client-id and cf-access-client-secret",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": "client-id",
+          "cf-access-client-secret": "client-secret",
+          extra: "not-allowed",
+        }),
+        "Access token must contain exactly cf-access-client-id and cf-access-client-secret",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": 123,
+          "cf-access-client-secret": "client-secret",
+        }),
+        "Access token values must be non-empty strings without surrounding whitespace",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": " client-id",
+          "cf-access-client-secret": "client-secret",
+        }),
+        "Access token values must be non-empty strings without surrounding whitespace",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": "client-id",
+          "cf-access-client-secret": "",
+        }),
+        "Access token values must be non-empty strings without surrounding whitespace",
+      ],
+    ];
+    for (const [accessToken, message] of cases) {
+      const api = fakeApi([jsonResponse([])]);
+      await expect(new ManagementClient({
+        target: "https://cloud.example",
+        token: "management-secret",
+        accessToken,
+        fetch: api.fetch,
+      }).listConnections("acct_demo")).rejects.toThrow(message);
       expect(api.requests).toHaveLength(0);
     }
   });
