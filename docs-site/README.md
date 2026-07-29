@@ -11,6 +11,7 @@ is no forked content to drift.
 | `/` | Front-page index (overview, doc cards, credential table) |
 | `/#/user-manual`, `/#/faq`, `/#/operator-journey`, `/#/domain-architecture`, `/#/skill` | Human-readable rendered docs with linkable heading anchors |
 | `/user-manual.md`, `/faq.md`, `/operator-journey.md`, `/domain-architecture.md` | The raw markdown (agent-consumable) |
+| `/google-read-proof-manual-journey.md` | The operator journey under its source name, so raw cross-links from the other docs resolve |
 | `/product-decisions/*.md`, `/adrs/*.md` | The decision records the docs link to, so no served link dangles |
 | `/llms.txt` | LLM site map ([llmstxt.org](https://llmstxt.org) convention) |
 | `/SKILL.md` | The create → publish → operate journey as a Claude Code skill |
