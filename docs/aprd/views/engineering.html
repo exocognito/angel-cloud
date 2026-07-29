@@ -203,12 +203,14 @@ ManagementConnection    { id; accountId; nickname; identityLabel; credential; pr
 
           <div class="space-y-2">
             <h3 class="font-medium">S2 · Browser → Control (Access session) <span class="badge-obs">observed</span></h3>
-            <p class="text-sm text-slate-600"><code>GET /api/demo/state</code> returns the self-validated <code>angelmcp.demo.v3</code> read model; producer (<code>demo-view.ts</code>) and consumer (<code>app.js</code>) enforce the identical contract and fail closed on drift. Provider custody routes carry OAuth client material transiently to the Broker; Control never persists it.</p>
-            <pre class="code">DemoView { schema: "angelmcp.demo.v3"; account: {id; name}; angels: DemoAngelView[] }
+            <p class="text-sm text-slate-600"><code>GET /api/demo/state</code> returns the self-validated <code>angelmcp.demo.v4</code> read model; producer (<code>demo-view.ts</code>) and consumer (<code>app.js</code>) enforce the identical contract and fail closed on drift. Provider custody routes carry OAuth client material transiently to the Broker; Control never persists it.</p>
+            <pre class="code">DemoView { schema: "angelmcp.demo.v4"; account: {id; name; handle: string | null}; angels: DemoAngelView[] }
 DemoEnvironmentView { version; digest; deploymentId; keyFingerprint;
   gateAlignment {installation; availability}; pendingAvailabilityRepair;
-  availability {defaultEnabled; overrides; revision; changedAt}; keys; bindings; tools; lifecycle }
-DemoRecordedTime = {source:"recorded"; at: string} | {source:"derived"; at: null}   <span class="k">// honesty-typed</span></pre>
+  availability {defaultEnabled; overrides; revision; changedAt: DemoRecordedTime};
+  keys; bindings; tools; lifecycle }
+DemoRecordedTime = {source:"recorded"; at: string} | {source:"derived"; at: null}   <span class="k">// honesty-typed</span>
+<span class="k">// endpoints are built from the handle: `${origin}/@${handle}/${angel}`</span></pre>
           </div>
 
           <div class="space-y-2">
@@ -420,7 +422,7 @@ flowchart LR
           <h3 class="font-medium pt-2">Suspicious — flagged, not classified</h3>
           <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
             <li><code>src/control.ts</code> still ships legacy <code>DemoControl</code> emitting <code>angelmcp.demo.v1</code>; reachable from one test file only. Deletion candidate.</li>
-            <li><code>types/broker.d.ts</code> is hand-written but labeled Wrangler-generated; omits <code>CredentialVault</code>; <code>ControlRequestEnv</code> omits the <code>GATEWAY</code> binding the registry uses; <code>controlErrorResponse</code> is dead code.</li>
+            <li><code>types/broker.d.ts</code> is hand-written but labeled Wrangler-generated and omits <code>CredentialVault</code> from <code>durableNamespaces</code>; <code>controlErrorResponse</code> (<code>src/workers/control.ts:600</code>) is dead code. (<code>ControlRequestEnv</code> now carries the <code>GATEWAY</code> binding — that one is fixed.)</li>
             <li><code>google-read-proof</code> is excluded from the fixture-staleness check (the other four Angels are checked); digest verified only at acceptance-run time.</li>
             <li>Revoked-Connection failures reach the agent by two paths (custody lease 404 vs refresh-time <code>invalid_grant</code>), both −32003-family; the asymmetry is undocumented.</li>
           </ul>

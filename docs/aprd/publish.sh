@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Publish the APRD dataroom and its audience views to their existing R2 URLs.
 #
-# Local copies use relative links so the set works offline from this directory.
+# Local copies use relative links so the set cross-links from this directory.
+# They still need the network: every page loads Tailwind, and two load Mermaid,
+# from a CDN.
 # The hosted copies need absolute links, so this script stages a rewritten copy
 # and uploads each page over its own stable URL with --replace. Each URL is the
 # identity of its page — never mint a new one for a page that already has one.
