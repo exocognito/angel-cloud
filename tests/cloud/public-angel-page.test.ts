@@ -153,6 +153,26 @@ describe("the public Angel page on the bare production coordinate", () => {
     expect(await response.json()).toEqual(publicAngelView(ARTIFACT, 3) as never);
   });
 
+  test("a JSON range refused with q=0 falls back to HTML", async () => {
+    const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
+    const response = await handleGatewayRequest(
+      get("/@smcllns/golden-assistant", { accept: "application/json;q=0" }),
+      env,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toStartWith("text/html");
+  });
+
+  test("a JSON range with a positive quality gets JSON", async () => {
+    const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
+    const response = await handleGatewayRequest(
+      get("/@smcllns/golden-assistant", { accept: "text/html;q=0.5, application/json;q=0.9" }),
+      env,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toStartWith("application/json");
+  });
+
   test("the JSON body is exactly the public subset", async () => {
     const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
     const response = await handleGatewayRequest(
@@ -286,6 +306,18 @@ describe("every page-route 404 is byte-identical", () => {
     // never confirm a handle exists.
     const suffixed = await handleGatewayRequest(get("/@nobody-here/golden-assistant@preview"), unknown.env);
     expect(await suffixed.text()).toBe(first!);
+  });
+
+  test("HEAD 404s carry the same headers and no body, like the 200 HEAD path", async () => {
+    const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
+    const getResponse = await handleGatewayRequest(get("/@smcllns/golden-assistant@preview"), env);
+    const headResponse = await handleGatewayRequest(
+      new Request("https://gateway.example/@smcllns/golden-assistant@preview", { method: "HEAD" }),
+      env,
+    );
+    expect(headResponse.status).toBe(404);
+    expect(headResponse.headers.get("content-type")).toBe(getResponse.headers.get("content-type"));
+    expect(await headResponse.text()).toBe("");
   });
 
   test("@preview 404s without resolving the handle or touching a gate", async () => {

@@ -303,26 +303,45 @@ async function servePublicAngelPage(
   env: GatewayEnv,
   page: CoordinatePath,
 ): Promise<Response> {
-  if (page.suffix !== undefined) return pageNotFound();
+  const head = request.method === "HEAD";
+  if (page.suffix !== undefined) return pageNotFound(head);
   const accountId = await resolveHandleOnly(env, page.handle);
-  if (accountId === null) return pageNotFound();
+  if (accountId === null) return pageNotFound(head);
   const runtime = env.GATES.getByName(`${accountId}:${page.angelId}:production`);
   const installation = (await runtime.snapshot("gateway")).installation;
-  if (installation === null || installation === undefined) return pageNotFound();
+  if (installation === null || installation === undefined) return pageNotFound(head);
   const view = publicAngelView(installation.artifact, installation.version);
-  const wantsJson = (request.headers.get("accept") ?? "").includes("application/json");
-  const body = wantsJson ? JSON.stringify(view) : renderPublicAngelHtml(view);
-  return new Response(request.method === "HEAD" ? null : body, {
+  const json = acceptsJson(request.headers.get("accept"));
+  const body = json ? JSON.stringify(view) : renderPublicAngelHtml(view);
+  return new Response(head ? null : body, {
     headers: {
-      "content-type": wantsJson ? "application/json" : "text/html; charset=utf-8",
+      "content-type": json ? "application/json" : "text/html; charset=utf-8",
       vary: "Accept",
     },
   });
 }
 
-/** The one 404 for the whole page surface, byte-identical to the Gateway's generic 404. */
-function pageNotFound(): Response {
-  return Response.json({ error: "not found" }, { status: 404 });
+/**
+ * The page speaks JSON when the Accept header carries an `application/json`
+ * range that is not refused with `q=0`. HTML stays the default for everything
+ * else — this is decision 5's trigger, not general content negotiation.
+ */
+function acceptsJson(accept: string | null): boolean {
+  if (accept === null) return false;
+  return accept.split(",").some((entry) => {
+    const [range, ...params] = entry.split(";");
+    if (range!.trim().toLowerCase() !== "application/json") return false;
+    return !params.some((param) => /^\s*q\s*=\s*0(\.0+)?\s*$/i.test(param));
+  });
+}
+
+/**
+ * The one 404 for the whole page surface, byte-identical to the Gateway's
+ * generic 404 — and bodiless on HEAD, exactly like the 200 page path.
+ */
+function pageNotFound(head: boolean): Response {
+  const response = Response.json({ error: "not found" }, { status: 404 });
+  return head ? new Response(null, { status: 404, headers: response.headers }) : response;
 }
 
 /**
