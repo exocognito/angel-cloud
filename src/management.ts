@@ -1,5 +1,6 @@
 import type { GateFleet } from "./control";
 import type { DeploymentEnvironment, HostedVersionContent } from "./domain";
+import { migrateInstalledAvailability } from "./gate";
 import type {
   GateAvailability,
   GateAvailabilityCommand,
@@ -14,8 +15,11 @@ import type {
   AgentKey,
   AgentKeyView,
   CreateKeyResponse,
+  DeleteAngelRequest,
+  DeleteAngelResponse,
   DeployStagingRequest,
   EnsureAngelResponse,
+  IdempotencyRecord,
   ManagementAngel,
   ManagementAngelView,
   ManagementAvailabilityChange,
@@ -123,6 +127,42 @@ export class ManagementControl {
         const environmentState = angel.environments[environment];
         environmentState.availability ??= defaultAvailability();
         environmentState.pendingAvailability ??= null;
+        // Repair a state persisted by a pre-migration deploy (issue #1): its
+        // overrides may still key refs of a deployment that is no longer active
+        // (every read then throws) or tools the active Version no longer ships.
+        // The gates pruned their copies when they installed that deployment, so
+        // DROP the stale entries rather than remap them — resurrecting an
+        // override the gates no longer hold would diverge the recorded
+        // availability from what the gates enforce and wedge the next change.
+        // A pending availability change embeds the same shapes in its recorded
+        // target, so it gets the identical repair.
+        const activeId = environmentState.activeDeploymentId;
+        const active = this.state.deployments.find((deployment) => deployment.id === activeId);
+        if (active === undefined) {
+          environmentState.availability.connectionOverrides = {};
+          if (environmentState.pendingAvailability !== null) {
+            environmentState.pendingAvailability.target.connectionOverrides = {};
+          }
+        } else {
+          const version = this.state.versions.find((candidate) => candidate.id === active.versionId);
+          const tools = version?.artifact.tools
+            ?? [...new Set(active.runtimeBindings.map((binding) => binding.tool))]
+              .map((name) => ({ name }));
+          environmentState.availability = migrateInstalledAvailability(
+            environmentState.availability,
+            tools,
+            active.runtimeBindings,
+            active.runtimeBindings,
+          );
+          if (environmentState.pendingAvailability !== null) {
+            environmentState.pendingAvailability.target = migrateInstalledAvailability(
+              environmentState.pendingAvailability.target,
+              tools,
+              active.runtimeBindings,
+              active.runtimeBindings,
+            );
+          }
+        }
         // Migrate a legacy single key into the named-keys model. The migrated key
         // preserves the exact hash/fingerprint (so gate auth never breaks) and is
         // named "Default key". Its id is derived deterministically from the hash so
@@ -240,6 +280,109 @@ export class ManagementControl {
     });
   }
 
+  /**
+   * Hard-delete an Angel: nothing survives, the coordinate 404s afterwards, and
+   * the slug is immediately reusable. Teardown follows ADR 0003's disable path —
+   * keys revoked first (nothing authenticates mid-teardown), Broker closed
+   * before Gateway, partial state visible and repairable by calling delete
+   * again (every step is idempotent).
+   */
+  async deleteAngel(
+    accountId: string,
+    slug: string,
+    input: DeleteAngelRequest,
+    mutation: MutationIdentity,
+  ): Promise<DeleteAngelResponse> {
+    this.assertAccount(accountId);
+    requiredSlug(slug);
+    return this.mutate(mutation, false, async () => {
+      const angel = this.state.angels.find((candidate) => candidate.slug === slug);
+      if (angel === undefined) throw new ManagementError(404, "not found");
+      if (input.confirm !== undefined && input.confirm !== slug) {
+        throw new ManagementError(400, "confirm must equal the Angel slug");
+      }
+      // A production deployment that is pending repair may already be serving
+      // at both gates (only the final persist was lost), so pending demands
+      // the confirmation exactly like active.
+      const production = angel.environments.production;
+      if (
+        (production.activeDeploymentId !== null || production.pendingDeploymentId !== null)
+        && input.confirm !== slug
+      ) {
+        throw new ManagementError(
+          409,
+          `deleting an Angel with a live production deployment requires confirm: "${slug}"`,
+        );
+      }
+      const fleet = this.dependencies.fleetFor(angel.id, angel.slug);
+      const environments = ["staging", "production"] as const;
+      // 1. Revoke every key — recorded and persisted BEFORE touching any gate
+      //    (persist-then-act, like deploy's repair marker), then pushed: the
+      //    Gateway holds the runtime keys, and an empty reconcile locks it, so
+      //    no key authenticates from here on.
+      for (const environment of environments) {
+        for (const key of keysOf(angel.environments[environment])) {
+          if (key.status === "active") {
+            key.status = "revoked";
+            key.revokedAt = this.now();
+          }
+        }
+      }
+      await this.dependencies.checkpoint.persist(this.exportState());
+      for (const environment of environments) await fleet.reconcileKeys("gateway", environment, []);
+      // 2. Broker closes first, 3. Gateway second.
+      for (const environment of environments) await fleet.reset("broker", environment);
+      for (const environment of environments) await fleet.reset("gateway", environment);
+      // 4. Drop the Angel with its Deployments and Versions. Connections are
+      //    referenced only from Deployment bindings, so dropping the
+      //    Deployments releases them.
+      const dropped = new Set([
+        ...this.state.versions.filter((version) => version.angelId === angel.id).map((version) => version.id),
+        ...this.state.deployments
+          .filter((deployment) => deployment.angelId === angel.id)
+          .map((deployment) => deployment.id),
+      ]);
+      this.state.angels = this.state.angels.filter((candidate) => candidate.id !== angel.id);
+      this.state.versions = this.state.versions.filter((version) => version.angelId !== angel.id);
+      this.state.deployments = this.state.deployments.filter((deployment) => deployment.angelId !== angel.id);
+      for (const id of dropped) delete this.state.timestamps?.[id];
+      // 5. Purge the dead Angel's idempotency records so the coordinate is
+      //    genuinely reusable: the pinned CLI derives its Idempotency-Key from
+      //    method+path+body, and a surviving ensure record would replay the
+      //    dead Angel's sealed response (stale id, spent keys) instead of
+      //    creating a fresh one. The delete's own record is stored after this
+      //    runs, so its replay remains available.
+      //    Records persisted before deletion existed carry no `path`; those are
+      //    purged only when their stored response contains the dead Angel's
+      //    opaque id (never the slug — prose can mention it), so a different
+      //    Angel's replay protection survives. A sealed legacy record that
+      //    cannot be opened is unattributable and purged — losing it is
+      //    strictly safer than replaying a dead Angel's response.
+      //    Earlier deletes' receipts at the coordinate path are exempt: a
+      //    receipt replay is inert (it reports the original committed delete
+      //    and touches nothing), while purging one would turn a very delayed
+      //    retry into a fresh destructive delete of the slug's new holder.
+      const coordinatePath = `/v1/accounts/${accountId}/angels/${slug}`;
+      for (const [key, record] of Object.entries(this.state.idempotency)) {
+        let purge: boolean;
+        if (record.path !== undefined) {
+          purge = (
+            record.path === coordinatePath
+            || record.path.startsWith(`/v1/angels/${angel.id}/`)
+            || record.angelId === angel.id
+          ) && !isDeleteReceipt(record);
+        } else {
+          const response = "ciphertext" in record
+            ? await this.dependencies.replayVault.open(record.ciphertext).catch(() => null)
+            : record.responseJson;
+          purge = response === null || response.includes(angel.id);
+        }
+        if (purge) delete this.state.idempotency[key];
+      }
+      return { id: angel.id, slug: angel.slug, deleted: true as const };
+    });
+  }
+
   async publishVersion(
     angelId: string,
     input: PublishVersionRequest,
@@ -262,7 +405,7 @@ export class ManagementControl {
       this.state.versions.push(version);
       this.stamp(version.id);
       return structuredClone(version);
-    });
+    }, angelId);
   }
 
   async deployStaging(
@@ -277,7 +420,7 @@ export class ManagementControl {
         throw new ManagementError(409, "expected digest does not match Version");
       }
       return this.deploy(angelId, "staging", version, input.bindings);
-    });
+    }, angelId);
   }
 
   async promoteProduction(
@@ -301,7 +444,7 @@ export class ManagementControl {
         this.version(angelId, staged.versionId),
         input.bindings,
       );
-    });
+    }, angel.id);
   }
 
   async changeAvailability(
@@ -341,7 +484,7 @@ export class ManagementControl {
       environmentState.availabilityChangedAt = this.now();
       await this.dependencies.checkpoint.persist(this.exportState());
       return this.availabilityView(angelId, environment, environmentState.availability);
-    });
+    }, angelId);
   }
 
   private async deploy(
@@ -395,6 +538,21 @@ export class ManagementControl {
     // the projected event genuinely happened. Re-stamped on each convergence so a
     // repair overwrites any earlier (never-effective) value.
     this.stamp(deployment.id);
+    // connectionRefs are minted per deployment, but the environment's stored
+    // availability outlives the deployment that keyed it. Migrate it exactly as
+    // the gates just did at install — remap connection overrides onto the new
+    // refs via the stable connectionId, drop overrides for tools or Connections
+    // the new deployment no longer serves — so reads keep resolving and the
+    // recorded availability matches what the gates now enforce (issue #1).
+    const previousActiveId = environmentState.activeDeploymentId;
+    if (previousActiveId !== null && previousActiveId !== deployment.id) {
+      environmentState.availability = migrateInstalledAvailability(
+        environmentState.availability,
+        version.artifact.tools,
+        this.deployment(angelId, previousActiveId).runtimeBindings,
+        deployment.runtimeBindings,
+      );
+    }
     environmentState.activeDeploymentId = deployment.id;
     environmentState.pendingDeploymentId = null;
     environmentState.repair = null;
@@ -516,6 +674,7 @@ export class ManagementControl {
     mutation: MutationIdentity,
     encrypted: boolean,
     action: () => Promise<T>,
+    ownerAngelId?: string,
   ): Promise<T> {
     const key = mutation.idempotencyKey.trim();
     if (key === "") throw new ManagementError(400, "Idempotency-Key must be non-empty");
@@ -537,9 +696,11 @@ export class ManagementControl {
 
     const response = await action();
     const responseJson = JSON.stringify(response);
+    const path = canonicalPath(mutation.path);
+    const owner = ownerAngelId === undefined ? {} : { angelId: ownerAngelId };
     this.state.idempotency[key] = encrypted
-      ? { fingerprint, ciphertext: await this.dependencies.replayVault.seal(responseJson) }
-      : { fingerprint, responseJson };
+      ? { fingerprint, ciphertext: await this.dependencies.replayVault.seal(responseJson), path, ...owner }
+      : { fingerprint, responseJson, path, ...owner };
     await this.dependencies.checkpoint.persist(this.exportState());
     return structuredClone(response);
   }
@@ -606,7 +767,7 @@ export class ManagementControl {
       keysOf(environmentState).push(minted.key);
       await this.reconcileKeys(angel, environment);
       return { key: keyView(minted.key), plaintext: minted.plaintext };
-    });
+    }, angel.id);
   }
 
   async rotateKey(
@@ -633,7 +794,7 @@ export class ManagementControl {
       this.syncLegacyKey(environmentState);
       await this.reconcileKeys(angel, environment);
       return { key: keyView(minted.key), revokedKeyId: previous.id, plaintext: minted.plaintext };
-    });
+    }, angel.id);
   }
 
   async revokeKey(
@@ -662,7 +823,7 @@ export class ManagementControl {
       this.syncLegacyKey(environmentState);
       await this.reconcileKeys(angel, environment);
       return { key: keyView(target) };
-    });
+    }, angel.id);
   }
 
   /**
@@ -779,6 +940,17 @@ export class ManagementError extends Error {
   }
 }
 
+function isDeleteReceipt(record: IdempotencyRecord): boolean {
+  if (!("responseJson" in record)) return false;
+  try {
+    const response: unknown = JSON.parse(record.responseJson);
+    return typeof response === "object" && response !== null
+      && (response as { deleted?: unknown }).deleted === true;
+  } catch {
+    return false;
+  }
+}
+
 function keysOf(environmentState: ManagementEnvironment): AgentKey[] {
   return (environmentState.keys ??= [{
     id: `key_${environmentState.keyHash.slice(0, 24)}`,
@@ -891,7 +1063,16 @@ function requiredSlug(value: string): string {
 
 function canonicalPath(value: string): string {
   if (!value.startsWith("/")) throw new ManagementError(400, "mutation path must be absolute");
-  return value.length > 1 ? value.replace(/\/+$/, "") : value;
+  const trimmed = value.length > 1 ? value.replace(/\/+$/, "") : value;
+  // Decode each segment the way routing does, so a percent-encoded coordinate
+  // fingerprints and purges identically to its canonical spelling.
+  return trimmed.split("/").map((segment) => {
+    try {
+      return decodeURIComponent(segment);
+    } catch {
+      throw new ManagementError(400, "mutation path must be percent-decodable");
+    }
+  }).join("/");
 }
 
 function defaultAvailability(): GateAvailability {

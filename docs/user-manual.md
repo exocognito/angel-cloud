@@ -476,6 +476,39 @@ dashboard's promote button does the same thing, with a drift check on top
 ([the Activity pane](#use-the-dashboard)). Rollback has no command yet; see
 [How do I roll back?](faq.md#how-do-i-roll-back)
 
+### Delete an Angel
+
+There is no CLI command yet; call the management API directly with the same
+authentication as every mutation (Access identity, management bearer, and an
+`Idempotency-Key`):
+
+```sh
+curl -X DELETE "$CONTROL_BASE_URL/v1/accounts/<account>/angels/<slug>" \
+  -H "CF-Access-Client-Id: <service-token-id>" \
+  -H "CF-Access-Client-Secret: <service-token-secret>" \
+  -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+Deletion is hard and complete: every agent key is revoked first (nothing
+authenticates mid-teardown), the Broker gates close before the Gateway gates in
+both environments, and the Angel's state, Deployments, and Versions — receipts
+included — are dropped. Afterwards the coordinate returns `404` and the slug is
+immediately reusable inside your Account; publish-then-delete is how an Angel
+gets renamed. Account handles are different — they are
+[never released](product-decisions/0004-account-handles.md).
+
+When production has a deployment — active, or pending repair after a failed
+convergence — the request must repeat the slug in the body —
+`{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose production is
+empty deletes without a body; a live staging deployment does not require
+confirmation. Replaying the same `Idempotency-Key` returns the original
+response; a fresh delete of an already-deleted slug returns `404`. Mint a fresh
+key per delete (as the `uuidgen` above does) — a key derived from
+method+path+body would collide across delete → recreate → delete and replay the
+first response instead of deleting again. If a gate call fails mid-teardown the
+Angel stays visible with its keys revoked — call delete again to finish.
+
 ## Connect an agent
 
 ### Endpoint and auth
@@ -605,9 +638,10 @@ Availability is a runtime overlay per Angel per environment, at three levels:
 - **tool** — one tool across all its Connections; or
 - **tool + Connection** — one tuple, leaving the tool's other Connections running.
 
-The most specific override wins. Tool-level pause state survives a redeploy,
-pruned to the tools that still exist; per-Connection pauses reset on each deploy,
-because a deployment mints fresh Connection selectors. Per-tool-and-Connection toggles
+The most specific override wins. Pause state survives a redeploy: tool-level
+pauses are pruned to the tools that still exist, and per-Connection pauses
+follow the Connection onto the new deployment — a pause is dropped only when
+its Connection is no longer bound to the tool. Per-tool-and-Connection toggles
 live on the Allowed Tools pane; environment-wide **Pause all** and **Resume all**
 live under Settings → Availability.
 
@@ -646,7 +680,7 @@ Transport and platform errors:
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
 | `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
-| `409` | Digest, idempotency, staging, revision, or pending-repair conflict — or a handle already claimed or a second rename, see [Account handles](#account-handles). |
+| `409` | Digest, idempotency, staging, revision, or pending-repair conflict, or a delete missing its [slug confirmation](#delete-an-angel), or a handle already claimed or a second rename — see [Account handles](#account-handles). |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |

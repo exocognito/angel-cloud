@@ -743,6 +743,37 @@ async function managementCommand(
         command: { operation: "ensure_angel", accountId, slug, mutation },
       };
     }
+    if (request.method === "DELETE") {
+      // The body is optional: an empty body deletes an Angel whose production is
+      // empty; `{ "confirm": "<slug>" }` is required once production is live.
+      const idempotencyKey = requiredIdempotencyKey(request);
+      const text = await request.text();
+      let parsed: unknown = {};
+      if (text.trim() !== "") {
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          throw new RequestError(400, "request body must be valid JSON");
+        }
+      }
+      const body = record(parsed);
+      if (Object.keys(body).some((key) => key !== "confirm")) {
+        throw new RequestError(400, "delete accepts only an optional confirm field");
+      }
+      const input = body.confirm === undefined
+        ? {}
+        : { confirm: requiredString(body.confirm, "confirm") };
+      const mutation: MutationIdentity = {
+        method: request.method,
+        path: url.pathname,
+        idempotencyKey,
+        body: input,
+      };
+      return {
+        accountId,
+        command: { operation: "delete_angel", accountId, slug, input, mutation },
+      };
+    }
     throw new RequestError(404, "not found");
   }
 
@@ -1101,12 +1132,14 @@ function parseBindings(value: unknown): ManagementBindingMap {
 function matchPath(pathname: string, pattern: RegExp): string[] | null {
   const match = pattern.exec(pathname);
   if (!match) return null;
-  try {
-    return match.slice(1).map((value) => decodeURIComponent(value));
-  } catch {
-    // A malformed percent-escape is the client's error, never a 500.
-    throw new RequestError(400, "malformed path segment encoding");
-  }
+  return match.slice(1).map((value) => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      // A malformed percent-encoding is the client's error, not a server fault.
+      throw new RequestError(400, "request path must be percent-decodable");
+    }
+  });
 }
 
 function requiredString(value: unknown, label: string): string {

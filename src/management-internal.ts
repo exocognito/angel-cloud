@@ -99,6 +99,13 @@ export interface MutationIdentity {
 
 export type ManagementCommand =
   | { operation: "ensure_angel"; accountId: string; slug: string; mutation: MutationIdentity }
+  | {
+      operation: "delete_angel";
+      accountId: string;
+      slug: string;
+      input: DeleteAngelRequest;
+      mutation: MutationIdentity;
+    }
   | { operation: "get_angel_by_slug"; accountId: string; slug: string }
   | { operation: "get_angel"; angelId: string }
   | { operation: "get_version"; angelId: string; versionId: string }
@@ -151,6 +158,20 @@ export type ManagementCommand =
       mutation: MutationIdentity;
     };
 
+export interface DeleteAngelRequest {
+  /**
+   * The Angel slug, typed back by the caller. Required only when production has
+   * a live deployment; when present it must equal the slug being deleted.
+   */
+  confirm?: string;
+}
+
+export interface DeleteAngelResponse {
+  id: string;
+  slug: string;
+  deleted: true;
+}
+
 export interface CreateKeyResponse {
   key: AgentKeyView;
   /** The plaintext runtime secret — returned exactly once, never persisted. */
@@ -171,11 +192,29 @@ export interface RevokeKeyResponse {
 export interface EncryptedReplayRecord {
   fingerprint: string;
   ciphertext: string;
+  /**
+   * Canonical mutation path, recorded so Angel deletion can purge the dead
+   * Angel's records. Absent on records persisted before deletion existed —
+   * deletion purges those only when the stored response contains the dead
+   * Angel's id (or cannot be opened at all); the rest age in place.
+   */
+  path?: string;
+  /**
+   * The Angel this mutation addressed, when it addressed one. Lets Angel
+   * deletion purge records whose path carries no Angel identity (the
+   * dashboard's `/api/demo/action`). Absent on pre-deletion records and on
+   * mutations that are not Angel-scoped.
+   */
+  angelId?: string;
 }
 
 export interface JsonReplayRecord {
   fingerprint: string;
   responseJson: string;
+  /** See {@link EncryptedReplayRecord.path}. */
+  path?: string;
+  /** See {@link EncryptedReplayRecord.angelId}. */
+  angelId?: string;
 }
 
 export type IdempotencyRecord = EncryptedReplayRecord | JsonReplayRecord;
