@@ -78,7 +78,10 @@ describe("Google OAuth custody boundary", () => {
       "https://www.googleapis.com/auth/userinfo.email",
       "https://www.googleapis.com/auth/userinfo.profile",
     ]) {
-      expect(() => parseProviderScopes([scope, ...DEFAULT_GOOGLE_PROVIDER_SCOPES])).toThrow(/identity/);
+      // The message must not claim every rejected scope gets requested —
+      // consent adds only openid and email; the profile scopes are reserved.
+      expect(() => parseProviderScopes([scope, ...DEFAULT_GOOGLE_PROVIDER_SCOPES]))
+        .toThrow(/identity scopes are reserved.*consent requests openid and email itself/);
     }
   });
 

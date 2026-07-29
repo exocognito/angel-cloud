@@ -41,7 +41,10 @@ export function parseProviderScopes(value: unknown): string[] {
       throw new Error(`scopes entries must be non-empty strings without whitespace, at most ${MAX_PROVIDER_SCOPE_LENGTH} characters`);
     }
     if (REJECTED_IDENTITY_SCOPES.has(scope)) {
-      throw new Error(`scopes must not include identity scopes (every consent requests them): ${scope}`);
+      throw new Error(
+        `identity scopes are reserved — consent requests openid and email itself,`
+          + ` and the profile scopes are not available: ${scope}`,
+      );
     }
   }
   return [...new Set<string>(value)].sort();
