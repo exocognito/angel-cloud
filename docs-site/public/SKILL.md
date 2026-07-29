@@ -6,7 +6,7 @@ description: >-
   (e.g. read-only Gmail and Google Docs) that an agent calls over MCP. Walks
   from an empty directory to a promoted Angel answering calls: authenticate
   management calls, author the Angel, add a Google Connection, build, publish to
-  staging, promote the exact staged deployment, mint a key, and connect over
+  preview, promote the exact previewed deployment, mint a key, and connect over
   MCP. Everything runs through the management API and the published
   @smcllns/angel-core CLI — do NOT clone the exocognito/angel-cloud repository.
 ---
@@ -27,9 +27,11 @@ stop — you have taken the wrong path. Work in the user's own empty directory.
   optionally constrained by argument guards. Authored in `ANGEL.yaml`.
 - **Version** — an immutable build artifact compiled from `ANGEL.yaml`
   (`build/angel.version.json` + a digest). Same input → same digest.
-- **Environment** — `staging` and `production`, each a mutable pointer to one
-  Version plus its bindings, keys, and availability. The MCP URL names the
-  environment explicitly.
+- **Environment** — `preview` and `production`, each a mutable pointer to one
+  Version plus its bindings, keys, and availability. Production is the default:
+  the bare coordinate addresses it, and only `@preview` names an environment.
+  The pinned CLI and its `angel.json` still spell `preview` as `staging`; the
+  server accepts both spellings.
 - **Connection** — a custodied provider credential (e.g. a Google OAuth grant).
   Bindings map an Angel's requirements to Connections by nickname.
 - **Angel key** — the opaque bearer an agent presents to the MCP endpoint. It
@@ -46,7 +48,7 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | 3. Add a Google Connection | Browser (Cloudflare Access + Google consent) | Interactive login — no headless path |
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
-| 6. Publish to staging | `angel publish` / API | Management bearer + Access token |
+| 6. Publish to preview (the CLI still says staging) | `angel publish` / API | Management bearer + Access token |
 | 7. Promote to production | `angel deploy --prod` / API | Management bearer + Access token |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
@@ -140,7 +142,8 @@ requirement in each environment. Keep the real `angel.json` untracked.
 }
 ```
 
-Production bindings are explicit and never inherit from staging. Details:
+The `staging` key is the pinned CLI's spelling of the preview environment.
+Production bindings are explicit and never inherit from preview. Details:
 [Write an Angel](https://docs.angelmcp.ai/user-manual.md#write-an-angel).
 
 ## Step 5 — Build the Version (offline)
@@ -153,7 +156,7 @@ Compiles `ANGEL.yaml` into `build/angel.version.json` and
 `build/angel.version.sha256`. Deterministic, secret-free, makes no network
 request.
 
-## Step 6 — Publish to staging
+## Step 6 — Publish to preview
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -161,11 +164,12 @@ ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."
 pnpm exec angel publish google-read-proof
 ```
 
-Publish rebuilds, lists healthy Connections, resolves the staging bindings,
-ensures the Angel, publishes the immutable Version, and installs it in staging.
+Publish rebuilds, lists healthy Connections, resolves the preview bindings,
+ensures the Angel, publishes the immutable Version, and installs it in the
+preview environment (the pinned CLI prints and sends `staging` for it).
 
-**On the first ensure, the response prints the shown-once staging and production
-Angel keys.** Capture them immediately into a secret store — later reads expose
+**On the first ensure, the response prints the shown-once preview and
+production Angel keys.** Capture them immediately into a secret store — later reads expose
 only fingerprints. Then verify the staged tool list is exactly what you expect
 (here: `gmail.users.messages.list` and `docs.documents.get`).
 
@@ -181,18 +185,23 @@ pnpm exec angel deploy google-read-proof --prod
 bindings, and promotes that exact staged Version and digest under them. It does
 not build, publish, or pick a newer Version — the policy is exact by
 construction, though production keeps its own bindings.
-Reference: [Promote the exact staged deployment](https://docs.angelmcp.ai/user-manual.md#promote-the-exact-staged-deployment).
+Reference: [Promote the exact previewed deployment](https://docs.angelmcp.ai/user-manual.md#promote-the-exact-previewed-deployment).
 
 ## Step 8 — Connect an agent over MCP
 
-Each environment has one MCP endpoint:
+Each Angel has one canonical MCP coordinate; bare means production:
 
 ```text
-POST https://<gateway>/v1/a/<account>/<angel>/<staging|production>/mcp
+POST https://<gateway>/@<handle>/<angel>           → production
+POST https://<gateway>/@<handle>/<angel>@preview   → preview
 Authorization: Bearer <Angel key>
 ```
 
-Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The endpoint
+`<handle>` is the Account's public handle. `latest` and `production` are
+rejected as suffixes, so production has exactly one spelling. The legacy route
+`POST /v1/a/<account>/<angel>/<staging|preview|production>/mcp` still answers
+through the cutover. Today `<gateway>` is
+`angelmcp-gateway-demo.sam-633.workers.dev`. The endpoint
 speaks MCP streamable HTTP, protocol version `2025-06-18`. Send:
 
 - `Content-Type: application/json`
@@ -227,8 +236,10 @@ path, and you do not need it to confirm the check above.
 
 ## Common failures
 
-- `401 invalid Angel key` — wrong, revoked, or wrong-environment key. Keys are
-  per environment; the staging key does not work on production.
+- `401 invalid Angel key` — wrong, revoked, or wrong-environment key, or an
+  unknown Account handle in the coordinate (answered like a wrong key on
+  purpose). Keys are per environment; the preview key does not work on
+  production.
 - `connection_required` — several Connections are eligible and the call omitted
   `angel_connection`. Re-run `tools/list` and pass the selector.
 - A tool missing from `tools/list` — it is not in the deployed policy for that
@@ -260,10 +271,11 @@ shown-once Angel keys; retry with the same key instead.
 | --- | --- |
 | Ensure (create) Angel; returns shown-once keys on first create | `PUT /v1/accounts/{account}/angels/{slug}` |
 | Publish immutable Version (send the built artifact + its digest) | `POST /v1/angels/{id}/versions` |
-| Deploy Version to staging | `POST /v1/angels/{id}/environments/staging/deployments` |
-| Promote staged → production (send the staged deployment id, digest, and production bindings) | `POST /v1/angels/{id}/environments/production/promotions` |
+| Deploy Version to preview (`staging` is the accepted legacy spelling) | `POST /v1/angels/{id}/environments/preview/deployments` |
+| Deploy Version straight to production in one step | `POST /v1/angels/{id}/environments/production/deployments` |
+| Promote previewed → production (send the previewed deployment id, digest, and production bindings) | `POST /v1/angels/{id}/environments/production/promotions` |
 | Mint an additional named key | `POST /v1/angels/{id}/environments/{env}/keys` |
-| Read an environment (fingerprints, pending/active deployment) | `GET /v1/angels/{id}/environments/{staging\|production}` |
+| Read an environment (fingerprints, pending/active deployment) | `GET /v1/angels/{id}/environments/{preview\|production}` |
 | List Connections (resolve nicknames → ids) | `GET /v1/accounts/{account}/connections` |
 
 The build step (`ANGEL.yaml` → artifact + digest) has **no** server endpoint;

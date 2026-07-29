@@ -8,11 +8,13 @@
   // Secrets: CONTROL_GATEWAY_TOKEN, GATEWAY_BROKER_INVOKE_TOKEN
   "durable_objects": {
     "bindings": [
-      { "name": "GATES", "class_name": "GateRuntime" }
+      { "name": "GATES", "class_name": "GateRuntime" },
+      { "name": "HANDLES", "class_name": "HandleDirectory" }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["GateRuntime"] }
+    { "tag": "v1", "new_sqlite_classes": ["GateRuntime"] },
+    { "tag": "v2", "new_sqlite_classes": ["HandleDirectory"] }
   ],
   "services": [
     { "binding": "BROKER", "service": "angelmcp-broker-demo" }

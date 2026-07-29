@@ -21,14 +21,14 @@ it is the whole journey as procedural instructions.
 
 ## Reference docs
 
-- [User manual](https://docs.angelmcp.ai/user-manual.md): Canonical product mechanics — write an Angel (`ANGEL.yaml` + `angel.json`), add Google custody, authenticate management calls, build, publish to staging, promote the exact staged deployment, connect an agent over MCP, operate and pause. The authoritative reference the SKILL journey draws from.
+- [User manual](https://docs.angelmcp.ai/user-manual.md): Canonical product mechanics — write an Angel (`ANGEL.yaml` + `angel.json`), add Google custody, authenticate management calls, build, publish to preview, promote the exact previewed deployment, connect an agent over MCP, operate and pause. The authoritative reference the SKILL journey draws from.
 - [FAQ](https://docs.angelmcp.ai/faq.md): The rationale and boundaries — why policy is split from deployment config, why Versions are immutable, how credentials are custodied, what a Cloudflare account admin can and cannot see, current limits, and what is not built yet.
 - [Operator journey](https://docs.angelmcp.ai/operator-journey.md): A worked, credentialed end-to-end lifecycle for the `google-read-proof` Angel — publish, promote, prove real Google calls pass, revoke a Connection and prove loud failure, reauthorize and prove recovery. Tags each step "browser" vs "shell".
 
 ## Interfaces
 
 - Management API base (today): `https://angelmcp-control-demo.sam-633.workers.dev` — all `/v1/...` routes need a Cloudflare Access identity **and** `Authorization: Bearer <management token>`; mutations need an `Idempotency-Key` header.
-- MCP endpoint (today): `POST https://angelmcp-gateway-demo.sam-633.workers.dev/v1/a/<account>/<angel>/<staging|production>/mcp` with `Authorization: Bearer <Angel key>`, MCP streamable HTTP, protocol `2025-06-18`.
+- MCP endpoint (today): `POST https://angelmcp-gateway-demo.sam-633.workers.dev/@<handle>/<angel>` for production, `.../@<handle>/<angel>@preview` for preview, with `Authorization: Bearer <Angel key>`, MCP streamable HTTP, protocol `2025-06-18`. The legacy `/v1/a/<account>/<angel>/<staging|preview|production>/mcp` route still answers.
 - CLI: `@smcllns/angel-core` on npm (`bin: angel`); run with `bun`. Subcommands: `angel build`, `angel publish`, `angel deploy --prod`.
 
 ## Optional

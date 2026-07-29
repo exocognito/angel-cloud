@@ -17,7 +17,7 @@ import type {
   GateReceipt,
   PolicyGateState,
 } from "../../src/gate";
-import type { DeploymentEnvironment } from "../../src/domain";
+import type { HostedEnvironment } from "../../src/environments";
 
 const fixtures = join(import.meta.dir, "../../research/hosted-platform/example-configurations");
 const v1Source = readFileSync(join(fixtures, "golden-research-assistant.v1.hosted.yaml"), "utf8")
@@ -67,15 +67,15 @@ describe("DemoControl release and promotion", () => {
     const { control } = await boot(fleet);
     const { v1 } = await artifacts();
     await control.publish({ artifact: v1, bindings });
-    await control.changeAvailability("staging", { kind: "all", enabled: false });
+    await control.changeAvailability("preview", { kind: "all", enabled: false });
 
-    await fleet.reset("broker", "staging");
-    await fleet.reset("gateway", "staging");
+    await fleet.reset("broker", "preview");
+    await fleet.reset("gateway", "preview");
 
-    expect(await fleet.snapshot("broker", "staging")).toEqual(
+    expect(await fleet.snapshot("broker", "preview")).toEqual(
       expect.objectContaining({ installation: null, receipts: [] }),
     );
-    expect(await fleet.snapshot("gateway", "staging")).toEqual(
+    expect(await fleet.snapshot("gateway", "preview")).toEqual(
       expect.objectContaining({
         installation: null,
         receipts: [],
@@ -89,23 +89,23 @@ describe("DemoControl release and promotion", () => {
     );
   });
 
-  test("bootstraps opaque environment keys and publishes v1 to staging only", async () => {
+  test("bootstraps opaque environment keys and publishes v1 to preview only", async () => {
     const fleet = new MemoryGateFleet();
     const { control, keys } = await boot(fleet);
     const { v1 } = await artifacts();
 
-    expect(keys.staging).not.toBe(keys.production);
-    expect(keys.staging).toMatch(/^ak_staging_/);
+    expect(keys.preview).not.toBe(keys.production);
+    expect(keys.preview).toMatch(/^ak_preview_/);
     expect(keys.production).toMatch(/^ak_production_/);
-    expect(JSON.stringify(control.exportState())).not.toContain(keys.staging);
+    expect(JSON.stringify(control.exportState())).not.toContain(keys.preview);
     expect(JSON.stringify(control.exportState())).not.toContain(keys.production);
 
     const staged = await control.publish({ artifact: v1, bindings });
     const view = await control.view();
 
-    expect(staged).toMatchObject({ environment: "staging", version: 1, digest: v1.digest });
+    expect(staged).toMatchObject({ environment: "preview", version: 1, digest: v1.digest });
     expect(fleet.history().map((entry) => `${entry.operation}:${entry.gate}:${entry.environment}`))
-      .toEqual(["install:broker:staging", "install:gateway:staging"]);
+      .toEqual(["install:broker:preview", "install:gateway:preview"]);
     expect(view).toMatchObject({
       schema: "angelmcp.demo.v1",
       account: bootstrapInput.account,
@@ -113,12 +113,12 @@ describe("DemoControl release and promotion", () => {
         id: bootstrapInput.angel.id,
         name: bootstrapInput.angel.name,
         endpoints: {
-          staging: bootstrapInput.endpoint!.replace("/production", "/staging"),
+          preview: bootstrapInput.endpoint!.replace("/production", "/preview"),
           production: bootstrapInput.endpoint,
         },
         enabled: true,
         environments: {
-          staging: { version: 1, digest: v1.digest, deploymentId: staged.id },
+          preview: { version: 1, digest: v1.digest, deploymentId: staged.id },
           production: { version: null, digest: null, deploymentId: null },
         },
       },
@@ -286,7 +286,7 @@ describe("DemoControl release and promotion", () => {
     await control.changeAvailability("production", { kind: "all", enabled: false });
     const stagedV2 = await control.publish({ artifact: v2, bindings });
     let view = await control.view();
-    expect(view.angel.environments.staging).toMatchObject({ version: 2, digest: v2.digest });
+    expect(view.angel.environments.preview).toMatchObject({ version: 2, digest: v2.digest });
     expect(view.angel.environments.production).toMatchObject({
       version: 1,
       digest: v1.digest,
@@ -301,7 +301,7 @@ describe("DemoControl release and promotion", () => {
     expect(view.angel.environments.production.tools.find(
       (tool) => tool.name === "gmail.users.labels.list",
     )?.available).toBe(false);
-    expect(view.angel.environments.staging.tools.find(
+    expect(view.angel.environments.preview.tools.find(
       (tool) => tool.name === "gmail.users.labels.list",
     )?.available).toBe(true);
   });
@@ -313,22 +313,22 @@ describe("DemoControl release and promotion", () => {
     const staged = await control.publish({ artifact: v1, bindings });
     await control.promote({ stagedDeploymentId: staged.id, expectedDigest: v1.digest });
 
-    await control.changeAvailability("staging", { kind: "tool", tool: v1.tools[0]!.name, enabled: false });
+    await control.changeAvailability("preview", { kind: "tool", tool: v1.tools[0]!.name, enabled: false });
     expect(fleet.history().slice(-2).map((entry) => `${entry.operation}:${entry.gate}`))
       .toEqual(["availability:broker", "availability:gateway"]);
     let view = await control.view();
-    expect(view.angel.environments.staging.tools.find(
+    expect(view.angel.environments.preview.tools.find(
       (tool) => tool.name === v1.tools[0]!.name,
     )?.available).toBe(false);
     expect(view.angel.environments.production.tools.find(
       (tool) => tool.name === v1.tools[0]!.name,
     )?.available).toBe(true);
 
-    await control.changeAvailability("staging", { kind: "all", enabled: false });
-    await control.changeAvailability("staging", { kind: "tool", tool: v1.tools[0]!.name, enabled: true });
+    await control.changeAvailability("preview", { kind: "all", enabled: false });
+    await control.changeAvailability("preview", { kind: "tool", tool: v1.tools[0]!.name, enabled: true });
     view = await control.view();
-    expect(view.angel.environments.staging.availability.defaultEnabled).toBe(false);
-    expect(view.angel.environments.staging.tools.find(
+    expect(view.angel.environments.preview.availability.defaultEnabled).toBe(false);
+    expect(view.angel.environments.preview.tools.find(
       (tool) => tool.name === v1.tools[0]!.name,
     )?.available).toBe(true);
   });
@@ -341,21 +341,21 @@ describe("DemoControl release and promotion", () => {
     await control.publish({ artifact: v1, bindings });
     const target = v1.tools[0]!.name;
 
-    await expect(control.changeAvailability("staging", { kind: "tool", tool: target, enabled: false }))
+    await expect(control.changeAvailability("preview", { kind: "tool", tool: target, enabled: false }))
       .rejects.toThrow("injected gateway failure");
-    expect((await memory.snapshot("broker", "staging")).availability).toEqual({
+    expect((await memory.snapshot("broker", "preview")).availability).toEqual({
       defaultEnabled: true,
       overrides: { [target]: false },
       connectionOverrides: {},
       revision: 1,
     });
-    expect((await memory.snapshot("gateway", "staging")).availability).toEqual({
+    expect((await memory.snapshot("gateway", "preview")).availability).toEqual({
       defaultEnabled: true,
       overrides: {},
       connectionOverrides: {},
       revision: 0,
     });
-    const partial = (await control.view()).angel.environments.staging;
+    const partial = (await control.view()).angel.environments.preview;
     expect(partial.gateAlignment).toEqual({
       installation: "aligned",
       availability: "mismatched",
@@ -369,13 +369,13 @@ describe("DemoControl release and promotion", () => {
     });
     expect(partial.tools.every((tool) => !tool.available)).toBe(true);
 
-    await memory.change("gateway", "staging", {
+    await memory.change("gateway", "preview", {
       kind: "tool",
       tool: target,
       enabled: false,
       expectedRevision: 0,
     });
-    const convergedWithPendingIntent = (await control.view()).angel.environments.staging;
+    const convergedWithPendingIntent = (await control.view()).angel.environments.preview;
     expect(convergedWithPendingIntent.gateAlignment).toEqual({
       installation: "aligned",
       availability: "aligned",
@@ -385,10 +385,10 @@ describe("DemoControl release and promotion", () => {
       tool: target,
     });
 
-    await control.changeAvailability("staging", { kind: "tool", tool: target, enabled: false });
+    await control.changeAvailability("preview", { kind: "tool", tool: target, enabled: false });
 
-    const broker = (await memory.snapshot("broker", "staging")).availability;
-    const gateway = (await memory.snapshot("gateway", "staging")).availability;
+    const broker = (await memory.snapshot("broker", "preview")).availability;
+    const gateway = (await memory.snapshot("gateway", "preview")).availability;
     expect(broker).toEqual({
       defaultEnabled: true,
       overrides: { [target]: false },
@@ -396,8 +396,8 @@ describe("DemoControl release and promotion", () => {
       revision: 1,
     });
     expect(gateway).toEqual(broker);
-    expect(control.exportState().environments.staging.pendingAvailability).toBeNull();
-    const repaired = (await control.view()).angel.environments.staging;
+    expect(control.exportState().environments.preview.pendingAvailability).toBeNull();
+    const repaired = (await control.view()).angel.environments.preview;
     expect(repaired.gateAlignment).toEqual({
       installation: "aligned",
       availability: "aligned",
@@ -419,14 +419,14 @@ describe("DemoControl release and promotion", () => {
       arguments: {},
     };
 
-    await fleet.evaluate("gateway", "staging", { ...input, presentedKey: keys.staging });
-    await fleet.change("broker", "staging", {
+    await fleet.evaluate("gateway", "preview", { ...input, presentedKey: keys.preview });
+    await fleet.change("broker", "preview", {
       kind: "tool",
       tool,
       enabled: false,
       expectedRevision: 0,
     });
-    await fleet.evaluate("broker", "staging", input);
+    await fleet.evaluate("broker", "preview", input);
 
     expect((await control.view()).activity).toContainEqual(expect.objectContaining({
       requestId: input.requestId,
@@ -445,13 +445,13 @@ describe("DemoControl release and promotion", () => {
     const tool = "gmail.users.messages.list";
     const requestId = "req_matching_broker_denial";
 
-    const gateway = await fleet.evaluate("gateway", "staging", {
+    const gateway = await fleet.evaluate("gateway", "preview", {
       requestId,
-      presentedKey: keys.staging,
+      presentedKey: keys.preview,
       tool,
       arguments: { maxResults: 5 },
     });
-    const broker = await fleet.evaluate("broker", "staging", {
+    const broker = await fleet.evaluate("broker", "preview", {
       requestId,
       tool,
       arguments: { maxResults: 6 },
@@ -480,16 +480,16 @@ describe("DemoControl release and promotion", () => {
       arguments: {},
     };
 
-    const gateway = await fleet.evaluate("gateway", "staging", {
+    const gateway = await fleet.evaluate("gateway", "preview", {
       ...input,
-      presentedKey: keys.staging,
+      presentedKey: keys.preview,
     });
-    await fleet.change("broker", "staging", {
+    await fleet.change("broker", "preview", {
       kind: "all",
       enabled: true,
       expectedRevision: 0,
     });
-    const broker = await fleet.evaluate("broker", "staging", input);
+    const broker = await fleet.evaluate("broker", "preview", input);
     expect(gateway.allowed).toBe(true);
     expect(broker.allowed).toBe(true);
 
@@ -529,14 +529,14 @@ describe("DemoControl release and promotion", () => {
 
     await expect(control.publish({ artifact: v1, bindings })).rejects.toThrow("injected gateway failure");
     const view = await control.view();
-    expect(view.angel.environments.staging).toMatchObject({
+    expect(view.angel.environments.preview).toMatchObject({
       version: 1,
       digest: v1.digest,
       deploymentId: expect.any(String),
     });
-    expect(view.angel.environments.staging.tools).not.toHaveLength(0);
-    expect(view.angel.environments.staging.tools.every((tool) => !tool.available)).toBe(true);
-    expect(view.angel.environments.staging.tools[0]!.guards.join(" ")).toMatch(/gate mismatch/);
+    expect(view.angel.environments.preview.tools).not.toHaveLength(0);
+    expect(view.angel.environments.preview.tools.every((tool) => !tool.available)).toBe(true);
+    expect(view.angel.environments.preview.tools[0]!.guards.join(" ")).toMatch(/gate mismatch/);
   });
 });
 
@@ -559,7 +559,7 @@ class FailOnceFleet implements GateFleet {
 
   async change(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     command: GateAvailabilityCommand,
   ) {
     if (!this.failed && gate === this.failedGate && this.failedOperation === "availability") {
@@ -571,21 +571,21 @@ class FailOnceFleet implements GateFleet {
 
   reconcileKeys(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     hashes: string[],
   ): Promise<string[]> {
     return this.inner.reconcileKeys(gate, environment, hashes);
   }
 
-  snapshot(gate: GateKind, environment: DeploymentEnvironment): Promise<PolicyGateState> {
+  snapshot(gate: GateKind, environment: HostedEnvironment): Promise<PolicyGateState> {
     return this.inner.snapshot(gate, environment);
   }
 
-  activity(gate: GateKind, environment: DeploymentEnvironment): Promise<GateReceipt[]> {
+  activity(gate: GateKind, environment: HostedEnvironment): Promise<GateReceipt[]> {
     return this.inner.activity(gate, environment);
   }
 
-  reset(gate: GateKind, environment: DeploymentEnvironment): Promise<void> {
+  reset(gate: GateKind, environment: HostedEnvironment): Promise<void> {
     return this.inner.reset(gate, environment);
   }
 }

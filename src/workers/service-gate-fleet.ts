@@ -1,4 +1,4 @@
-import type { DeploymentEnvironment } from "../domain";
+import type { HostedEnvironment } from "../environments";
 import type {
   GateAvailability,
   GateAvailabilityCommand,
@@ -27,7 +27,7 @@ export interface ServiceGateFleetInput {
 export class ServiceGateFleet implements GateFleet {
   constructor(private readonly input: ServiceGateFleetInput) {}
 
-  async reset(gate: GateKind, environment: DeploymentEnvironment): Promise<void> {
+  async reset(gate: GateKind, environment: HostedEnvironment): Promise<void> {
     await this.request(gate, environment, { operation: "reset" });
   }
 
@@ -37,7 +37,7 @@ export class ServiceGateFleet implements GateFleet {
 
   change(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     command: GateAvailabilityCommand,
   ): Promise<GateAvailability> {
     return this.request(gate, environment, { operation: "availability", command });
@@ -45,23 +45,23 @@ export class ServiceGateFleet implements GateFleet {
 
   reconcileKeys(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     hashes: string[],
   ): Promise<string[]> {
     return this.request(gate, environment, { operation: "reconcile_keys", hashes });
   }
 
-  snapshot(gate: GateKind, environment: DeploymentEnvironment): Promise<PolicyGateState> {
+  snapshot(gate: GateKind, environment: HostedEnvironment): Promise<PolicyGateState> {
     return this.request(gate, environment, { operation: "snapshot" });
   }
 
-  async activity(gate: GateKind, environment: DeploymentEnvironment): Promise<GateReceipt[]> {
+  async activity(gate: GateKind, environment: HostedEnvironment): Promise<GateReceipt[]> {
     return (await this.snapshot(gate, environment)).receipts;
   }
 
   private async request<T>(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     operation:
       | { operation: "reset" }
       | { operation: "install"; command: GateInstallCommand }

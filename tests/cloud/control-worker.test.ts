@@ -47,7 +47,7 @@ describe("ServiceGateFleet", () => {
     const result = await dispatchGate(namespace as never, {
       operation: "reset",
       gate: "broker",
-      runtimeId: "acct:angel:staging",
+      runtimeId: "acct:angel:preview",
     });
 
     expect(result).toBeNull();
@@ -76,7 +76,7 @@ describe("ServiceGateFleet", () => {
     });
 
     await fleet.snapshot("gateway", "production");
-    await fleet.reset("broker", "staging");
+    await fleet.reset("broker", "preview");
 
     expect(calls).toEqual([
       {
@@ -94,7 +94,7 @@ describe("ServiceGateFleet", () => {
         input: {
           operation: "reset",
           gate: "broker",
-          runtimeId: "acct_demo:golden-research-assistant:staging",
+          runtimeId: "acct_demo:golden-research-assistant:preview",
         },
       },
     ]);
@@ -111,7 +111,7 @@ describe("ServiceGateFleet", () => {
       broker: failing,
     });
 
-    await expect(fleet.snapshot("gateway", "staging")).rejects.toThrow("gate exploded");
+    await expect(fleet.snapshot("gateway", "preview")).rejects.toThrow("gate exploded");
   });
 });
 
@@ -442,7 +442,7 @@ describe("Worker role credentials", () => {
 
 describe("control Worker routing", () => {
   test("protects assets and private APIs with Access before routing", async () => {
-    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v3" } });
+    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
     (env as Record<string, unknown>).ACCESS_REQUIRED = "true";
     const response = await handleControlRequest(new Request("https://demo.test/"), env);
     expect(response.status).toBe(401);
@@ -450,7 +450,7 @@ describe("control Worker routing", () => {
   });
 
   test("returns 401 only for authentication rejection and 500 for verifier failure", async () => {
-    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v3" } });
+    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
     const rejected = await handleControlRequestReal(new Request("https://demo.test/"), env as never, async () => {
       throw new AccessAuthenticationError("invalid assertion");
     });
@@ -465,7 +465,7 @@ describe("control Worker routing", () => {
   });
 
   test("uses the verified Access identity for owner state and actions without a demo bearer", async () => {
-    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v3" } });
+    const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
     const state = await handleControlRequest(
       new Request("https://demo.test/api/demo/state"),
       env,
@@ -500,7 +500,7 @@ describe("control Worker routing", () => {
     const revoke = await handleControlRequest(new Request("https://demo.test/api/demo/action", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ angelId: "golden-assistant", action: "revoke_key", environment: "staging", keyId: "key_1", idempotencyToken: "tok-revoke" }),
+      body: JSON.stringify({ angelId: "golden-assistant", action: "revoke_key", environment: "preview", keyId: "key_1", idempotencyToken: "tok-revoke" }),
     }), env);
 
     expect([create.status, rotate.status, revoke.status]).toEqual([200, 200, 200]);
@@ -509,7 +509,7 @@ describe("control Worker routing", () => {
     // worker never synthesizes a per-request UUID (finding #1/#2).
     expect(env.calls[0]).toEqual({ operation: "key_action", action: "create_key", angelId: "golden-assistant", environment: "production", idempotencyToken: "tok-create", name: "CI" });
     expect(env.calls[1]).toEqual({ operation: "key_action", action: "rotate_key", angelId: "golden-assistant", environment: "production", idempotencyToken: "tok-rotate", keyId: "key_1" });
-    expect(env.calls[2]).toEqual({ operation: "key_action", action: "revoke_key", angelId: "golden-assistant", environment: "staging", idempotencyToken: "tok-revoke", keyId: "key_1" });
+    expect(env.calls[2]).toEqual({ operation: "key_action", action: "revoke_key", angelId: "golden-assistant", environment: "preview", idempotencyToken: "tok-revoke", keyId: "key_1" });
   });
 
   test("rejects a malformed or unbounded key action body before dispatch", async () => {
@@ -536,7 +536,7 @@ describe("control Worker routing", () => {
       // 65 astral code points → over the 64 CODE-POINT bound (130 UTF-16 units).
       { angelId: "golden-assistant", action: "create_key", environment: "production", name: "🚀".repeat(65), idempotencyToken: "t" },
       // Extra field (exact-keys enforcement).
-      { angelId: "golden-assistant", action: "revoke_key", environment: "staging", keyId: "key_1", idempotencyToken: "t", extra: true },
+      { angelId: "golden-assistant", action: "revoke_key", environment: "preview", keyId: "key_1", idempotencyToken: "t", extra: true },
     ];
     for (const body of cases) {
       const response = await post(body);
@@ -653,7 +653,7 @@ describe("control Worker routing", () => {
   });
 
   test("forwards reset and exact v3 action commands to the Account registry", async () => {
-    const view = { schema: "angelmcp.demo.v3" };
+    const view = { schema: "angelmcp.demo.v4" };
     const env = controlEnv({ ok: true, value: view });
     const reset = await handleControlRequest(new Request("https://demo.test/api/demo/reset", {
       method: "POST",
@@ -728,7 +728,7 @@ describe("control Worker routing", () => {
     const bodies = [
       { action: "pause_all", environment: "production" },
       { angelId: "golden-assistant", action: "pause_tool", environment: "production" },
-      { angelId: "golden-assistant", action: "promote", environment: "staging" },
+      { angelId: "golden-assistant", action: "promote", environment: "preview" },
       { angelId: "golden-assistant", action: "pause_all", environment: "production", extra: true },
     ];
     for (const body of bodies) {
@@ -771,7 +771,7 @@ describe("control Worker routing", () => {
 });
 
 describe("AccountRegistry", () => {
-  test("reset clears both comparison Angel runtimes and leaves an empty management Account", async () => {
+  test("reset clears every existing Angel runtime and leaves an empty management Account", async () => {
     const resets: string[] = [];
     const harness = registryHarness((input) => {
       if (input.operation === "reset") resets.push(`${input.gate}:${input.runtimeId}`);
@@ -780,17 +780,136 @@ describe("AccountRegistry", () => {
     const view = valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
 
     expect(view).toEqual({
-      schema: "angelmcp.demo.v3",
-      account: { id: "acct_demo", name: "Personal" },
+      schema: "angelmcp.demo.v4",
+      account: { id: "acct_demo", name: "Personal", handle: null },
       angels: [],
     });
-    expect(resets).toHaveLength(8);
+    // No Angels exist yet, so there are no runtimes to clear — the old
+    // hardcoded comparison-slug list is gone.
+    expect(resets).toEqual([]);
+
+    await deployGolden(harness.registry);
+    valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+
+    expect(resets).toHaveLength(4);
     expect(new Set(resets.map((entry) => entry.split(":").slice(0, -1).join(":")))).toEqual(new Set([
-      "broker:acct_demo:gmail-inbox-zero",
-      "gateway:acct_demo:gmail-inbox-zero",
       "broker:acct_demo:golden-assistant",
       "gateway:acct_demo:golden-assistant",
     ]));
+  });
+
+  test("delete_angel tears down both gates Broker-first and reset still works afterwards", async () => {
+    const operations: string[] = [];
+    const harness = registryHarness((input) => {
+      operations.push(`${input.operation}:${input.gate}:${input.runtimeId.split(":").pop()}`);
+    });
+    const deployed = await deployGolden(harness.registry);
+    operations.length = 0;
+
+    const deleted = valueOf(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      // deployGolden promoted production, so the slug confirmation is required.
+      input: { confirm: "golden-assistant" },
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-golden",
+        body: { confirm: "golden-assistant" },
+      },
+    }));
+
+    expect(deleted).toMatchObject({
+      id: deployed.ensure.angel.id,
+      slug: "golden-assistant",
+      deleted: true,
+    });
+    expect(operations).toEqual([
+      "reconcile_keys:gateway:preview",
+      "reconcile_keys:gateway:production",
+      "reset:broker:preview",
+      "reset:broker:production",
+      "reset:gateway:preview",
+      "reset:gateway:production",
+    ]);
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels).toEqual([]);
+    const reset = valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+    expect(reset.angels).toEqual([]);
+  });
+
+  test("dashboard actions on a re-created slug do not replay the dead Angel's records", async () => {
+    const harness = registryHarness();
+    await deployGolden(harness.registry);
+    const pause = {
+      operation: "action" as const,
+      angelId: "golden-assistant",
+      action: "pause_all" as const,
+      environment: "production" as const,
+    };
+    const paused = valueOf(await harness.registry.dispatchJson(pause));
+    expect(paused.angels[0].enabled).toBe(false);
+
+    valueOf(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      input: { confirm: "golden-assistant" },
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-for-recreate",
+        body: { confirm: "golden-assistant" },
+      },
+    }));
+    await deployGolden(harness.registry, "-recreated");
+
+    // The re-created Angel starts at availability revision 0 again, so a
+    // slug+revision-derived key would collide with the dead Angel's record and
+    // silently replay it, leaving every tool live. The action must pause the
+    // NEW Angel's gates for real.
+    const pausedAgain = valueOf(await harness.registry.dispatchJson(pause));
+    expect(pausedAgain.angels[0].enabled).toBe(false);
+  });
+
+  test("delete_angel without confirmation refuses a live production Angel", async () => {
+    const harness = registryHarness();
+    await deployGolden(harness.registry);
+
+    const result = JSON.parse(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      input: {},
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-unconfirmed",
+        body: {},
+      },
+    }));
+
+    expect(result).toMatchObject({ ok: false, status: 409 });
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels).toHaveLength(1);
+  });
+
+  test("the state view runs the restore repair so pre-fix dangling availability projects as aligned", async () => {
+    const harness = registryHarness();
+    valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+    await deployGolden(harness.registry);
+
+    // Emulate the issue-#1 damage: management holds an override keyed by a ref
+    // no deployment serves, while the gates pruned their copy at install (they
+    // hold no overrides, same revision).
+    const state = harness.storage.get("management") as ManagementState;
+    state.angels[0]!.environments.production.availability.connectionOverrides = {
+      "gmail.users.messages.list": { arc_stale_pre_fix: false },
+    };
+
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels[0].environments.production.gateAlignment.availability).toBe("aligned");
   });
 
   test("bridges tuple, whole-tool, and all availability actions idempotently", async () => {
@@ -879,7 +998,7 @@ describe("AccountRegistry", () => {
     expect(result).toEqual({
       ok: false,
       status: 409,
-      error: "no staged Version has compatible production bindings",
+      error: "no previewed Version has compatible production bindings",
     });
   });
 
@@ -987,13 +1106,13 @@ function registryHarness(observe: (input: GateInternalRequest) => void = () => {
   return { registry, storage };
 }
 
-async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
+async function deployGolden(registry: InstanceType<typeof AccountRegistry>, keySuffix = "") {
   const slug = "golden-assistant";
   const ensure = valueOf(await registry.dispatchJson({
     operation: "ensure_angel",
     accountId: "acct_demo",
     slug,
-    mutation: registryMutation("ensure-golden", {}),
+    mutation: registryMutation(`ensure-golden${keySuffix}`, {}),
   }));
   const artifact = checkedArtifact(slug);
   const publishBody = { artifact, expectedDigest: artifact.digest };
@@ -1001,7 +1120,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "publish_version",
     angelId: ensure.angel.id,
     input: publishBody,
-    mutation: registryMutation("publish-golden", publishBody),
+    mutation: registryMutation(`publish-golden${keySuffix}`, publishBody),
   }));
   const bindings = {
     "gdocs-read": ["con_personal_google"],
@@ -1009,10 +1128,10 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
   };
   const stagingBody = { versionId: version.id, expectedDigest: version.digest, bindings };
   const staged = valueOf(await registry.dispatchJson({
-    operation: "deploy_staging",
+    operation: "deploy_preview",
     angelId: ensure.angel.id,
     input: stagingBody,
-    mutation: registryMutation("stage-golden", stagingBody),
+    mutation: registryMutation(`stage-golden${keySuffix}`, stagingBody),
   }));
   const productionBody = {
     stagedDeploymentId: staged.id,
@@ -1023,7 +1142,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "promote_production",
     angelId: ensure.angel.id,
     input: productionBody,
-    mutation: registryMutation("promote-golden", productionBody),
+    mutation: registryMutation(`promote-golden${keySuffix}`, productionBody),
   }));
   return { ensure, version, staged, bindings };
 }
@@ -1089,6 +1208,9 @@ function gateService(
           return Response.json(await policy.install(input.command));
         case "availability":
           return Response.json(policy.changeAvailability(input.command));
+        case "reconcile_keys":
+          states.set(input.runtimeId, policy);
+          return Response.json(policy.reconcileGatewayKeys(input.hashes));
         case "snapshot":
           return Response.json(policy.snapshot());
       }

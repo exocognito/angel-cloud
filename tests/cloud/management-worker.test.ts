@@ -160,7 +160,7 @@ describe("management resource routes", () => {
     expect(env.calls.map((entry) => (entry as { operation: string }).operation)).toEqual([
       "ensure_angel",
       "publish_version",
-      "deploy_staging",
+      "deploy_preview",
       "promote_production",
     ]);
     expect(env.calls[0]).toMatchObject({
@@ -217,6 +217,96 @@ describe("management resource routes", () => {
       input: { keyId: "key_abc" },
       mutation: { idempotencyKey: "key-revoke-1" },
     });
+  });
+
+  test("routes the delete command with an optional slug confirmation", async () => {
+    const env = managementEnv();
+    const url = "https://cloud.test/v1/accounts/acct_personal/angels/golden-assistant";
+
+    // Bare delete: no body required when production is empty.
+    const bare = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders("delete-1"),
+    }), env as never);
+    expect(bare.status).toBe(200);
+
+    // Confirmed delete: the slug typed into the body.
+    const confirmed = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders("delete-2"),
+      body: JSON.stringify({ confirm: "golden-assistant" }),
+    }), env as never);
+    expect(confirmed.status).toBe(200);
+
+    expect(env.calls).toEqual([
+      {
+        operation: "delete_angel",
+        accountId: "acct_personal",
+        slug: "golden-assistant",
+        input: {},
+        mutation: {
+          method: "DELETE",
+          path: "/v1/accounts/acct_personal/angels/golden-assistant",
+          idempotencyKey: "delete-1",
+          body: {},
+        },
+      },
+      {
+        operation: "delete_angel",
+        accountId: "acct_personal",
+        slug: "golden-assistant",
+        input: { confirm: "golden-assistant" },
+        mutation: {
+          method: "DELETE",
+          path: "/v1/accounts/acct_personal/angels/golden-assistant",
+          idempotencyKey: "delete-2",
+          body: { confirm: "golden-assistant" },
+        },
+      },
+    ]);
+  });
+
+  test("rejects malformed delete requests before dispatch", async () => {
+    const url = "https://cloud.test/v1/accounts/acct_personal/angels/golden-assistant";
+
+    // Unknown body keys are rejected (there is no ?force=true equivalent).
+    const unknownKey = managementEnv();
+    const forced = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders("delete-forced"),
+      body: JSON.stringify({ force: true }),
+    }), unknownKey as never);
+    expect(forced.status).toBe(400);
+    expect(await forced.json()).toEqual({ error: "delete accepts only an optional confirm field" });
+    expect(unknownKey.calls).toEqual([]);
+
+    // Every mutation requires an Idempotency-Key.
+    const missingKey = managementEnv();
+    const unkeyed = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders(),
+    }), missingKey as never);
+    expect(unkeyed.status).toBe(400);
+    expect(missingKey.calls).toEqual([]);
+
+    // A malformed percent-encoding in the path is the client's error, not a
+    // server fault.
+    const malformed = managementEnv();
+    const undecodable = await handleControlRequest(new Request(
+      "https://cloud.test/v1/accounts/acct_personal/angels/%zz",
+      { method: "DELETE", headers: managementHeaders("delete-malformed") },
+    ), malformed as never);
+    expect(undecodable.status).toBe(400);
+    expect(malformed.calls).toEqual([]);
+
+    // The management credential stays bound to its configured Account.
+    const crossAccount = managementEnv();
+    const crossed = await handleControlRequest(new Request(
+      "https://cloud.test/v1/accounts/acct_other/angels/golden-assistant",
+      { method: "DELETE", headers: managementHeaders("delete-crossed") },
+    ), crossAccount as never);
+    expect(crossed.status).toBe(404);
+    expect(crossAccount.calls).toEqual([]);
   });
 
   test("rejects a create-key request that is missing its name", async () => {
@@ -385,7 +475,8 @@ describe("management resource routes", () => {
       .toEqual(cases.map((input) => ({
         operation: "change_availability",
         angelId: "ang_1",
-        environment: "staging",
+        // The legacy route spelling canonicalizes before dispatch.
+        environment: "preview",
         input,
         mutation: expect.any(Object),
       })));
@@ -530,7 +621,7 @@ describe("AccountRegistry management persistence", () => {
       "personal-google",
       "work-google",
     ]);
-    expect(JSON.stringify(storage.get("management"))).not.toContain(ensured.keys.staging);
+    expect(JSON.stringify(storage.get("management"))).not.toContain(ensured.keys.preview);
     expect(JSON.stringify(storage.get("management"))).not.toContain(ensured.keys.production);
   });
 
@@ -577,18 +668,18 @@ describe("AccountRegistry management persistence", () => {
     };
 
     valueOf(await registry.dispatchJson({
-      operation: "deploy_staging",
+      operation: "deploy_preview",
       angelId: ensured.angel.id,
       input: stageInput,
       mutation: {
         method: "POST",
-        path: `/v1/angels/${ensured.angel.id}/environments/staging/deployments`,
+        path: `/v1/angels/${ensured.angel.id}/environments/preview/deployments`,
         idempotencyKey: "stage-runtime",
         body: stageInput,
       },
     }));
 
-    expect(new Set(runtimeIds)).toEqual(new Set(["acct_demo:golden-assistant:staging"]));
+    expect(new Set(runtimeIds)).toEqual(new Set(["acct_demo:golden-assistant:preview"]));
   });
 
   // Integration: drive the REAL registry (real ManagementControl behind DO storage)
@@ -674,13 +765,13 @@ describe("AccountRegistry management persistence", () => {
     const registry = keyRegistry();
     await ensureGolden(registry);
 
-    const create = (environment: "staging" | "production") => registry.dispatchJson({
+    const create = (environment: "preview" | "production") => registry.dispatchJson({
       operation: "key_action", action: "create_key", angelId: "golden-assistant",
       environment, idempotencyToken: "shared-token", name: "Same name",
     });
 
     const prod = valueOf(await create("production")) as { plaintext: string };
-    const staging = valueOf(await create("staging")) as { plaintext: string };
+    const staging = valueOf(await create("preview")) as { plaintext: string };
     // Same token + same name across two environments must NOT collide onto the
     // first context's sealed plaintext.
     expect(staging.plaintext).not.toBe(prod.plaintext);
@@ -694,7 +785,7 @@ describe("AccountRegistry management persistence", () => {
     // Exactly one "Same name" key per environment — no duplicate from the replay,
     // no cross-context bleed.
     expect(golden.environments.production.keys.filter((key: { name: string }) => key.name === "Same name")).toHaveLength(1);
-    expect(golden.environments.staging.keys.filter((key: { name: string }) => key.name === "Same name")).toHaveLength(1);
+    expect(golden.environments.preview.keys.filter((key: { name: string }) => key.name === "Same name")).toHaveLength(1);
   });
 });
 
@@ -767,7 +858,7 @@ function managementEnv() {
         return {
           async dispatchJson(command: unknown) {
             calls.push(command);
-            return JSON.stringify({ ok: true, value: { accepted: true } });
+            return JSON.stringify({ ok: true, value: stubValue(command as { operation: string }) });
           },
         };
       },
@@ -776,6 +867,42 @@ function managementEnv() {
     calls,
     registryNames,
   };
+}
+
+// Realistic minimal per-operation shapes: the Worker rewrites legacy-dialect
+// responses (angel and environment views), so the stub must return view-shaped
+// values for those operations rather than an opaque marker.
+function stubValue(command: { operation: string } & Record<string, unknown>): unknown {
+  const environmentView = (environment: string) => ({
+    environment,
+    keyFingerprint: "sha256:stub",
+    activeDeployment: null,
+    pendingDeployment: null,
+    repair: null,
+    availability: { defaultEnabled: true, toolOverrides: {}, connectionOverrides: {}, revision: 0 },
+    pendingAvailability: null,
+  });
+  const angelView = {
+    id: "ang_1",
+    accountId: (command.accountId as string | undefined) ?? "acct_personal",
+    slug: (command.slug as string | undefined) ?? "golden-assistant",
+    environments: { preview: environmentView("preview"), production: environmentView("production") },
+  };
+  if (command.operation === "ensure_angel") return { angel: angelView };
+  if (command.operation === "get_angel_by_slug") return angelView;
+  if (command.operation === "get_environment") return environmentView(command.environment as string);
+  if (command.operation === "deploy_preview" || command.operation === "deploy_production") {
+    return {
+      id: "dep_1",
+      angelId: command.angelId,
+      environment: command.operation === "deploy_preview" ? "preview" : "production",
+      versionId: "ver_1",
+      version: 1,
+      digest: "0".repeat(64),
+      bindings: {},
+    };
+  }
+  return { accepted: true };
 }
 
 async function versionArtifact() {

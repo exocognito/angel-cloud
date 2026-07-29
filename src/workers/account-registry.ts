@@ -4,7 +4,7 @@ import { DurableObject } from "cloudflare:workers";
 import { canonicalJson } from "@smcllns/angel-core";
 import { sha256Hex } from "@smcllns/angel-core";
 import { buildDemoView, type DemoView } from "../demo-view";
-import type { DeploymentEnvironment } from "../domain";
+import { HOSTED_ENVIRONMENTS, type HostedEnvironment } from "../environments";
 import {
   AesGcmResponseReplayVault,
   ManagementControl,
@@ -18,6 +18,16 @@ import type {
   ManagementState,
 } from "../management-contract";
 import { DEMO_ACCOUNT } from "../demo-fixtures";
+import {
+  ACCOUNT_HANDLE_PATTERN,
+  claimAccountHandle,
+  classifyAccountHandle,
+  resolveAccountHandle,
+  HandleError,
+  type HandleAccountRecord,
+  type HandleClaim,
+  type HandleResolution,
+} from "../handles";
 import { ServiceGateFleet } from "./service-gate-fleet";
 import {
   emptyProviderManagementState,
@@ -38,7 +48,7 @@ export type DemoAccountRegistryCommand =
       operation: "action";
       angelId: string;
       action: DemoAction;
-      environment: DeploymentEnvironment;
+      environment: HostedEnvironment;
       tool?: string;
       connectionId?: string;
       stagedDeploymentId?: string;
@@ -53,13 +63,27 @@ export type DemoAccountRegistryCommand =
       operation: "key_action";
       action: "create_key" | "rotate_key" | "revoke_key";
       angelId: string;
-      environment: DeploymentEnvironment;
+      environment: HostedEnvironment;
       idempotencyToken: string;
       name?: string;
       keyId?: string;
     };
 
-export type AccountRegistryCommand = DemoAccountRegistryCommand | ManagementCommand | ProviderRegistryCommand;
+// Handle directory commands are only ever dispatched to the singleton
+// HANDLE_DIRECTORY_REGISTRY instance, which holds the platform-wide claims.
+export type HandleRegistryCommand =
+  | { operation: "claim_handle"; accountId: string; handle: string }
+  | { operation: "resolve_handle"; handle: string }
+  | { operation: "account_handle"; accountId: string }
+  // Dispatched to the ACCOUNT's own registry (not the directory): stores the
+  // display copy of the claimed handle so views can build the coordinate.
+  | { operation: "record_handle"; accountId: string; handle: string };
+
+export type AccountRegistryCommand =
+  | DemoAccountRegistryCommand
+  | ManagementCommand
+  | ProviderRegistryCommand
+  | HandleRegistryCommand;
 
 type RegistryResult =
   | { ok: true; value: unknown; status?: number }
@@ -101,12 +125,30 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
           return { ok: true, value: await this.action(command) };
         case "key_action":
           return { ok: true, value: await this.keyAction(command) };
+        case "claim_handle":
+          return { ok: true, value: await this.claimHandle(command.accountId, command.handle) };
+        case "resolve_handle":
+          return { ok: true, value: await this.resolveHandle(command.handle) };
+        case "account_handle":
+          return { ok: true, value: await this.accountHandle(command.accountId) };
+        case "record_handle":
+          return { ok: true, value: await this.recordHandle(command.accountId, command.handle) };
         case "ensure_angel":
           return {
             ok: true,
             value: await (await this.management()).ensureAngel(
               command.accountId,
               command.slug,
+              command.mutation,
+            ),
+          };
+        case "delete_angel":
+          return {
+            ok: true,
+            value: await (await this.management()).deleteAngel(
+              command.accountId,
+              command.slug,
+              command.input,
               command.mutation,
             ),
           };
@@ -137,11 +179,21 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
               command.mutation,
             ),
           };
-        case "deploy_staging":
+        case "deploy_preview":
           await this.reconcileFromBroker();
           return {
             ok: true,
-            value: await (await this.management()).deployStaging(
+            value: await (await this.management()).deployPreview(
+              command.angelId,
+              command.input,
+              command.mutation,
+            ),
+          };
+        case "deploy_production":
+          await this.reconcileFromBroker();
+          return {
+            ok: true,
+            value: await (await this.management()).deployProduction(
               command.angelId,
               command.input,
               command.mutation,
@@ -279,7 +331,11 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
           };
       }
     } catch (error) {
-      if (error instanceof RegistryError || error instanceof ManagementError) {
+      if (
+        error instanceof RegistryError
+        || error instanceof ManagementError
+        || error instanceof HandleError
+      ) {
         return { ok: false, status: error.status, error: error.message };
       }
       return {
@@ -290,17 +346,66 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     }
   }
 
+  // One storage key per claimed name and per Account: resolution reads one or
+  // two keys, and no single record grows with the platform.
+  private async claimHandle(accountId: string, handle: string): Promise<HandleClaim> {
+    // Validate before any storage access: Durable Object keys cap at 2 KiB,
+    // so an unclaimable name must never become a storage key probe.
+    const classification = classifyAccountHandle(handle);
+    if (!classification.ok) {
+      throw new HandleError(classification.kind === "invalid" ? 400 : 403, classification.message);
+    }
+    const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
+    const record = await this.ctx.storage.get<HandleAccountRecord>(`account:${accountId}`);
+    const { account, changed } = claimAccountHandle({ accountId, handle, owner, account: record });
+    if (changed) {
+      await this.ctx.storage.put({
+        [`handle:${handle}`]: accountId,
+        [`account:${accountId}`]: { handle: account.handle, retiredHandle: account.retiredHandle },
+      });
+    }
+    return account;
+  }
+
+  /** Store the display copy of a claimed handle on the management state. */
+  private async recordHandle(accountId: string, handle: string): Promise<{ handle: string }> {
+    if (accountId !== this.env.ACCOUNT_ID) throw new RegistryError(404, "not found");
+    const control = await this.management();
+    const state = control.exportState();
+    if (state.account.handle !== handle) {
+      state.account.handle = handle;
+      await this.ctx.storage.put("management", state);
+    }
+    return { handle };
+  }
+
+  /** The Account's own naming record, from the directory's per-Account key. */
+  private async accountHandle(accountId: string): Promise<HandleClaim> {
+    const record = await this.ctx.storage.get<HandleAccountRecord>(`account:${accountId}`);
+    if (record === undefined) throw new RegistryError(404, "no handle is claimed");
+    return { accountId, handle: record.handle, retiredHandle: record.retiredHandle };
+  }
+
+  private async resolveHandle(handle: string): Promise<HandleResolution> {
+    // An unclaimable name is by definition unclaimed — answer without ever
+    // building it into a storage key.
+    if (!ACCOUNT_HANDLE_PATTERN.test(handle)) throw new RegistryError(404, "unknown handle");
+    const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
+    const record = owner === undefined
+      ? undefined
+      : await this.ctx.storage.get<HandleAccountRecord>(`account:${owner}`);
+    const resolution = resolveAccountHandle(handle, owner, record);
+    if (resolution === null) throw new RegistryError(404, "unknown handle");
+    return resolution;
+  }
+
   private async reset(): Promise<DemoView> {
     const existing = await this.ctx.storage.get<ManagementState>("management");
-    const slugs = new Set([
-      "gmail-inbox-zero",
-      "golden-assistant",
-      ...(existing?.angels.map((angel) => angel.slug) ?? []),
-    ]);
+    const slugs = new Set(existing?.angels.map((angel) => angel.slug) ?? []);
     for (const slug of slugs) {
       const fleet = this.managementFleet(slug);
       for (const gate of ["broker", "gateway"] as const) {
-        for (const environment of ["staging", "production"] as const) {
+        for (const environment of HOSTED_ENVIRONMENTS) {
           await fleet.reset(gate, environment);
         }
       }
@@ -309,6 +414,9 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
       account: { ...DEMO_ACCOUNT, id: this.env.ACCOUNT_ID },
       connections: managementConnections(this.env.ACCOUNT_ID),
     });
+    // The handle claim is permanent directory state, not demo state: a reset
+    // must not un-display it.
+    if (existing?.account.handle !== undefined) state.account.handle = existing.account.handle;
     await this.ctx.storage.put("management", state);
     return buildDemoView(
       state,
@@ -338,11 +446,17 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
       if (current.pendingAvailability === null && availabilityAlready(current.availability, change)) {
         return this.view(control.exportState());
       }
+      // Bind the resolved Management id into the derived key and the
+      // fingerprinted body (like keyAction does): the demo slug is reusable
+      // after a delete and availability revisions restart at 0, so a
+      // slug+revision key would collide with the dead Angel's record and
+      // silently replay it instead of touching the new Angel's gates.
+      const body = { ...commandBody(command) as Record<string, unknown>, resolvedAngelId: angel.id };
       const mutation = {
         method: "POST",
         path: "/api/demo/action",
-        idempotencyKey: await demoMutationKey(command, current.availability.revision),
-        body: commandBody(command),
+        idempotencyKey: await demoMutationKey(body, current.availability.revision),
+        body,
       };
       await control.changeAvailability(angel.id, command.environment, change, mutation);
     }
@@ -390,17 +504,17 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   ): Promise<void> {
     const state = control.exportState();
     const angel = state.angels.find((candidate) => candidate.id === angelId)!;
-    const stagingId = angel.environments.staging.activeDeploymentId;
+    const previewId = angel.environments.preview.activeDeploymentId;
     const productionId = angel.environments.production.activeDeploymentId;
-    const staging = state.deployments.find((candidate) => candidate.id === stagingId);
+    const preview = state.deployments.find((candidate) => candidate.id === previewId);
     const production = state.deployments.find((candidate) => candidate.id === productionId);
     if (
-      staging !== undefined
+      preview !== undefined
       && production !== undefined
-      && staging.versionId === production.versionId
-      && staging.digest === production.digest
-      && command.stagedDeploymentId === staging.id
-      && command.expectedDigest === staging.digest
+      && preview.versionId === production.versionId
+      && preview.digest === production.digest
+      && command.stagedDeploymentId === preview.id
+      && command.expectedDigest === preview.digest
       && canonicalJson(command.bindings) === canonicalJson(production.bindings)
       && angel.environments.production.pendingDeploymentId === null
     ) return;
@@ -408,7 +522,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     const view = await this.view(state);
     const ready = view.angels.find((candidate) => candidate.id === command.angelId)?.readyForProduction;
     if (ready === null || ready === undefined) {
-      throw new RegistryError(409, "no staged Version has compatible production bindings");
+      throw new RegistryError(409, "no previewed Version has compatible production bindings");
     }
     if (
       command.stagedDeploymentId !== ready.stagedDeploymentId
@@ -422,17 +536,29 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
       expectedDigest: ready.expectedDigest,
       bindings: ready.bindings,
     };
+    // Same identity binding as availability actions: the resolved Management
+    // id keeps a re-created slug's promotions from colliding with a dead
+    // Angel's records.
+    const body = { ...commandBody(command) as Record<string, unknown>, resolvedAngelId: angelId };
     await control.promoteProduction(angelId, input, {
       method: "POST",
       path: "/api/demo/action",
-      idempotencyKey: await demoMutationKey(command, production?.id ?? "none"),
-      body: commandBody(command),
+      idempotencyKey: await demoMutationKey(body, production?.id ?? "none"),
+      body,
     });
   }
 
   private async view(state?: ManagementState): Promise<DemoView> {
-    const managementState = state ?? await this.ctx.storage.get<ManagementState>("management");
-    if (managementState === undefined) throw new RegistryError(409, "demo Account is not initialized");
+    let managementState = state;
+    if (managementState === undefined) {
+      if (await this.ctx.storage.get<ManagementState>("management") === undefined) {
+        throw new RegistryError(409, "demo Account is not initialized");
+      }
+      // Route the raw read through ManagementControl so both restore repairs —
+      // pre-fix dangling availability (issue #1) and the staging→preview
+      // rename migration — apply to this projection like every other read path.
+      managementState = (await this.management()).exportState();
+    }
     return buildDemoView(
       managementState,
       (_angelId, slug) => this.managementFleet(slug),
@@ -613,10 +739,10 @@ function availabilityAlready(
 }
 
 async function demoMutationKey(
-  command: Extract<AccountRegistryCommand, { operation: "action" }>,
+  body: unknown,
   generation: string | number,
 ): Promise<string> {
-  return `demo_${await sha256Hex(canonicalJson({ command: commandBody(command), generation }))}`;
+  return `demo_${await sha256Hex(canonicalJson({ command: body, generation }))}`;
 }
 
 function commandBody(command: Extract<AccountRegistryCommand, { operation: "action" }>): unknown {

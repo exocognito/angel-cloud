@@ -311,7 +311,7 @@ describe("Allowed Tools renderers are EXECUTED against a stub DOM (never grepped
           boundTool("gmail.users.drafts.create", "Gmail", "Use", ["conn-work"]),
         ],
       },
-      staging: { tools: [] },
+      preview: { tools: [] },
     },
   };
   const prodTools = angel.environments.production.tools;
@@ -371,7 +371,7 @@ describe("Allowed Tools renderers are EXECUTED against a stub DOM (never grepped
 });
 
 describe("Angel header providers derive from the ACTIVE environment only", () => {
-  // Production deploys Docs only; staging additionally deploys Gmail. Production
+  // Production deploys Docs only; preview additionally deploys Gmail. Production
   // must NEVER surface Gmail in its header logos/charter.
   const angel = {
     id: "a1",
@@ -379,7 +379,7 @@ describe("Angel header providers derive from the ACTIVE environment only", () =>
     connections: [{ id: "conn-personal", label: "personal-google" }],
     environments: {
       production: { tools: [boundTool("docs.documents.get", "Google Docs", "Read", ["conn-personal"])] },
-      staging: {
+      preview: {
         tools: [
           boundTool("docs.documents.get", "Google Docs", "Read", ["conn-personal"]),
           boundTool("gmail.users.messages.list", "Gmail", "Read", ["conn-personal"]),
@@ -388,14 +388,14 @@ describe("Angel header providers derive from the ACTIVE environment only", () =>
     },
   };
 
-  test("production shows Docs only; switching to staging updates to Docs + Gmail", () => {
+  test("production shows Docs only; switching to preview updates to Docs + Gmail", () => {
     h.setDemoState({ angels: [angel] });
     h.setActiveAngel("a1");
 
     h.setActiveEnvironment("production");
     expect(h.activeEnvironmentApps()).toEqual(["Google Docs"]);
 
-    h.setActiveEnvironment("staging");
+    h.setActiveEnvironment("preview");
     expect(h.activeEnvironmentApps()).toEqual(["Gmail", "Google Docs"]);
   });
 
@@ -404,7 +404,7 @@ describe("Angel header providers derive from the ACTIVE environment only", () =>
       id: "a2",
       name: "Fresh Angel",
       connections: [],
-      environments: { production: { tools: [] }, staging: { tools: [] } },
+      environments: { production: { tools: [] }, preview: { tools: [] } },
     };
     h.setDemoState({ angels: [undeployed] });
     h.setActiveAngel("a2");
@@ -464,8 +464,8 @@ describe("PR G: the header sub line is quiet — environment + Version, never a 
   test("renders `<Environment> · Version N` with no digest on the front door", () => {
     expect(h.environmentSubLine("Production", { version: 1, digest: "sha256:deadbeefcafef00d" }))
       .toBe("Production · Version 1");
-    expect(h.environmentSubLine("Staging", { version: 4, digest: "sha256:0123456789abcdef" }))
-      .toBe("Staging · Version 4");
+    expect(h.environmentSubLine("Preview", { version: 4, digest: "sha256:0123456789abcdef" }))
+      .toBe("Preview · Version 4");
   });
 
   test("never leaks the sha/digest onto the header, for any digest value", () => {
@@ -477,8 +477,8 @@ describe("PR G: the header sub line is quiet — environment + Version, never a 
   });
 
   test("an undeployed environment stays honest (no active Version), still no sha", () => {
-    const line = h.environmentSubLine("Staging", { version: null, digest: null });
-    expect(line).toBe("Staging · No active Version");
+    const line = h.environmentSubLine("Preview", { version: null, digest: null });
+    expect(line).toBe("Preview · No active Version");
     expect(line).not.toContain("sha256");
   });
 });

@@ -1,6 +1,7 @@
 # Domain architecture (target)
 
-Status: direction agreed 2026-07-23; nothing here is wired yet. Everything
+Status: direction agreed 2026-07-23. The coordinate path grammar is live on
+the Gateway as of 2026-07-28 (issue #3); the host move is not — everything
 currently runs on `workers.dev` URLs in the dedicated Cloudflare account, and
 that carries us until the public-product milestone. This document exists so
 the URL scheme is settled before anything public depends on it.
@@ -8,9 +9,10 @@ the URL scheme is settled before anything public depends on it.
 This is reference — what the addresses are. Why they are shaped this way, and
 whether they are built yet, lives in the product decision records:
 [PD 0001](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0001-angel-coordinate-scheme.md)
-for the coordinate and
+for the coordinate (implemented — the Gateway answers it on the current host)
+and
 [PD 0002](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0002-public-angel-page.md)
-for public Angel pages. Neither is implemented.
+for public Angel pages (not implemented).
 
 ## The angel coordinate
 
@@ -50,11 +52,17 @@ the bare coordinate — so every Angel has one canonical production URL.
 The suffix set is closed and product-defined — today just `preview` (bare =
 production), with room for a small fixed set later (e.g. per-PR builds).
 The canonical validation pattern, to be reused verbatim wherever coordinates
-are parsed:
+are parsed (a surface that accepts only a subset — like the acceptance
+runner's production-only URL check — embeds that subset instead):
 
 ```
 ^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$
 ```
+
+The account segment additionally carries PD 0004's four-character floor and a
+32-character cap, enforced by the registry in `src/handles.ts`
+(`^[a-z][a-z0-9-]{3,31}$`); the pattern above stays the shape of a
+coordinate, not the claimability of a name.
 
 Growing the set means editing one alternation in one pattern. The suffix
 vocabulary is under review — see PD 0001, which also records the rejected

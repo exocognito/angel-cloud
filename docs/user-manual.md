@@ -58,7 +58,7 @@ client secret.
 
 **Live and proven end to end:**
 
-- The local build, publish, staging deploy, and exact-promotion lifecycle
+- The local build, publish, preview deploy, and exact-promotion lifecycle
   ([Ship it](#ship-it)), driven through the Account-scoped management API with
   safely retryable mutations and stable environment keys.
 - Bring-your-own Google OAuth custody: a Provider App stored write-only, Google
@@ -96,19 +96,21 @@ flowchart TD
     PA --> CON
     ACC --> AN["Angel"]
     AN --> VER["Versions\n(immutable artifacts)"]
-    AN --> ST["staging environment"]
+    AN --> ST["preview environment"]
     AN --> PROD["production environment"]
     ST --> DS["deployment =\nVersion + bindings"]
     PROD --> DP["deployment =\nVersion + bindings"]
     DS --> CON
     DP --> CON
-    ST --> KS["staging Angel key"]
+    ST --> KS["preview Angel key"]
     PROD --> KP["production Angel key"]
 ```
 
 - **Account** — the ownership and isolation boundary. It owns everything below.
   A request for another Account's resources returns `404`
-  ([why not a denial?](faq.md#how-are-accounts-isolated)).
+  ([why not a denial?](faq.md#how-are-accounts-isolated)). Internally an
+  Account is an opaque `acct_*` id; its public name is its **handle** — see
+  [Account handles](#account-handles).
 - **Provider App** — one reusable OAuth client ID and secret you bring yourself.
   It is stored write-only in Broker custody; its secret is never read back.
 - **Connection** — an Account-owned link to one authorized provider identity and
@@ -121,9 +123,11 @@ flowchart TD
   its canonical source. Versions never change; publishing the same digest twice
   returns the existing Version
   ([why](faq.md#why-are-versions-immutable)).
-- **Environment** — `staging` or `production`, nothing else. Each has its own
-  deployment, bindings, availability state, and Angel key. A staging key cannot
-  call production.
+- **Environment** — `preview` or `production`, nothing else. Each has its own
+  deployment, bindings, availability state, and Angel key. A preview key cannot
+  call production. `preview` was named `staging` until 2026-07-28 (PD 0003);
+  the pinned CLI and its `angel.json` still use the old spelling, and the
+  server accepts it as a legacy dialect.
 - **Deployment** — one Version installed into one environment, with explicit
   **bindings** that map each of the artifact's requirements to Connections.
 - **Angel key** — the bearer an agent presents. Each environment gets a default
@@ -296,12 +300,14 @@ Exactly four keys:
   credentials.
 - `account` — your Account ID.
 - `angel` — the Angel slug; must equal the artifact's `name`.
-- `bindings` — a `staging` map and a `production` map, each keyed by the
+- `bindings` — a `staging` map (the pinned CLI's spelling of the preview
+  environment) and a `production` map, each keyed by the
   artifact's binding-requirement IDs. For a direct Angel the ID is the provider
   name (`gmail`); for a composed Angel it is the child name
   (`gmail-read-and-draft`), or `<child>:<provider>` when one child uses two
   providers. The value is one Connection nickname, or a list of nicknames to give
-  the agent a choice. Production never inherits staging's bindings
+  the agent a choice. Production never inherits preview's bindings, and
+  preview never inherits production's (PD 0005)
   ([why](faq.md#why-cant-production-reuse-my-staging-bindings-automatically)).
 
 ## Add Google custody
@@ -432,7 +438,7 @@ flowchart LR
     ART --> PUB["angel publish"]
     J["angel.json\n(target, Account,\nbindings)"] --> PUB
     PUB --> V["immutable Version"]
-    V --> S["staging deployment"]
+    V --> S["preview deployment"]
     S -->|"angel deploy --prod\nor dashboard promote"| PR["production deployment"]
 ```
 
@@ -474,7 +480,7 @@ children) and writes `build/angel.version.json` (the canonical, secret-free
 artifact) and `build/angel.version.sha256` (its digest). You never need to run
 `build` by hand — `publish` runs it — but it is a cheap, offline preview.
 
-### Publish to staging
+### Publish to preview
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -491,14 +497,19 @@ One command does four things:
    read the plaintext back**
    ([can I rotate?](faq.md#can-i-rotate-an-angel-key-is-it-shown-more-than-once)).
 3. Publishes the Version. The same digest returns the same Version.
-4. Deploys it to staging, resolving your `staging` binding nicknames against the
-   Account's live Connections. Each nickname must exist, be `healthy`, and cover
-   its requirement's provider.
+4. Deploys it to the preview environment, resolving your `staging` binding
+   nicknames (the CLI's legacy spelling of preview) against the Account's live
+   Connections. Each nickname must exist, be `healthy`, and cover its
+   requirement's provider. A preview deploy with no bindings for a Version
+   that requires them fails and names the two ways forward (PD 0005). The
+   server can also take a published Version straight to production in one step
+   (`POST /v1/angels/{id}/environments/production/deployments`); the CLI
+   default moves there with the next `@smcllns/angel-core` release (PD 0003).
 
 Every mutation carries an idempotency key: resend the same key to retry a call
 safely, and never reuse a key for different input.
 
-### Promote the exact staged deployment
+### Promote the exact previewed deployment
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -506,29 +517,76 @@ ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."
 pnpm exec angel deploy google-read-proof --prod
 ```
 
-Promotion, not deployment from source. It reads the *currently active* staging
+Promotion, not deployment from source. It reads the *currently active* preview
 deployment, resolves your `production` binding nicknames, and asks Control to
-promote that exact staged Version and digest under your production bindings. It
-does not build, publish, or pick a newer Version — the policy you tested on
-staging is byte-for-byte what production runs, though each environment keeps its
-own bindings. The
+promote that exact previewed Version and digest under your production bindings.
+It does not build, publish, or pick a newer Version — the policy you tested on
+preview is byte-for-byte what production runs, though each environment keeps
+its own bindings. The
 dashboard's promote button does the same thing, with a drift check on top
 ([the Activity pane](#use-the-dashboard)). Rollback has no command yet; see
 [How do I roll back?](faq.md#how-do-i-roll-back)
+
+### Delete an Angel
+
+There is no CLI command yet; call the management API directly with the same
+authentication as every mutation (Access identity, management bearer, and an
+`Idempotency-Key`):
+
+```sh
+curl -X DELETE "$CONTROL_BASE_URL/v1/accounts/<account>/angels/<slug>" \
+  -H "CF-Access-Client-Id: <service-token-id>" \
+  -H "CF-Access-Client-Secret: <service-token-secret>" \
+  -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
+  -H "Idempotency-Key: $(uuidgen)"
+```
+
+Deletion is hard and complete: every agent key is revoked first (nothing
+authenticates mid-teardown), the Broker gates close before the Gateway gates in
+both environments, and the Angel's state, Deployments, and Versions — receipts
+included — are dropped. Afterwards the coordinate returns `404` and the slug is
+immediately reusable inside your Account; publish-then-delete is how an Angel
+gets renamed. Account handles are different — they are
+[never released](product-decisions/0004-account-handles.md).
+
+When production has a deployment — active, or pending repair after a failed
+convergence — the request must repeat the slug in the body —
+`{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose production is
+empty deletes without a body; a live preview deployment does not require
+confirmation. Replaying the same `Idempotency-Key` returns the original
+response; a fresh delete of an already-deleted slug returns `404`. Mint a fresh
+key per delete (as the `uuidgen` above does) — a key derived from
+method+path+body would collide across delete → recreate → delete and replay the
+first response instead of deleting again. If a gate call fails mid-teardown the
+Angel stays visible with its keys revoked — call delete again to finish.
 
 ## Connect an agent
 
 ### Endpoint and auth
 
-Each Angel environment has one MCP endpoint on the Gateway:
+Each Angel has one canonical MCP coordinate on the Gateway (PD 0001); bare
+means production:
 
 ```text
-POST https://<gateway>/v1/a/<account>/<angel>/<staging|production>/mcp
+POST https://<gateway>/@<handle>/<angel>           → production
+POST https://<gateway>/@<handle>/<angel>@preview   → preview
 Authorization: Bearer <that environment's Angel key>
 ```
 
-Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The endpoint
-serves only POST; other methods get `405`.
+`<handle>` is the Account's [handle](#account-handles) — a retired handle also
+works and is answered directly with `200`, never a redirect. An unknown handle
+answers `401` exactly like a wrong key, so handle existence cannot be probed
+without one. `latest` and `production` are rejected as suffixes, so production
+has exactly one spelling; pinned `@N` Version addresses are reserved in the
+grammar and answer `404` for now.
+
+The legacy route
+`POST /v1/a/<account>/<angel>/<staging|preview|production>/mcp` still answers
+through the cutover — `staging` is the old spelling of `preview`, and
+`<account>` is either the internal `acct_*` id or the handle.
+
+Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The
+endpoints serve only POST; other methods get `405`.
 
 ![The Agent Keys pane: the active environment's MCP endpoint ready to paste into an agent client, and named keys with masked fingerprints, Rotate, and Revoke](manual-images/agent-keys-pane.png)
 
@@ -595,10 +653,14 @@ rows described in [Add Google custody](#add-google-custody).
 **Angels** shows one Angel beside a rail of the Account's Angels. The header
 carries provider marks, a generated provider summary line (derived from the
 active environment's deployed tools, not the `ANGEL.yaml` charter), and the
-environment's Version line, with a Staging/Production toggle and a Live/Paused
+environment's Version line, with a Preview/Production toggle and a Live/Paused
 pill.
 
-![Angel header with provider marks, the generated provider summary, environment Version line, the Staging/Production toggle, the Live pill, and the four pane tabs](manual-images/angel-header-panes.png)
+![Angel header with provider marks, the generated provider summary, environment Version line, the Preview/Production toggle, the Live pill, and the four pane tabs](manual-images/angel-header-panes.png)
+
+*(The screenshots on this page predate the staging→preview rename and the
+coordinate endpoint; the labels read Staging and the endpoint shows the legacy
+URL until they are recaptured.)*
 
 Angel detail has four panes:
 
@@ -644,9 +706,10 @@ Availability is a runtime overlay per Angel per environment, at three levels:
 - **tool** — one tool across all its Connections; or
 - **tool + Connection** — one tuple, leaving the tool's other Connections running.
 
-The most specific override wins. Tool-level pause state survives a redeploy,
-pruned to the tools that still exist; per-Connection pauses reset on each deploy,
-because a deployment mints fresh Connection selectors. Per-tool-and-Connection toggles
+The most specific override wins. Pause state survives a redeploy: tool-level
+pauses are pruned to the tools that still exist, and per-Connection pauses
+follow the Connection onto the new deployment — a pause is dropped only when
+its Connection is no longer bound to the tool. Per-tool-and-Connection toggles
 live on the Allowed Tools pane; environment-wide **Pause all** and **Resume all**
 live under Settings → Availability.
 
@@ -683,12 +746,13 @@ Transport and platform errors:
 | `404` | The route or owned resource is absent — cross-Account lookups also return `404`. |
 | `405` | Non-POST to the MCP endpoint. |
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
-| `403` | Disallowed `Origin`. |
+| `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
-| `409` | Digest, idempotency, staging, revision, or pending-repair conflict. |
+| `409` | Digest, idempotency, preview, revision, or pending-repair conflict, or a delete missing its [slug confirmation](#delete-an-angel), or a handle already claimed or a second rename — see [Account handles](#account-handles). |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |
+| `502` | A handle claim committed but its Gateway push failed — see [Account handles](#account-handles). |
 
 Management errors share one shape: `{"error":"<message>"}` with the HTTP status.
 Provider and custody failures throw; the runtime never silently substitutes a
@@ -715,8 +779,40 @@ Required secrets:
 
 Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
 `ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, and `GATEWAY_BASE_URL`. The internal tokens
-must be non-empty and pairwise distinct; every Worker fails closed otherwise. The
-Broker has `workers_dev` disabled and no public route.
+must be non-empty and pairwise distinct; every Worker fails closed otherwise.
+`ACCOUNT_ID` must carry the `acct_` prefix — Control refuses to serve with a
+handle-shaped id. The Broker has `workers_dev` disabled and no public route.
+
+### Account handles
+
+An Account's public name in the
+[coordinate scheme](product-decisions/0001-angel-coordinate-scheme.md) is its
+handle, governed by
+[PD 0004](product-decisions/0004-account-handles.md): unique platform-wide,
+renameable once, never released. A valid handle matches
+`^[a-z][a-z0-9-]{3,31}$`; one-to-three-character names and the platform's
+authority words (`admin`, `support`, `official`, and the rest of the list in
+`src/handles.ts`) are reserved. In Milestone 1 the handle is operator-set over
+the `/v1` management surface — there is no self-serve rename:
+
+```sh
+curl -X PUT "https://<control>/v1/accounts/<acct_id-or-handle>/handle" \
+  -H "CF-Access-Client-Id: <id>" -H "CF-Access-Client-Secret: <secret>" \
+  -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"handle":"smcllns"}'
+```
+
+Statuses: `400` invalid, `403` reserved, `409` taken or a second rename, `502`
+the claim committed but the Gateway push failed (retry the same PUT), `500`
+directory divergence (do not retry; investigate). `GET /v1/handles/<handle>`
+resolves your own current or retired handle to
+`{accountId, canonicalHandle, retired}`; anyone else's handle is `404`.
+`GET /v1/accounts/<account>/handle` reads your own claim back as
+`{accountId, handle, retiredHandle}`, `404` before any claim. A
+handle also names the Account anywhere `/v1/accounts/<account>` appears. The
+first claim must use the internal `acct_*` id, since an unclaimed handle
+resolves to nothing.
 
 ## Prove it works
 

@@ -1,8 +1,8 @@
 "use strict";
 
 const ACTIONS = new Set(["promote", "pause_all", "resume_all", "pause_tool", "resume_tool"]);
-const ENVIRONMENTS = ["staging", "production"];
-const KEY_ENVIRONMENT_COPY = "A staging key cannot call production. The production key fingerprint stays stable across promotions.";
+const ENVIRONMENTS = ["preview", "production"];
+const KEY_ENVIRONMENT_COPY = "A preview key cannot call production. The production key fingerprint stays stable across promotions.";
 let demoState;
 let activeEnvironment = "production";
 let activeRoute = "home";
@@ -185,19 +185,21 @@ function validateLifecycleEvent(value, path, environmentName) {
   );
   const kind = oneOf(
     event.kind,
-    ["version_published", "staging_deploy", "production_promotion"],
+    ["version_published", "preview_deploy", "production_promotion", "production_deploy"],
     `${path}.kind`,
   );
   // Strict per-environment separation: an event's environment must equal the
   // environment whose lifecycle carries it, and a deploy/promotion kind must
-  // match that environment. Staging and production data are never interleaved.
+  // match that environment. Preview and production data are never interleaved.
   const eventEnvironment = oneOf(event.environment, ENVIRONMENTS, `${path}.environment`);
   if (eventEnvironment !== environmentName) {
     fail(`${path}.environment`, `must equal ${environmentName} (no cross-environment lifecycle)`);
   }
-  const expectedDeployKind = environmentName === "staging" ? "staging_deploy" : "production_promotion";
-  if (kind !== "version_published" && kind !== expectedDeployKind) {
-    fail(`${path}.kind`, `must be version_published or ${expectedDeployKind} in ${environmentName}`);
+  const expectedDeployKinds = environmentName === "preview"
+    ? ["preview_deploy"]
+    : ["production_promotion", "production_deploy"];
+  if (kind !== "version_published" && !expectedDeployKinds.includes(kind)) {
+    fail(`${path}.kind`, `must be version_published or ${expectedDeployKinds.join("/")} in ${environmentName}`);
   }
   // version_published is version-scoped (no deployment id); a deploy/promotion names its deployment.
   const deploymentId = kind === "version_published"
@@ -374,7 +376,7 @@ function validateActivity(value, path) {
 }
 
 function validateAngel(value, path) {
-  // endpoints is a required first-class field in v3 (no optional bypass).
+  // endpoints is a required first-class field in v4 (no optional bypass).
   const angel = exact(
     value,
     ["id", "name", "enabled", "endpoints", "connections", "environments", "versions", "readyForProduction", "activity"],
@@ -386,13 +388,13 @@ function validateAngel(value, path) {
     id: text(angel.id, `${path}.id`),
     name: text(angel.name, `${path}.name`),
     endpoints: {
-      staging: httpUrl(endpoints.staging, `${path}.endpoints.staging`),
+      preview: httpUrl(endpoints.preview, `${path}.endpoints.preview`),
       production: httpUrl(endpoints.production, `${path}.endpoints.production`),
     },
     enabled: boolean(angel.enabled, `${path}.enabled`),
     connections: list(angel.connections, `${path}.connections`, validateConnection),
     environments: {
-      staging: validateEnvironment(environments.staging, `${path}.environments.staging`, "staging"),
+      preview: validateEnvironment(environments.preview, `${path}.environments.preview`, "preview"),
       production: validateEnvironment(environments.production, `${path}.environments.production`, "production"),
     },
     versions: list(angel.versions, `${path}.versions`, validateVersion),
@@ -403,13 +405,14 @@ function validateAngel(value, path) {
 
 function validateDemoState(value) {
   const root = exact(value, ["schema", "account", "angels"], "response");
-  if (root.schema !== "angelmcp.demo.v3") fail("response.schema", "must equal angelmcp.demo.v3");
-  const account = exact(root.account, ["id", "name"], "response.account");
+  if (root.schema !== "angelmcp.demo.v4") fail("response.schema", "must equal angelmcp.demo.v4");
+  const account = exact(root.account, ["id", "name", "handle"], "response.account");
   return {
     schema: root.schema,
     account: {
       id: text(account.id, "response.account.id"),
       name: text(account.name, "response.account.name"),
+      handle: account.handle === null ? null : text(account.handle, "response.account.handle"),
     },
     angels: list(root.angels, "response.angels", validateAngel),
   };
@@ -792,9 +795,9 @@ function versionLabel(version) {
 
 // Both environment-labelled versions always render; readiness is appended,
 // never substituted — dropping the labels would blur which environment owns
-// which Version exactly when staging is ahead of production.
+// which Version exactly when preview is ahead of production.
 function homeVersionWedgeText(angel) {
-  const versions = `prod ${versionLabel(angel.environments.production.version).toLowerCase()} · staging ${versionLabel(angel.environments.staging.version).toLowerCase()}`;
+  const versions = `prod ${versionLabel(angel.environments.production.version).toLowerCase()} · preview ${versionLabel(angel.environments.preview.version).toLowerCase()}`;
   const ready = angel.readyForProduction;
   return ready !== null ? `${versions} · Version ${ready.toVersion} ready for exact promotion` : versions;
 }
@@ -945,7 +948,7 @@ function renderHomeAngel(angel) {
   // Wedged: real info the prototype card lacks — the promotion-ready hint, or the
   // per-environment Version story (the product's exact-promotion backbone).
   const wedge = element("div", "wedge home-wedge");
-  wedge.title = "Real deployment data: the Version deployed to production and to staging, plus the promotion-ready hint when a promotion is staged. The approved design mockup has no slot for this line yet, so it keeps this placeholder treatment until a designer places it. Context and next steps: docs/design/prototype-parity-handoff.md, section \"Wedge inventory\".";
+  wedge.title = "Real deployment data: the Version deployed to production and to preview, plus the promotion-ready hint when a promotion is staged. The approved design mockup has no slot for this line yet, so it keeps this placeholder treatment until a designer places it. Context and next steps: docs/design/prototype-parity-handoff.md, section \"Wedge inventory\".";
   wedge.append(element("span", "wedge-tag", "not in the design yet"));
   wedge.append(document.createTextNode(` ${homeVersionWedgeText(angel)}`));
   body.append(wedge);
@@ -1103,13 +1106,13 @@ function newAngelGuideSteps() {
     {
       where: "shell",
       title: "Copy the deployment config",
-      detail: "Copy the safe example and edit only local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both staging and production. The real angel.json is git-ignored; ANGEL.yaml stays portable.",
+      detail: "Copy the safe example and edit only local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. The real angel.json is git-ignored; ANGEL.yaml stays portable.",
       commands: ["cp angels/google-read-proof/angel.example.json angels/google-read-proof/angel.json"],
     },
     {
       where: "shell",
-      title: "Publish to staging",
-      detail: "With the operator's management bearer and the mandatory Cloudflare Access service token for the Access-protected M1 Control endpoint, build the checked-in policy, publish its immutable artifact, and install the exact bindings in staging. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
+      title: "Publish to preview",
+      detail: "With the operator's management bearer and the mandatory Cloudflare Access service token for the Access-protected M1 Control endpoint, build the checked-in policy, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
       commands: [`ANGEL_MANAGEMENT_TOKEN=... ${accessToken} bun run angel publish google-read-proof`],
     },
     {
@@ -1162,7 +1165,7 @@ function renderNewAngelGuide() {
   const head = element("div", "wp4-panel-head");
   head.append(element("span", "eyebrow", "Getting started"));
   head.append(element("b", "", "Publish your first Angel from the CLI"));
-  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof operator journey: sign in, add your BYO Google client, authorize a Connection, edit local config, publish to staging, promote to production, and capture the shown-once key. Browser steps use the Access-protected control site; shell steps run from your local operator checkout. Publish installs staging; deploy --prod promotes the exact staged build to production without rebuilding."));
+  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof operator journey: sign in, add your BYO Google client, authorize a Connection, edit local config, publish to preview, promote to production, and capture the shown-once key. Browser steps use the Access-protected control site; shell steps run from your local operator checkout. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
   head.append(element("small", "wp4-guide-more", "From here, docs/google-read-proof-manual-journey.md continues with wiring the GitHub Actions secret and repository variables, running the acceptance journey, and proving the revoke/failure and reauthorization path."));
   panel.append(head);
   const list = element("ol", "wp4-steps");
@@ -1227,7 +1230,7 @@ function renderHome() {
   document.querySelector("#home-account").textContent = demoState.account.name;
   const summary = fleetHealthSummary(demoState.angels);
   const noun = summary.total === 1 ? "Angel" : "Angels";
-  document.querySelector("#home-summary").textContent = `${summary.total} hosted ${noun}, each isolated across staging and production.`;
+  document.querySelector("#home-summary").textContent = `${summary.total} hosted ${noun}, each isolated across preview and production.`;
 
   // Fleet health now leads on the LEFT as the prototype's .reassure line under
   // the h1 (the duplicate Fleet Health panel + top-right pill are gone). Degraded
@@ -1298,7 +1301,7 @@ function quietHeadline(summary) {
 
 // The distinct provider apps deployed in the ACTIVE environment only, sorted for
 // a stable brand-mark cluster. Production must never surface a provider that only
-// staging deploys, so the header derives its logos and charter from
+// preview deploys, so the header derives its logos and charter from
 // environments[activeEnvironment].tools — NOT a cross-environment union. When the
 // active environment has no active Version (no tools), this is empty, so no logo
 // is fabricated and the caller shows the honest empty label instead.
@@ -1333,7 +1336,7 @@ function renderAngelHeading() {
   const apps = activeEnvironmentApps(angel);
   document.querySelector("#angel-charter").textContent = apps.length === 0
     ? "No tools are deployed to this environment yet."
-    : `${apps.join(" + ")} hosted permissions with independent staging and production controls.`;
+    : `${apps.join(" + ")} hosted permissions with independent preview and production controls.`;
   // Overlapped provider brand-marks (prototype .mhead-logos cluster).
   document.querySelector("#angel-logos").replaceChildren(...apps.map((app) => providerLogo(app, "sm")));
   const status = document.querySelector("#angel-status");
@@ -1353,7 +1356,7 @@ function environmentSubLine(environmentName, environment) {
 
 function renderEnvironmentSeam() {
   const environment = selectedAngel().environments[activeEnvironment];
-  const envName = activeEnvironment === "production" ? "Production" : "Staging";
+  const envName = activeEnvironment === "production" ? "Production" : "Preview";
   document.querySelector("#angel-envline").textContent =
     environmentSubLine(envName, environment);
   // The compact segmented control replaces the environment tabs; keep the exact
@@ -1799,7 +1802,7 @@ function renderEndpointCard(angel) {
   const code = element("div", "code");
   code.append(element("span", "c", "# paste into your agent's MCP client"));
   // endpoints is a required first-class field; keep the copy honest to the ACTIVE
-  // environment (a staging endpoint is never presented as production).
+  // environment (a preview endpoint is never presented as production).
   code.append(document.createTextNode(`\n${angel.endpoints?.[activeEnvironment] ?? "Endpoint assigned after deployment"}`));
   card.append(code);
   card.append(element("p", "key-env-note", KEY_ENVIRONMENT_COPY));
@@ -1823,7 +1826,7 @@ function renderAgentKeysCard(keys) {
   if (revoked.length > 0) card.append(renderRevokedGroup(revoked));
   if (keyError !== null) card.append(element("p", "key-error", keyError));
   // The one-time reveal renders ONLY in the environment/angel it was minted for
-  // (finding #3: a production secret never paints as a staging key). It is CONSUMED
+  // (finding #3: a production secret never paints as a preview key). It is CONSUMED
   // on its single paint (finding #4: cleared here so any later render — ordinary or
   // post-navigation — shows nothing, without relying on a manual reset). A reveal
   // minted while the operator was on another context stays held until they return
@@ -1943,7 +1946,7 @@ function handleKeyAction(action, keyId) {
 // Perform a key mutation against the demo surface, disabling row actions in flight
 // and restoring them in a finally. The angel + environment are CAPTURED at dispatch
 // (finding #3) so a mid-flight environment/angel switch can never paint a
-// production secret as a staging key; the reveal is tagged with that captured
+// production secret as a preview key; the reveal is tagged with that captured
 // context and only paints there. A single client idempotency token (finding #2) is
 // generated per attempt and reused across the retry inside requestKeyMutation, so a
 // committed-but-lost mutation replays instead of minting a duplicate. Revoke
@@ -2099,7 +2102,7 @@ function renderActivityDetail(event) {
 
 // Fill an environment badge host (dot + capitalized name) for the ACTIVE
 // environment only. Each stratum carries its own badge so the reader always sees
-// which environment the feed belongs to — staging and production never blend.
+// which environment the feed belongs to — preview and production never blend.
 function paintEnvironmentBadge(host) {
   if (host === null) return host;
   host.className = `environment-badge ${activeEnvironment}`;
@@ -2112,7 +2115,8 @@ function paintEnvironmentBadge(host) {
 
 function lifecycleLabel(kind) {
   if (kind === "version_published") return "Version published";
-  if (kind === "staging_deploy") return "Deployed to staging";
+  if (kind === "preview_deploy") return "Deployed to preview";
+  if (kind === "production_deploy") return "Deployed to production";
   return "Promoted to production";
 }
 
@@ -2169,11 +2173,11 @@ function renderDecisionCard() {
     const title = element("h2", "", `Version ${ready.toVersion} is staged and ready for production`);
     const copy = element("p", "", "Promote the exact artifact you tested. This does not build, republish, or rotate the production key.");
     const flow = element("div", "promotion-flow");
-    const staging = element("div", "promotion-side");
-    staging.append(element("small", "", "Staging · active"), element("b", "", `Version ${ready.toVersion}`), element("code", "", shortDigest(ready.expectedDigest)));
+    const preview = element("div", "promotion-side");
+    preview.append(element("small", "", "Preview · active"), element("b", "", `Version ${ready.toVersion}`), element("code", "", shortDigest(ready.expectedDigest)));
     const production = element("div", "promotion-side");
     production.append(element("small", "", "Production · current"), element("b", "", versionLabel(ready.fromVersion)), element("code", "", shortDigest(angel.environments.production.digest)));
-    flow.append(staging, element("span", "promotion-arrow", "→"), production);
+    flow.append(preview, element("span", "promotion-arrow", "→"), production);
     const note = element("div", "exact-note", `Production receives staged deployment ${ready.stagedDeploymentId} and exact digest ${shortDigest(ready.expectedDigest)}.`);
     const bindings = renderBindingMap(ready.bindings);
     const diff = element("div", "version-diff");
@@ -2446,7 +2450,7 @@ document.addEventListener("click", (event) => {
     resetKeysPaneTransient();
     // The header logos + charter are per-environment, so re-render the heading
     // together with the version/sha seam line — otherwise production could keep
-    // showing a provider only staging deploys.
+    // showing a provider only preview deploys.
     renderAngelHeading();
     renderEnvironmentSeam();
     renderPermissions();
