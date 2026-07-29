@@ -105,7 +105,7 @@ bun run check
 
 Ordinary CI runs the deterministic journey against in-memory Worker and
 Durable Object adapters and injects a deterministic provider at Broker, without
-Google credentials (450 tests / 2,798 assertions). The journey publishes both
+Google credentials (482 tests / 2,982 assertions). The journey publishes both
 checked-in comparison Angels, promotes exact previewed deployments, discovers one
 canonical Gmail tool with two opaque Connection choices, proves omission never
 fans out, calls each Connection separately, pauses one tuple without pausing

@@ -771,7 +771,7 @@ describe("control Worker routing", () => {
 });
 
 describe("AccountRegistry", () => {
-  test("reset clears both comparison Angel runtimes and leaves an empty management Account", async () => {
+  test("reset clears every existing Angel runtime and leaves an empty management Account", async () => {
     const resets: string[] = [];
     const harness = registryHarness((input) => {
       if (input.operation === "reset") resets.push(`${input.gate}:${input.runtimeId}`);
@@ -784,13 +784,132 @@ describe("AccountRegistry", () => {
       account: { id: "acct_demo", name: "Personal", handle: null },
       angels: [],
     });
-    expect(resets).toHaveLength(8);
+    // No Angels exist yet, so there are no runtimes to clear — the old
+    // hardcoded comparison-slug list is gone.
+    expect(resets).toEqual([]);
+
+    await deployGolden(harness.registry);
+    valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+
+    expect(resets).toHaveLength(4);
     expect(new Set(resets.map((entry) => entry.split(":").slice(0, -1).join(":")))).toEqual(new Set([
-      "broker:acct_demo:gmail-inbox-zero",
-      "gateway:acct_demo:gmail-inbox-zero",
       "broker:acct_demo:golden-assistant",
       "gateway:acct_demo:golden-assistant",
     ]));
+  });
+
+  test("delete_angel tears down both gates Broker-first and reset still works afterwards", async () => {
+    const operations: string[] = [];
+    const harness = registryHarness((input) => {
+      operations.push(`${input.operation}:${input.gate}:${input.runtimeId.split(":").pop()}`);
+    });
+    const deployed = await deployGolden(harness.registry);
+    operations.length = 0;
+
+    const deleted = valueOf(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      // deployGolden promoted production, so the slug confirmation is required.
+      input: { confirm: "golden-assistant" },
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-golden",
+        body: { confirm: "golden-assistant" },
+      },
+    }));
+
+    expect(deleted).toMatchObject({
+      id: deployed.ensure.angel.id,
+      slug: "golden-assistant",
+      deleted: true,
+    });
+    expect(operations).toEqual([
+      "reconcile_keys:gateway:preview",
+      "reconcile_keys:gateway:production",
+      "reset:broker:preview",
+      "reset:broker:production",
+      "reset:gateway:preview",
+      "reset:gateway:production",
+    ]);
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels).toEqual([]);
+    const reset = valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+    expect(reset.angels).toEqual([]);
+  });
+
+  test("dashboard actions on a re-created slug do not replay the dead Angel's records", async () => {
+    const harness = registryHarness();
+    await deployGolden(harness.registry);
+    const pause = {
+      operation: "action" as const,
+      angelId: "golden-assistant",
+      action: "pause_all" as const,
+      environment: "production" as const,
+    };
+    const paused = valueOf(await harness.registry.dispatchJson(pause));
+    expect(paused.angels[0].enabled).toBe(false);
+
+    valueOf(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      input: { confirm: "golden-assistant" },
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-for-recreate",
+        body: { confirm: "golden-assistant" },
+      },
+    }));
+    await deployGolden(harness.registry, "-recreated");
+
+    // The re-created Angel starts at availability revision 0 again, so a
+    // slug+revision-derived key would collide with the dead Angel's record and
+    // silently replay it, leaving every tool live. The action must pause the
+    // NEW Angel's gates for real.
+    const pausedAgain = valueOf(await harness.registry.dispatchJson(pause));
+    expect(pausedAgain.angels[0].enabled).toBe(false);
+  });
+
+  test("delete_angel without confirmation refuses a live production Angel", async () => {
+    const harness = registryHarness();
+    await deployGolden(harness.registry);
+
+    const result = JSON.parse(await harness.registry.dispatchJson({
+      operation: "delete_angel",
+      accountId: "acct_demo",
+      slug: "golden-assistant",
+      input: {},
+      mutation: {
+        method: "DELETE",
+        path: "/v1/accounts/acct_demo/angels/golden-assistant",
+        idempotencyKey: "delete-unconfirmed",
+        body: {},
+      },
+    }));
+
+    expect(result).toMatchObject({ ok: false, status: 409 });
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels).toHaveLength(1);
+  });
+
+  test("the state view runs the restore repair so pre-fix dangling availability projects as aligned", async () => {
+    const harness = registryHarness();
+    valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+    await deployGolden(harness.registry);
+
+    // Emulate the issue-#1 damage: management holds an override keyed by a ref
+    // no deployment serves, while the gates pruned their copy at install (they
+    // hold no overrides, same revision).
+    const state = harness.storage.get("management") as ManagementState;
+    state.angels[0]!.environments.production.availability.connectionOverrides = {
+      "gmail.users.messages.list": { arc_stale_pre_fix: false },
+    };
+
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels[0].environments.production.gateAlignment.availability).toBe("aligned");
   });
 
   test("bridges tuple, whole-tool, and all availability actions idempotently", async () => {
@@ -987,13 +1106,13 @@ function registryHarness(observe: (input: GateInternalRequest) => void = () => {
   return { registry, storage };
 }
 
-async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
+async function deployGolden(registry: InstanceType<typeof AccountRegistry>, keySuffix = "") {
   const slug = "golden-assistant";
   const ensure = valueOf(await registry.dispatchJson({
     operation: "ensure_angel",
     accountId: "acct_demo",
     slug,
-    mutation: registryMutation("ensure-golden", {}),
+    mutation: registryMutation(`ensure-golden${keySuffix}`, {}),
   }));
   const artifact = checkedArtifact(slug);
   const publishBody = { artifact, expectedDigest: artifact.digest };
@@ -1001,7 +1120,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "publish_version",
     angelId: ensure.angel.id,
     input: publishBody,
-    mutation: registryMutation("publish-golden", publishBody),
+    mutation: registryMutation(`publish-golden${keySuffix}`, publishBody),
   }));
   const bindings = {
     "gdocs-read": ["con_personal_google"],
@@ -1012,7 +1131,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "deploy_preview",
     angelId: ensure.angel.id,
     input: stagingBody,
-    mutation: registryMutation("stage-golden", stagingBody),
+    mutation: registryMutation(`stage-golden${keySuffix}`, stagingBody),
   }));
   const productionBody = {
     stagedDeploymentId: staged.id,
@@ -1023,7 +1142,7 @@ async function deployGolden(registry: InstanceType<typeof AccountRegistry>) {
     operation: "promote_production",
     angelId: ensure.angel.id,
     input: productionBody,
-    mutation: registryMutation("promote-golden", productionBody),
+    mutation: registryMutation(`promote-golden${keySuffix}`, productionBody),
   }));
   return { ensure, version, staged, bindings };
 }
@@ -1089,6 +1208,9 @@ function gateService(
           return Response.json(await policy.install(input.command));
         case "availability":
           return Response.json(policy.changeAvailability(input.command));
+        case "reconcile_keys":
+          states.set(input.runtimeId, policy);
+          return Response.json(policy.reconcileGatewayKeys(input.hashes));
         case "snapshot":
           return Response.json(policy.snapshot());
       }

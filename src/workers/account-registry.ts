@@ -10,7 +10,6 @@ import {
   ManagementControl,
   ManagementError,
   createManagementState,
-  migrateLegacyPreviewSpelling,
 } from "../management";
 import type {
   ManagementCommand,
@@ -122,6 +121,16 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
             value: await (await this.management()).ensureAngel(
               command.accountId,
               command.slug,
+              command.mutation,
+            ),
+          };
+        case "delete_angel":
+          return {
+            ok: true,
+            value: await (await this.management()).deleteAngel(
+              command.accountId,
+              command.slug,
+              command.input,
               command.mutation,
             ),
           };
@@ -374,11 +383,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
 
   private async reset(): Promise<DemoView> {
     const existing = await this.ctx.storage.get<ManagementState>("management");
-    const slugs = new Set([
-      "gmail-inbox-zero",
-      "golden-assistant",
-      ...(existing?.angels.map((angel) => angel.slug) ?? []),
-    ]);
+    const slugs = new Set(existing?.angels.map((angel) => angel.slug) ?? []);
     for (const slug of slugs) {
       const fleet = this.managementFleet(slug);
       for (const gate of ["broker", "gateway"] as const) {
@@ -423,11 +428,17 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
       if (current.pendingAvailability === null && availabilityAlready(current.availability, change)) {
         return this.view(control.exportState());
       }
+      // Bind the resolved Management id into the derived key and the
+      // fingerprinted body (like keyAction does): the demo slug is reusable
+      // after a delete and availability revisions restart at 0, so a
+      // slug+revision key would collide with the dead Angel's record and
+      // silently replay it instead of touching the new Angel's gates.
+      const body = { ...commandBody(command) as Record<string, unknown>, resolvedAngelId: angel.id };
       const mutation = {
         method: "POST",
         path: "/api/demo/action",
-        idempotencyKey: await demoMutationKey(command, current.availability.revision),
-        body: commandBody(command),
+        idempotencyKey: await demoMutationKey(body, current.availability.revision),
+        body,
       };
       await control.changeAvailability(angel.id, command.environment, change, mutation);
     }
@@ -507,21 +518,29 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
       expectedDigest: ready.expectedDigest,
       bindings: ready.bindings,
     };
+    // Same identity binding as availability actions: the resolved Management
+    // id keeps a re-created slug's promotions from colliding with a dead
+    // Angel's records.
+    const body = { ...commandBody(command) as Record<string, unknown>, resolvedAngelId: angelId };
     await control.promoteProduction(angelId, input, {
       method: "POST",
       path: "/api/demo/action",
-      idempotencyKey: await demoMutationKey(command, production?.id ?? "none"),
-      body: commandBody(command),
+      idempotencyKey: await demoMutationKey(body, production?.id ?? "none"),
+      body,
     });
   }
 
   private async view(state?: ManagementState): Promise<DemoView> {
-    const managementState = state ?? await this.ctx.storage.get<ManagementState>("management");
-    if (managementState === undefined) throw new RegistryError(409, "demo Account is not initialized");
-    // This read path skips ManagementControl.restore, so apply the same
-    // pre-rename migration a restore would; the migrated shape persists on
-    // the next mutation's checkpoint.
-    migrateLegacyPreviewSpelling(managementState);
+    let managementState = state;
+    if (managementState === undefined) {
+      if (await this.ctx.storage.get<ManagementState>("management") === undefined) {
+        throw new RegistryError(409, "demo Account is not initialized");
+      }
+      // Route the raw read through ManagementControl so both restore repairs —
+      // pre-fix dangling availability (issue #1) and the staging→preview
+      // rename migration — apply to this projection like every other read path.
+      managementState = (await this.management()).exportState();
+    }
     return buildDemoView(
       managementState,
       (_angelId, slug) => this.managementFleet(slug),
@@ -702,10 +721,10 @@ function availabilityAlready(
 }
 
 async function demoMutationKey(
-  command: Extract<AccountRegistryCommand, { operation: "action" }>,
+  body: unknown,
   generation: string | number,
 ): Promise<string> {
-  return `demo_${await sha256Hex(canonicalJson({ command: commandBody(command), generation }))}`;
+  return `demo_${await sha256Hex(canonicalJson({ command: body, generation }))}`;
 }
 
 function commandBody(command: Extract<AccountRegistryCommand, { operation: "action" }>): unknown {

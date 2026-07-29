@@ -219,6 +219,96 @@ describe("management resource routes", () => {
     });
   });
 
+  test("routes the delete command with an optional slug confirmation", async () => {
+    const env = managementEnv();
+    const url = "https://cloud.test/v1/accounts/acct_personal/angels/golden-assistant";
+
+    // Bare delete: no body required when production is empty.
+    const bare = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders("delete-1"),
+    }), env as never);
+    expect(bare.status).toBe(200);
+
+    // Confirmed delete: the slug typed into the body.
+    const confirmed = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders("delete-2"),
+      body: JSON.stringify({ confirm: "golden-assistant" }),
+    }), env as never);
+    expect(confirmed.status).toBe(200);
+
+    expect(env.calls).toEqual([
+      {
+        operation: "delete_angel",
+        accountId: "acct_personal",
+        slug: "golden-assistant",
+        input: {},
+        mutation: {
+          method: "DELETE",
+          path: "/v1/accounts/acct_personal/angels/golden-assistant",
+          idempotencyKey: "delete-1",
+          body: {},
+        },
+      },
+      {
+        operation: "delete_angel",
+        accountId: "acct_personal",
+        slug: "golden-assistant",
+        input: { confirm: "golden-assistant" },
+        mutation: {
+          method: "DELETE",
+          path: "/v1/accounts/acct_personal/angels/golden-assistant",
+          idempotencyKey: "delete-2",
+          body: { confirm: "golden-assistant" },
+        },
+      },
+    ]);
+  });
+
+  test("rejects malformed delete requests before dispatch", async () => {
+    const url = "https://cloud.test/v1/accounts/acct_personal/angels/golden-assistant";
+
+    // Unknown body keys are rejected (there is no ?force=true equivalent).
+    const unknownKey = managementEnv();
+    const forced = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders("delete-forced"),
+      body: JSON.stringify({ force: true }),
+    }), unknownKey as never);
+    expect(forced.status).toBe(400);
+    expect(await forced.json()).toEqual({ error: "delete accepts only an optional confirm field" });
+    expect(unknownKey.calls).toEqual([]);
+
+    // Every mutation requires an Idempotency-Key.
+    const missingKey = managementEnv();
+    const unkeyed = await handleControlRequest(new Request(url, {
+      method: "DELETE",
+      headers: managementHeaders(),
+    }), missingKey as never);
+    expect(unkeyed.status).toBe(400);
+    expect(missingKey.calls).toEqual([]);
+
+    // A malformed percent-encoding in the path is the client's error, not a
+    // server fault.
+    const malformed = managementEnv();
+    const undecodable = await handleControlRequest(new Request(
+      "https://cloud.test/v1/accounts/acct_personal/angels/%zz",
+      { method: "DELETE", headers: managementHeaders("delete-malformed") },
+    ), malformed as never);
+    expect(undecodable.status).toBe(400);
+    expect(malformed.calls).toEqual([]);
+
+    // The management credential stays bound to its configured Account.
+    const crossAccount = managementEnv();
+    const crossed = await handleControlRequest(new Request(
+      "https://cloud.test/v1/accounts/acct_other/angels/golden-assistant",
+      { method: "DELETE", headers: managementHeaders("delete-crossed") },
+    ), crossAccount as never);
+    expect(crossed.status).toBe(404);
+    expect(crossAccount.calls).toEqual([]);
+  });
+
   test("rejects a create-key request that is missing its name", async () => {
     const env = managementEnv();
     const response = await handleControlRequest(new Request(
