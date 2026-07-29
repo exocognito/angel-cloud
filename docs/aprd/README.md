@@ -37,15 +37,13 @@ from the real `www/` shell — the live product rather than a picture of it, so 
 will never need refreshing here.
 
 The build step that assembles the page landed on `main` with
-[#21](https://github.com/exocognito/angel-cloud/pull/21): before it,
-[the docs build](../../docs-site/README.md) copied markdown only and named no
-`www/` asset. Nothing serves the path until the docs worker is next deployed,
-so the frame is blank until then. The frame points at the interim host the rest
-of the repo uses; the zone move
-([#6](https://github.com/exocognito/angel-cloud/issues/6)) later settles
-`docs.angelmcp.ai` as the canonical address, but it is not what is holding the
-demo up. That pending deploy is why flow F is tagged as an intended change
-rather than observed behaviour.
+[#21](https://github.com/exocognito/angel-cloud/pull/21) and was deployed on
+2026-07-29: before it, [the docs build](../../docs-site/README.md) copied
+markdown only and named no `www/` asset. The path is live, so flow F is tagged
+observed. The frame points at the interim host the rest of the repo uses; the
+zone move ([#6](https://github.com/exocognito/angel-cloud/issues/6)) later
+settles `docs.angelmcp.ai` as the canonical address, but the page does not wait
+on it.
 
 ## Hosting
 
