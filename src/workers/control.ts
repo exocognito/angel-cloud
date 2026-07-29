@@ -26,6 +26,7 @@ import {
   type ConnectionSummary,
   type ProviderAppSummary,
 } from "../provider-management";
+import { ACCOUNT_HANDLE_PATTERN, HANDLE_DIRECTORY_REGISTRY, isInternalAccountId } from "../handles";
 
 export { AccountRegistry };
 
@@ -47,6 +48,7 @@ export interface ControlRequestEnv {
   ACCESS_AUDIENCE: string;
   CONTROL_BASE_URL: string;
   BROKER: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
+  GATEWAY: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
 }
 
 export type AccessVerifier = (request: Request, env: ControlRequestEnv) => Promise<import("../access").AccessIdentity>;
@@ -85,12 +87,24 @@ export async function handleControlRequest(
     if (env.CONTROL_RESPONSE_KEK.trim() === "") {
       throw new HttpError(500, "Control response replay key must be non-empty");
     }
+    // The handle/id split relies on internal ids carrying the `acct_` prefix,
+    // which the handle grammar cannot express. A handle-shaped ACCOUNT_ID
+    // would silently 404 every resolution, so refuse to serve with one.
+    if (typeof env.ACCOUNT_ID !== "string" || !isInternalAccountId(env.ACCOUNT_ID)) {
+      throw new HttpError(500, "ACCOUNT_ID must be an internal acct_* identifier");
+    }
     if (isProviderPath) {
       return await providerRequest(request, env, accessIdentity);
     }
     if (url.pathname.startsWith("/v1/")) {
       await requireBearer(request, env.MANAGEMENT_API_TOKEN, "management authorization required");
-      const routed = await managementCommand(request, url, accessIdentity.accountId);
+      const handled = await handleRoutes(request, url, env, accessIdentity);
+      if (handled !== null) return handled;
+      const routed = await managementCommand(
+        request,
+        await withCanonicalAccountSegment(url, env),
+        accessIdentity.accountId,
+      );
       const registry = env.ACCOUNTS.getByName(routed.accountId);
       return registryResponse(await registry.dispatchJson(routed.command));
     }
@@ -118,6 +132,114 @@ export async function handleControlRequest(
     return Response.json({
       error: error instanceof Error ? error.message : "control request failed",
     }, { status: 500 });
+  }
+}
+
+/**
+ * Handle routes on the management surface (PD 0004). The directory singleton
+ * is the platform-wide authority; the Gateway holds a pushed replica so
+ * request-path resolution stays local to it.
+ */
+async function handleRoutes(
+  request: Request,
+  url: URL,
+  env: ControlRequestEnv,
+  identity: AccessIdentity,
+): Promise<Response | null> {
+  const set = matchPath(url.pathname, /^\/v1\/accounts\/([^/]+)\/handle$/);
+  if (set !== null && request.method === "PUT") {
+    const accountId = await canonicalAccountId(env, set[0]!);
+    requireAuthenticatedAccount(accountId, identity.accountId);
+    const body = record(await requestJson(request));
+    exactKeys(body, ["handle"]);
+    const handle = requiredString(body.handle, "handle");
+    const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
+    const claim = await registryValue(directory, { operation: "claim_handle", accountId, handle }) as {
+      accountId: string;
+      handle: string;
+      retiredHandle: string | null;
+    };
+    // Push current and retired bindings so a lost earlier push self-heals.
+    await pushHandleBinding(env, claim.handle, claim.accountId);
+    if (claim.retiredHandle !== null) await pushHandleBinding(env, claim.retiredHandle, claim.accountId);
+    return Response.json(claim);
+  }
+  const get = matchPath(url.pathname, /^\/v1\/handles\/([^/]+)$/);
+  if (get !== null && request.method === "GET") {
+    const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
+    let resolution: { accountId: string };
+    try {
+      resolution = await registryValue(directory, { operation: "resolve_handle", handle: get[0]! }) as {
+        accountId: string;
+      };
+    } catch (error) {
+      // Unclaimed names answer with the exact body an unowned name gets below,
+      // or the error message becomes a which-names-are-taken oracle.
+      if (error instanceof RequestError && error.status === 404) {
+        throw new RequestError(404, "not found");
+      }
+      throw error;
+    }
+    // Scoped like every other account route: another Account's handle is 404,
+    // so the directory never doubles as a public enumeration surface.
+    requireAuthenticatedAccount(resolution.accountId, identity.accountId);
+    return Response.json(resolution);
+  }
+  return null;
+}
+
+async function pushHandleBinding(env: ControlRequestEnv, handle: string, accountId: string): Promise<void> {
+  const response = await env.GATEWAY.fetch("https://gateway.internal/internal/handles", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${env.CONTROL_GATEWAY_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ handle, accountId }),
+  });
+  if (response.status === 409) {
+    // The replica already binds this name to a different Account: the two
+    // directories have diverged, which no retry can fix.
+    throw new RequestError(500, "handle directories have diverged: the Gateway binds this name to a different Account; operator intervention required");
+  }
+  if (!response.ok) {
+    throw new RequestError(502, "handle claimed, but the Gateway binding push failed; retry the request");
+  }
+}
+
+/**
+ * A handle names the Account anywhere `/v1/accounts/{account}` appears. The
+ * grammar forbids `_`, so `acct_*` internal ids pass through untouched; an
+ * unknown handle stays as-is and 404s at the authenticated-account check.
+ */
+async function withCanonicalAccountSegment(url: URL, env: ControlRequestEnv): Promise<URL> {
+  const match = /^\/v1\/accounts\/([^/]+)((?:\/.*)?)$/.exec(url.pathname);
+  if (match === null) return url;
+  let segment: string;
+  try {
+    segment = decodeURIComponent(match[1]!);
+  } catch {
+    throw new RequestError(400, "malformed account segment encoding");
+  }
+  const canonical = await canonicalAccountId(env, segment);
+  if (canonical === segment) return url;
+  return new URL(`/v1/accounts/${encodeURIComponent(canonical)}${match[2]!}${url.search}`, url);
+}
+
+async function canonicalAccountId(env: ControlRequestEnv, segment: string): Promise<string> {
+  // The claimable pattern, not just the grammar: a segment past the cap can
+  // never be a handle, and probing the directory with it would build an
+  // over-long Durable Object storage key that errors instead of missing.
+  if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_PATTERN.test(segment)) return segment;
+  const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
+  try {
+    const resolution = await registryValue(directory, { operation: "resolve_handle", handle: segment }) as {
+      accountId: string;
+    };
+    return resolution.accountId;
+  } catch (error) {
+    if (error instanceof RequestError && error.status === 404) return segment;
+    throw error;
   }
 }
 

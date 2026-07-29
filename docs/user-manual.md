@@ -107,7 +107,9 @@ flowchart TD
 
 - **Account** — the ownership and isolation boundary. It owns everything below.
   A request for another Account's resources returns `404`
-  ([why not a denial?](faq.md#how-are-accounts-isolated)).
+  ([why not a denial?](faq.md#how-are-accounts-isolated)). Internally an
+  Account is an opaque `acct_*` id; its public name is its **handle** — see
+  [Account handles](#account-handles).
 - **Provider App** — one reusable OAuth client ID and secret you bring yourself.
   It is stored write-only in Broker custody; its secret is never read back.
 - **Connection** — an Account-owned link to one authorized provider identity and
@@ -519,7 +521,11 @@ Authorization: Bearer <that environment's Angel key>
 ```
 
 Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The endpoint
-serves only POST; other methods get `405`.
+serves only POST; other methods get `405`. `<account>` is either the internal
+`acct_*` id or the Account's [handle](#account-handles) — a retired handle
+also works and is answered directly with `200`, never a redirect. An unknown
+handle answers `401` exactly like a wrong key, so handle existence cannot be
+probed without one.
 
 ![The Agent Keys pane: the active environment's MCP endpoint ready to paste into an agent client, and named keys with masked fingerprints, Rotate, and Revoke](manual-images/agent-keys-pane.png)
 
@@ -672,12 +678,13 @@ Transport and platform errors:
 | `404` | The route or owned resource is absent — cross-Account lookups also return `404`. |
 | `405` | Non-POST to the MCP endpoint. |
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
-| `403` | Disallowed `Origin`. |
+| `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
-| `409` | Digest, idempotency, staging, revision, or pending-repair conflict, or a delete missing its [slug confirmation](#delete-an-angel). |
+| `409` | Digest, idempotency, staging, revision, or pending-repair conflict, or a delete missing its [slug confirmation](#delete-an-angel), or a handle already claimed or a second rename — see [Account handles](#account-handles). |
 | `-32603` | Gateway and Broker failed to converge — the call was refused. |
 | `-32003` | A provider or custody failure (for example a revoked Connection's refresh) surfaced as a JSON-RPC error — distinct from the `-32603` convergence failure. `-32001` is a bad Angel key. |
 | `501` | Provider App removal is not implemented. |
+| `502` | A handle claim committed but its Gateway push failed — see [Account handles](#account-handles). |
 
 Management errors share one shape: `{"error":"<message>"}` with the HTTP status.
 Provider and custody failures throw; the runtime never silently substitutes a
@@ -704,8 +711,38 @@ Required secrets:
 
 Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
 `ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, and `GATEWAY_BASE_URL`. The internal tokens
-must be non-empty and pairwise distinct; every Worker fails closed otherwise. The
-Broker has `workers_dev` disabled and no public route.
+must be non-empty and pairwise distinct; every Worker fails closed otherwise.
+`ACCOUNT_ID` must carry the `acct_` prefix — Control refuses to serve with a
+handle-shaped id. The Broker has `workers_dev` disabled and no public route.
+
+### Account handles
+
+An Account's public name in the
+[coordinate scheme](product-decisions/0001-angel-coordinate-scheme.md) is its
+handle, governed by
+[PD 0004](product-decisions/0004-account-handles.md): unique platform-wide,
+renameable once, never released. A valid handle matches
+`^[a-z][a-z0-9-]{3,31}$`; one-to-three-character names and the platform's
+authority words (`admin`, `support`, `official`, and the rest of the list in
+`src/handles.ts`) are reserved. In Milestone 1 the handle is operator-set over
+the `/v1` management surface — there is no self-serve rename:
+
+```sh
+curl -X PUT "https://<control>/v1/accounts/<acct_id-or-handle>/handle" \
+  -H "CF-Access-Client-Id: <id>" -H "CF-Access-Client-Secret: <secret>" \
+  -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"handle":"smcllns"}'
+```
+
+Statuses: `400` invalid, `403` reserved, `409` taken or a second rename, `502`
+the claim committed but the Gateway push failed (retry the same PUT), `500`
+directory divergence (do not retry; investigate). `GET /v1/handles/<handle>`
+resolves your own current or retired handle to
+`{accountId, canonicalHandle, retired}`; anyone else's handle is `404`. A
+handle also names the Account anywhere `/v1/accounts/<account>` appears. The
+first claim must use the internal `acct_*` id, since an unclaimed handle
+resolves to nothing.
 
 ## Prove it works
 

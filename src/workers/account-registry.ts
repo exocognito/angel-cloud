@@ -18,6 +18,16 @@ import type {
   ManagementState,
 } from "../management-contract";
 import { DEMO_ACCOUNT } from "../demo-fixtures";
+import {
+  ACCOUNT_HANDLE_PATTERN,
+  claimAccountHandle,
+  classifyAccountHandle,
+  resolveAccountHandle,
+  HandleError,
+  type HandleAccountRecord,
+  type HandleClaim,
+  type HandleResolution,
+} from "../handles";
 import { ServiceGateFleet } from "./service-gate-fleet";
 import {
   emptyProviderManagementState,
@@ -59,7 +69,17 @@ export type DemoAccountRegistryCommand =
       keyId?: string;
     };
 
-export type AccountRegistryCommand = DemoAccountRegistryCommand | ManagementCommand | ProviderRegistryCommand;
+// Handle directory commands are only ever dispatched to the singleton
+// HANDLE_DIRECTORY_REGISTRY instance, which holds the platform-wide claims.
+export type HandleRegistryCommand =
+  | { operation: "claim_handle"; accountId: string; handle: string }
+  | { operation: "resolve_handle"; handle: string };
+
+export type AccountRegistryCommand =
+  | DemoAccountRegistryCommand
+  | ManagementCommand
+  | ProviderRegistryCommand
+  | HandleRegistryCommand;
 
 type RegistryResult =
   | { ok: true; value: unknown; status?: number }
@@ -83,6 +103,10 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
           return { ok: true, value: await this.action(command) };
         case "key_action":
           return { ok: true, value: await this.keyAction(command) };
+        case "claim_handle":
+          return { ok: true, value: await this.claimHandle(command.accountId, command.handle) };
+        case "resolve_handle":
+          return { ok: true, value: await this.resolveHandle(command.handle) };
         case "ensure_angel":
           return {
             ok: true,
@@ -271,7 +295,11 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
           };
       }
     } catch (error) {
-      if (error instanceof RegistryError || error instanceof ManagementError) {
+      if (
+        error instanceof RegistryError
+        || error instanceof ManagementError
+        || error instanceof HandleError
+      ) {
         return { ok: false, status: error.status, error: error.message };
       }
       return {
@@ -280,6 +308,40 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
         error: error instanceof Error ? error.message : "control operation failed",
       };
     }
+  }
+
+  // One storage key per claimed name and per Account: resolution reads one or
+  // two keys, and no single record grows with the platform.
+  private async claimHandle(accountId: string, handle: string): Promise<HandleClaim> {
+    // Validate before any storage access: Durable Object keys cap at 2 KiB,
+    // so an unclaimable name must never become a storage key probe.
+    const classification = classifyAccountHandle(handle);
+    if (!classification.ok) {
+      throw new HandleError(classification.kind === "invalid" ? 400 : 403, classification.message);
+    }
+    const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
+    const record = await this.ctx.storage.get<HandleAccountRecord>(`account:${accountId}`);
+    const { account, changed } = claimAccountHandle({ accountId, handle, owner, account: record });
+    if (changed) {
+      await this.ctx.storage.put({
+        [`handle:${handle}`]: accountId,
+        [`account:${accountId}`]: { handle: account.handle, retiredHandle: account.retiredHandle },
+      });
+    }
+    return account;
+  }
+
+  private async resolveHandle(handle: string): Promise<HandleResolution> {
+    // An unclaimable name is by definition unclaimed — answer without ever
+    // building it into a storage key.
+    if (!ACCOUNT_HANDLE_PATTERN.test(handle)) throw new RegistryError(404, "unknown handle");
+    const owner = await this.ctx.storage.get<string>(`handle:${handle}`);
+    const record = owner === undefined
+      ? undefined
+      : await this.ctx.storage.get<HandleAccountRecord>(`account:${owner}`);
+    const resolution = resolveAccountHandle(handle, owner, record);
+    if (resolution === null) throw new RegistryError(404, "unknown handle");
+    return resolution;
   }
 
   private async reset(): Promise<DemoView> {

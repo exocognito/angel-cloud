@@ -26,11 +26,39 @@ import {
 import {
   dispatchGate,
   errorResponse,
+  HttpError,
+  requireBearerToken,
   requireDistinctRoleCredentials,
   requireInternalRequest,
 } from "./protocol";
+import { DurableObject } from "cloudflare:workers";
+import { ACCOUNT_HANDLE_GRAMMAR, ACCOUNT_HANDLE_PATTERN, isInternalAccountId } from "../handles";
 
 export { GateRuntime };
+
+/** Name of the single HandleDirectory instance in the HANDLES namespace. */
+const HANDLE_DIRECTORY_INSTANCE = "directory";
+
+/**
+ * Replica of the Control-side handle directory, pushed by Control on every
+ * claim, so handle resolution on the MCP request path stays inside this
+ * worker. Bindings are append-only — PD 0004 never releases a name — and a
+ * name can never move to a different Account.
+ */
+export class HandleDirectory extends DurableObject {
+  // One storage key per name: the hot-path resolve reads exactly one key, and
+  // prototype names like `constructor` are ordinary keys, never phantoms.
+  async bind(handle: string, accountId: string): Promise<"bound" | "conflict"> {
+    const existing = await this.ctx.storage.get<string>(`handle:${handle}`);
+    if (existing !== undefined) return existing === accountId ? "bound" : "conflict";
+    await this.ctx.storage.put(`handle:${handle}`, accountId);
+    return "bound";
+  }
+
+  async resolve(handle: string): Promise<string | null> {
+    return await this.ctx.storage.get<string>(`handle:${handle}`) ?? null;
+  }
+}
 
 export default {
   async fetch(request, env): Promise<Response> {
@@ -50,12 +78,25 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
         if (input.gate !== "gateway") return Response.json({ error: "wrong gate" }, { status: 400 });
         return Response.json(await dispatchGate(env.GATES, input));
       }
+      if (url.pathname === "/internal/handles") {
+        return await bindHandle(request, env);
+      }
       const mcpMatch = /^\/v1\/a\/([^/]+)\/([^/]+)\/(staging|production)\/mcp$/.exec(url.pathname);
       if (mcpMatch) {
         if (request.method !== "POST") return mcpMethodNotAllowed();
         const presentedKey = bearer(request);
         if (presentedKey === undefined || presentedKey === "") return invalidAngelKey();
-        const [, accountId, angelId, environment] = mcpMatch;
+        const [, rawAccountSegment, angelId, environment] = mcpMatch;
+        let accountSegment: string;
+        try {
+          accountSegment = decodeURIComponent(rawAccountSegment!);
+        } catch {
+          return Response.json({ error: "malformed account segment encoding" }, { status: 400 });
+        }
+        // An unknown handle answers exactly like a wrong key: a 404 here would
+        // let an unauthenticated caller probe which handles exist.
+        const accountId = await resolveAccountSegment(env, accountSegment);
+        if (accountId === null) return invalidAngelKey();
         const runtimeId = `${accountId}:${angelId}:${environment}`;
         const runtime = env.GATES.getByName(runtimeId);
         const state = await runtime.snapshot("gateway");
@@ -163,6 +204,49 @@ interface RuntimeIdentity {
   accountId: string;
   angelId: string;
   environment: string;
+}
+
+/** Control pushes handle claims here; the token is the existing control role. */
+async function bindHandle(request: Request, env: GatewayEnv): Promise<Response> {
+  await requireBearerToken(request, env.CONTROL_GATEWAY_TOKEN, "unauthorized internal request");
+  if (request.method !== "POST") throw new HttpError(405, "method not allowed");
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw new HttpError(400, "internal request must be an object");
+  }
+  const handle = (body as { handle?: unknown }).handle;
+  const accountId = (body as { accountId?: unknown }).accountId;
+  if (typeof handle !== "string" || handle === "" || typeof accountId !== "string" || accountId === "") {
+    throw new HttpError(400, "handle and accountId are required");
+  }
+  // Defense in depth against a misbehaving Control: an unclaimable name must
+  // never become a replica storage key (Durable Object keys cap at 2 KiB).
+  if (!ACCOUNT_HANDLE_PATTERN.test(handle)) {
+    throw new HttpError(400, "handle is outside the claimable pattern");
+  }
+  const outcome = await env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).bind(handle, accountId);
+  if (outcome === "conflict") {
+    return Response.json({ error: "handle is bound to another Account" }, { status: 409 });
+  }
+  return Response.json({ handle, accountId });
+}
+
+/**
+ * Resolve the account path segment. Internal `acct_*` ids pass through
+ * untouched — checked positively, not just by grammar exclusion, so a
+ * misconfigured id can never be silently reclassified as a handle. A
+ * handle-shaped segment — current or retired — resolves to its Account and is
+ * answered directly, with no redirect (PD 0004).
+ */
+async function resolveAccountSegment(env: GatewayEnv, segment: string): Promise<string | null> {
+  if (isInternalAccountId(segment) || !ACCOUNT_HANDLE_GRAMMAR.test(segment)) return segment;
+  // Handle-shaped but past the claimable pattern (the cap, or under the
+  // floor): it can never be claimed, and probing the directory would build an
+  // over-long Durable Object storage key that errors as a distinguishable 500.
+  if (!ACCOUNT_HANDLE_PATTERN.test(segment)) return null;
+  return env.HANDLES.getByName(HANDLE_DIRECTORY_INSTANCE).resolve(segment);
 }
 
 interface InvocationPayload {
