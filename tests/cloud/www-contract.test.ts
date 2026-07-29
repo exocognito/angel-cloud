@@ -349,6 +349,16 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).not.toContain("managementToken");
   });
 
+  test("startup reconciles provider custody before rendering the demo state", () => {
+    const js = source("app.js");
+    // The demo state (promotion readiness, provider labels) is computed from
+    // Connection health and granted scopes, which /api/connections
+    // reconciles — fetching it first would render from stale custody.
+    const start = js.slice(js.indexOf("(async function start()"));
+    expect(start).toContain("await loadProviderCustody();");
+    expect(start.indexOf("await loadProviderCustody();")).toBeLessThan(start.indexOf("await loadState()"));
+  });
+
   test("keeps opaque custody IDs in action values while rendering only safe identity", () => {
     const js = source("app.js");
     const custodyRenderer = js.slice(js.indexOf("function renderProviderCustody"), js.indexOf("async function startProviderAuthorization"));

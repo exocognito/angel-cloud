@@ -2542,11 +2542,15 @@ document.querySelector("#theme-toggle").addEventListener("click", () => {
 
 (async function start() {
   try {
+    // Custody first: /api/connections reconciles Connection health and
+    // granted scopes, and the demo state (promotion readiness, provider
+    // labels) is computed from them. A custody failure reports into
+    // #custody-status without blocking the demo state.
+    await loadProviderCustody();
     demoState = await loadState();
     document.querySelector(".loading-screen").hidden = true;
     document.querySelector("#app").setAttribute("aria-busy", "false");
     render();
-    await loadProviderCustody();
   } catch (error) {
     renderBlockingError(errorMessage(error));
   }
