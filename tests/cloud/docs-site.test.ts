@@ -193,6 +193,23 @@ describe("docs-site build output", () => {
     expect(slugsOf("faq.md").has("can-i-declare-or-guard-angel_connection-in-my-own-policy")).toBe(true);
   });
 
+  test("served markdown never links a served doc through the GitHub repo", () => {
+    // A same-repo blob link sends a reader from the public site back to the
+    // source tree — the workflow this site exists to end. Issue-tracker links
+    // are fine; doc files must use relative links so they resolve on the site.
+    const servedMarkdown = [
+      ...SERVED_FILES.filter((f) => f.endsWith(".md")),
+      ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
+      ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
+    ];
+    for (const file of servedMarkdown) {
+      expect(
+        read(canonicalDist, file),
+        `${file} links repo files via github.com; use relative links`,
+      ).not.toMatch(/github\.com\/exocognito\/angel-cloud\/(blob|tree|raw)\//);
+    }
+  });
+
   test("interim build rewrites the canonical base URL everywhere agents read", () => {
     for (const file of ["llms.txt", "SKILL.md"]) {
       const content = read(interimDist, file);

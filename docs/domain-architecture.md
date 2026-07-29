@@ -8,10 +8,10 @@ the URL scheme is settled before anything public depends on it.
 
 This is reference — what the addresses are. Why they are shaped this way, and
 whether they are built yet, lives in the product decision records:
-[PD 0001](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0001-angel-coordinate-scheme.md)
+[PD 0001](product-decisions/0001-angel-coordinate-scheme.md)
 for the coordinate (implemented — the Gateway answers it on the current host)
 and
-[PD 0002](https://github.com/exocognito/angel-cloud/blob/main/docs/product-decisions/0002-public-angel-page.md)
+[PD 0002](product-decisions/0002-public-angel-page.md)
 for public Angel pages (not implemented).
 
 ## The angel coordinate
