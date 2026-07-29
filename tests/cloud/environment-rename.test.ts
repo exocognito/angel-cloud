@@ -96,9 +96,49 @@ describe("management state renames staging to preview", () => {
     expect(Object.keys(state.angels[0]!.environments).sort()).toEqual(["preview", "production"]);
     expect(state.deployments.every((deployment) => (deployment.environment as string) !== "staging")).toBe(true);
     expect(restored.getEnvironment(ensured.angel.id, "preview").activeDeployment).not.toBeNull();
-    // Pre-rename idempotency records replay old-spelling responses, so the
-    // migration drops them; the mutations re-execute idempotently instead.
-    expect(state.idempotency).toEqual({});
+    // Idempotency records survive the migration: replays translate stale
+    // spellings instead of losing shown-once responses.
+    expect(Object.keys(state.idempotency).length).toBeGreaterThan(0);
+  });
+
+  test("a pre-rename idempotency record replays with canonical spellings and the original keys", async () => {
+    const first = harness();
+    const ensureMutation = mutation("ensure-replay");
+    const ensured = await first.control.ensureAngel(account.id, "golden-assistant", ensureMutation);
+
+    // Persisted pre-rename: the state AND the sealed replay record carry the
+    // old spellings. PlainVault seals as base64 JSON, so rewrite it directly.
+    const legacy = structuredClone(first.control.exportState()) as unknown as {
+      angels: Array<{ environments: Record<string, unknown> }>;
+      idempotency: Record<string, { ciphertext?: string; responseJson?: string }>;
+    };
+    for (const angel of legacy.angels) {
+      angel.environments.staging = angel.environments.preview;
+      delete angel.environments.preview;
+    }
+    for (const record of Object.values(legacy.idempotency)) {
+      const source = record.ciphertext !== undefined
+        ? atob(record.ciphertext.slice("sealed:".length))
+        : record.responseJson!;
+      const rewritten = source
+        .replaceAll('"preview":', '"staging":')
+        .replaceAll('"environment":"preview"', '"environment":"staging"');
+      if (record.ciphertext !== undefined) record.ciphertext = `sealed:${btoa(rewritten)}`;
+      else record.responseJson = rewritten;
+    }
+
+    const restored = ManagementControl.restore(
+      legacy as unknown as ManagementState,
+      harness().dependencies,
+    );
+    const replay = await restored.ensureAngel(account.id, "golden-assistant", ensureMutation);
+    expect(Object.keys(replay.angel.environments).sort()).toEqual(["preview", "production"]);
+    expect(replay.angel.environments.preview.environment).toBe("preview");
+    // The shown-once plaintexts are preserved, not re-minted.
+    expect(replay.keys).toEqual({
+      preview: ensured.keys!.preview,
+      production: ensured.keys!.production,
+    });
   });
 
   test("preview deploys install gates under the preview environment", async () => {
@@ -179,6 +219,53 @@ describe("one-step production publish", () => {
     expect(h.control.getEnvironment(ensured.angel.id, "preview").activeDeployment).toBeNull();
   });
 
+  test("a pending direct deployment cannot be completed by a promotion", async () => {
+    const h = harness();
+    const ensured = await h.control.ensureAngel(account.id, "golden-assistant", mutation("ensure"));
+    const artifact = await versionArtifact("golden-assistant");
+    const version = await h.control.publishVersion(
+      ensured.angel.id,
+      { artifact, expectedDigest: artifact.digest },
+      mutation("publish"),
+    );
+    const bindings = { gmail: ["con_personal_google"] };
+    const preview = await h.control.deployPreview(
+      ensured.angel.id,
+      { versionId: version.id, expectedDigest: artifact.digest, bindings },
+      mutation("deploy-preview"),
+    );
+
+    // The direct production deploy fails at the gateway, leaving a pending
+    // deployment whose provenance is "direct".
+    h.armGatewayFailure();
+    await expect(h.control.deployProduction(
+      ensured.angel.id,
+      { versionId: version.id, expectedDigest: artifact.digest, bindings },
+      mutation("deploy-direct"),
+    )).rejects.toThrow("injected gateway failure");
+
+    // A promotion of the same bytes must not silently complete it under the
+    // wrong provenance.
+    await expect(h.control.promoteProduction(
+      ensured.angel.id,
+      { stagedDeploymentId: preview.id, expectedDigest: artifact.digest, bindings },
+      mutation("promote"),
+    )).rejects.toMatchObject({
+      status: 409,
+      message: "repair the pending production deployment first",
+    });
+
+    // Retrying the direct deploy repairs it and keeps its provenance.
+    const repaired = await h.control.deployProduction(
+      ensured.angel.id,
+      { versionId: version.id, expectedDigest: artifact.digest, bindings },
+      mutation("deploy-direct-retry"),
+    );
+    expect(repaired.environment).toBe("production");
+    const stateAfter = h.control.exportState();
+    expect(stateAfter.deployments.find((d) => d.id === repaired.id)?.provenance).toBe("direct");
+  });
+
   test("deployProduction rejects a digest that does not match the Version", async () => {
     const h = harness();
     const ensured = await h.control.ensureAngel(account.id, "golden-assistant", mutation("ensure"));
@@ -227,7 +314,7 @@ function harness() {
     createManagementState({ account, connections }),
     dependencies,
   );
-  return { control, events, dependencies };
+  return { control, events, dependencies, armGatewayFailure: () => fleet.armGatewayFailure() };
 }
 
 class PlainVault implements ResponseReplayVault {
@@ -243,7 +330,13 @@ class PlainVault implements ResponseReplayVault {
 class RecordingFleet {
   private readonly installations = new Map<string, GateInstallation>();
 
+  private failGatewayInstallOnce = false;
+
   constructor(private readonly events: string[]) {}
+
+  armGatewayFailure(): void {
+    this.failGatewayInstallOnce = true;
+  }
 
   async reset(): Promise<void> {}
 
@@ -254,6 +347,10 @@ class RecordingFleet {
 
   async install(gate: GateKind, command: GateInstallCommand): Promise<GateInstallation> {
     this.events.push(`install:${gate}:${command.environment}`);
+    if (gate === "gateway" && this.failGatewayInstallOnce) {
+      this.failGatewayInstallOnce = false;
+      throw new Error("injected gateway failure");
+    }
     const installation = {
       ...command,
       gate,

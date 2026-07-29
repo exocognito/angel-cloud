@@ -175,6 +175,22 @@ describe("account handle read-back", () => {
       retiredHandle: null,
     });
   });
+
+  test("reading the handle backfills the display copy for claims made before the push existed", async () => {
+    const h = await harness();
+    await h.request("PUT", `/v1/accounts/${ACCOUNT_ID}/handle`, { handle: "golden-demo" });
+
+    // Simulate a claim from before the display push: the directory has the
+    // claim but the Account's management state does not.
+    const persisted = structuredClone(h.storage.get("management")) as { account: { handle?: string } };
+    delete persisted.account.handle;
+    h.storage.set("management", persisted);
+
+    const read = await h.request("GET", `/v1/accounts/${ACCOUNT_ID}/handle`);
+    expect(read.status).toBe(200);
+    const restored = h.storage.get("management") as { account: { handle?: string } };
+    expect(restored.account.handle).toBe("golden-demo");
+  });
 });
 
 async function versionArtifact() {

@@ -345,8 +345,10 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     if (accountId !== this.env.ACCOUNT_ID) throw new RegistryError(404, "not found");
     const control = await this.management();
     const state = control.exportState();
-    state.account.handle = handle;
-    await this.ctx.storage.put("management", state);
+    if (state.account.handle !== handle) {
+      state.account.handle = handle;
+      await this.ctx.storage.put("management", state);
+    }
     return { handle };
   }
 

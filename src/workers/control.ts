@@ -155,7 +155,16 @@ async function handleRoutes(
     const accountId = await canonicalAccountId(env, set[0]!);
     requireAuthenticatedAccount(accountId, identity.accountId);
     const directory = env.ACCOUNTS.getByName(HANDLE_DIRECTORY_REGISTRY);
-    const record = await registryValue(directory, { operation: "account_handle", accountId });
+    const record = await registryValue(directory, { operation: "account_handle", accountId }) as {
+      handle: string;
+    };
+    // Self-healing backfill: claims made before the display push existed (or
+    // whose push was lost) reach the Account's own state on the next read.
+    await registryValue(env.ACCOUNTS.getByName(accountId), {
+      operation: "record_handle",
+      accountId,
+      handle: record.handle,
+    });
     return Response.json(record);
   }
   if (set !== null && request.method === "PUT") {

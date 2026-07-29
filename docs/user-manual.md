@@ -583,6 +583,10 @@ pill.
 
 ![Angel header with provider marks, the generated provider summary, environment Version line, the Preview/Production toggle, the Live pill, and the four pane tabs](manual-images/angel-header-panes.png)
 
+*(The screenshots on this page predate the staging→preview rename and the
+coordinate endpoint; the labels read Staging and the endpoint shows the legacy
+URL until they are recaptured.)*
+
 Angel detail has four panes:
 
 - **Allowed Tools** folders the deployed tools into provider-and-Connection cards
@@ -724,7 +728,9 @@ Statuses: `400` invalid, `403` reserved, `409` taken or a second rename, `502`
 the claim committed but the Gateway push failed (retry the same PUT), `500`
 directory divergence (do not retry; investigate). `GET /v1/handles/<handle>`
 resolves your own current or retired handle to
-`{accountId, canonicalHandle, retired}`; anyone else's handle is `404`. A
+`{accountId, canonicalHandle, retired}`; anyone else's handle is `404`.
+`GET /v1/accounts/<account>/handle` reads your own claim back as
+`{accountId, handle, retiredHandle}`, `404` before any claim. A
 handle also names the Account anywhere `/v1/accounts/<account>` appears. The
 first claim must use the internal `acct_*` id, since an unclaimed handle
 resolves to nothing.

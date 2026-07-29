@@ -118,30 +118,52 @@ export function createManagementState(input: {
  * `staging` to `preview`. Same on-read pattern as the named-keys migration;
  * the migrated shape persists on the next checkpoint.
  *
- * Pre-rename idempotency records are dropped when the rename fires: their
- * stored responses carry the old spellings, so replaying one would hand a
- * stale-dialect body to the response translation. Every management mutation
- * is idempotent by construction (ensure returns the existing Angel, publish
- * returns the existing digest's Version), so re-executing beats replaying a
- * shape the current code can no longer speak.
+ * Idempotency records are kept: some replay shown-once key plaintexts that
+ * exist nowhere else. Their stored responses may carry the old spellings, so
+ * the replay path canonicalizes them (see canonicalizeLegacyReplay).
  */
 export function migrateLegacyPreviewSpelling(state: ManagementState): void {
-  let renamed = false;
   for (const angel of state.angels) {
     const environments = angel.environments as Record<string, ManagementEnvironment>;
     if (environments.preview === undefined && environments.staging !== undefined) {
       environments.preview = environments.staging;
       delete environments.staging;
-      renamed = true;
     }
   }
   for (const deployment of state.deployments) {
     if ((deployment.environment as string) === "staging") {
       deployment.environment = "preview";
-      renamed = true;
     }
   }
-  if (renamed) state.idempotency = {};
+}
+
+/**
+ * Canonicalize a replayed mutation response recorded before the PD 0003
+ * rename. Only the shapes this backend ever recorded need translating: the
+ * ensure response (`angel.environments` record + shown-once `keys`) and
+ * deployment views (`environment` field). Already-canonical replays pass
+ * through unchanged.
+ */
+function canonicalizeLegacyReplay<T>(value: T): T {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return value;
+  const replay = structuredClone(value) as Record<string, unknown> & {
+    environment?: unknown;
+    angel?: { environments?: Record<string, unknown> };
+    keys?: Record<string, unknown>;
+  };
+  if (replay.environment === "staging") replay.environment = "preview";
+  const renameRecordKey = (record: Record<string, unknown> | undefined) => {
+    if (record === undefined || record.staging === undefined || record.preview !== undefined) return;
+    record.preview = record.staging;
+    delete record.staging;
+    const view = record.preview;
+    if (typeof view === "object" && view !== null && (view as { environment?: unknown }).environment === "staging") {
+      (view as { environment: string }).environment = "preview";
+    }
+  };
+  if (typeof replay.angel === "object" && replay.angel !== null) renameRecordKey(replay.angel.environments);
+  renameRecordKey(replay.keys);
+  return replay as T;
 }
 
 export class ManagementControl {
@@ -445,6 +467,10 @@ export class ManagementControl {
       || deployment.versionId !== version.id
       || deployment.digest !== version.digest
       || canonicalJson(deployment.bindings) !== canonicalJson(normalizedBindings)
+      // A pending record with recorded provenance can only be completed by
+      // the same operation; absent provenance predates the field and stays a
+      // wildcard so pre-field pending repairs cannot deadlock.
+      || (deployment.provenance ?? provenance) !== provenance
     ) {
       throw new ManagementError(409, `repair the pending ${environment} deployment first`);
     }
@@ -598,7 +624,7 @@ export class ManagementControl {
       const json = "ciphertext" in prior
         ? await this.dependencies.replayVault.open(prior.ciphertext)
         : prior.responseJson;
-      return JSON.parse(json) as T;
+      return canonicalizeLegacyReplay(JSON.parse(json) as T);
     }
 
     const response = await action();
