@@ -137,12 +137,15 @@ export async function handleBrokerRequest(
         }),
       }));
       if (!stored.ok) {
-        try {
-          await revokeGoogleRefreshToken(credentials.refreshToken, fetcher);
-        } catch (cleanupError) {
-          const custodyError = await responseError(stored);
-          throw new Error(`${custodyError}; Google OAuth grant cleanup failed: ${errorMessage(cleanupError)}`);
-        }
+        // Deliberately no automatic revocation: Google's revoke endpoint
+        // invalidates the whole client+user grant, which would kill the
+        // account's sibling healthy Connections over a duplicate nickname or
+        // an identity-mismatched reauth. The un-stored grant is the user's to
+        // remove, and the error says where.
+        const custodyError = await responseError(stored);
+        return Response.json({
+          error: `${custodyError}; the Google grant was not stored — retry, or remove the app's access under Google Account permissions`,
+        }, { status: stored.status });
       }
       return vaultResponse(stored);
     }
@@ -324,10 +327,6 @@ async function responseError(response: Response): Promise<string> {
     // The status remains useful when a private service returns malformed JSON.
   }
   return `Credential Vault request failed with status ${response.status}`;
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "unknown cleanup error";
 }
 
 function parseInvokeRequest(value: unknown): InvokeRequest {

@@ -189,10 +189,14 @@ describe("Broker custody lifecycle routes", () => {
     ]);
   });
 
-  test("exchange failure after Google grants a refresh token revokes the new token", async () => {
+  test("custody rejection after Google grants a token surfaces guidance and must not revoke", async () => {
+    // Google's revoke endpoint invalidates the whole client+user grant, so an
+    // automatic cleanup here (duplicate nickname, identity-mismatched reauth)
+    // would kill the account's sibling healthy Connections. The un-stored
+    // grant stays live; the error tells the user what happened and where to
+    // remove it.
     const idToken = await signedGoogleIdToken();
     const calls: string[] = [];
-    const custodyRefreshToken = "old-refresh-token";
     const vault = {
       async fetch(input: string | Request) {
         const request = vaultRequest(input);
@@ -203,7 +207,7 @@ describe("Broker custody lifecycle routes", () => {
           expect(request.method).toBe("POST");
           const candidate = await request.json() as { refreshToken?: string };
           expect(candidate.refreshToken).toBe("new-refresh-token");
-          return Response.json({ error: "identity mismatch" }, { status: 409 });
+          return Response.json({ error: "same Google identity required" }, { status: 409 });
         }
         return Response.json({ error: "unused" }, { status: 500 });
       },
@@ -212,47 +216,20 @@ describe("Broker custody lifecycle routes", () => {
       method: "POST",
       headers: { authorization: "Bearer control-broker", "content-type": "application/json" },
       body: JSON.stringify({ accountId: "acct_a", providerAppId: "app_google", connectionId: "con_google", nickname: "family-google", flow: "reauth", code: "code", codeVerifier: "verifier", redirectUri: "https://control.test/callback" }),
-    }), brokerEnv(vault), () => ({}), async (input, init) => {
+    }), brokerEnv(vault), () => ({}), async (input) => {
       const url = new URL(input.toString());
       calls.push(`FETCH ${url.pathname}`);
       if (url.pathname === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: DEFAULT_CONSENT.join(" ") });
-      if (url.pathname === "/revoke") {
-        const body = await googleRequest(input, init).text();
-        expect(body).toContain("new-refresh-token");
-        return new Response(null, { status: 204 });
-      }
+      if (url.pathname === "/revoke") throw new Error("revocation must not be attempted on custody rejection");
       return Response.json({ keys: [publicJwk] });
     });
 
     expect(response.status).toBe(409);
-    expect(calls).toContain("FETCH /revoke");
+    expect(calls).not.toContain("FETCH /revoke");
     expect(calls).toContain("POST /connections/con_google/reauth");
-    expect(custodyRefreshToken).toBe("old-refresh-token");
-  });
-
-  test("preserves custody rejection when cleanup revocation also fails", async () => {
-    const idToken = await signedGoogleIdToken();
-    const vault = {
-      async fetch(input: string | Request) {
-        const path = new URL(requestUrl(input)).pathname;
-        if (path.endsWith("/lease")) return Response.json({ clientId: "client-id", clientSecret: "client-secret", scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] });
-        if (path.endsWith("/reauth")) return Response.json({ error: "same Google identity required" }, { status: 409 });
-        return Response.json({ error: "unexpected vault request" }, { status: 500 });
-      },
-    };
-    const response = await handleBrokerRequest(new Request("https://broker.internal/internal/oauth/exchange", {
-      method: "POST",
-      headers: { authorization: "Bearer control-broker", "content-type": "application/json" },
-      body: JSON.stringify({ accountId: "acct_a", providerAppId: "app_google", connectionId: "con_google", nickname: "family-google", flow: "reauth", code: "code", codeVerifier: "verifier", redirectUri: "https://control.test/callback" }),
-    }), brokerEnv(vault), () => ({}), async (input) => {
-      const path = new URL(input.toString()).pathname;
-      if (path === "/token") return Response.json({ refresh_token: "new-refresh-token", id_token: idToken, scope: DEFAULT_CONSENT.join(" ") });
-      if (path === "/revoke") return new Response("upstream revoke failed", { status: 503 });
-      return Response.json({ keys: [publicJwk] });
-    });
-
-    expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: "same Google identity required; Google OAuth grant cleanup failed: Google OAuth revocation failed" });
+    const body = await response.json() as { error: string };
+    expect(body.error).toMatch(/same Google identity required/);
+    expect(body.error).toMatch(/grant was not stored.*Google Account/);
   });
 });
 
