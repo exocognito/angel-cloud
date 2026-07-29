@@ -332,20 +332,24 @@ await fetch("/api/provider-apps", {
   method: "POST",
   headers: { "content-type": "application/json" },
   body: JSON.stringify({
-    providerAppId: "app_calendar",
+    providerAppId: "app_gmail_write",
     provider: "google",
-    displayName: "Calendar Google",
+    displayName: "Gmail write Google",
     clientId: "<your OAuth client ID>",
     clientSecret: "<your OAuth client secret>",
-    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    scopes: ["https://www.googleapis.com/auth/gmail.modify"],
   }),
 });
 ```
 
-`scopes` takes 1 to 64 entries, each a whitespace-free string of at most 256
-characters. Identity scopes (`openid`, `email`, `profile`, and the
-`userinfo` URLs) are rejected — every consent requests the identity scopes
-itself. The stored set is deduplicated and sorted.
+This one registers a Gmail write consent, so a draft-writing Angel can deploy
+against a Connection authorized through it. Pick scopes the adapter registry
+can use — it ships Gmail and Docs today, so a scope outside those (say,
+Calendar) is granted by Google but usable by no operation. `scopes` takes 1 to
+64 entries, each a whitespace-free string of at most 256 characters. Identity
+scopes (`openid`, `email`, `profile`, and the `userinfo` URLs) are rejected —
+every consent requests the identity scopes itself. The stored set is
+deduplicated and sorted.
 
 The dashboard row shows a Provider App's display name, provider, and client-ID
 suffix; the `GET /api/provider-apps` response carries those plus the scope set.
