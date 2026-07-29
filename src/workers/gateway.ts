@@ -88,8 +88,11 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
         const presentedKey = bearer(request);
         if (presentedKey === undefined || presentedKey === "") return invalidAngelKey();
         const { angelId, environment } = target;
-        // An unknown handle answers exactly like a wrong key: a 404 here would
-        // let an unauthenticated caller probe which handles exist.
+        // An unknown handle answers exactly like a wrong key — same status and
+        // body — so a 404 never confirms which handles exist. Accepted
+        // residual risk: the unknown-handle path returns after one directory
+        // read while a known handle also snapshots the gate runtime, so a
+        // timing channel remains (as on the legacy route's account segment).
         let accountId: string | null;
         if (target.coordinate) {
           accountId = await resolveHandleOnly(env, target.accountSegment);

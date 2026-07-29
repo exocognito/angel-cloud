@@ -185,7 +185,7 @@ pnpm exec angel deploy google-read-proof --prod
 bindings, and promotes that exact staged Version and digest under them. It does
 not build, publish, or pick a newer Version — the policy is exact by
 construction, though production keeps its own bindings.
-Reference: [Promote the exact staged deployment](https://docs.angelmcp.ai/user-manual.md#promote-the-exact-staged-deployment).
+Reference: [Promote the exact previewed deployment](https://docs.angelmcp.ai/user-manual.md#promote-the-exact-previewed-deployment).
 
 ## Step 8 — Connect an agent over MCP
 

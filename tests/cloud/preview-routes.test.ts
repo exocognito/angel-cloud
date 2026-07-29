@@ -143,8 +143,9 @@ describe("pre-rename persisted state served by the worker", () => {
     expect(view.schema).toBe("angelmcp.demo.v4");
     expect(Object.keys(view.angels[0]!.environments).sort()).toEqual(["preview", "production"]);
 
-    // A pre-rename idempotency key replays nothing stale: the records are
-    // dropped at migration and the mutation re-executes idempotently.
+    // A pre-rename idempotency key never surfaces a stale spelling: the
+    // record survives migration and its replay is canonicalized
+    // (canonicalizeLegacyReplay) before the legacy-dialect translation.
     const ensured = await h.request(
       "PUT",
       `/v1/accounts/${ACCOUNT_ID}/angels/golden-assistant`,
