@@ -632,9 +632,10 @@ Availability is a runtime overlay per Angel per environment, at three levels:
 - **tool** — one tool across all its Connections; or
 - **tool + Connection** — one tuple, leaving the tool's other Connections running.
 
-The most specific override wins. Tool-level pause state survives a redeploy,
-pruned to the tools that still exist; per-Connection pauses reset on each deploy,
-because a deployment mints fresh Connection selectors. Per-tool-and-Connection toggles
+The most specific override wins. Pause state survives a redeploy: tool-level
+pauses are pruned to the tools that still exist, and per-Connection pauses
+follow the Connection onto the new deployment — a pause is dropped only when
+its Connection is no longer bound to the tool. Per-tool-and-Connection toggles
 live on the Allowed Tools pane; environment-wide **Pause all** and **Resume all**
 live under Settings → Availability.
 

@@ -429,8 +429,16 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   }
 
   private async view(state?: ManagementState): Promise<DemoView> {
-    const managementState = state ?? await this.ctx.storage.get<ManagementState>("management");
-    if (managementState === undefined) throw new RegistryError(409, "demo Account is not initialized");
+    let managementState = state;
+    if (managementState === undefined) {
+      if (await this.ctx.storage.get<ManagementState>("management") === undefined) {
+        throw new RegistryError(409, "demo Account is not initialized");
+      }
+      // Route the raw read through ManagementControl so its restore repair for
+      // pre-fix dangling availability (issue #1) applies to this projection
+      // like every other read path.
+      managementState = (await this.management()).exportState();
+    }
     return buildDemoView(
       managementState,
       (_angelId, slug) => this.managementFleet(slug),
