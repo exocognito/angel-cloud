@@ -36,16 +36,16 @@ Prototype flow F frames the public demo at `/demo/`, which will be assembled
 from the real `www/` shell — the live product rather than a picture of it, so it
 will never need refreshing here.
 
-Nothing serves that path today, so the frame is blank. One thing is
-outstanding: the build step that assembles the page, which arrives with
-[#21](https://github.com/exocognito/angel-cloud/pull/21). The docs site itself
-shipped with [#4](https://github.com/exocognito/angel-cloud/issues/4), but
-[its build](../../docs-site/README.md) copies markdown only and names no `www/`
-asset. The frame points at the interim host the rest of the repo uses; the zone
-move ([#6](https://github.com/exocognito/angel-cloud/issues/6)) later settles
+The build step that assembles the page landed on `main` with
+[#21](https://github.com/exocognito/angel-cloud/pull/21): before it,
+[the docs build](../../docs-site/README.md) copied markdown only and named no
+`www/` asset. Nothing serves the path until the docs worker is next deployed,
+so the frame is blank until then. The frame points at the interim host the rest
+of the repo uses; the zone move
+([#6](https://github.com/exocognito/angel-cloud/issues/6)) later settles
 `docs.angelmcp.ai` as the canonical address, but it is not what is holding the
-demo up. That single outstanding step is why flow F is tagged as an intended
-change rather than observed behaviour.
+demo up. That pending deploy is why flow F is tagged as an intended change
+rather than observed behaviour.
 
 ## Hosting
 
