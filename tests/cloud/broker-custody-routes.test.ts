@@ -109,7 +109,7 @@ describe("Broker custody lifecycle routes", () => {
     });
 
     expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({ error: "Google OAuth response omitted a required scope" });
+    expect((await response.json() as { error: string }).error).toMatch(/omitted a required scope/);
   });
 
   test("healthy removal revokes upstream before delete and preserves custody on revoke failure", async () => {

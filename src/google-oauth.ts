@@ -138,19 +138,17 @@ export async function exchangeGoogleCode(
   // The floor is what this Provider App was configured to request — a partial
   // grant (the user unchecked a box on the consent screen) fails here rather
   // than surfacing later as a Connection that cannot run its operations. The
-  // refresh token Google just issued is revoked first: nothing will ever
-  // store it, and dropping it would leave the user a live grant to clean up
-  // by hand in their Google account settings.
+  // fresh refresh token is deliberately NOT revoked: Google's revoke endpoint
+  // invalidates the whole client+user grant, which would silently break every
+  // healthy Connection this Google account already authorized through the
+  // same Provider App. The un-stored grant is the user's to remove, and the
+  // error says where.
   if (input.requiredScopes.some((scope) => !scopes.includes(scope))) {
-    const failure = new Error("Google OAuth response omitted a required scope");
-    try {
-      await revokeGoogleRefreshToken(token.refresh_token, fetcher);
-    } catch (cleanupError) {
-      throw new Error(`${failure.message}; Google OAuth grant cleanup failed: ${
-        cleanupError instanceof Error ? cleanupError.message : "unknown error"
-      }`);
-    }
-    throw failure;
+    throw new Error(
+      "Google OAuth response omitted a required scope; the grant was not stored"
+      + " — re-run consent approving every requested scope, or remove the app's"
+      + " access under Google Account permissions",
+    );
   }
   const identity = await verifyGoogleIdToken(token.id_token, input.clientId, fetcher);
   return {

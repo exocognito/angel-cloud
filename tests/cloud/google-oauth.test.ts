@@ -200,37 +200,28 @@ describe("Google OAuth custody boundary", () => {
       .rejects.toThrow(/omitted a required scope/);
   });
 
-  test("a partial grant's fresh refresh token is revoked, not dropped", async () => {
+  test("a partial grant fails with cleanup instructions and must not touch Google's revoke endpoint", async () => {
+    // Google's revoke endpoint invalidates the whole client+user grant, not
+    // just the one token — revoking here would silently break every healthy
+    // Connection the same Google account already authorized through this
+    // Provider App. The un-stored grant is the user's to remove, and the
+    // error tells them where.
     const idToken = await sign({ aud: clientId, sub: "sub", email: "x@example.test", email_verified: true });
     const calendar = "https://www.googleapis.com/auth/calendar.readonly";
-    const input = {
+    const inner = googleFetcher({ idToken, token: { refresh_token: "partial-refresh", scope: "openid email" } });
+    await expect(exchangeGoogleCode({
       clientId,
       clientSecret: "secret",
       code: "code",
       codeVerifier: "verifier",
       redirectUri: "https://control.test/callback",
       requiredScopes: [calendar],
-    };
-    const partialGrant = { idToken, token: { refresh_token: "partial-refresh", scope: "openid email" } };
-
-    // Success path: the floor failure revokes the token Google just issued —
-    // otherwise the user keeps a live grant with no Connection to manage it.
-    const revoked: string[] = [];
-    const inner = googleFetcher(partialGrant);
-    await expect(exchangeGoogleCode(input, async (request, init) => {
+    }, async (request, init) => {
       if (new URL(request.toString()).pathname === "/revoke") {
-        revoked.push(new URLSearchParams(String(init?.body ?? "")).get("token") ?? "");
-        return new Response(null, { status: 200 });
+        throw new Error("revocation must not be attempted for a partial grant");
       }
       return inner(request, init);
-    })).rejects.toThrow(/omitted a required scope/);
-    expect(revoked).toEqual(["partial-refresh"]);
-
-    // Cleanup failure surfaces both errors rather than hiding either.
-    await expect(exchangeGoogleCode(input, async (request, init) => {
-      if (new URL(request.toString()).pathname === "/revoke") return new Response("no", { status: 500 });
-      return inner(request, init);
-    })).rejects.toThrow(/omitted a required scope.*cleanup failed/);
+    })).rejects.toThrow(/omitted a required scope.*was not stored.*Google Account/);
   });
 
   test("rejects an unverified identity, wrong audience, expired token, or missing refresh token", async () => {
