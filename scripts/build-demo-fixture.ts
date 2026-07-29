@@ -4,7 +4,7 @@
 // projection code the live dashboard reads — `buildDemoView` over a real
 // `ManagementControl` that publishes and promotes the checked-in Angel
 // artifacts — and then checked by `assertDemoView`, the producer half of the
-// `angelmcp.demo.v3` contract the browser validates on the other side. If the
+// `angelmcp.demo.v4` contract the browser validates on the other side. If the
 // read model changes shape, this build fails rather than shipping a stale page.
 //
 // Usage: bun run scripts/build-demo-fixture.ts <output.json>
@@ -108,13 +108,13 @@ async function deployAngel(slug: string, bindings: ManagementBindingMap): Promis
     publishBody,
     mutation(`publish-${slug}`, publishBody),
   );
-  const stagingBody = { versionId: version.id, expectedDigest: version.digest, bindings };
-  const staging = await control.deployStaging(
+  const previewBody = { versionId: version.id, expectedDigest: version.digest, bindings };
+  const preview = await control.deployPreview(
     ensured.angel.id,
-    stagingBody,
-    mutation(`stage-${slug}`, stagingBody),
+    previewBody,
+    mutation(`preview-${slug}`, previewBody),
   );
-  const productionBody = { stagedDeploymentId: staging.id, expectedDigest: staging.digest, bindings };
+  const productionBody = { stagedDeploymentId: preview.id, expectedDigest: preview.digest, bindings };
   await control.promoteProduction(
     ensured.angel.id,
     productionBody,

@@ -33,6 +33,9 @@ const SERVED_FILES = [
   "operator-journey.md",
   "google-read-proof-manual-journey.md",
   "domain-architecture.md",
+  // The public demo is a directory, not a file: llms.txt links /demo/, and
+  // build.sh writes dist/demo/index.html plus the shell it is assembled from.
+  "demo/",
 ];
 
 let canonicalDist: string;
@@ -95,7 +98,8 @@ function docLinks(content: string, base: string): Array<{ path: string; anchor: 
 describe("docs-site build output", () => {
   test("serves every file the journey depends on", () => {
     for (const file of SERVED_FILES) {
-      expect(existsSync(join(canonicalDist, file))).toBe(true);
+      const target = file === "demo/" ? "demo/index.html" : file;
+      expect(existsSync(join(canonicalDist, target))).toBe(true);
     }
     // The user manual's images ship alongside it.
     expect(existsSync(join(canonicalDist, "manual-images"))).toBe(true);
