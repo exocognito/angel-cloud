@@ -10,11 +10,13 @@
 #   ./build.sh                 # canonical build (URLs point at docs.angelmcp.ai)
 #   DOCS_BASE_URL=https://angelmcp-docs-demo.sam-633.workers.dev ./build.sh
 #                              # interim build for a workers.dev deploy
+#   DOCS_DIST=/some/dir ./build.sh   # build somewhere other than ./dist
+#                              # (the contract tests build into temp dirs)
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
 docs="$here/../docs"
-dist="$here/dist"
+dist="${DOCS_DIST:-$here/dist}"
 
 rm -rf "$dist"
 mkdir -p "$dist"
