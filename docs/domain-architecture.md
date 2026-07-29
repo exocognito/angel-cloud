@@ -12,7 +12,8 @@ whether they are built yet, lives in the product decision records:
 for the coordinate (implemented — the Gateway answers it on the current host)
 and
 [PD 0002](product-decisions/0002-public-angel-page.md)
-for public Angel pages (not implemented).
+for public Angel pages (implemented — the Gateway serves the page at the bare
+production coordinate until the apex dispatcher exists).
 
 ## The angel coordinate
 

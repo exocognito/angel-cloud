@@ -161,8 +161,8 @@ export function mcpAccepted(): Response {
   return new Response(null, { status: 202 });
 }
 
-export function mcpMethodNotAllowed(): Response {
-  return new Response(null, { status: 405, headers: { allow: "POST" } });
+export function mcpMethodNotAllowed(allow = "POST"): Response {
+  return new Response(null, { status: 405, headers: { allow } });
 }
 
 export function mcpToolDefinitions(runtimeTools: AvailableRuntimeTool[]) {

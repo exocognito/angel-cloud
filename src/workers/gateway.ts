@@ -34,6 +34,7 @@ import {
 import { DurableObject } from "cloudflare:workers";
 import { ACCOUNT_HANDLE_GRAMMAR, ACCOUNT_HANDLE_PATTERN, isInternalAccountId } from "../handles";
 import { canonicalEnvironment, type HostedEnvironment } from "../environments";
+import { publicAngelView, renderPublicAngelHtml } from "../public-angel-page";
 
 export { GateRuntime };
 
@@ -82,9 +83,22 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
       if (url.pathname === "/internal/handles") {
         return await bindHandle(request, env);
       }
+      if (request.method === "GET" || request.method === "HEAD") {
+        const page = coordinatePath(url.pathname);
+        if (page !== null) return await servePublicAngelPage(request, env, page);
+        // A coordinate-shaped miss (`@latest`, a malformed handle) answers
+        // through the same page 404, so HEAD stays bodiless there too.
+        if (url.pathname.startsWith("/@")) return pageNotFound(request.method === "HEAD");
+      }
       const target = mcpTarget(url.pathname);
       if (target !== null) {
-        if (request.method !== "POST") return mcpMethodNotAllowed();
+        if (request.method !== "POST") {
+          // The bare production coordinate also serves the public page, so
+          // its 405 advertises the page methods; preview and the legacy
+          // route stay POST-only.
+          const pageCoordinate = target.coordinate && target.environment === "production";
+          return mcpMethodNotAllowed(pageCoordinate ? "GET, HEAD, POST" : "POST");
+        }
         const presentedKey = bearer(request);
         if (presentedKey === undefined || presentedKey === "") return invalidAngelKey();
         const { angelId, environment } = target;
@@ -238,17 +252,13 @@ interface McpTarget {
  *   `preview`.
  */
 function mcpTarget(pathname: string): McpTarget | null {
-  // The canonical coordinate pattern from docs/domain-architecture.md,
-  // verbatim. A suffix outside the closed alternation (latest, production,
-  // staging, a typo) fails the match; an all-digits suffix matches as a
-  // pinned Version address, which is reserved and deferred — both 404.
-  const coordinate = /^\/@([a-z][a-z0-9-]*)\/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$/.exec(pathname);
+  const coordinate = coordinatePath(pathname);
   if (coordinate !== null) {
-    const [, handle, angelId, suffix] = coordinate;
+    const { handle, angelId, suffix } = coordinate;
     if (suffix !== undefined && suffix !== "preview") return null;
     return {
-      accountSegment: handle!,
-      angelId: angelId!,
+      accountSegment: handle,
+      angelId,
       environment: suffix === "preview" ? "preview" : "production",
       coordinate: true,
     };
@@ -263,6 +273,84 @@ function mcpTarget(pathname: string): McpTarget | null {
     };
   }
   return null;
+}
+
+interface CoordinatePath {
+  handle: string;
+  angelId: string;
+  /** `preview`, or an all-digits pinned Version address. Absent means production. */
+  suffix?: string;
+}
+
+/**
+ * Parse the canonical coordinate pattern from docs/domain-architecture.md,
+ * verbatim. A suffix outside the closed alternation (latest, production,
+ * staging, a typo) fails the match; an all-digits suffix matches as a pinned
+ * Version address, which is reserved and deferred.
+ */
+function coordinatePath(pathname: string): CoordinatePath | null {
+  const coordinate = /^\/@([a-z][a-z0-9-]*)\/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$/.exec(pathname);
+  if (coordinate === null) return null;
+  const [, handle, angelId, suffix] = coordinate;
+  return { handle: handle!, angelId: angelId!, ...(suffix === undefined ? {} : { suffix }) };
+}
+
+/**
+ * The public Angel page (PD 0002): the bare production coordinate answers GET
+ * and HEAD with the trust page, no auth, read-only. Rendering comes from
+ * `public-angel-page.ts`, which sees only the compiled artifact and the
+ * Version number — never the installation — so binding data cannot leak.
+ *
+ * Every 404 on this surface is byte-identical — unknown handle, unknown
+ * Angel, no production deployment, and the suffixed coordinates (`@preview`,
+ * pinned `@N`) that have no page. Suffixed coordinates answer before handle
+ * resolution, which keeps the response independent of whether the handle
+ * exists.
+ */
+async function servePublicAngelPage(
+  request: Request,
+  env: GatewayEnv,
+  page: CoordinatePath,
+): Promise<Response> {
+  const head = request.method === "HEAD";
+  if (page.suffix !== undefined) return pageNotFound(head);
+  const accountId = await resolveHandleOnly(env, page.handle);
+  if (accountId === null) return pageNotFound(head);
+  const runtime = env.GATES.getByName(`${accountId}:${page.angelId}:production`);
+  const installation = (await runtime.snapshot("gateway")).installation;
+  if (installation === null || installation === undefined) return pageNotFound(head);
+  const view = publicAngelView(installation.artifact, installation.version);
+  const json = acceptsJson(request.headers.get("accept"));
+  const body = json ? JSON.stringify(view) : renderPublicAngelHtml(view);
+  return new Response(head ? null : body, {
+    headers: {
+      "content-type": json ? "application/json" : "text/html; charset=utf-8",
+      vary: "Accept",
+    },
+  });
+}
+
+/**
+ * The page speaks JSON when the Accept header carries an `application/json`
+ * range that is not refused with `q=0`. HTML stays the default for everything
+ * else — this is decision 5's trigger, not general content negotiation.
+ */
+function acceptsJson(accept: string | null): boolean {
+  if (accept === null) return false;
+  return accept.split(",").some((entry) => {
+    const [range, ...params] = entry.split(";");
+    if (range!.trim().toLowerCase() !== "application/json") return false;
+    return !params.some((param) => /^\s*q\s*=\s*0(\.0+)?\s*$/i.test(param));
+  });
+}
+
+/**
+ * The one 404 for the whole page surface, byte-identical to the Gateway's
+ * generic 404 — and bodiless on HEAD, exactly like the 200 page path.
+ */
+function pageNotFound(head: boolean): Response {
+  const response = Response.json({ error: "not found" }, { status: 404 });
+  return head ? new Response(null, { status: 404, headers: response.headers }) : response;
 }
 
 /**

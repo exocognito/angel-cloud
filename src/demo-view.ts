@@ -19,6 +19,7 @@ import type {
   PublishedAngelVersion,
 } from "./management-contract";
 import { bindingOperationGaps } from "./management";
+import { appName, guardLabels } from "./tool-labels";
 
 export interface DemoConnectionView {
   id: string;
@@ -717,20 +718,6 @@ function connectionById(state: ManagementState, connectionId: string): Managemen
   );
   if (connection === undefined) throw new Error(`management Connection not found: ${connectionId}`);
   return connection;
-}
-
-function guardLabels(tool: HostedTool): string[] {
-  return tool.argGuards.map((guard) => {
-    if ("pin" in guard) return `${guard.field} pinned to ${guard.pin}`;
-    if ("forbid" in guard) return `${guard.field} forbidden`;
-    return `${guard.field} forbids ${guard.forbiddenValues.join(", ")}`;
-  });
-}
-
-function appName(provider: string): string {
-  if (provider === "gmail") return "Gmail";
-  if (provider === "docs") return "Google Docs";
-  return provider.charAt(0).toUpperCase() + provider.slice(1);
 }
 
 function groupName(operation: string): string {
