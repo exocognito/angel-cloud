@@ -92,7 +92,13 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
       }
       const target = mcpTarget(url.pathname);
       if (target !== null) {
-        if (request.method !== "POST") return mcpMethodNotAllowed();
+        if (request.method !== "POST") {
+          // The bare production coordinate also serves the public page, so
+          // its 405 advertises the page methods; preview and the legacy
+          // route stay POST-only.
+          const pageCoordinate = target.coordinate && target.environment === "production";
+          return mcpMethodNotAllowed(pageCoordinate ? "GET, HEAD, POST" : "POST");
+        }
         const presentedKey = bearer(request);
         if (presentedKey === undefined || presentedKey === "") return invalidAngelKey();
         const { angelId, environment } = target;

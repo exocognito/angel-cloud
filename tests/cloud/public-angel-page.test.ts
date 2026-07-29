@@ -348,7 +348,7 @@ describe("surrounding routes keep today's behavior", () => {
     expect(response.status).toBe(405);
   });
 
-  test("non-GET, non-POST methods on the coordinate stay 405", async () => {
+  test("non-GET, non-POST methods on the coordinate stay 405 and allow the page methods", async () => {
     const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
     for (const method of ["PUT", "DELETE", "PATCH"]) {
       const response = await handleGatewayRequest(
@@ -356,6 +356,19 @@ describe("surrounding routes keep today's behavior", () => {
         env,
       );
       expect(response.status).toBe(405);
+      expect(response.headers.get("allow")).toBe("GET, HEAD, POST");
+    }
+  });
+
+  test("the preview coordinate and legacy route stay POST-only in Allow", async () => {
+    const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
+    for (const path of ["/@smcllns/golden-assistant@preview", "/v1/a/acct_m1/golden-assistant/production/mcp"]) {
+      const response = await handleGatewayRequest(
+        new Request(`https://gateway.example${path}`, { method: "PUT" }),
+        env,
+      );
+      expect(response.status).toBe(405);
+      expect(response.headers.get("allow")).toBe("POST");
     }
   });
 });
