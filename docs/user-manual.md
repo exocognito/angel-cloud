@@ -250,8 +250,10 @@ Example from the checked-in `gmail-inbox-zero` Angel: `messages.modify` and
 `threads.modify` are allowed, but `addLabelIds` and `removeLabelIds` both carry
 `forbiddenValues: [TRASH, SPAM, SENT]` — a policy that lets the agent relabel and
 archive but never trash, spam, or fake a send. This illustrates guard semantics;
-in Milestone 1 only the two read operations above reach real Google, so a
-`modify` call fails closed at the provider. The field `angel_connection` is
+any registry operation reaches real Google once a Connection's grant covers it,
+though only the two read operations above carry a credentialed acceptance
+proof. A `modify` deployment bound to a read-only grant is rejected at deploy
+time. The field `angel_connection` is
 reserved by the platform; you cannot declare or guard it
 ([why](faq.md#can-i-declare-or-guard-angel_connection-in-my-own-policy)).
 
