@@ -15,7 +15,7 @@ import type {
   ManagementVersionArtifact,
   MutationIdentity,
 } from "../../src/management-contract";
-import { angelEndpoint, assertDemoView, buildDemoView, type DemoView } from "../../src/demo-view";
+import { angelEndpoint, assertDemoView, bindingsFitVersion, buildDemoView, type DemoView } from "../../src/demo-view";
 
 const GATEWAY_BASE_URL = "https://gw.test";
 
@@ -136,6 +136,40 @@ describe("angelmcp.demo.v3 projection", () => {
     ]);
     expect(JSON.stringify(view)).not.toContain("arc_");
     expect(JSON.stringify(view)).not.toContain("keyHash");
+  });
+
+  test("promotion readiness applies the per-operation scope floor, not the provider label", () => {
+    const readonlyConnection = {
+      id: "con_readonly",
+      accountId: "acct_demo",
+      nickname: "readonly-google",
+      identityLabel: "Readonly Google",
+      credential: "google_oauth" as const,
+      providers: ["gmail"],
+      grantedScopes: ["https://www.googleapis.com/auth/gmail.readonly"],
+      health: "healthy" as const,
+    };
+    const state = { account: { id: "acct_demo" }, connections: [readonlyConnection] } as never;
+    const versionWith = (tools: string[]) => ({
+      artifact: {
+        bindingRequirements: [{
+          id: "gmail",
+          source: "gmail",
+          provider: "gmail",
+          credential: "google_oauth",
+          requiredScopes: [],
+          tools,
+        }],
+      },
+    }) as never;
+    const bindings = { gmail: ["con_readonly"] };
+
+    expect(bindingsFitVersion(state, versionWith(["gmail.users.messages.list"]), bindings)).toBe(true);
+    // The provider label alone said "fits"; deploying would 409 on the
+    // per-operation floor — the promotion action must not be offered.
+    expect(bindingsFitVersion(state, versionWith(["gmail.users.drafts.create"]), bindings)).toBe(false);
+    // Registry skew cannot fit either.
+    expect(bindingsFitVersion(state, versionWith(["gmail.users.vanished"]), bindings)).toBe(false);
   });
 
   test("offers only active production bindings for an exact staged promotion", async () => {

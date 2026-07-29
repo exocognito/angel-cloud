@@ -17,6 +17,7 @@ import type {
   ManagementState,
   PublishedAngelVersion,
 } from "./management-contract";
+import { bindingOperationGaps } from "./management";
 
 export interface DemoConnectionView {
   id: string;
@@ -534,7 +535,10 @@ function readyForProduction(state: ManagementState, angelId: string): DemoAngelV
   };
 }
 
-function bindingsFitVersion(
+// Exported for tests: the promotion action must not be offered for bindings
+// the deploy floor would 409 — same per-operation registry check, not the
+// coarser provider label.
+export function bindingsFitVersion(
   state: ManagementState,
   version: PublishedAngelVersion,
   bindings: Record<string, string[]>,
@@ -549,10 +553,19 @@ function bindingsFitVersion(
       && connectionIds.length > 0
       && connectionIds.every((connectionId) => {
         const connection = state.connections.find((candidate) => candidate.id === connectionId);
-        return connection !== undefined
-          && connection.accountId === state.account.id
-          && connection.credential === requirement.credential
-          && connection.providers.includes(requirement.provider);
+        if (
+          connection === undefined
+          || connection.accountId !== state.account.id
+          || connection.credential !== requirement.credential
+        ) {
+          return false;
+        }
+        const gaps = bindingOperationGaps(
+          requirement.provider,
+          requirement.tools,
+          connection.grantedScopes ?? [],
+        );
+        return gaps.unknown.length === 0 && gaps.uncovered.length === 0;
       });
   });
 }
