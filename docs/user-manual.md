@@ -585,10 +585,32 @@ The legacy route
 through the cutover — `staging` is the old spelling of `preview`, and
 `<account>` is either the internal `acct_*` id or the handle.
 
-Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The
-endpoints serve only POST; other methods get `405`.
+Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The MCP
+protocol answers only POST; `GET` on the bare production coordinate serves the
+[public page](#the-public-page), and every other method gets `405`.
 
 ![The Agent Keys pane: the active environment's MCP endpoint ready to paste into an agent client, and named keys with masked fingerprints, Rotate, and Revoke](manual-images/agent-keys-pane.png)
+
+### The public page
+
+Open the bare production coordinate in a browser — no key, no login — and it
+renders the Angel's trust page ([PD 0002](product-decisions/0002-public-angel-page.md)):
+the charter, each tool with its provider app, operation, and argument guards,
+the deployed Version number, the policy digest, and the note that the artifact
+is immutable and compiled from ANGEL.yaml. It never shows OAuth scopes,
+provider origins, Connection identities, or the canonical source.
+
+The same URL answers `Accept: application/json` with the identical content as
+JSON, for machines that want to read an Angel before holding a key:
+
+```text
+GET https://<gateway>/@<handle>/<angel>
+Accept: application/json        → the trust page as JSON
+```
+
+Only production has a page. `@preview`, pinned `@N`, an unknown coordinate,
+and an Angel with no production deployment all answer the same `404`. The
+route is read-only: it touches no key, no Broker, and sets no cookie.
 
 ### Protocol
 
