@@ -767,7 +767,7 @@ Transport and platform errors:
 |---|---|
 | `401` | Missing Access identity on Control, or a missing/wrong Angel key on MCP — including an in-gate `unauthorized` key re-check (`-32001`). |
 | `404` | The route or owned resource is absent — cross-Account lookups also return `404`. |
-| `405` | Non-POST to the MCP endpoint. |
+| `405` | Non-POST to the MCP endpoint — except GET and HEAD on the bare production coordinate, which serve the [public page](#the-public-page). |
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
 | `403` | Disallowed `Origin`, or a reserved handle claim — see [Account handles](#account-handles). |
 | `400` | Bad JSON, a missing or blank `MCP-Protocol-Version`, an empty `Idempotency-Key`, or invalid management input. |
