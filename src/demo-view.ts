@@ -557,6 +557,7 @@ export function bindingsFitVersion(
           connection === undefined
           || connection.accountId !== state.account.id
           || connection.credential !== requirement.credential
+          || connection.health !== "healthy"
         ) {
           return false;
         }

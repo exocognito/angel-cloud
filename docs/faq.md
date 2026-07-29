@@ -299,9 +299,9 @@ Composition (`angels:` instead of `tools:`) is optional — a single Angel listi
 tools from several providers is valid
 ([composing Angels](user-manual.md#composing-angels)). Compose when parts need
 independent review or reuse, or when the same provider needs different rules per
-identity — one Connection read-only while another may draft, once that operation
-ships. That takes two children with different allowlists, bound to different
-Connections.
+identity — one Connection read-only while another, authorized through a Provider
+App whose scope set covers drafting, may draft. That takes two children with
+different allowlists, bound to different Connections.
 
 ### How do I roll back?
 

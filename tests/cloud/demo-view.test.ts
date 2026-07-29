@@ -170,6 +170,12 @@ describe("angelmcp.demo.v3 projection", () => {
     expect(bindingsFitVersion(state, versionWith(["gmail.users.drafts.create"]), bindings)).toBe(false);
     // Registry skew cannot fit either.
     expect(bindingsFitVersion(state, versionWith(["gmail.users.vanished"]), bindings)).toBe(false);
+    // Nor can an unhealthy Connection — the deploy floor 409s those too.
+    const unhealthy = {
+      account: { id: "acct_demo" },
+      connections: [{ ...readonlyConnection, health: "error" as const }],
+    } as never;
+    expect(bindingsFitVersion(unhealthy, versionWith(["gmail.users.messages.list"]), bindings)).toBe(false);
   });
 
   test("offers only active production bindings for an exact staged promotion", async () => {
