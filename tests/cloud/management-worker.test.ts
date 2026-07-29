@@ -393,6 +393,38 @@ describe("management resource routes", () => {
 });
 
 describe("AccountRegistry management persistence", () => {
+  test("the demo state read reconciles Connections from the Broker before building the view", async () => {
+    const storage = new Map<string, unknown>();
+    let brokerReads = 0;
+    const env = {
+      ...registryEnv(),
+      GATEWAY_BASE_URL: "https://gateway.test",
+      BROKER: {
+        fetch: async (input: string | URL | Request) => {
+          const url = new URL(typeof input === "string" || input instanceof URL ? input.toString() : input.url);
+          if (url.pathname !== "/internal/connections") return Response.json({ error: "not used" }, { status: 500 });
+          brokerReads += 1;
+          // The Broker is the custody source of truth; a revocation there must
+          // reach the demo view on the next state read, not the next refresh.
+          return Response.json(fixtureConnectionSummaries("acct_demo").map((summary) => ({ ...summary, health: "revoked" })));
+        },
+      },
+    };
+    const registry = new AccountRegistry({
+      storage: {
+        get: async (key: string) => storage.get(key),
+        put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
+      },
+    } as never, env as never);
+
+    valueOf(await registry.dispatchJson({ operation: "state" }));
+
+    expect(brokerReads).toBe(1);
+    const providers = storage.get("providers") as { connections: { health: string }[] };
+    expect(providers.connections.length).toBeGreaterThan(0);
+    expect(providers.connections.every((connection) => connection.health === "revoked")).toBe(true);
+  });
+
   test("persists encrypted ensure replay state and dispatches resource reads", async () => {
     const storage = new Map<string, unknown>();
     const registry = new AccountRegistry({

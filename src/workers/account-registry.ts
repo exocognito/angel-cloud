@@ -76,6 +76,10 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     try {
       switch (command.operation) {
         case "state":
+          // The Broker is the custody source of truth: promotion readiness and
+          // provider labels are computed from Connection health and granted
+          // scopes, so the view must never render from a stale copy.
+          await this.reconcileFromBroker();
           return { ok: true, value: await this.view() };
         case "reset":
           return { ok: true, value: await this.reset() };
