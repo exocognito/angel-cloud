@@ -1,6 +1,7 @@
 import { canonicalJson } from "@smcllns/angel-core";
 import type { GateFleet } from "./control";
-import type { DeploymentEnvironment, HostedTool } from "./domain";
+import type { HostedTool } from "./domain";
+import type { HostedEnvironment } from "./environments";
 import {
   gateReceiptIdentity,
   gateReceiptMismatch,
@@ -74,7 +75,7 @@ export interface DemoAgentKeyView {
  * Real-vs-derived is carried by `source`:
  *  - `source: "recorded"` means the backend genuinely stamped `at` (a real ISO
  *    timestamp). This IS emitted now: `publish_version` stamps the Version at
- *    creation, and `deploy_staging`/`promote_production` stamp the Deployment at
+ *    creation, and preview deploys / production promotions stamp the Deployment at
  *    convergence (the moment it becomes effective — a failed-then-repaired deploy
  *    records the repair time, never the failed attempt's). A change made under
  *    timestamp support therefore surfaces `recorded`. (The availability change
@@ -86,12 +87,12 @@ export interface DemoAgentKeyView {
  *    recording that never happened.
  *
  * `environment` is echoed on every event and MUST equal the environment whose
- * `lifecycle` array carries it: staging and production event data are never
+ * `lifecycle` array carries it: preview and production event data are never
  * interleaved.
  */
 export interface DemoLifecycleEvent {
-  kind: "version_published" | "staging_deploy" | "production_promotion";
-  environment: DeploymentEnvironment;
+  kind: "version_published" | "preview_deploy" | "production_promotion" | "production_deploy";
+  environment: HostedEnvironment;
   version: number;
   deploymentId: string | null;
   order: number;
@@ -137,9 +138,9 @@ export interface DemoAngelView {
   id: string;
   name: string;
   enabled: boolean;
-  endpoints: Record<DeploymentEnvironment, string>;
+  endpoints: Record<HostedEnvironment, string>;
   connections: DemoConnectionView[];
-  environments: Record<DeploymentEnvironment, DemoEnvironmentView>;
+  environments: Record<HostedEnvironment, DemoEnvironmentView>;
   versions: Array<{
     number: number;
     digest: string;
@@ -157,7 +158,7 @@ export interface DemoAngelView {
   };
   activity: Array<{
     requestId: string;
-    environment: DeploymentEnvironment;
+    environment: HostedEnvironment;
     tool: string;
     decision: "allow" | "deny";
     detail: string;
@@ -167,8 +168,8 @@ export interface DemoAngelView {
 }
 
 export interface DemoView {
-  schema: "angelmcp.demo.v3";
-  account: { id: string; name: string };
+  schema: "angelmcp.demo.v4";
+  account: { id: string; name: string; handle: string | null };
   angels: DemoAngelView[];
 }
 
@@ -224,9 +225,16 @@ export function normalizeGatewayOrigin(gatewayBaseUrl: string): string {
 function endpointFromOrigin(
   origin: string,
   accountId: string,
+  handle: string | null,
   angelSlug: string,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
 ): string {
+  // The canonical coordinate needs a handle; an Account that never claimed
+  // one keeps the legacy path until it does.
+  if (handle !== null) {
+    const suffix = environment === "production" ? "" : "@preview";
+    return `${origin}/@${encodeURIComponent(handle)}/${encodeURIComponent(angelSlug)}${suffix}`;
+  }
   const path = ["v1", "a", accountId, angelSlug, environment, "mcp"]
     .map((segment) => encodeURIComponent(segment))
     .join("/");
@@ -234,8 +242,10 @@ function endpointFromOrigin(
 }
 
 /**
- * Build the exact MCP endpoint the gateway serves for one Angel/environment:
- * `{origin}/v1/a/{account}/{angel}/{environment}/mcp`.
+ * Build the exact MCP endpoint the gateway serves for one Angel/environment.
+ * With a handle it is the PD 0001 coordinate `{origin}/@{handle}/{angel}`
+ * (production) or `...@preview`; without one it is the legacy
+ * `{origin}/v1/a/{account}/{angel}/{environment}/mcp` path.
  *
  * Fail-closed on config: `gatewayBaseUrl` MUST parse as an absolute http(s)
  * origin. Path segments are percent-encoded so an odd account/angel value can
@@ -244,10 +254,11 @@ function endpointFromOrigin(
 export function angelEndpoint(
   gatewayBaseUrl: string,
   accountId: string,
+  handle: string | null,
   angelSlug: string,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
 ): string {
-  return endpointFromOrigin(normalizeGatewayOrigin(gatewayBaseUrl), accountId, angelSlug, environment);
+  return endpointFromOrigin(normalizeGatewayOrigin(gatewayBaseUrl), accountId, handle, angelSlug, environment);
 }
 
 export async function buildDemoView(
@@ -264,12 +275,12 @@ export async function buildDemoView(
     .map(async (angel): Promise<DemoAngelView> => {
       const fleet = fleetFor(angel.id, angel.slug);
       const snapshots = await gateSnapshots(fleet);
-      const staging = environmentView(
+      const preview = environmentView(
         state,
         angel.id,
         angel.slug,
-        "staging",
-        snapshots.staging,
+        "preview",
+        snapshots.preview,
       );
       const production = environmentView(
         state,
@@ -288,21 +299,25 @@ export async function buildDemoView(
         enabled: production.deploymentId !== null
           && production.tools.some((tool) => tool.connections.some((connection) => connection.available)),
         endpoints: {
-          staging: endpointFromOrigin(gatewayOrigin, state.account.id, angel.slug, "staging"),
-          production: endpointFromOrigin(gatewayOrigin, state.account.id, angel.slug, "production"),
+          preview: endpointFromOrigin(gatewayOrigin, state.account.id, state.account.handle ?? null, angel.slug, "preview"),
+          production: endpointFromOrigin(gatewayOrigin, state.account.id, state.account.handle ?? null, angel.slug, "production"),
         },
         connections: connectionViews(state, angel.id),
-        environments: { staging, production },
+        environments: { preview, production },
         versions,
         readyForProduction: readyForProduction(state, angel.id),
         activity: activityView(snapshots),
       };
     }));
-  // Fail closed: the producer validates its own output against the exact v3
+  // Fail closed: the producer validates its own output against the exact v4
   // validator before returning, so it can never emit an off-schema shape.
   return assertDemoView({
-    schema: "angelmcp.demo.v3",
-    account: structuredClone(state.account),
+    schema: "angelmcp.demo.v4",
+    account: {
+      id: state.account.id,
+      name: state.account.name,
+      handle: state.account.handle ?? null,
+    },
     angels,
   });
 }
@@ -311,7 +326,7 @@ function environmentView(
   state: ManagementState,
   angelId: string,
   angelSlug: string,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
   snapshots: Record<"broker" | "gateway", PolicyGateState>,
 ): DemoEnvironmentView {
   const angel = state.angels.find((candidate) => candidate.id === angelId)!;
@@ -424,17 +439,23 @@ function environmentKeyViews(managementEnvironment: ManagementEnvironment): Demo
  * The version-publish time is keyed by the deployment's `versionId`; the deploy/
  * promotion time by the deployment's `id`.
  *
- * Per-environment separation is structural: a staging environment can only ever
- * emit `version_published` + `staging_deploy`; a production environment only
+ * Per-environment separation is structural: a preview environment can only ever
+ * emit `version_published` + `preview_deploy`; a production environment only
  * `version_published` + `production_promotion`. The two are never interleaved.
  */
 function lifecycleEvents(
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
   deployment: ManagementDeployment | null,
   timestamps: Record<string, string>,
 ): DemoLifecycleEvent[] {
   if (deployment === null) return [];
-  const deployKind = environment === "staging" ? "staging_deploy" : "production_promotion";
+  // A production deployment without recorded provenance predates one-step
+  // deploys and could only have been a promotion.
+  const deployKind = environment === "preview"
+    ? "preview_deploy"
+    : deployment.provenance === "direct"
+    ? "production_deploy"
+    : "production_promotion";
   return [
     {
       kind: "version_published",
@@ -491,14 +512,14 @@ function versionView(
 ): DemoAngelView["versions"][number] {
   const angel = state.angels.find((candidate) => candidate.id === angelId)!;
   const production = activeDeployment(state, angelId, angel.environments.production.activeDeploymentId);
-  const staging = activeDeployment(state, angelId, angel.environments.staging.activeDeploymentId);
+  const preview = activeDeployment(state, angelId, angel.environments.preview.activeDeploymentId);
   return {
     number: version.number,
     digest: version.digest,
     label: `Version ${version.number}`,
     status: production?.versionId === version.id
       ? "live"
-      : staging?.versionId === version.id
+      : preview?.versionId === version.id
       ? "staged"
       : "history",
     tools: version.artifact.tools.map((tool) => tool.name),
@@ -507,25 +528,25 @@ function versionView(
 
 function readyForProduction(state: ManagementState, angelId: string): DemoAngelView["readyForProduction"] {
   const angel = state.angels.find((candidate) => candidate.id === angelId)!;
-  const staging = activeDeployment(state, angelId, angel.environments.staging.activeDeploymentId);
-  if (staging === null) return null;
+  const preview = activeDeployment(state, angelId, angel.environments.preview.activeDeploymentId);
+  if (preview === null) return null;
   const production = activeDeployment(state, angelId, angel.environments.production.activeDeploymentId);
   if (
-    production?.versionId === staging.versionId
-    && production.digest === staging.digest
+    production?.versionId === preview.versionId
+    && production.digest === preview.digest
     && angel.environments.production.pendingDeploymentId === null
   ) return null;
   if (production === null) return null;
-  const stagedVersion = versionById(state, angelId, staging.versionId);
+  const stagedVersion = versionById(state, angelId, preview.versionId);
   const productionVersion = versionById(state, angelId, production.versionId);
   if (!bindingsFitVersion(state, stagedVersion, production.bindings)) return null;
   const stagedTools = new Set(stagedVersion.artifact.tools.map((tool) => tool.name));
   const productionTools = new Set(productionVersion.artifact.tools.map((tool) => tool.name));
   return {
-    stagedDeploymentId: staging.id,
-    expectedDigest: staging.digest,
+    stagedDeploymentId: preview.id,
+    expectedDigest: preview.digest,
     fromVersion: production.version,
-    toVersion: staging.version,
+    toVersion: preview.version,
     diff: {
       added: [...stagedTools].filter((tool) => !productionTools.has(tool)).sort(),
       removed: [...productionTools].filter((tool) => !stagedTools.has(tool)).sort(),
@@ -558,26 +579,26 @@ function bindingsFitVersion(
 }
 
 type DemoSnapshots = Record<
-  DeploymentEnvironment,
+  HostedEnvironment,
   Record<"broker" | "gateway", PolicyGateState>
 >;
 
 async function gateSnapshots(fleet: GateFleet): Promise<DemoSnapshots> {
-  const [stagingBroker, stagingGateway, productionBroker, productionGateway] = await Promise.all([
-    fleet.snapshot("broker", "staging"),
-    fleet.snapshot("gateway", "staging"),
+  const [previewBroker, previewGateway, productionBroker, productionGateway] = await Promise.all([
+    fleet.snapshot("broker", "preview"),
+    fleet.snapshot("gateway", "preview"),
     fleet.snapshot("broker", "production"),
     fleet.snapshot("gateway", "production"),
   ]);
   return {
-    staging: { broker: stagingBroker, gateway: stagingGateway },
+    preview: { broker: previewBroker, gateway: previewGateway },
     production: { broker: productionBroker, gateway: productionGateway },
   };
 }
 
 function activityView(snapshots: DemoSnapshots): DemoAngelView["activity"] {
   const activity: DemoAngelView["activity"] = [];
-  for (const environment of ["staging", "production"] as const) {
+  for (const environment of ["preview", "production"] as const) {
     const gateway = snapshots[environment].gateway.receipts;
     const broker = snapshots[environment].broker.receipts;
     for (const receipt of gateway) activity.push(activityEvent(environment, receipt, broker));
@@ -586,7 +607,7 @@ function activityView(snapshots: DemoSnapshots): DemoAngelView["activity"] {
 }
 
 function activityEvent(
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
   gateway: GateReceipt,
   brokerReceipts: GateReceipt[],
 ): DemoAngelView["activity"][number] {
@@ -611,7 +632,7 @@ function installationMatches(
   deployment: ManagementDeployment | null,
   accountId: string,
   angelSlug: string,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
 ): boolean {
   if (deployment === null) return installation === null;
   return installation !== null
@@ -710,15 +731,15 @@ function angelName(slug: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Exact, fail-closed runtime validator for angelmcp.demo.v3.
+// Exact, fail-closed runtime validator for angelmcp.demo.v4.
 //
 // This is the producer-side twin of the validator in www/app.js: the two MUST
-// stay in lockstep. It rejects unknown or missing fields, the old v2 schema id,
-// and any lifecycle event that crosses the strict staging/production separation
+// stay in lockstep. It rejects unknown or missing fields, older schema ids,
+// and any lifecycle event that crosses the strict preview/production separation
 // boundary. There is no soft fallback — a malformed view throws.
 // ---------------------------------------------------------------------------
 
-const DEMO_ENVIRONMENTS: readonly DeploymentEnvironment[] = ["staging", "production"];
+const DEMO_ENVIRONMENTS: readonly HostedEnvironment[] = ["preview", "production"];
 
 function demoFail(path: string, expectation: string): never {
   throw new Error(`Invalid demo state: ${path} ${expectation}.`);
@@ -865,7 +886,7 @@ function validateDemoBinding(value: unknown, path: string): DemoBindingView {
 function validateDemoLifecycleEvent(
   value: unknown,
   path: string,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
 ): DemoLifecycleEvent {
   const event = demoExact(
     value,
@@ -874,19 +895,21 @@ function validateDemoLifecycleEvent(
   );
   const kind = demoOneOf(
     event.kind,
-    ["version_published", "staging_deploy", "production_promotion"] as const,
+    ["version_published", "preview_deploy", "production_promotion", "production_deploy"] as const,
     `${path}.kind`,
   );
   // Strict per-environment separation: an event's environment must equal the
   // environment whose lifecycle carries it, and a deploy/promotion kind must
-  // match that environment. Staging and production data are never interleaved.
+  // match that environment. Preview and production data are never interleaved.
   const eventEnvironment = demoOneOf(event.environment, DEMO_ENVIRONMENTS, `${path}.environment`);
   if (eventEnvironment !== environment) {
     demoFail(`${path}.environment`, `must equal ${environment} (no cross-environment lifecycle)`);
   }
-  const expectedDeployKind = environment === "staging" ? "staging_deploy" : "production_promotion";
-  if (kind !== "version_published" && kind !== expectedDeployKind) {
-    demoFail(`${path}.kind`, `must be version_published or ${expectedDeployKind} in ${environment}`);
+  const expectedDeployKinds: readonly string[] = environment === "preview"
+    ? ["preview_deploy"]
+    : ["production_promotion", "production_deploy"];
+  if (kind !== "version_published" && !expectedDeployKinds.includes(kind)) {
+    demoFail(`${path}.kind`, `must be version_published or ${expectedDeployKinds.join("/")} in ${environment}`);
   }
   // version_published is version-scoped (no deployment id); a deploy/promotion
   // names its deployment.
@@ -954,7 +977,7 @@ function validateDemoAvailabilityRepair(
 function validateDemoEnvironment(
   value: unknown,
   path: string,
-  environment: DeploymentEnvironment,
+  environment: HostedEnvironment,
 ): DemoEnvironmentView {
   const view = demoExact(
     value,
@@ -1076,12 +1099,12 @@ function validateDemoAngel(value: unknown, path: string): DemoAngelView {
     name: demoText(angel.name, `${path}.name`),
     enabled: demoBoolean(angel.enabled, `${path}.enabled`),
     endpoints: {
-      staging: demoHttpUrl(endpoints.staging, `${path}.endpoints.staging`),
+      preview: demoHttpUrl(endpoints.preview, `${path}.endpoints.preview`),
       production: demoHttpUrl(endpoints.production, `${path}.endpoints.production`),
     },
     connections: demoList(angel.connections, `${path}.connections`, validateDemoConnection),
     environments: {
-      staging: validateDemoEnvironment(environments.staging, `${path}.environments.staging`, "staging"),
+      preview: validateDemoEnvironment(environments.preview, `${path}.environments.preview`, "preview"),
       production: validateDemoEnvironment(environments.production, `${path}.environments.production`, "production"),
     },
     versions: demoList(angel.versions, `${path}.versions`, validateDemoVersion),
@@ -1091,18 +1114,19 @@ function validateDemoAngel(value: unknown, path: string): DemoAngelView {
 }
 
 /**
- * Validate an arbitrary value as an exact angelmcp.demo.v3 view, returning a
- * normalized copy. Throws on any deviation — including the old v2 schema id.
+ * Validate an arbitrary value as an exact angelmcp.demo.v4 view, returning a
+ * normalized copy. Throws on any deviation — including the older schema ids.
  */
 export function assertDemoView(value: unknown): DemoView {
   const root = demoExact(value, ["schema", "account", "angels"], "response");
-  if (root.schema !== "angelmcp.demo.v3") demoFail("response.schema", "must equal angelmcp.demo.v3");
-  const account = demoExact(root.account, ["id", "name"], "response.account");
+  if (root.schema !== "angelmcp.demo.v4") demoFail("response.schema", "must equal angelmcp.demo.v4");
+  const account = demoExact(root.account, ["id", "name", "handle"], "response.account");
   return {
-    schema: "angelmcp.demo.v3",
+    schema: "angelmcp.demo.v4",
     account: {
       id: demoText(account.id, "response.account.id"),
       name: demoText(account.name, "response.account.name"),
+      handle: demoNullableText(account.handle, "response.account.handle"),
     },
     angels: demoList(root.angels, "response.angels", validateDemoAngel),
   };

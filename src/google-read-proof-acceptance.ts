@@ -351,10 +351,20 @@ function validateGatewayUrl(value: string): void {
     || url.password !== ""
     || url.search !== ""
     || url.hash !== ""
-    || !/^\/v1\/a\/[^/]+\/google-read-proof\/production\/mcp$/.test(url.pathname)
+    || !isProductionReadProofPath(url.pathname)
   ) {
     throw new Error("GOLDEN_GATEWAY_URL must be the exact google-read-proof production MCP endpoint");
   }
+}
+
+/**
+ * Production endpoints only: the bare PD 0001 coordinate (bare means
+ * production — any suffix is another environment or a pinned Version), or the
+ * legacy route with the explicit production segment.
+ */
+function isProductionReadProofPath(pathname: string): boolean {
+  return /^\/@[a-z][a-z0-9-]*\/google-read-proof$/.test(pathname)
+    || /^\/v1\/a\/[^/]+\/google-read-proof\/production\/mcp$/.test(pathname);
 }
 
 function validatePolicyDigest(value: string): void {

@@ -82,6 +82,8 @@ export function goldenOptionsFromEnv(
 
 export interface GoldenJourneyReport {
   accountId: string;
+  /** The Account handle the coordinate ran under. */
+  handle: string;
   angels: {
     gmailInboxZero: {
       slug: "gmail-inbox-zero";
@@ -101,7 +103,9 @@ export interface GoldenJourneyReport {
   };
   checks: {
     builtFromCheckedInFiles: true;
-    exactStagingPromoted: true;
+    exactPreviewPromoted: true;
+    coordinateAnswersMcp: true;
+    legacyRouteStillAnswers: true;
     authenticatedDiscovery: true;
     canonicalRepeatedTool: true;
     eachConnectionInvokedSeparately: true;
@@ -180,10 +184,16 @@ export async function runGoldenJourney(
       body: JSON.stringify({}),
     },
   );
-  if (reset.schema !== "angelmcp.demo.v3" || reset.angels.length !== 0) {
-    throw new Error("golden reset did not produce an empty v3 Account");
+  if (reset.schema !== "angelmcp.demo.v4" || reset.angels.length !== 0) {
+    throw new Error("golden reset did not produce an empty v4 Account");
   }
   trace.push("control:reset:management");
+
+  // The PD 0001 coordinate needs the Account's handle. Reuse an existing
+  // claim; claim the deterministic demo handle only when none exists, so the
+  // journey can never spend PD 0004's one rename on a live Account.
+  const handle = await ensureAccountHandle(fetch, controlBaseUrl, options, assistantConfig.account, "golden-demo");
+  trace.push(`account:handle:@${handle}`);
 
   const client = new ManagementClient({
     target: controlBaseUrl,
@@ -202,7 +212,7 @@ export async function runGoldenJourney(
     "gmail-inbox-zero:read:angel.json",
     "gmail-inbox-zero:ensure",
     "gmail-inbox-zero:publish:v1",
-    "gmail-inbox-zero:deploy:staging:v1",
+    "gmail-inbox-zero:deploy:preview:v1",
   );
   await cliDeployProduction("gmail-inbox-zero", options, fetch);
   trace.push("gmail-inbox-zero:promote:production:v1");
@@ -221,7 +231,7 @@ export async function runGoldenJourney(
     "golden-assistant:read:angel.json",
     "golden-assistant:ensure",
     "golden-assistant:publish:v1",
-    "golden-assistant:deploy:staging:v1",
+    "golden-assistant:deploy:preview:v1",
   );
   await cliDeployProduction("golden-assistant", options, fetch);
   trace.push("golden-assistant:promote:production:v1");
@@ -236,10 +246,20 @@ export async function runGoldenJourney(
   if (productionKey === undefined) {
     throw new Error("CLI did not return the shown-once Golden Assistant production key");
   }
-  const mcpUrl = `${gatewayBaseUrl}/v1/a/${assistantConfig.account}/${assistantConfig.angel}/production/mcp`;
+  // Production is the bare coordinate: no environment in the URL (PD 0001).
+  const mcpUrl = `${gatewayBaseUrl}/@${handle}/${assistantConfig.angel}`;
   await initializeMcpHttp(fetch, mcpUrl, productionKey);
   const listed = await listMcpToolsHttp(fetch, mcpUrl, productionKey);
   trace.push("golden-assistant:tools/list:production");
+  // The pre-coordinate route keeps answering through the cutover.
+  const legacyMcpUrl = `${gatewayBaseUrl}/v1/a/${assistantConfig.account}/${assistantConfig.angel}/production/mcp`;
+  await initializeMcpHttp(fetch, legacyMcpUrl, productionKey);
+  const legacyListed = await listMcpToolsHttp(fetch, legacyMcpUrl, productionKey);
+  if (canonicalJson(legacyListed.map(({ name }) => name).sort())
+    !== canonicalJson(listed.map(({ name }) => name).sort())) {
+    throw new Error("the legacy MCP route no longer matches the coordinate");
+  }
+  trace.push("golden-assistant:tools/list:legacy-route");
   const gmail = onlyTool(listed, GMAIL_TOOL);
   const connections = await client.listConnections(assistantConfig.account);
   const personal = connectionByNickname(connections, "personal-google");
@@ -324,10 +344,12 @@ export async function runGoldenJourney(
   trace.push(
     "golden-assistant:build:ANGEL.v2.yaml",
     "golden-assistant:publish:v2",
-    "golden-assistant:deploy:staging:v2",
+    "golden-assistant:deploy:preview:v2",
   );
-  const stagingV2 = await client.getEnvironment(assistantAngel.id, "staging");
-  const stagedV2 = stagingV2.activeDeployment;
+  // The pinned CLI still spells the second environment `staging`; this read
+  // doubles as the proof the legacy management dialect survived the rename.
+  const previewV2 = await client.getEnvironment(assistantAngel.id, "staging");
+  const stagedV2 = previewV2.activeDeployment;
   if (stagedV2 === null || stagedV2.digest !== v2Artifact.digest) {
     throw new Error("CLI did not stage the checked-in v2 artifact");
   }
@@ -364,7 +386,7 @@ export async function runGoldenJourney(
     { headers: cloudflareAccessHeaders(options.accessToken) },
   );
   if (
-    finalView.schema !== "angelmcp.demo.v3"
+    finalView.schema !== "angelmcp.demo.v4"
     || canonicalJson(finalView.angels.map(({ id }) => id).sort()) !== canonicalJson([
       "gmail-inbox-zero",
       "golden-assistant",
@@ -383,6 +405,7 @@ export async function runGoldenJourney(
 
   return {
     accountId: assistantConfig.account,
+    handle,
     angels: {
       gmailInboxZero: {
         slug: "gmail-inbox-zero",
@@ -402,7 +425,9 @@ export async function runGoldenJourney(
     },
     checks: {
       builtFromCheckedInFiles: true,
-      exactStagingPromoted: true,
+      exactPreviewPromoted: true,
+      coordinateAnswersMcp: true,
+      legacyRouteStillAnswers: true,
       authenticatedDiscovery: true,
       canonicalRepeatedTool: true,
       eachConnectionInvokedSeparately: true,
@@ -697,6 +722,42 @@ function assertAllowedMcp(call: HttpMcpCall, expectedRef: string, expectedMailbo
   ) {
     throw new Error("MCP call did not use the selected Connection");
   }
+}
+
+/**
+ * The Account's current handle, claiming `fallbackHandle` only when none is
+ * claimed yet. An existing claim — whatever its name — is reused untouched:
+ * PD 0004 allows one rename ever, and an acceptance run must never spend it.
+ */
+async function ensureAccountHandle(
+  fetch: FetchLike,
+  controlBaseUrl: string,
+  options: GoldenJourneyOptions,
+  accountId: string,
+  fallbackHandle: string,
+): Promise<string> {
+  const headers = new Headers(bearerJson(options.managementToken));
+  const access = cloudflareAccessHeaders(options.accessToken);
+  headers.set("CF-Access-Client-ID", access["CF-Access-Client-ID"]);
+  headers.set("CF-Access-Client-Secret", access["CF-Access-Client-Secret"]);
+  const handleUrl = `${controlBaseUrl}/v1/accounts/${encodeURIComponent(accountId)}/handle`;
+  const current = await fetch(handleUrl, { headers });
+  if (current.status === 200) {
+    const record = recordValue(await current.json(), "account handle");
+    if (typeof record.handle !== "string" || record.handle === "") {
+      throw new Error("account handle response is missing the handle");
+    }
+    return record.handle;
+  }
+  if (current.status !== 404) {
+    throw new Error(`GET account handle failed (${current.status})`);
+  }
+  const claimed = await requestJson<{ handle: string }>(fetch, handleUrl, {
+    method: "PUT",
+    headers,
+    body: JSON.stringify({ handle: fallbackHandle }),
+  });
+  return claimed.handle;
 }
 
 async function demoAction(

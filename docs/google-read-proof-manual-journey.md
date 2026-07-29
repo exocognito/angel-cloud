@@ -54,10 +54,11 @@ monitoring yet.
    ```
 
    Set the real control target, Account, Angel slug, and the same healthy
-   Connection nickname under both `docs` and `gmail` in staging and production.
+   Connection nickname under both `docs` and `gmail` in the `staging` map (the
+   pinned CLI's spelling of the preview environment) and the `production` map.
    The real `angel.json` is ignored. `ANGEL.yaml` remains portable and
    target-neutral.
-5. **Local operator shell — publish staging.** With the operator's management
+5. **Local operator shell — publish preview.** With the operator's management
    bearer and mandatory Access service token for the Access-protected M1
    Control endpoint, run:
 
@@ -66,7 +67,8 @@ monitoring yet.
    ```
 
    This builds the checked-in policy, publishes its immutable artifact, and
-   installs the exact bindings in staging. Verify the tool list contains only
+   installs the exact bindings in the preview environment. Verify the tool
+   list contains only
    `gmail.users.messages.list` and `docs.documents.get`.
 6. **Local operator shell — deploy production.** With both the management
    bearer and mandatory `ANGEL_ACCESS_TOKEN`, promote the exact staged
@@ -82,9 +84,11 @@ monitoring yet.
    Actions secret `GOLDEN_ANGEL_KEY`. Do not paste it into a file, command
    transcript, issue, report, or chat. Set repository variables:
 
-   - `GOLDEN_GATEWAY_URL`: the exact full production MCP endpoint, such as
-     `https://gateway.example/v1/a/<account>/google-read-proof/production/mcp`; do not
-     provide only the origin, add a query, or add a trailing slash.
+   - `GOLDEN_GATEWAY_URL`: the exact full production MCP endpoint — the
+     canonical coordinate `https://gateway.example/@<handle>/google-read-proof`
+     (the legacy `/v1/a/<account>/google-read-proof/production/mcp` shape
+     still answers); do not provide only the origin, add a query, or add a
+     trailing slash.
    - `GOLDEN_GMAIL_QUERY`: a unique query that is known to match at least one
      message in the custodied mailbox.
    - `GOLDEN_DOC_ID`: the pinned document ID.

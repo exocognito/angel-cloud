@@ -61,6 +61,26 @@ describe("credentialed google-read-proof acceptance", () => {
       GOLDEN_GMAIL_QUERY: query,
       GOLDEN_DOC_ID: documentId,
     }, expectedPolicyDigest)).toThrow(/google-read-proof production MCP endpoint/);
+    // The canonical coordinate is a valid production endpoint; other Angels
+    // and non-production suffixes are not.
+    expect(() => googleReadProofOptionsFromEnv({
+      GOLDEN_GATEWAY_URL: "https://gateway.example/@smcllns/another-angel",
+      GOLDEN_ANGEL_KEY: key,
+      GOLDEN_GMAIL_QUERY: query,
+      GOLDEN_DOC_ID: documentId,
+    }, expectedPolicyDigest)).toThrow(/google-read-proof production MCP endpoint/);
+    expect(() => googleReadProofOptionsFromEnv({
+      GOLDEN_GATEWAY_URL: "https://gateway.example/@smcllns/google-read-proof@preview",
+      GOLDEN_ANGEL_KEY: key,
+      GOLDEN_GMAIL_QUERY: query,
+      GOLDEN_DOC_ID: documentId,
+    }, expectedPolicyDigest)).toThrow(/google-read-proof production MCP endpoint/);
+    expect(googleReadProofOptionsFromEnv({
+      GOLDEN_GATEWAY_URL: "https://gateway.example/@smcllns/google-read-proof",
+      GOLDEN_ANGEL_KEY: key,
+      GOLDEN_GMAIL_QUERY: query,
+      GOLDEN_DOC_ID: documentId,
+    }, expectedPolicyDigest).gatewayUrl).toBe("https://gateway.example/@smcllns/google-read-proof");
     expect(googleReadProofOptionsFromEnv({
       GOLDEN_GATEWAY_URL: endpoint,
       GOLDEN_ANGEL_KEY: key,

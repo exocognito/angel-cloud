@@ -1,5 +1,5 @@
+import type { HostedEnvironment, RecordedEnvironment } from "./environments";
 import type {
-  DeploymentEnvironment,
   HostedTool,
   HostedVersionArtifact,
   ToolRequest,
@@ -44,7 +44,7 @@ export interface GateAvailability {
 export interface GateIdentity {
   accountId: string;
   angelId: string;
-  environment: DeploymentEnvironment;
+  environment: RecordedEnvironment;
 }
 
 export interface GateInstallation extends GateIdentity {
@@ -147,7 +147,9 @@ export interface PolicyGateState {
   checkpoint: string;
 }
 
-export interface GateInstallCommand extends GateIdentity {
+export interface GateInstallCommand extends Omit<GateIdentity, "environment"> {
+  /** New installs are always canonical; only persisted records may still say `staging`. */
+  environment: HostedEnvironment;
   deploymentId: string;
   version: number;
   artifact: HostedVersionArtifact;

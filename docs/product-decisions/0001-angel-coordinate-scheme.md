@@ -2,7 +2,8 @@
 
 - Status: Agreed
 - Date: 2026-07-23
-- Implemented: No
+- Implemented: Yes — the Gateway answers `/@handle/angel[@preview]` with bare
+  meaning production; pinned `@N` addresses stay reserved and answer 404
 - Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
 
 ## Decision

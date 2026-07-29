@@ -53,6 +53,7 @@ describe("canonical deterministic hosted golden journey", () => {
     });
 
     expect(report.accountId).toBe("acct_demo");
+    expect(report.handle).toBe("golden-demo");
     expect(report.angels.gmailInboxZero).toMatchObject({
       slug: "gmail-inbox-zero",
       version: 1,
@@ -75,7 +76,9 @@ describe("canonical deterministic hosted golden journey", () => {
 
     expect(report.checks).toEqual({
       builtFromCheckedInFiles: true,
-      exactStagingPromoted: true,
+      exactPreviewPromoted: true,
+      coordinateAnswersMcp: true,
+      legacyRouteStillAnswers: true,
       authenticatedDiscovery: true,
       canonicalRepeatedTool: true,
       eachConnectionInvokedSeparately: true,
@@ -88,19 +91,21 @@ describe("canonical deterministic hosted golden journey", () => {
     });
     expect(report.trace).toEqual([
       "control:reset:management",
+      "account:handle:@golden-demo",
       "gmail-inbox-zero:build:ANGEL.yaml",
       "gmail-inbox-zero:read:angel.json",
       "gmail-inbox-zero:ensure",
       "gmail-inbox-zero:publish:v1",
-      "gmail-inbox-zero:deploy:staging:v1",
+      "gmail-inbox-zero:deploy:preview:v1",
       "gmail-inbox-zero:promote:production:v1",
       "golden-assistant:build:ANGEL.yaml",
       "golden-assistant:read:angel.json",
       "golden-assistant:ensure",
       "golden-assistant:publish:v1",
-      "golden-assistant:deploy:staging:v1",
+      "golden-assistant:deploy:preview:v1",
       "golden-assistant:promote:production:v1",
       "golden-assistant:tools/list:production",
+      "golden-assistant:tools/list:legacy-route",
       "golden-assistant:call:gmail.users.messages.list:connection:1",
       "golden-assistant:call:gmail.users.messages.list:connection:2",
       "golden-assistant:pause:gmail.users.messages.list:connection:2",
@@ -109,7 +114,7 @@ describe("canonical deterministic hosted golden journey", () => {
       "golden-assistant:resume:all",
       "golden-assistant:build:ANGEL.v2.yaml",
       "golden-assistant:publish:v2",
-      "golden-assistant:deploy:staging:v2",
+      "golden-assistant:deploy:preview:v2",
       "golden-assistant:promote:production:v2",
       "golden-assistant:call:gmail.users.labels.list:v2",
       "account-isolation:wrong-account-denied",
@@ -121,6 +126,7 @@ describe("canonical deterministic hosted golden journey", () => {
         "PUT /v1/accounts/acct_demo/angels/gmail-inbox-zero",
         "PUT /v1/accounts/acct_demo/angels/golden-assistant",
         "POST /api/demo/action",
+        "POST /@golden-demo/golden-assistant",
         "POST /v1/a/acct_demo/golden-assistant/production/mcp",
       ]));
     const resetCall = harness.topLevelRequests.find(({ pathname }) => pathname === "/api/demo/reset");
@@ -128,7 +134,7 @@ describe("canonical deterministic hosted golden journey", () => {
     expect(resetCall?.accessClientId).toBe("access-client-id");
     expect(resetCall?.accessClientSecret).toBe("access-client-secret");
     const accessProtectedCalls = harness.topLevelRequests.filter(({ pathname }) =>
-      !pathname.startsWith("/v1/a/"));
+      !pathname.startsWith("/v1/a/") && !pathname.startsWith("/@"));
     expect(accessProtectedCalls.length).toBeGreaterThan(0);
     expect(accessProtectedCalls.every(({ accessClientId }) => accessClientId === "access-client-id")).toBe(true);
     expect(accessProtectedCalls.every(({ accessClientSecret }) => accessClientSecret === "access-client-secret")).toBe(true);
@@ -174,10 +180,26 @@ function workerHarness() {
       }));
     },
   };
+  const handleDirectory = new Map<string, string>();
   const gatewayEnv = {
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",
     GATEWAY_BROKER_INVOKE_TOKEN: "gateway-broker-secret",
     GATES: gatewayGates,
+    HANDLES: {
+      getByName() {
+        return {
+          async bind(handle: string, accountId: string) {
+            const existing = handleDirectory.get(handle);
+            if (existing !== undefined) return existing === accountId ? "bound" : "conflict";
+            handleDirectory.set(handle, accountId);
+            return "bound";
+          },
+          async resolve(handle: string) {
+            return handleDirectory.get(handle) ?? null;
+          },
+        };
+      },
+    },
     BROKER: broker,
   };
   const gateway = {
@@ -224,7 +246,7 @@ function workerHarness() {
         accessClientSecret: request.headers.get("cf-access-client-secret"),
         legacyAccessHeader: request.headers.get("x-angel-access"),
       });
-      if (url.pathname.startsWith("/v1/a/")) {
+      if (url.pathname.startsWith("/v1/a/") || url.pathname.startsWith("/@")) {
         return handleGatewayRequest(request, gatewayEnv as never);
       }
       return handleControlRequest(request, controlEnv as never);

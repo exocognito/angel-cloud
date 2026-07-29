@@ -1,8 +1,8 @@
 import type {
   CredentialKind,
-  DeploymentEnvironment,
   HostedVersionArtifact,
 } from "./domain";
+import type { HostedEnvironment } from "./environments";
 import {
   PolicyGate,
   createPolicyGateState,
@@ -22,43 +22,43 @@ import {
 import { sha256Hex } from "@smcllns/angel-core";
 
 export interface GateFleet {
-  reset(gate: GateKind, environment: DeploymentEnvironment): Promise<void>;
+  reset(gate: GateKind, environment: HostedEnvironment): Promise<void>;
   install(gate: GateKind, command: GateInstallCommand): Promise<GateInstallation>;
   change(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     command: GateAvailabilityCommand,
   ): Promise<GateAvailability>;
   reconcileKeys(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     hashes: string[],
   ): Promise<string[]>;
-  snapshot(gate: GateKind, environment: DeploymentEnvironment): Promise<PolicyGateState>;
-  activity(gate: GateKind, environment: DeploymentEnvironment): Promise<GateReceipt[]>;
+  snapshot(gate: GateKind, environment: HostedEnvironment): Promise<PolicyGateState>;
+  activity(gate: GateKind, environment: HostedEnvironment): Promise<GateReceipt[]>;
 }
 
 export interface MemoryGateFleetState {
   schemaVersion: 1;
-  gates: Record<DeploymentEnvironment, Record<GateKind, PolicyGateState>>;
+  gates: Record<HostedEnvironment, Record<GateKind, PolicyGateState>>;
 }
 
 export interface MemoryGateFleetEvent {
   operation: "install" | "availability";
   gate: GateKind;
-  environment: DeploymentEnvironment;
+  environment: HostedEnvironment;
 }
 
 export class MemoryGateFleet implements GateFleet {
-  private readonly gates: Record<DeploymentEnvironment, Record<GateKind, PolicyGate>>;
+  private readonly gates: Record<HostedEnvironment, Record<GateKind, PolicyGate>>;
   private readonly events: MemoryGateFleetEvent[] = [];
 
   constructor(state: MemoryGateFleetState = emptyFleetState()) {
     if (state.schemaVersion !== 1) throw new Error("unsupported memory GateFleet state schema");
     this.gates = {
-      staging: {
-        gateway: new PolicyGate(state.gates.staging.gateway),
-        broker: new PolicyGate(state.gates.staging.broker),
+      preview: {
+        gateway: new PolicyGate(state.gates.preview.gateway),
+        broker: new PolicyGate(state.gates.preview.broker),
       },
       production: {
         gateway: new PolicyGate(state.gates.production.gateway),
@@ -67,7 +67,7 @@ export class MemoryGateFleet implements GateFleet {
     };
   }
 
-  async reset(gate: GateKind, environment: DeploymentEnvironment): Promise<void> {
+  async reset(gate: GateKind, environment: HostedEnvironment): Promise<void> {
     assertEnvironment(environment);
     this.gates[environment][gate] = new PolicyGate(createPolicyGateState(gate));
   }
@@ -80,7 +80,7 @@ export class MemoryGateFleet implements GateFleet {
 
   async change(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     command: GateAvailabilityCommand,
   ): Promise<GateAvailability> {
     assertEnvironment(environment);
@@ -90,25 +90,25 @@ export class MemoryGateFleet implements GateFleet {
 
   async reconcileKeys(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     hashes: string[],
   ): Promise<string[]> {
     assertEnvironment(environment);
     return this.gates[environment][gate].reconcileGatewayKeys(hashes);
   }
 
-  async snapshot(gate: GateKind, environment: DeploymentEnvironment): Promise<PolicyGateState> {
+  async snapshot(gate: GateKind, environment: HostedEnvironment): Promise<PolicyGateState> {
     assertEnvironment(environment);
     return this.gates[environment][gate].snapshot();
   }
 
-  async activity(gate: GateKind, environment: DeploymentEnvironment): Promise<GateReceipt[]> {
+  async activity(gate: GateKind, environment: HostedEnvironment): Promise<GateReceipt[]> {
     return (await this.snapshot(gate, environment)).receipts;
   }
 
   async evaluate(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     input: GateEvaluationInput,
   ): Promise<GateEvaluation> {
     assertEnvironment(environment);
@@ -123,9 +123,9 @@ export class MemoryGateFleet implements GateFleet {
     return {
       schemaVersion: 1,
       gates: {
-        staging: {
-          gateway: this.gates.staging.gateway.snapshot(),
-          broker: this.gates.staging.broker.snapshot(),
+        preview: {
+          gateway: this.gates.preview.gateway.snapshot(),
+          broker: this.gates.preview.broker.snapshot(),
         },
         production: {
           gateway: this.gates.production.gateway.snapshot(),
@@ -175,7 +175,7 @@ export interface DemoBinding {
 
 export interface DemoDeployment {
   id: string;
-  environment: DeploymentEnvironment;
+  environment: HostedEnvironment;
   version: number;
   digest: string;
   bindings: Record<string, DemoBinding>;
@@ -201,7 +201,7 @@ export interface DemoControlState {
   connections: DemoConnection[];
   versions: DemoVersion[];
   deployments: DemoDeployment[];
-  environments: Record<DeploymentEnvironment, DemoEnvironmentState>;
+  environments: Record<HostedEnvironment, DemoEnvironmentState>;
 }
 
 export interface DemoControlCheckpoint {
@@ -213,7 +213,7 @@ const noCheckpoint: DemoControlCheckpoint = {
 };
 
 export interface DemoKeys {
-  staging: string;
+  preview: string;
   production: string;
 }
 
@@ -261,7 +261,7 @@ export interface DemoView {
   schema: "angelmcp.demo.v1";
   account: DemoAccountSummary;
   angel: DemoAngelSummary & {
-    endpoints?: Record<DeploymentEnvironment, string>;
+    endpoints?: Record<HostedEnvironment, string>;
     enabled: boolean;
     connections: Array<{
       id: string;
@@ -269,7 +269,7 @@ export interface DemoView {
       apps: string[];
       health: "healthy" | "error";
     }>;
-    environments: Record<DeploymentEnvironment, DemoEnvironmentView>;
+    environments: Record<HostedEnvironment, DemoEnvironmentView>;
     versions: Array<{
       number: number;
       digest: string;
@@ -287,7 +287,7 @@ export interface DemoView {
   };
   activity: Array<{
     requestId: string;
-    environment: DeploymentEnvironment;
+    environment: HostedEnvironment;
     tool: string;
     decision: "allow" | "deny";
     detail: string;
@@ -316,7 +316,7 @@ export class DemoControl {
     control: DemoControl;
     keys: DemoKeys;
   }> {
-    const staging = await createKey("staging");
+    const preview = await createKey("preview");
     const production = await createKey("production");
     const state: DemoControlState = {
       schemaVersion: 1,
@@ -327,7 +327,7 @@ export class DemoControl {
       versions: [],
       deployments: [],
       environments: {
-        staging: environmentState(staging),
+        preview: environmentState(preview),
         production: environmentState(production),
       },
     };
@@ -337,7 +337,7 @@ export class DemoControl {
         input.fleet ?? new MemoryGateFleet(),
         noCheckpoint,
       ),
-      keys: { staging: staging.plaintext, production: production.plaintext },
+      keys: { preview: preview.plaintext, production: production.plaintext },
     };
   }
 
@@ -356,7 +356,7 @@ export class DemoControl {
   async publish(input: DemoPublishInput): Promise<DemoDeployment> {
     this.assertArtifact(input.artifact);
     this.assertBindings(input.artifact, input.bindings);
-    const pendingId = this.state.environments.staging.pendingDeploymentId;
+    const pendingId = this.state.environments.preview.pendingDeploymentId;
     const version = pendingId === null
       ? this.versionFor(input.artifact)
       : this.version(this.deployment(pendingId).version);
@@ -364,13 +364,13 @@ export class DemoControl {
       version.artifact.digest !== input.artifact.digest
       || version.artifact.canonicalSource !== input.artifact.canonicalSource
     ) {
-      throw new Error("retry the pending staging deployment before publishing another Version");
+      throw new Error("retry the pending preview deployment before publishing another Version");
     }
-    return this.deploy("staging", version, input.bindings);
+    return this.deploy("preview", version, input.bindings);
   }
 
   async promote(input: DemoPromoteInput): Promise<DemoDeployment> {
-    const activeId = this.state.environments.staging.activeDeploymentId;
+    const activeId = this.state.environments.preview.activeDeploymentId;
     if (activeId === null || activeId !== input.stagedDeploymentId) {
       throw new Error("promotion requires the active staged deployment");
     }
@@ -383,7 +383,7 @@ export class DemoControl {
   }
 
   private async deploy(
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     version: DemoVersion,
     bindings: Record<string, DemoBinding>,
   ): Promise<DemoDeployment> {
@@ -435,7 +435,7 @@ export class DemoControl {
   }
 
   async changeAvailability(
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     change: DemoAvailabilityChange,
   ): Promise<void> {
     assertEnvironment(environment);
@@ -475,7 +475,7 @@ export class DemoControl {
 
   private async reconcileAvailabilityGate(
     gate: GateKind,
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     pending: NonNullable<DemoEnvironmentState["pendingAvailability"]>,
   ): Promise<void> {
     const current = (await this.fleet.snapshot(gate, environment)).availability;
@@ -493,8 +493,8 @@ export class DemoControl {
   }
 
   async view(): Promise<DemoView> {
-    const [staging, production, activity] = await Promise.all([
-      this.environmentView("staging"),
+    const [preview, production, activity] = await Promise.all([
+      this.environmentView("preview"),
       this.environmentView("production"),
       this.activityView(),
     ]);
@@ -505,7 +505,7 @@ export class DemoControl {
         ...structuredClone(this.state.angel),
         ...(this.state.endpoint === undefined ? {} : {
           endpoints: {
-            staging: environmentEndpoint(this.state.endpoint, "staging"),
+            preview: environmentEndpoint(this.state.endpoint, "preview"),
             production: environmentEndpoint(this.state.endpoint, "production"),
           },
         }),
@@ -515,10 +515,10 @@ export class DemoControl {
           apps: [...apps],
           health,
         })),
-        environments: { staging, production },
-        versions: this.versionViews(staging, production),
+        environments: { preview, production },
+        versions: this.versionViews(preview, production),
       },
-      readyForProduction: this.readyForProduction(staging, production),
+      readyForProduction: this.readyForProduction(preview, production),
       activity,
     };
   }
@@ -574,7 +574,7 @@ export class DemoControl {
   }
 
   private newDeployment(
-    environment: DeploymentEnvironment,
+    environment: HostedEnvironment,
     version: DemoVersion,
     bindings: Record<string, DemoBinding>,
   ): DemoDeployment {
@@ -644,7 +644,7 @@ export class DemoControl {
     return version;
   }
 
-  private async environmentView(environment: DeploymentEnvironment): Promise<DemoEnvironmentView> {
+  private async environmentView(environment: HostedEnvironment): Promise<DemoEnvironmentView> {
     const [broker, gateway] = await Promise.all([
       this.fleet.snapshot("broker", environment),
       this.fleet.snapshot("gateway", environment),
@@ -697,7 +697,7 @@ export class DemoControl {
   }
 
   private versionViews(
-    staging: DemoEnvironmentView,
+    preview: DemoEnvironmentView,
     production: DemoEnvironmentView,
   ): DemoView["angel"]["versions"] {
     return this.state.versions.map((version) => ({
@@ -706,7 +706,7 @@ export class DemoControl {
       label: `Version ${version.number}`,
       status: production.version === version.number && production.digest === version.artifact.digest
         ? "live"
-        : staging.version === version.number && staging.digest === version.artifact.digest
+        : preview.version === version.number && preview.digest === version.artifact.digest
         ? "staged"
         : "history",
       tools: version.artifact.tools.map((tool) => tool.name),
@@ -714,22 +714,22 @@ export class DemoControl {
   }
 
   private readyForProduction(
-    staging: DemoEnvironmentView,
+    preview: DemoEnvironmentView,
     production: DemoEnvironmentView,
   ): DemoView["readyForProduction"] {
-    const activeId = this.state.environments.staging.activeDeploymentId;
+    const activeId = this.state.environments.preview.activeDeploymentId;
     if (
       activeId === null
-      || staging.deploymentId !== activeId
-      || staging.digest === null
-      || staging.version === null
+      || preview.deploymentId !== activeId
+      || preview.digest === null
+      || preview.version === null
       || (
         this.state.environments.production.pendingDeploymentId === null
-        && staging.digest === production.digest
-        && staging.version === production.version
+        && preview.digest === production.digest
+        && preview.version === production.version
       )
     ) return null;
-    const stagedTools = new Set(staging.tools.map((tool) => tool.name));
+    const stagedTools = new Set(preview.tools.map((tool) => tool.name));
     const pendingPromotion = this.state.environments.production.pendingDeploymentId !== null;
     const activeProductionId = this.state.environments.production.activeDeploymentId;
     const activeProduction = pendingPromotion && activeProductionId !== null
@@ -744,9 +744,9 @@ export class DemoControl {
     );
     return {
       stagedDeploymentId: activeId,
-      expectedDigest: staging.digest,
+      expectedDigest: preview.digest,
       fromVersion: pendingPromotion ? activeProduction?.version ?? null : production.version,
-      toVersion: staging.version,
+      toVersion: preview.version,
       diff: {
         added: [...stagedTools].filter((tool) => !productionTools.has(tool)).sort(),
         removed: [...productionTools].filter((tool) => !stagedTools.has(tool)).sort(),
@@ -786,8 +786,8 @@ export class DemoControl {
   }
 }
 
-function environmentEndpoint(endpoint: string, environment: DeploymentEnvironment): string {
-  const match = /\/(staging|production)\/mcp$/.exec(endpoint);
+function environmentEndpoint(endpoint: string, environment: HostedEnvironment): string {
+  const match = /\/(preview|production)\/mcp$/.exec(endpoint);
   if (match === null) throw new Error("MCP endpoint must end with an environment and /mcp");
   return `${endpoint.slice(0, match.index)}/${environment}/mcp`;
 }
@@ -796,7 +796,7 @@ function emptyFleetState(): MemoryGateFleetState {
   return {
     schemaVersion: 1,
     gates: {
-      staging: {
+      preview: {
         gateway: createPolicyGateState("gateway"),
         broker: createPolicyGateState("broker"),
       },
@@ -808,7 +808,7 @@ function emptyFleetState(): MemoryGateFleetState {
   };
 }
 
-async function createKey(environment: DeploymentEnvironment): Promise<{
+async function createKey(environment: HostedEnvironment): Promise<{
   plaintext: string;
   hash: string;
   fingerprint: string;
@@ -980,12 +980,12 @@ function groupName(operation: string): string {
   return action === "get" || action === "list" ? "Read" : "Use";
 }
 
-function environments(): DeploymentEnvironment[] {
-  return ["staging", "production"];
+function environments(): HostedEnvironment[] {
+  return ["preview", "production"];
 }
 
-function assertEnvironment(environment: DeploymentEnvironment): void {
-  if (environment !== "staging" && environment !== "production") {
+function assertEnvironment(environment: HostedEnvironment): void {
+  if (environment !== "preview" && environment !== "production") {
     throw new Error(`unknown deployment environment: ${String(environment)}`);
   }
 }
