@@ -2,9 +2,9 @@
  * The hosted environment vocabulary (PD 0003, amended by PD 0005): every
  * Angel has `production` plus an opt-in second environment named `preview`.
  *
- * `preview` replaced the old name `staging` on 2026-07-28. The pinned
- * `@smcllns/angel-core` CLI still speaks the old spelling on the `/v1`
- * management surface, and old MCP URLs still carry it, so the legacy
+ * `preview` replaced the old name `staging` on 2026-07-28. CLIs pinned to
+ * `@smcllns/angel-core` 0.2.0 or older still speak the old spelling on the
+ * `/v1` management surface, and old MCP URLs still carry it, so the legacy
  * spelling stays accepted at the HTTP boundaries and is translated to the
  * canonical name there. Internal state, gate runtime ids, and every new
  * surface use `preview` only.

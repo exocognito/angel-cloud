@@ -3,7 +3,7 @@
   "account": "acct_example",
   "angel": "google-read-proof",
   "bindings": {
-    "staging": {
+    "preview": {
       "docs": "proof-google",
       "gmail": "proof-google"
     },

@@ -346,9 +346,7 @@ export async function runGoldenJourney(
     "golden-assistant:publish:v2",
     "golden-assistant:deploy:preview:v2",
   );
-  // The pinned CLI still spells the second environment `staging`; this read
-  // doubles as the proof the legacy management dialect survived the rename.
-  const previewV2 = await client.getEnvironment(assistantAngel.id, "staging");
+  const previewV2 = await client.getEnvironment(assistantAngel.id, "preview");
   const stagedV2 = previewV2.activeDeployment;
   if (stagedV2 === null || stagedV2.digest !== v2Artifact.digest) {
     throw new Error("CLI did not stage the checked-in v2 artifact");
@@ -479,7 +477,9 @@ async function cliPublish(
 ): Promise<CliPublishResult> {
   let artifact: HostedVersionArtifact | undefined;
   const output: string[] = [];
-  await runAngelCommand(["publish", angelId], {
+  // Core 0.3.0's bare `publish` one-step deploys to production; the journey
+  // exercises the publish -> preview -> promote path, so target preview.
+  await runAngelCommand(["publish", angelId, "--preview"], {
     repoRoot: options.repoRoot,
     fetch,
     build: async (input) => {

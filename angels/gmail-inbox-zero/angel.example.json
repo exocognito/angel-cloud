@@ -3,7 +3,7 @@
   "account": "acct_demo",
   "angel": "gmail-inbox-zero",
   "bindings": {
-    "staging": {
+    "preview": {
       "gmail": "personal-google"
     },
     "production": {

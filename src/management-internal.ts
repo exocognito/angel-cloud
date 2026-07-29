@@ -1,5 +1,4 @@
 import type {
-  DeployStagingRequest,
   ManagementAngelView,
   ManagementAvailabilityChange,
   ManagementBindingMap,
@@ -12,10 +11,10 @@ import type { HostedEnvironment } from "./environments";
 import type { GateAvailability, GateAvailabilityCommand, GateToolBinding } from "./gate";
 
 /**
- * Hosted twins of the core `/v1` view types. The pinned core contract still
- * spells the second environment `staging`; hosted state and every new surface
- * spell it `preview`, and the control Worker translates back to the legacy
- * spelling only on the legacy-dialect `/v1` routes.
+ * Hosted twins of the core `/v1` view types. They predate core 0.3.0, which
+ * renamed the contract's second environment `staging` -> `preview`; the shapes
+ * now agree, and the control Worker translates back to the legacy spelling
+ * only on the legacy-dialect `/v1` routes kept for older clients.
  */
 export interface HostedEnvironmentView extends Omit<ManagementEnvironmentView, "environment"> {
   environment: HostedEnvironment;
@@ -33,9 +32,6 @@ export interface HostedEnsureAngelResponse {
   angel: HostedAngelView;
   keys?: Record<HostedEnvironment, string>;
 }
-
-/** A direct deploy of a published Version into an environment. */
-export type DeployRequest = DeployStagingRequest;
 
 /**
  * A named runtime key for a single environment. The plaintext secret is never
@@ -207,12 +203,6 @@ export interface DeleteAngelRequest {
    * a live deployment; when present it must equal the slug being deleted.
    */
   confirm?: string;
-}
-
-export interface DeleteAngelResponse {
-  id: string;
-  slug: string;
-  deleted: true;
 }
 
 export interface CreateKeyResponse {
