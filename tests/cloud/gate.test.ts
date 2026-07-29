@@ -4,6 +4,7 @@ import {
   PolicyGate,
   availableTools,
   createPolicyGateState,
+  migrateInstalledAvailability,
   type GateToolBinding,
 } from "../../src/gate";
 import { sha256Hex } from "@smcllns/angel-core";
@@ -401,6 +402,185 @@ describe("PolicyGate policy and availability", () => {
         connectionOverrides: {},
         revision: 4,
       });
+  });
+
+  test("remaps connection-scoped overrides onto the new deployment's refs at install", async () => {
+    const { gate, key } = await installedGateway();
+    // Pause the tool, then re-enable it for the one bound Connection: the
+    // enabling override is the only thing keeping the tool served.
+    gate.changeAvailability({
+      kind: "tool",
+      tool: "gmail.users.messages.list",
+      enabled: false,
+      expectedRevision: 0,
+    });
+    gate.changeAvailability({
+      kind: "tool_connection",
+      tool: "gmail.users.messages.list",
+      connectionRef: "arc_google",
+      enabled: true,
+      expectedRevision: 1,
+    });
+
+    // A promote installs the same Connection under a freshly minted ref.
+    const promoted = bindings.map((binding) => ({ ...binding, connectionRef: "arc_promoted" }));
+    await gate.install({
+      accountId: "acct_personal",
+      angelId: "golden-research-assistant",
+      environment: "production",
+      deploymentId: "dep_v2",
+      version: 2,
+      artifact: await compileHostedAngel(v1Source),
+      bindings: promoted,
+      gatewayKeyHash: await sha256Hex(key),
+    });
+
+    expect(gate.availability()).toEqual({
+      defaultEnabled: true,
+      overrides: { "gmail.users.messages.list": false },
+      connectionOverrides: {
+        "gmail.users.messages.list": { arc_promoted: true },
+      },
+      revision: 2,
+    });
+    // The incident symptom: without the remap the enabling override vanished
+    // and the tool disappeared from discovery.
+    expect(availableTools(gate.snapshot()).map((tool) => tool.name))
+      .toContain("gmail.users.messages.list");
+  });
+
+  test("drops a connection override whose Connection is no longer bound at install", async () => {
+    const { gate, key } = await installedGateway();
+    gate.changeAvailability({
+      kind: "tool_connection",
+      tool: "gmail.users.messages.list",
+      connectionRef: "arc_google",
+      enabled: false,
+      expectedRevision: 0,
+    });
+
+    const rebound = bindings.map((binding) => ({
+      ...binding,
+      connectionRef: "arc_other",
+      connectionId: "con_other",
+    }));
+    await gate.install({
+      accountId: "acct_personal",
+      angelId: "golden-research-assistant",
+      environment: "production",
+      deploymentId: "dep_v2",
+      version: 2,
+      artifact: await compileHostedAngel(v1Source),
+      bindings: rebound,
+      gatewayKeyHash: await sha256Hex(key),
+    });
+
+    expect(gate.availability()).toEqual({
+      defaultEnabled: true,
+      overrides: {},
+      connectionOverrides: {},
+      revision: 1,
+    });
+  });
+
+  test("keeps an override on its own ref when a Connection serves one tool under several refs", async () => {
+    const key = "ak_stable_gateway_key";
+    const gate = new PolicyGate(createPolicyGateState("gateway"));
+    const artifact = await compileHostedAngel(v1Source);
+    // One Connection bound to the same tool under two refs — permitted by
+    // assertBindings, never emitted by the in-repo control planes.
+    const doubled: GateToolBinding[] = [
+      ...bindings,
+      {
+        tool: "gmail.users.messages.list",
+        connectionRef: "arc_google_alt",
+        connectionId: "con_google",
+        provider: "gmail",
+        identityLabel: "Golden Google",
+      },
+    ];
+    await gate.install({
+      accountId: "acct_personal",
+      angelId: "golden-research-assistant",
+      environment: "production",
+      deploymentId: "dep_v1",
+      version: 1,
+      artifact,
+      bindings: doubled,
+      gatewayKeyHash: await sha256Hex(key),
+    });
+    gate.changeAvailability({
+      kind: "tool_connection",
+      tool: "gmail.users.messages.list",
+      connectionRef: "arc_google",
+      enabled: false,
+      expectedRevision: 0,
+    });
+
+    // Reinstalling the same deployment must leave the override on arc_google,
+    // not migrate it onto the Connection's other ref.
+    await gate.install({
+      accountId: "acct_personal",
+      angelId: "golden-research-assistant",
+      environment: "production",
+      deploymentId: "dep_v1",
+      version: 1,
+      artifact,
+      bindings: doubled,
+      gatewayKeyHash: await sha256Hex(key),
+    });
+
+    expect(gate.availability()).toEqual({
+      defaultEnabled: true,
+      overrides: {},
+      connectionOverrides: {
+        "gmail.users.messages.list": { arc_google: false },
+      },
+      revision: 1,
+    });
+  });
+
+  test("refuses to migrate conflicting overrides from two old refs of one Connection", () => {
+    // No writer can produce two different values for one (tool, Connection) —
+    // both values would have to differ from the same base. If persisted state
+    // ever carries that shape, collapsing it silently would let ref order pick
+    // which override wins; fail loudly instead.
+    expect(() => migrateInstalledAvailability(
+      {
+        defaultEnabled: false,
+        overrides: {},
+        connectionOverrides: {
+          "gmail.users.messages.list": { arc_old_a: true, arc_old_b: false },
+        },
+        revision: 2,
+      },
+      [{ name: "gmail.users.messages.list" }],
+      [
+        {
+          tool: "gmail.users.messages.list",
+          connectionRef: "arc_old_a",
+          connectionId: "con_google",
+          provider: "gmail",
+          identityLabel: "Golden Google",
+        },
+        {
+          tool: "gmail.users.messages.list",
+          connectionRef: "arc_old_b",
+          connectionId: "con_google",
+          provider: "gmail",
+          identityLabel: "Golden Google",
+        },
+      ],
+      [
+        {
+          tool: "gmail.users.messages.list",
+          connectionRef: "arc_new",
+          connectionId: "con_google",
+          provider: "gmail",
+          identityLabel: "Golden Google",
+        },
+      ],
+    )).toThrow(/conflicting availability overrides/);
   });
 
   test("the broker independently applies the same policy without an agent key", async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { compileHostedAngel, sha256Hex } from "@smcllns/angel-core";
+import { canonicalJson, compileHostedAngel, sha256Hex } from "@smcllns/angel-core";
+import { MemoryGateFleet } from "../../src/control";
 import { buildDemoView } from "../../src/demo-view";
 import type { HostedVersionArtifact } from "../../src/domain";
 import type { ManagementConnection } from "../../src/management-contract";
@@ -477,6 +478,444 @@ describe("ManagementControl", () => {
       },
       availability: repaired,
     });
+  });
+
+  test("keeps a connection-scoped override readable across a promote by remapping refs", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const v1 = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version1 = await publish(harness.control, angelId, v1);
+    const staged1 = await stage(harness.control, angelId, version1, v1.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote1 = {
+      stagedDeploymentId: staged1.id,
+      expectedDigest: staged1.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote1,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote1),
+    );
+    const change = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: false,
+    };
+    await harness.control.changeAvailability(
+      angelId,
+      "production",
+      change,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-personal", change),
+    );
+
+    const v2 = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list", "gmail.users.labels.list"]),
+    ]);
+    const version2 = await publish(harness.control, angelId, v2);
+    const staged2 = await stage(harness.control, angelId, version2, v2.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote2 = {
+      stagedDeploymentId: staged2.id,
+      expectedDigest: staged2.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote2,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-2", promote2),
+    );
+
+    const environment = harness.control.getEnvironment(angelId, "production");
+    expect(environment.availability).toEqual({
+      defaultEnabled: true,
+      toolOverrides: {},
+      connectionOverrides: {
+        "gmail.users.messages.list": { con_personal_google: false },
+      },
+      revision: 1,
+    });
+    // The stored override is keyed by the NEW active deployment's connectionRef.
+    const state = harness.control.exportState();
+    const active = state.deployments.find(
+      (candidate) => candidate.id === environment.activeDeployment!.id,
+    )!;
+    const newRef = active.runtimeBindings.find(
+      (binding) => binding.tool === "gmail.users.messages.list"
+        && binding.connectionId === "con_personal_google",
+    )!.connectionRef;
+    expect(state.angels[0]!.environments.production.availability.connectionOverrides).toEqual({
+      "gmail.users.messages.list": { [newRef]: false },
+    });
+  });
+
+  test("drops a connection override whose Connection is no longer bound after a promote", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    const staged1 = await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote1 = {
+      stagedDeploymentId: staged1.id,
+      expectedDigest: staged1.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote1,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote1),
+    );
+    const change = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: false,
+    };
+    await harness.control.changeAvailability(
+      angelId,
+      "production",
+      change,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-personal", change),
+    );
+
+    // Re-stage the same Version, then promote WITHOUT the overridden Connection.
+    const body = {
+      versionId: version.id,
+      expectedDigest: artifact.digest,
+      bindings: { gmail: ["con_work_google"] },
+    };
+    const staged2 = await harness.control.deployStaging(
+      angelId,
+      body,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/deployments`, "stage-narrow", body),
+    );
+    const promote2 = {
+      stagedDeploymentId: staged2.id,
+      expectedDigest: staged2.digest,
+      bindings: { gmail: ["con_work_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote2,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-2", promote2),
+    );
+
+    const environment = harness.control.getEnvironment(angelId, "production");
+    expect(environment.availability).toEqual({
+      defaultEnabled: true,
+      toolOverrides: {},
+      connectionOverrides: {},
+      revision: 1,
+    });
+  });
+
+  test("restores a state left dangling by a pre-fix promote to readable, gate-matching availability", async () => {
+    // Build a healthy promoted environment with an override, then re-key the
+    // stored override to the ref of a non-active deployment — the exact state
+    // a pre-fix promote persisted (issue #1). The gates pruned their copy of
+    // the override at that install, so restore must drop it, not resurrect it.
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    const staged = await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google"],
+    });
+    const promote = {
+      stagedDeploymentId: staged.id,
+      expectedDigest: staged.digest,
+      bindings: { gmail: ["con_personal_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote),
+    );
+    const change = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: false,
+    };
+    await harness.control.changeAvailability(
+      angelId,
+      "production",
+      change,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-personal", change),
+    );
+
+    const damaged = harness.control.exportState();
+    const production = damaged.angels[0]!.environments.production;
+    const stagingRef = damaged.deployments.find((candidate) => candidate.id === staged.id)!
+      .runtimeBindings[0]!.connectionRef;
+    // The staging deployment's ref is never active in production — like the old
+    // production deployment's ref after a pre-fix promote.
+    production.availability.connectionOverrides = {
+      "gmail.users.messages.list": { [stagingRef]: false },
+    };
+
+    const restored = ManagementControl.restore(damaged, freshDependencies(harness));
+    const environment = restored.getEnvironment(angelId, "production");
+    expect(environment.availability).toEqual({
+      defaultEnabled: true,
+      toolOverrides: {},
+      connectionOverrides: {},
+      revision: 1,
+    });
+  });
+
+  test("management and real gates hold byte-identical availability after a promote with overrides", async () => {
+    // The forward fix rests on management and the gates running the SAME
+    // migration: if their availability ever diverges, the next
+    // changeAvailability fails to reconcile. Run the incident flow against
+    // real PolicyGates and pin the invariant.
+    const fleet = new MemoryGateFleet();
+    const vault = new MemoryReplayVault();
+    let sequence = 0;
+    const control = ManagementControl.restore(
+      createManagementState({ account, connections }),
+      {
+        replayVault: vault,
+        fleetFor: () => fleet,
+        randomId: (prefix) => `${prefix}_${String(++sequence).padStart(4, "0")}`,
+        checkpoint: { persist: async () => {} },
+        now: () => MANAGEMENT_NOW,
+      },
+    );
+    const ensured = await ensure(control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(control, angelId, artifact);
+    const staged = await stage(control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote1 = {
+      stagedDeploymentId: staged.id,
+      expectedDigest: staged.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await control.promoteProduction(
+      angelId,
+      promote1,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote1),
+    );
+    const change = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: false,
+    };
+    await control.changeAvailability(
+      angelId,
+      "production",
+      change,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-personal", change),
+    );
+
+    const body = {
+      versionId: version.id,
+      expectedDigest: artifact.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    const restaged = await control.deployStaging(
+      angelId,
+      body,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/deployments`, "restage", body),
+    );
+    const promote2 = {
+      stagedDeploymentId: restaged.id,
+      expectedDigest: restaged.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await control.promoteProduction(
+      angelId,
+      promote2,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-2", promote2),
+    );
+
+    const stored = control.exportState().angels[0]!.environments.production.availability;
+    expect(Object.keys(stored.connectionOverrides)).toEqual(["gmail.users.messages.list"]);
+    for (const gate of ["broker", "gateway"] as const) {
+      expect(canonicalJson((await fleet.snapshot(gate, "production")).availability))
+        .toBe(canonicalJson(stored));
+    }
+
+    // A follow-up availability change must still reconcile end to end.
+    const followUp = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_work_google",
+      enabled: false,
+    };
+    const view = await control.changeAvailability(
+      angelId,
+      "production",
+      followUp,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/availability`, "pause-work", followUp),
+    );
+    expect(view.connectionOverrides).toEqual({
+      "gmail.users.messages.list": { con_personal_google: false, con_work_google: false },
+    });
+  });
+
+  test("restore also repairs a pending availability change whose target carries dangling refs", async () => {
+    // A pause attempted DURING the issue-#1 outage recorded a pendingAvailability
+    // whose target embeds the dangling refs, wedging every retry and deploy.
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    const staged = await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const promote = {
+      stagedDeploymentId: staged.id,
+      expectedDigest: staged.digest,
+      bindings: { gmail: ["con_personal_google", "con_work_google"] },
+    };
+    await harness.control.promoteProduction(
+      angelId,
+      promote,
+      mutation("POST", `/v1/angels/${angelId}/environments/production/promotions`, "prod-1", promote),
+    );
+
+    const damaged = harness.control.exportState();
+    const production = damaged.angels[0]!.environments.production;
+    const activeBindings = damaged.deployments.find(
+      (candidate) => candidate.id === production.activeDeploymentId,
+    )!.runtimeBindings;
+    const activeRef = activeBindings.find(
+      (binding) => binding.connectionId === "con_work_google",
+    )!.connectionRef;
+    const staleRef = damaged.deployments.find((candidate) => candidate.id === staged.id)!
+      .runtimeBindings[0]!.connectionRef;
+    production.availability = {
+      defaultEnabled: true,
+      overrides: {},
+      connectionOverrides: { "gmail.users.messages.list": { [staleRef]: false } },
+      revision: 1,
+    };
+    production.pendingAvailability = {
+      change: {
+        kind: "tool_connection",
+        tool: "gmail.users.messages.list",
+        connectionId: "con_work_google",
+        enabled: false,
+      },
+      command: {
+        kind: "tool_connection",
+        tool: "gmail.users.messages.list",
+        connectionRef: activeRef,
+        enabled: false,
+        expectedRevision: 1,
+      },
+      target: {
+        defaultEnabled: true,
+        overrides: {},
+        connectionOverrides: {
+          "gmail.users.messages.list": { [staleRef]: false, [activeRef]: false },
+        },
+        revision: 2,
+      },
+    };
+    production.repair = "broker";
+
+    const restored = ManagementControl.restore(damaged, freshDependencies(harness));
+    const state = restored.exportState().angels[0]!.environments.production;
+    // The dangling ref is gone from both the availability and the pending
+    // target; the operator's in-flight change on the live ref survives.
+    expect(state.availability.connectionOverrides).toEqual({});
+    expect(state.pendingAvailability!.target.connectionOverrides).toEqual({
+      "gmail.users.messages.list": { [activeRef]: false },
+    });
+  });
+
+  test("restore drops a tool override for a tool the active deployment no longer ships", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google"],
+    });
+
+    const damaged = harness.control.exportState();
+    const stagingState = damaged.angels[0]!.environments.staging;
+    // A pre-fix deploy of a Version that dropped this tool pruned the override
+    // at the gates but left it in Management.
+    stagingState.availability = {
+      defaultEnabled: true,
+      overrides: { "gmail.users.labels.list": false },
+      connectionOverrides: {},
+      revision: 1,
+    };
+
+    const restored = ManagementControl.restore(damaged, freshDependencies(harness));
+    expect(
+      restored.getEnvironment(angelId, "staging").availability.toolOverrides,
+    ).toEqual({});
+  });
+
+  test("restore leaves a healthy environment's availability untouched", async () => {
+    const harness = managementHarness();
+    const ensured = await ensure(harness.control);
+    const angelId = ensured.angel.id;
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(harness.control, angelId, artifact);
+    await stage(harness.control, angelId, version, artifact.digest, {
+      gmail: ["con_personal_google", "con_work_google"],
+    });
+    const pauseTool = { kind: "tool" as const, tool: "gmail.users.messages.list", enabled: false };
+    await harness.control.changeAvailability(
+      angelId,
+      "staging",
+      pauseTool,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/availability`, "pause-tool", pauseTool),
+    );
+    const enablePersonal = {
+      kind: "tool_connection" as const,
+      tool: "gmail.users.messages.list",
+      connectionId: "con_personal_google",
+      enabled: true,
+    };
+    await harness.control.changeAvailability(
+      angelId,
+      "staging",
+      enablePersonal,
+      mutation("POST", `/v1/angels/${angelId}/environments/staging/availability`, "enable-personal", enablePersonal),
+    );
+
+    const before = harness.control.exportState();
+    const restored = ManagementControl.restore(before, freshDependencies(harness));
+    const after = restored.exportState();
+    expect(canonicalJson(after.angels[0]!.environments.staging.availability))
+      .toBe(canonicalJson(before.angels[0]!.environments.staging.availability));
+    expect(after.angels[0]!.environments.staging.availability.overrides)
+      .toEqual({ "gmail.users.messages.list": false });
   });
 
   test("returns tenant-safe not found for Angel resources outside the Account", async () => {

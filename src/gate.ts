@@ -313,35 +313,11 @@ export class PolicyGate {
       throw new Error("deployment ID is already installed with different content");
     }
 
-    const activeTools = new Map(
-      installation.artifact.tools.map((tool) => [tool.name.toUpperCase(), tool.name]),
-    );
-    this.state.availability.overrides = Object.fromEntries(
-      Object.entries(this.state.availability.overrides)
-        .flatMap(([tool, enabled]) => {
-          const canonical = activeTools.get(tool.toUpperCase());
-          return canonical === undefined ? [] : [[canonical, enabled] as const];
-        })
-        .sort(([left], [right]) => left.localeCompare(right)),
-    );
-    this.state.availability.connectionOverrides = Object.fromEntries(
-      Object.entries(this.state.availability.connectionOverrides)
-        .flatMap(([toolName, overrides]) => {
-          const tool = activeTools.get(toolName.toUpperCase());
-          if (tool === undefined) return [];
-          const activeRefs = new Set(
-            installation.bindings
-              .filter((binding) => binding.tool.toUpperCase() === tool.toUpperCase())
-              .map((binding) => binding.connectionRef),
-          );
-          const surviving = Object.fromEntries(
-            Object.entries(overrides)
-              .filter(([connectionRef]) => activeRefs.has(connectionRef))
-              .sort(([left], [right]) => left.localeCompare(right)),
-          );
-          return Object.keys(surviving).length === 0 ? [] : [[tool, surviving] as const];
-        })
-        .sort(([left], [right]) => left.localeCompare(right)),
+    this.state.availability = migrateInstalledAvailability(
+      this.state.availability,
+      installation.artifact.tools,
+      this.state.installation?.bindings ?? [],
+      installation.bindings,
     );
     this.state.identity = {
       accountId: command.accountId,
@@ -827,6 +803,79 @@ export function availableRuntimeTools(state: PolicyGateState): AvailableRuntimeT
       .sort((left, right) => left.ref.localeCompare(right.ref));
     return connections.length === 0 ? [] : [{ tool, connections }];
   });
+}
+
+/**
+ * Carry availability across an install. Tool overrides survive for tools the
+ * new artifact still ships. Connection-scoped overrides are keyed by
+ * connectionRefs, which are minted per DEPLOYMENT — so each override is
+ * remapped onto the new deployment's ref through the stable connectionId, and
+ * dropped only when its Connection is no longer bound to the tool. Both the
+ * gate (at install) and Management (when the deployment becomes active) apply
+ * this same migration so their recorded availability stays identical.
+ */
+export function migrateInstalledAvailability(
+  availability: GateAvailability,
+  tools: readonly { name: string }[],
+  previousBindings: readonly GateToolBinding[],
+  nextBindings: readonly GateToolBinding[],
+): GateAvailability {
+  const activeTools = new Map(tools.map((tool) => [tool.name.toUpperCase(), tool.name]));
+  const overrides = Object.fromEntries(
+    Object.entries(availability.overrides)
+      .flatMap(([tool, enabled]) => {
+        const canonical = activeTools.get(tool.toUpperCase());
+        return canonical === undefined ? [] : [[canonical, enabled] as const];
+      })
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+  const connectionOverrides = Object.fromEntries(
+    Object.entries(availability.connectionOverrides)
+      .flatMap(([toolName, refOverrides]) => {
+        const tool = activeTools.get(toolName.toUpperCase());
+        if (tool === undefined) return [];
+        const folded = tool.toUpperCase();
+        const previous = previousBindings.filter((binding) => binding.tool.toUpperCase() === folded);
+        const next = nextBindings.filter((binding) => binding.tool.toUpperCase() === folded);
+        const nextRefsByConnection = new Map<string, string[]>();
+        for (const binding of next) {
+          const refs = nextRefsByConnection.get(binding.connectionId) ?? [];
+          refs.push(binding.connectionRef);
+          nextRefsByConnection.set(binding.connectionId, refs);
+        }
+        const nextRefs = new Set(next.map((binding) => binding.connectionRef));
+        const migrated = new Map<string, boolean>();
+        for (const [ref, enabled] of Object.entries(refOverrides)) {
+          // A ref that is still bound stays as-is — the migration is a
+          // no-op on refs the next deployment keeps (including a re-run).
+          // Otherwise fan out to every ref the Connection now serves the tool
+          // under: the override targets the Connection, not one of its refs.
+          const connectionId = previous
+            .find((binding) => binding.connectionRef === ref)?.connectionId;
+          const targets = nextRefs.has(ref)
+            ? [ref]
+            : connectionId === undefined
+            ? []
+            : nextRefsByConnection.get(connectionId) ?? [];
+          for (const nextRef of targets) {
+            const existing = migrated.get(nextRef);
+            // No writer can record two values for one (tool, Connection): both
+            // would have to differ from the same base. Refuse to let ref order
+            // silently pick a winner if persisted state ever carries it.
+            if (existing !== undefined && existing !== enabled) {
+              throw new Error(`conflicting availability overrides for ${tool} / ${nextRef}`);
+            }
+            migrated.set(nextRef, enabled);
+          }
+        }
+        const surviving = Object.fromEntries(
+          [...migrated.entries()].sort(([left], [right]) => left.localeCompare(right)),
+        );
+        return Object.keys(surviving).length === 0 ? [] : [[tool, surviving] as const];
+      })
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
+  return { ...availability, overrides, connectionOverrides };
 }
 
 function isToolEnabled(availability: GateAvailability, tool: string): boolean {

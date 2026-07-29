@@ -793,6 +793,23 @@ describe("AccountRegistry", () => {
     ]));
   });
 
+  test("the state view runs the restore repair so pre-fix dangling availability projects as aligned", async () => {
+    const harness = registryHarness();
+    valueOf(await harness.registry.dispatchJson({ operation: "reset" }));
+    await deployGolden(harness.registry);
+
+    // Emulate the issue-#1 damage: management holds an override keyed by a ref
+    // no deployment serves, while the gates pruned their copy at install (they
+    // hold no overrides, same revision).
+    const state = harness.storage.get("management") as ManagementState;
+    state.angels[0]!.environments.production.availability.connectionOverrides = {
+      "gmail.users.messages.list": { arc_stale_pre_fix: false },
+    };
+
+    const view = valueOf(await harness.registry.dispatchJson({ operation: "state" }));
+    expect(view.angels[0].environments.production.gateAlignment.availability).toBe("aligned");
+  });
+
   test("bridges tuple, whole-tool, and all availability actions idempotently", async () => {
     const harness = registryHarness();
     valueOf(await harness.registry.dispatchJson({ operation: "reset" }));

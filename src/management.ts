@@ -1,5 +1,6 @@
 import type { GateFleet } from "./control";
 import type { DeploymentEnvironment, HostedVersionContent } from "./domain";
+import { migrateInstalledAvailability } from "./gate";
 import type {
   GateAvailability,
   GateAvailabilityCommand,
@@ -123,6 +124,42 @@ export class ManagementControl {
         const environmentState = angel.environments[environment];
         environmentState.availability ??= defaultAvailability();
         environmentState.pendingAvailability ??= null;
+        // Repair a state persisted by a pre-migration deploy (issue #1): its
+        // overrides may still key refs of a deployment that is no longer active
+        // (every read then throws) or tools the active Version no longer ships.
+        // The gates pruned their copies when they installed that deployment, so
+        // DROP the stale entries rather than remap them — resurrecting an
+        // override the gates no longer hold would diverge the recorded
+        // availability from what the gates enforce and wedge the next change.
+        // A pending availability change embeds the same shapes in its recorded
+        // target, so it gets the identical repair.
+        const activeId = environmentState.activeDeploymentId;
+        const active = this.state.deployments.find((deployment) => deployment.id === activeId);
+        if (active === undefined) {
+          environmentState.availability.connectionOverrides = {};
+          if (environmentState.pendingAvailability !== null) {
+            environmentState.pendingAvailability.target.connectionOverrides = {};
+          }
+        } else {
+          const version = this.state.versions.find((candidate) => candidate.id === active.versionId);
+          const tools = version?.artifact.tools
+            ?? [...new Set(active.runtimeBindings.map((binding) => binding.tool))]
+              .map((name) => ({ name }));
+          environmentState.availability = migrateInstalledAvailability(
+            environmentState.availability,
+            tools,
+            active.runtimeBindings,
+            active.runtimeBindings,
+          );
+          if (environmentState.pendingAvailability !== null) {
+            environmentState.pendingAvailability.target = migrateInstalledAvailability(
+              environmentState.pendingAvailability.target,
+              tools,
+              active.runtimeBindings,
+              active.runtimeBindings,
+            );
+          }
+        }
         // Migrate a legacy single key into the named-keys model. The migrated key
         // preserves the exact hash/fingerprint (so gate auth never breaks) and is
         // named "Default key". Its id is derived deterministically from the hash so
@@ -395,6 +432,21 @@ export class ManagementControl {
     // the projected event genuinely happened. Re-stamped on each convergence so a
     // repair overwrites any earlier (never-effective) value.
     this.stamp(deployment.id);
+    // connectionRefs are minted per deployment, but the environment's stored
+    // availability outlives the deployment that keyed it. Migrate it exactly as
+    // the gates just did at install — remap connection overrides onto the new
+    // refs via the stable connectionId, drop overrides for tools or Connections
+    // the new deployment no longer serves — so reads keep resolving and the
+    // recorded availability matches what the gates now enforce (issue #1).
+    const previousActiveId = environmentState.activeDeploymentId;
+    if (previousActiveId !== null && previousActiveId !== deployment.id) {
+      environmentState.availability = migrateInstalledAvailability(
+        environmentState.availability,
+        version.artifact.tools,
+        this.deployment(angelId, previousActiveId).runtimeBindings,
+        deployment.runtimeBindings,
+      );
+    }
     environmentState.activeDeploymentId = deployment.id;
     environmentState.pendingDeploymentId = null;
     environmentState.repair = null;
