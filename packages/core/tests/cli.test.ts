@@ -389,6 +389,9 @@ describe("Angel management commands", () => {
     }
   });
 
+  // The CLI's own coverage check pre-empts this for artifacts it built (see
+  // the no-bindings test above); this pins the contract that a server-side
+  // PD 0005 rejection reaches the user verbatim, guidance included.
   test("surfaces the preview no-bindings 400 with the API's guidance", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
@@ -411,6 +414,122 @@ describe("Angel management commands", () => {
       + "preview has no Connection bindings: bind a Connection to preview, "
       + "or pass production's bindings explicitly to share its credentials",
     );
+  });
+
+  test("stops before any deploy request when preview has no bindings for the artifact", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([jsonResponse(connections())]);
+    const root = mkdtempSync(join(tmpdir(), "angel-core-cli-unbound-"));
+    const angelDir = join(root, "angels", "golden-assistant");
+    mkdirSync(angelDir, { recursive: true });
+    writeFileSync(join(angelDir, "angel.json"), JSON.stringify({
+      target: "https://self-hosted.example",
+      account: "acct_demo",
+      angel: "golden-assistant",
+      bindings: {
+        preview: {},
+        production: {
+          "gdocs-read": "personal-google",
+          "gmail-read-and-draft": ["personal-google", "work-google"],
+        },
+      },
+    }));
+
+    await expect(runAngelCommand(["publish", "golden-assistant", "--preview"], {
+      repoRoot: root,
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow(
+      "bindings must exactly cover artifact requirements: gdocs-read, gmail-read-and-draft",
+    );
+    expect(api.requests).toHaveLength(1);
+  });
+
+  test("rejects a deployment response for a different environment or Angel", async () => {
+    const artifact = versionArtifact();
+    for (const [flags, response] of [
+      [["--preview"], productionDeployment(artifact)],
+      [[], previewDeployment(artifact)],
+      [[], { ...productionDeployment(artifact), angelId: "ang_other" }],
+    ] as const) {
+      const api = fakeApi([
+        jsonResponse(connections()),
+        jsonResponse({ angel: managementAngel("staging") }),
+        jsonResponse(publishedVersion(artifact)),
+        jsonResponse(response),
+      ]);
+      await expect(runAngelCommand(["publish", "golden-assistant", ...flags], {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/deployment/);
+      expect(api.requests).toHaveLength(4);
+    }
+  });
+
+  test("rejects a flag standing in for the Angel name", async () => {
+    for (const args of [
+      ["publish", "--preview"],
+      ["build", "--preview"],
+      ["deploy", "--prod"],
+    ]) {
+      const api = fakeApi([]);
+      await expect(runAngelCommand(args, {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        build: async () => ({ artifact: versionArtifact(), outDir: "/build" }),
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/usage: angel/);
+      expect(api.requests).toHaveLength(0);
+    }
+  });
+
+  test("rejects a staging-spelled or mixed-dialect environment response", async () => {
+    const artifact = versionArtifact();
+    // Canonical routes never spell staging: a staging-spelled getEnvironment
+    // response is malformed even though legacy angel views normalize.
+    const stagingSpelled = fakeApi([
+      jsonResponse(managementAngel("staging")),
+      jsonResponse({ ...previewEnvironment(artifact.digest), environment: "staging" }),
+    ]);
+    await expect(runAngelCommand(["deploy", "golden-assistant", "--prod"], {
+      repoRoot: commandRepo(),
+      fetch: stagingSpelled.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow(/response schema error/);
+
+    // Each dialect must be spelled consistently: the environments key and the
+    // nested environment field may not disagree.
+    for (const environments of [
+      {
+        staging: environmentState("preview", "dep_preview_1"),
+        production: environmentState("production", null),
+      },
+      {
+        preview: environmentState("staging", "dep_preview_1"),
+        production: environmentState("production", null),
+      },
+    ]) {
+      const api = fakeApi([
+        jsonResponse(connections()),
+        jsonResponse({ angel: { ...managementAngel("staging"), environments } }),
+      ]);
+      await expect(runAngelCommand(["publish", "golden-assistant"], {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/response schema error/);
+      expect(api.requests).toHaveLength(2);
+    }
   });
 
   test("rejects a staging-spelled deployment response from the preview route", async () => {

@@ -32,6 +32,9 @@ export async function runAngelCommand(
   dependencies: AngelCommandDependencies,
 ): Promise<void> {
   const [command, angelId, ...flags] = args;
+  // A flag where the Angel name belongs ("angel publish --preview") is a
+  // dropped argument, not an Angel called --preview.
+  if (angelId !== undefined && angelId.startsWith("-")) throw new Error(USAGE);
   if (command === "build" && angelId !== undefined && flags.length === 0) {
     const result = await build(dependencies)({ repoRoot: dependencies.repoRoot, angelId });
     output(dependencies)(`built ${result.artifact.name} ${result.artifact.digest} in ${result.outDir}`);
@@ -107,7 +110,11 @@ async function publish(
     expectedDigest: built.artifact.digest,
     bindings,
   });
-  if (deployment.versionId !== version.id || deployment.digest !== built.artifact.digest) {
+  if (
+    deployment.angelId !== ensured.angel.id
+    || deployment.versionId !== version.id
+    || deployment.digest !== built.artifact.digest
+  ) {
     throw new Error(`${options.environment} deployment response does not match the published Version`);
   }
   output(dependencies)(`published ${config.angel} Version ${version.number} to ${options.environment}`);
@@ -123,8 +130,9 @@ async function deployProduction(
   if (angel.accountId !== config.account || angel.slug !== config.angel) {
     throw new Error("Angel response does not match angel.json");
   }
+  // The client already rejects a response for the wrong environment.
   const preview = await client.getEnvironment(angel.id, "preview");
-  if (preview.environment !== "preview" || preview.activeDeployment === null) {
+  if (preview.activeDeployment === null) {
     throw new Error("no active preview deployment to promote");
   }
   const connections = await client.listConnections(config.account);
