@@ -613,7 +613,10 @@ Angel detail has four panes:
 - **Activity** pins a "Needs decision" card for an exact promotion or a pending
   gate repair, then shows the deploy and Version lifecycle and the request feed
   with its gate receipts (a call the Gateway denies never reaches the Broker, so
-  it carries no Broker receipt).
+  it carries no Broker receipt). The promote card is withheld when the
+  production bindings could not run the staged Version — a bound Connection is
+  unhealthy, no granted scope covers a bound operation, or the Version predates
+  the current artifact format; `angel deploy --prod` returns the exact reason.
 - **Settings** holds Availability — environment-scoped **Pause all** and
   **Resume all** — and the immutable Version history with each Version's full
   `sha256` digest.
