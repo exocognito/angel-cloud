@@ -58,7 +58,9 @@ identities belong in untracked `angel.json` files; safe examples use
 ## Distribution
 
 The source repository remains private for Milestone 0. The package is published
-publicly as exact version `@smcllns/angel-core@0.1.0`, so compatible hosted and
-self-hosted control planes can install the versioned interface without a
-repository credential. The exact tarball boundary and a public-publish dry run
-are covered by the package tests.
+publicly as exact versions, so compatible hosted and self-hosted control planes
+can install the versioned interface without a repository credential. npm's
+latest is `@smcllns/angel-core@0.2.0`, which still speaks the legacy staging
+dialect; this tree is `0.3.0`, the preview dialect, and must not be published
+before the server side (angel-cloud#20) is deployed. The exact tarball boundary
+and a public-publish dry run are covered by the package tests.
