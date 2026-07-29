@@ -1,8 +1,8 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, normalize } from "node:path";
 
 /**
  * Contract for the public docs site (issue #4).
@@ -62,10 +62,12 @@ function headingSlugs(markdown: string): Set<string> {
     const m = line.match(/^#{1,4}\s+(.*)$/);
     if (!m || m[1] === undefined) continue;
     // Headings are rendered as text: drop markdown link/code/emphasis markers
-    // the way the DOM's textContent would.
+    // the way the DOM's textContent would. Underscores survive inside code
+    // spans (`angel_connection`); only paired emphasis underscores are markup.
     const text = m[1]
       .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-      .replace(/[`*_]/g, "");
+      .replace(/[`*]/g, "")
+      .replace(/\b_([^_]+)_\b/g, "$1");
     let s = text.trim().toLowerCase().replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
     const base = s;
     let n = 0;
@@ -144,6 +146,51 @@ describe("docs-site build output", () => {
         expect(slugsOf(path).has(anchor)).toBe(true);
       }
     }
+  });
+
+  test("every relative link in every served markdown file resolves, anchors included", () => {
+    // Crawl the whole served set: root docs plus the decision-record
+    // directories they link into. A dangling relative link is exactly the
+    // defect that turns a public docs walk into a dead end.
+    const servedMarkdown: string[] = [
+      ...SERVED_FILES.filter((f) => f.endsWith(".md")),
+      ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
+      ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
+    ];
+    expect(servedMarkdown.some((f) => f.startsWith("product-decisions/"))).toBe(true);
+    expect(servedMarkdown.some((f) => f.startsWith("adrs/"))).toBe(true);
+
+    const slugCache = new Map<string, Set<string>>();
+    const slugsOf = (path: string) => {
+      let s = slugCache.get(path);
+      if (!s) { s = headingSlugs(read(canonicalDist, path)); slugCache.set(path, s); }
+      return s;
+    };
+
+    for (const file of servedMarkdown) {
+      const body = read(canonicalDist, file).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
+      for (const m of body.matchAll(/\]\(([^)\s]+)\)/g)) {
+        const href = m[1] ?? "";
+        if (/^(https?:|mailto:)/.test(href)) continue;
+        const [rawPath = "", ...anchorParts] = href.split("#");
+        const anchor = anchorParts.length ? anchorParts.join("#") : null;
+        const target = rawPath === "" ? file : normalize(join(dirname(file), rawPath));
+        expect(
+          existsSync(join(canonicalDist, target)),
+          `${file} links ${href} but ${target} is not served`,
+        ).toBe(true);
+        if (anchor && target.endsWith(".md")) {
+          expect(
+            slugsOf(target).has(anchor),
+            `${file} links ${href} but ${target} has no heading #${anchor}`,
+          ).toBe(true);
+        }
+      }
+    }
+    // Regression for the slug mirror: a code-span heading keeps its underscore
+    // (faq.md's angel_connection question), so the crawl above genuinely
+    // exercises underscore anchors rather than passing vacuously.
+    expect(slugsOf("faq.md").has("can-i-declare-or-guard-angel_connection-in-my-own-policy")).toBe(true);
   });
 
   test("interim build rewrites the canonical base URL everywhere agents read", () => {
