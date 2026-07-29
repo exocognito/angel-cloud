@@ -488,19 +488,12 @@ export class ManagementControl {
         ) {
           throw new ManagementError(404, `Connection for binding ${id} not found`);
         }
-        // A Connection the dashboard shows healthy but whose grant covers no
-        // operation of this provider (an out-of-registry consent) is a scope
-        // problem, not a missing record — a 404 here would misdiagnose it.
-        if (!connection.providers.includes(requirement.provider)) {
-          throw new ManagementError(
-            409,
-            `Connection for binding ${id} holds no scope for any ${requirement.provider} operation`,
-          );
-        }
         // The grant must be able to run every bound operation — judged
         // against the registry's accepted scopes per operation, so a broader
         // grant than the artifact's spec-derived consent still binds. A write
-        // Angel must fail here, not at Google after deployment.
+        // Angel must fail here, not at Google after deployment. The unknown
+        // check runs first: registry skew needs a republish, and any other
+        // diagnosis for it sends the operator somewhere futile.
         const gaps = bindingOperationGaps(
           requirement.provider,
           requirement.tools,
@@ -511,6 +504,15 @@ export class ManagementControl {
             409,
             `binding ${id} names operations absent from the deployed adapter registry:`
               + ` ${gaps.unknown.join(", ")} — republish the Version against the current registry`,
+          );
+        }
+        // A Connection the dashboard shows healthy but whose grant covers no
+        // operation of this provider (an out-of-registry consent) is a scope
+        // problem, not a missing record — a 404 here would misdiagnose it.
+        if (!connection.providers.includes(requirement.provider)) {
+          throw new ManagementError(
+            409,
+            `Connection for binding ${id} holds no scope for any ${requirement.provider} operation`,
           );
         }
         if (gaps.uncovered.length > 0) {

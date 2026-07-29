@@ -206,6 +206,25 @@ describe("ManagementControl", () => {
     });
   });
 
+  test("registry-mismatch guidance wins over the provider-label 409 under version skew", async () => {
+    const seed = managementHarness();
+    const ensured = await ensure(seed.control);
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(seed.control, ensured.angel.id, artifact);
+    // Simulate a Version published against an older registry that still
+    // shipped an operation the deployed registry no longer carries.
+    const skewed = seed.control.exportState();
+    skewed.versions[0]!.artifact.bindingRequirements[0]!.tools.push("gmail.users.vanished");
+    const control = ManagementControl.restore(skewed, seed.dependencies);
+    // Even when the bound Connection also lacks the provider label, the
+    // actionable diagnosis is the republish, not a futile reauthorization.
+    await expect(stage(control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_unlabeled_google"],
+    })).rejects.toThrow(/absent from the deployed adapter registry/);
+  });
+
   test("a healthy Connection with no usable scope for the provider gets a 409, not a 404", async () => {
     const { control } = managementHarness();
     const ensured = await ensure(control);
