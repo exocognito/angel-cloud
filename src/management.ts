@@ -111,6 +111,26 @@ export function createManagementState(input: {
   };
 }
 
+// The deploy floor's per-operation verdicts against the shipped registry. An
+// operation the registry no longer carries (a Version published against a
+// different @smcllns/angel-core) is a registry mismatch, reported apart from
+// scope gaps so it prompts a republish rather than a futile reauthorization.
+export function bindingOperationGaps(
+  provider: string,
+  tools: readonly string[],
+  granted: readonly string[],
+): { unknown: string[]; uncovered: { tool: string; accepted: string[] }[] } {
+  const operations = GENERATED_ADAPTERS[provider]?.operations ?? {};
+  const unknown: string[] = [];
+  const uncovered: { tool: string; accepted: string[] }[] = [];
+  for (const tool of tools) {
+    const accepted = operations[tool]?.scopes;
+    if (accepted === undefined) unknown.push(tool);
+    else if (!accepted.some((scope) => granted.includes(scope))) uncovered.push({ tool, accepted: [...accepted] });
+  }
+  return { unknown, uncovered };
+}
+
 export class ManagementControl {
   private readonly state: ManagementState;
 
@@ -473,15 +493,21 @@ export class ManagementControl {
         // against the registry's accepted scopes per operation, so a broader
         // grant than the artifact's spec-derived consent still binds. A write
         // Angel must fail here, not at Google after deployment.
-        const granted = connection.grantedScopes ?? [];
-        const operations = GENERATED_ADAPTERS[requirement.provider]?.operations ?? {};
-        const uncovered = requirement.tools.filter((tool) => {
-          const accepted = operations[tool]?.scopes ?? [];
-          return !accepted.some((scope) => granted.includes(scope));
-        });
-        if (uncovered.length > 0) {
-          const detail = uncovered
-            .map((tool) => `${tool} (needs one of: ${(operations[tool]?.scopes ?? []).join(", ")})`)
+        const gaps = bindingOperationGaps(
+          requirement.provider,
+          requirement.tools,
+          connection.grantedScopes ?? [],
+        );
+        if (gaps.unknown.length > 0) {
+          throw new ManagementError(
+            409,
+            `binding ${id} names operations absent from the deployed adapter registry:`
+              + ` ${gaps.unknown.join(", ")} — republish the Version against the current registry`,
+          );
+        }
+        if (gaps.uncovered.length > 0) {
+          const detail = gaps.uncovered
+            .map(({ tool, accepted }) => `${tool} (needs one of: ${accepted.join(", ")})`)
             .join("; ");
           throw new ManagementError(
             409,

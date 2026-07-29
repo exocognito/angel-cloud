@@ -16,6 +16,7 @@ import {
   AesGcmResponseReplayVault,
   ManagementControl,
   ManagementError,
+  bindingOperationGaps,
   createManagementState,
   type ManagementDependencies,
   type ResponseReplayVault,
@@ -165,6 +166,32 @@ describe("ManagementControl", () => {
     await expect(stage(control, ensured.angel.id, version, artifact.digest, {
       gmail: ["con_work_google"],
     })).rejects.toThrow(/gmail\.users\.drafts\.create \(needs one of: .*gmail\.compose/);
+  });
+
+  test("the binding floor separates registry-absent operations from scope gaps", () => {
+    const readonly = ["https://www.googleapis.com/auth/gmail.readonly"];
+    // A stored Version can carry an operation the deployed registry no longer
+    // ships (core version skew); that is a registry mismatch, not a scope gap.
+    expect(bindingOperationGaps("gmail", ["gmail.users.vanished"], readonly)).toEqual({
+      unknown: ["gmail.users.vanished"],
+      uncovered: [],
+    });
+    expect(bindingOperationGaps("gmail", ["gmail.users.drafts.create"], readonly)).toEqual({
+      unknown: [],
+      uncovered: [{
+        tool: "gmail.users.drafts.create",
+        accepted: [
+          "https://mail.google.com/",
+          "https://www.googleapis.com/auth/gmail.addons.current.action.compose",
+          "https://www.googleapis.com/auth/gmail.compose",
+          "https://www.googleapis.com/auth/gmail.modify",
+        ],
+      }],
+    });
+    expect(bindingOperationGaps("gmail", ["gmail.users.messages.list"], readonly)).toEqual({
+      unknown: [],
+      uncovered: [],
+    });
   });
 
   test("accepts a binding whose broader grant covers every bound operation through the registry", async () => {
