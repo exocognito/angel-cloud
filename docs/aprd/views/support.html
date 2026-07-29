@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Angel Cloud APRD — Support view</title>
+    <script>if (new URLSearchParams(location.search).has("embedded")) document.documentElement.setAttribute("data-embedded", "");</script>
+    <style>html[data-embedded] [data-audience-chrome] { display: none; }</style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-accent: #0d9488; /* teal — the one accent on this page */
+      }
+    </style>
+    <style>
+      /* Colored emphasis always via inset box-shadow; the corners the color
+         touches are square, never rounded. */
+      .note-accent { border-radius: 0 0.5rem 0.5rem 0; box-shadow: inset 4px 0 0 0 #0d9488; }
+      .note-amber  { border-radius: 0 0.5rem 0.5rem 0; box-shadow: inset 4px 0 0 0 #f59e0b; }
+      .note-red    { border-radius: 0 0.5rem 0.5rem 0; box-shadow: inset 4px 0 0 0 #dc2626; }
+      code { font-size: 0.85em; background: #f5f5f4; padding: 1px 5px; border-radius: 4px; }
+      th { text-align: left; }
+      tbody tr { vertical-align: top; }
+      .pill { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 7px; border-radius:9999px; white-space:nowrap; }
+      .pill-ok  { background:#f0fdfa; color:#0f766e; border:1px solid #99f6e4; }
+      .pill-red { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+      .pill-amb { background:#fffbeb; color:#b45309; border:1px solid #fde68a; }
+      @media (max-width: 640px) {
+        body { overflow-x: hidden; }
+        nav { flex-wrap: wrap; gap: 0.25rem 1rem; }
+      }
+    </style>
+  </head>
+
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+    <!-- ═════════ TOP BAR ═════════ -->
+    <div data-audience-chrome class="border-b border-stone-200 bg-white/90 sticky top-0 z-40 backdrop-blur">
+      <div class="max-w-5xl mx-auto px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+        <p class="text-xs uppercase tracking-wider text-slate-500">Angel Cloud APRD · Support view · derived from the dataroom</p>
+        <nav class="flex gap-4 text-sm">
+          <a href="../angel-cloud-aprd.html" class="text-accent hover:underline">Dataroom</a>
+          <a href="engineering.html" class="text-slate-500 hover:underline">Engineering</a>
+          <a href="design.html" class="text-slate-500 hover:underline">Design</a>
+          <a href="marketing.html" class="text-slate-500 hover:underline">Marketing</a>
+          <a href="support.html" class="text-slate-900 font-medium hover:underline">Support</a>
+        </nav>
+      </div>
+    </div>
+
+    <main class="max-w-5xl mx-auto px-6 py-14 space-y-16">
+
+      <!-- ═════════ HEADER ═════════ -->
+      <header class="space-y-3">
+        <h1 class="font-serif text-4xl leading-tight">The page you keep open while answering a ticket</h1>
+        <p class="text-lg text-slate-700 leading-relaxed max-w-3xl">
+          Angel Cloud gives one person a small, provable toolbox for their AI agents. Most tickets are one of about a dozen
+          known situations — and roughly half of them are the product working exactly as designed. This page tells you which
+          is which, what to say, and when to escalate.
+        </p>
+        <div class="note-accent bg-teal-50/60 p-4 text-sm text-slate-700 max-w-3xl">
+          <strong>Ground rule:</strong> the system fails closed. A refused call is a nuisance; a wrongly allowed one is a
+          betrayal. So when a user reports "it refused to do X", start from the assumption that the refusal is correct and
+          specific — every error below has exactly one meaning.
+        </div>
+      </header>
+
+      <!-- ═════════ 60 SECONDS ═════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">How it works in 60 seconds</h2>
+        <p class="text-slate-700 max-w-3xl">Five steps. Every ticket lands somewhere on this line, so place the ticket first, then diagnose.</p>
+        <ol class="grid gap-3 md:grid-cols-5 list-none">
+          <li class="rounded-lg border border-stone-200 bg-white p-4 space-y-1">
+            <p class="text-xs font-mono text-accent">1 · Write</p>
+            <p class="text-sm text-slate-700">The owner writes a short policy file: which operations the agent may call, with guards on arguments. Anything not listed does not exist.</p>
+          </li>
+          <li class="rounded-lg border border-stone-200 bg-white p-4 space-y-1">
+            <p class="text-xs font-mono text-accent">2 · Publish</p>
+            <p class="text-sm text-slate-700">One CLI command builds it and makes it live. What you can't run is refused at publish or deploy — not days later mid-task.</p>
+          </li>
+          <li class="rounded-lg border border-stone-200 bg-white p-4 space-y-1">
+            <p class="text-xs font-mono text-accent">3 · Key, once</p>
+            <p class="text-sm text-slate-700">Each environment gets a bearer Angel key, shown in plaintext exactly once. The server keeps only a hash. Nobody — including us — can read it back.</p>
+          </li>
+          <li class="rounded-lg border border-stone-200 bg-white p-4 space-y-1">
+            <p class="text-xs font-mono text-accent">4 · Connect</p>
+            <p class="text-sm text-slate-700">The agent talks to one MCP endpoint with that key. It sees only the allowed tools; a paused or absent tool isn't "blocked" — it's not in the list.</p>
+          </li>
+          <li class="rounded-lg border border-stone-200 bg-white p-4 space-y-1">
+            <p class="text-xs font-mono text-accent">5 · Double-check</p>
+            <p class="text-sm text-slate-700">Every executed call is checked by two independent gates, each writing a tamper-evident receipt. If they ever disagree, the call simply doesn't happen.</p>
+          </li>
+        </ol>
+      </section>
+
+      <!-- ═════════ TROUBLESHOOTING TABLE ═════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">Troubleshooting table</h2>
+        <p class="text-slate-700 max-w-3xl">
+          One row per failure a user can hit. The status pill tells you at a glance: <span class="pill pill-ok">by design</span> means
+          the product is doing its job, <span class="pill pill-amb">user-fixable</span> means walk them through it,
+          <span class="pill pill-red">escalate</span> means it's ours.
+        </p>
+        <input id="filter" type="search" placeholder="Filter rows — try 'paused', '409', 'key', 'google'…"
+               class="w-full max-w-md rounded-lg border border-stone-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent" />
+        <div class="overflow-x-auto rounded-lg border border-stone-200 bg-white">
+          <table class="w-full text-sm min-w-[900px]">
+            <thead class="bg-stone-100 text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th class="p-3 w-[22%]">What the user reports</th>
+                <th class="p-3 w-[26%]">What it actually means</th>
+                <th class="p-3 w-[27%]">What to tell them</th>
+                <th class="p-3 w-[25%]">How it gets fixed</th>
+              </tr>
+            </thead>
+            <tbody id="trows" class="divide-y divide-stone-100 text-slate-700">
+              <tr>
+                <td class="p-3">"My agent gets 401 / unauthorized." <span class="pill pill-amb">user-fixable</span></td>
+                <td class="p-3">Missing or wrong Angel key (<code>401</code> / <code>-32001</code>), rejected before the request body is even read. Common cause: a preview/staging key presented to production — environment keys never cross.</td>
+                <td class="p-3">"Your key doesn't match this environment. Check you pasted the production key to the production endpoint — a preview key never opens the production door."</td>
+                <td class="p-3">Paste the right key. If the plaintext is lost, it's gone — Rotate on the Agent Keys pane mints a replacement and kills the old one. See the key clinic below.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"My agent says the tool doesn't exist." <span class="pill pill-ok">by design</span></td>
+                <td class="p-3"><code>unknown_tool</code>: the operation is absent from the deployed policy. Example: an inbox-read Angel whose agent asks for <code>messages.send</code> — send was never in the toolbox, so there's nothing to call.</td>
+                <td class="p-3">"That's the product working. Your Angel only contains what you put in it — a forbidden action isn't blocked, it doesn't exist."</td>
+                <td class="p-3">If they genuinely want the capability: edit <code>ANGEL.yaml</code>, publish a new Version, promote. Authority is never added at runtime or by support.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"It asked which account and my agent failed." <span class="pill pill-ok">by design</span></td>
+                <td class="p-3"><code>connection_required</code>: the tool is bound to more than one Connection (say personal and work Gmail) and the agent omitted <code>angel_connection</code>. The platform never guesses and never fans out to all accounts.</td>
+                <td class="p-3">"You have two accounts connected, so every call must say which one. The agent picks from a menu titled like 'gmail - work account'."</td>
+                <td class="p-3">The agent includes the <code>angel_connection</code> value from <code>tools/list</code>. With exactly one Connection, omission is fine — this only appears once a second one exists.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"It worked yesterday, now it says the connection is unavailable." <span class="pill pill-amb">user-fixable</span></td>
+                <td class="p-3"><code>connection_unavailable</code>: the agent cached an <code>arc_…</code> selector from before a redeploy. Selectors are minted fresh for each deployment, so the old one is stale — not broken, expired.</td>
+                <td class="p-3">"Nothing is wrong with the account. Your agent is using an old selector from before the last deploy; it needs to refresh its tool list."</td>
+                <td class="p-3">The agent calls <code>tools/list</code> again and uses the new selector. Any agent that caches selectors across deploys will hit this every deploy.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"It says paused" / "a tool disappeared from my agent's list." <span class="pill pill-ok">by design</span></td>
+                <td class="p-3"><code>connection_paused</code>: that tool + account pair is paused (the tool's other accounts still work). <code>tool_paused</code>: no active Connection remains — and a fully paused tool vanishes from <code>tools/list</code> entirely, which users read as "it disappeared".</td>
+                <td class="p-3">"Someone flipped a pause toggle — often Pause all before a holiday. Disappearing from the list is intentional: a paused tool isn't shown as callable."</td>
+                <td class="p-3">Allowed Tools pane → resume the tool or the tool + Connection toggle; or Settings → Availability → Resume all. See the pause gotchas below before advising Resume all.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"It refused to move a message to Trash." <span class="pill pill-ok">by design</span></td>
+                <td class="p-3"><code>guard_denied</code>: an argument guard rejected the call. Example: a policy allows <code>messages.modify</code> but forbids the values <code>TRASH</code>, <code>SPAM</code>, <code>SENT</code> — so relabel and archive work, trashing is refused with a receipted reason.</td>
+                <td class="p-3">"Your own policy forbids that exact argument. The agent can relabel and archive; it provably cannot trash. The refusal is logged with a reason — that's the audit trail working."</td>
+                <td class="p-3">Nothing to fix unless the owner wants the guard loosened — which goes through source: edit the guard, publish, promote. Support cannot loosen a guard.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"HTTP 500 — 'Angel gates failed to converge'." <span class="pill pill-red">escalate</span></td>
+                <td class="p-3"><code>-32603</code>: the two independent gates disagreed, so the platform refused the call rather than pick a winner. No provider call was made. This status is intentional — fail closed — but the disagreement itself is a platform fault.</td>
+                <td class="p-3">"The safety system caught an internal inconsistency and stopped the call — your data was not touched. This one is on us."</td>
+                <td class="p-3">Escalate with the request ID from <code>_meta</code>. Not user-fixable; the receipts on both gates let engineering see exactly where the decisions diverged.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"Calls suddenly fail with a provider error." <span class="pill pill-amb">user-fixable</span></td>
+                <td class="p-3"><code>-32003</code> family: a provider or custody failure — most often a revoked Google grant. The Connection is marked <code>error</code> on the dashboard and the platform fails loudly rather than pretending. (Also expected weekly while the OAuth app is in External Testing: refresh tokens expire after seven days.)</td>
+                <td class="p-3">"Google cut off the grant — usually a revoke or an expired test-mode token. Nothing about your Angel changed, and nothing needs reconfiguring."</td>
+                <td class="p-3">Connections page → the row showing <code>error</code> → <strong>Reauthorize</strong>. The <em>same</em> Connection comes back healthy — same nickname, same identity, deployment and keys untouched. Calls pass again immediately.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"I get 405 / 406 / 415 / 403 from the endpoint." <span class="pill pill-amb">user-fixable</span></td>
+                <td class="p-3">Client transport misconfiguration, each with one meaning: <code>405</code> = non-POST (the endpoint answers <code>Allow: POST</code>); <code>406</code> = <code>Accept</code> missing <code>application/json</code> + <code>text/event-stream</code>; <code>415</code> = wrong <code>Content-Type</code>; <code>403</code> = a foreign <code>Origin</code> header; <code>400</code> = missing <code>MCP-Protocol-Version</code> after initialize.</td>
+                <td class="p-3">"Your MCP client is configured slightly wrong — the specific status tells us exactly which header. This is a setup fix, not an outage or a permissions problem."</td>
+                <td class="p-3">Fix the named header in the agent client and retry. These never involve the policy, the key set, or the account.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"My publish/deploy command returns 409." <span class="pill pill-amb">user-fixable</span></td>
+                <td class="p-3">A management conflict, three flavors: an <code>Idempotency-Key</code> reused with a <em>different</em> body; a stale <code>expectedDigest</code> (the staged deployment moved under them); or a pending repair marker from an interrupted change, which blocks every <em>different</em> mutation until repaired.</td>
+                <td class="p-3">"The platform refused rather than guess. If a change was interrupted: retry the identical request and it completes the repair. If the digest is stale: something changed since you last looked — re-read state and retry deliberately."</td>
+                <td class="p-3">Interrupted change → retry the byte-identical request. Reused idempotency key → mint a fresh key for new input. Digest drift → re-fetch, confirm intent, resend. Retrying is always safe: it can never double-fire.</td>
+              </tr>
+              <tr>
+                <td class="p-3">"I can't delete a Provider App — it returns 501." <span class="pill pill-ok">by design</span></td>
+                <td class="p-3"><code>501</code>: Provider App removal is not implemented in this milestone. The API reserves the route and says so honestly instead of half-deleting.</td>
+                <td class="p-3">"Not built yet — deliberately, not broken. Your Connections and Angels are unaffected; the stored client secret stays write-only either way."</td>
+                <td class="p-3">Nothing to do today. Note the request; removal is on the deferred list.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="norows" class="hidden text-sm text-slate-500">No rows match that filter.</p>
+      </section>
+
+      <!-- ═════════ KEY LIFECYCLE CLINIC ═════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">Key lifecycle clinic</h2>
+        <p class="text-slate-700 max-w-3xl">Four facts settle almost every key ticket. Say them plainly.</p>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-lg border border-stone-200 bg-white p-5 space-y-2">
+            <h3 class="font-serif text-lg">Shown exactly once</h3>
+            <p class="text-sm text-slate-700">The plaintext appears one time — at creation, mint, or rotate — beside the only Copy control, with a save-it-now warning. After that the server holds only a hash and a short fingerprint. No API, no admin, no support request can read it back. "Can you look up my key?" — the honest answer is that nobody can.</p>
+          </div>
+          <div class="rounded-lg border border-stone-200 bg-white p-5 space-y-2">
+            <h3 class="font-serif text-lg">Lost key → rotate</h3>
+            <p class="text-sm text-slate-700">A lost plaintext is unrecoverable, but never a crisis: Agent Keys pane → Rotate mints a replacement and reveals it once. The old key stops working the moment you rotate — warn users with several agents on one key that all of them need the new one.</p>
+          </div>
+          <div class="rounded-lg border border-stone-200 bg-white p-5 space-y-2">
+            <h3 class="font-serif text-lg">The last key can't be revoked</h3>
+            <p class="text-sm text-slate-700">Revoking the last active key would lock the environment out entirely, so the platform refuses. A user who "can't revoke this key" almost always has exactly one left. Mint a new key first, move agents over, then revoke the old.</p>
+          </div>
+          <div class="rounded-lg border border-stone-200 bg-white p-5 space-y-2">
+            <h3 class="font-serif text-lg">Deploys never change keys</h3>
+            <p class="text-sm text-slate-700">Publishing and promoting a new Version leaves every key untouched — only explicit mint, rotate, or revoke changes the key set. So "we shipped v3 and the agent broke" is never a key story; look at the policy diff or a stale <code>arc_…</code> selector instead. Responses carry <code>x-angel-version</code> so you can confirm which policy served the call.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ PAUSE / RESUME GOTCHAS ═════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">Pause and resume — the four ticket generators</h2>
+        <div class="space-y-3">
+          <div class="note-amber bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>Pauses survive a deploy — but a pause whose target is gone does not.</strong> A deployment mints fresh <code>arc_…</code> selectors, so the platform remaps every per-Connection pause onto the new deployment by Connection, not by selector. Tool-level pauses are pruned to the tools that still exist; a tool + Connection pause is dropped only when that Connection is no longer bound to that tool. Example ticket: "I paused my work account on the archive tool, we shipped v4, and the work account is active again." Check the new Version first — if it stopped binding work Google to that tool, the pause had nothing left to hold and was dropped. Re-bind, or re-apply the pause.
+          </div>
+          <div class="note-amber bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>Resume all clears every override.</strong> Pause all and Resume all reset the environment default <em>and</em> wipe every per-tool and per-Connection override. After a Resume all, nothing stays paused — including the one tool the user carefully switched off last month. Before advising Resume all, ask whether any pause is meant to be permanent; if so, resume tools one by one instead.
+          </div>
+          <div class="note-amber bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>While the environment default is paused, new tools inherit paused.</strong> A user who paused everything, then shipped a Version adding a tool, will report "my new tool never appeared". It deployed fine — it inherited the paused default and is waiting for a resume.
+          </div>
+          <div class="note-amber bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>Paused tools vanish from the agent's tool list entirely.</strong> Not greyed out, not "disabled" — absent from <code>tools/list</code>. Users report this as "the tool disappeared" or blame their agent. A direct call to the vanished tool returns <code>tool_paused</code> or <code>connection_paused</code>, which confirms the diagnosis in one request.
+          </div>
+        </div>
+        <p class="text-sm text-slate-600 max-w-3xl">One more distinction worth saying out loud: pause is a reversible last-mile overlay that can only switch things <em>off</em>. It never adds a tool or loosens a guard. Removing authority for good goes through source — edit, publish, promote.</p>
+      </section>
+
+      <!-- ═════════ KNOWN ISSUES ═════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">Known issues — one live, one worth remembering</h2>
+        <div class="space-y-3">
+          <div class="note-accent bg-teal-50/60 p-4 text-sm text-slate-700">
+            <strong>#1 · Promotion breaking connection-scoped availability overrides — fixed.</strong> The one ticketed correctness bug in the enforcement path; it took production down about four minutes on 2026-07-27 and is now closed. Worth keeping in your head because the symptom is memorable: an environment went dark <em>immediately after a promote</em>, on accounts that had a tool paused everywhere and switched back on for one Connection. That re-enabling setting was attached to an identifier a new release replaced, so it went missing at the worst moment. Pause settings now follow the Connection across a release. If you see this symptom on a current deployment, it is <em>not</em> this bug — escalate it as new, with the Angel and the promotion time.
+          </div>
+          <div class="note-red bg-red-50 p-4 text-sm text-red-900">
+            <strong>Admin reset paints fabricated healthy Connections.</strong> The admin reset endpoint currently seeds fake "healthy" Google Connections over real custody state. Classified a bug on 2026-07-28; it will stop. Until then: after any reset, dashboard Connection health is not evidence — a "healthy" pill may be fiction. Verify with a real call, not the pill.
+          </div>
+        </div>
+      </section>
+
+      <!-- ═════════ ESCALATE VS SELF-SERVE ═════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">What to escalate, what to self-serve</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-lg border border-stone-200 bg-white p-5 space-y-3">
+            <h3 class="font-serif text-lg">Self-serve — walk them through it</h3>
+            <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700">
+              <li><strong>Rollback.</strong> No rollback command exists. The path is re-promotion: publish the old source again, stage it, promote that exact staged Version. Same safety rules, just manual.</li>
+              <li><strong>Revoked Google access.</strong> Row-level Reauthorize on the Connections page — the same Connection returns, nothing else to touch.</li>
+              <li><strong>Lost or leaked keys.</strong> Rotate (lost) or mint-then-revoke (leaked, when other agents share the key).</li>
+              <li><strong>Interrupted changes.</strong> Retry the identical request; a repair marker completes and the 409s stop.</li>
+              <li><strong>Any authority change.</strong> Edit <code>ANGEL.yaml</code>, publish, promote — support never edits policy for a user.</li>
+            </ul>
+          </div>
+          <div class="rounded-lg border border-stone-200 bg-white p-5 space-y-3">
+            <h3 class="font-serif text-lg">Escalate — or set expectations honestly</h3>
+            <ul class="list-disc pl-5 space-y-2 text-sm text-slate-700">
+              <li><strong>Any <code>-32603</code> convergence failure.</strong> Platform fault by definition. Collect the request ID and escalate.</li>
+              <li><strong>Environment dark right after a promote.</strong> This is what issue #1 used to do, and it is fixed — so a report of it now is a new fault, not that one. Escalate with timing; don't troubleshoot the user.</li>
+              <li><strong>Activity history requests.</strong> No retention, search, or export guarantee exists yet. Never promise "we can pull the logs from last month."</li>
+              <li><strong>"How do I sign up?"</strong> There is no signup — one pre-provisioned Account behind Cloudflare Access. Say so; don't waitlist people informally.</li>
+              <li><strong>Naming heads-up.</strong> "Staging" is now "preview" — the dashboard, the docs and the platform all say preview. The published command-line tool still says <code>staging</code>, and old <code>/v1/a/…/staging/mcp</code> endpoints still answer, so a user pasting CLI output or an old URL will show you the old word. They mean the same environment. Translate silently; don't make the user care.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200">
+        The dataroom is normative; where this page and the dataroom disagree, the dataroom wins.
+      </footer>
+    </main>
+
+    <script>
+      // Table filter: hides rows whose text doesn't match; case-insensitive.
+      const input = document.getElementById("filter");
+      const rows = Array.from(document.getElementById("trows").children);
+      const empty = document.getElementById("norows");
+      input.addEventListener("input", () => {
+        const q = input.value.trim().toLowerCase();
+        let shown = 0;
+        rows.forEach((r) => {
+          const hit = !q || r.textContent.toLowerCase().includes(q);
+          r.style.display = hit ? "" : "none";
+          if (hit) shown++;
+        });
+        empty.classList.toggle("hidden", shown > 0);
+      });
+    </script>
+  </body>
+</html>

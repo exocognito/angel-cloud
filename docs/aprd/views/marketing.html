@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Angel Cloud — Marketing view</title>
+    <script>if (new URLSearchParams(location.search).has("embedded")) document.documentElement.setAttribute("data-embedded", "");</script>
+    <style>html[data-embedded] [data-audience-chrome] { display: none; }</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-accent: #4f46e5;
+      }
+    </style>
+
+    <style>
+      :root { --dot-active: #e5007a; }
+
+      /* Zero-chrome carousel: dots only. */
+      [data-carousel] .slide-stack { display: grid; }
+      [data-carousel] .slide-stack > * { grid-area: 1 / 1; transition: opacity 0.25s ease; }
+      [data-carousel] .slide-stack > *[aria-hidden="true"] { opacity: 0; pointer-events: none; }
+      [data-carousel] .dot { width: 7px; height: 7px; border-radius: 9999px; background: #cbd5e1; transition: background 0.2s ease; }
+      [data-carousel] .dot[data-active] { background: var(--dot-active); }
+      @media (prefers-reduced-motion: reduce) { [data-carousel] .slide-stack > * { transition: none; } }
+
+      .badge-ship { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; vertical-align:middle; }
+      .badge-next { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; vertical-align:middle; }
+      .badge-prop { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#fafaf9; color:#78716c; border:1px solid #e7e5e4; vertical-align:middle; }
+
+      pre.term { background:#1c1917; color:#d6d3d1; border-radius:8px; padding:14px 16px; font-size:12.5px; line-height:1.6; overflow-x:auto; }
+      pre.term .p { color:#a8a29e; }
+      pre.term .g { color:#4ade80; }
+      @media (max-width: 640px) {
+        body { overflow-x: hidden; }
+        nav { flex-wrap: wrap; gap: 0.25rem 1rem; }
+        pre.term { max-width: 100%; }
+      }
+    </style>
+  </head>
+
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+
+    <!-- ══════ Top bar ══════ -->
+    <div data-audience-chrome class="border-b border-stone-200 bg-white/80 backdrop-blur sticky top-0 z-40">
+      <div class="max-w-4xl mx-auto px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+        <p class="text-xs uppercase tracking-wider text-slate-500">Angel Cloud APRD · Marketing view · derived from the dataroom</p>
+        <nav class="flex gap-4 text-sm">
+          <a href="../angel-cloud-aprd.html" class="text-accent hover:underline">Dataroom</a>
+          <a href="engineering.html" class="text-slate-500 hover:underline">Engineering</a>
+          <a href="design.html" class="text-slate-500 hover:underline">Design</a>
+          <a href="marketing.html" class="font-medium text-slate-900 hover:underline" aria-current="page">Marketing</a>
+          <a href="support.html" class="text-slate-500 hover:underline">Support</a>
+        </nav>
+      </div>
+    </div>
+
+    <main class="max-w-4xl mx-auto px-6 py-16 space-y-24">
+
+      <!-- ══════ Hero ══════ -->
+      <header class="space-y-8">
+        <div class="rounded-lg border border-slate-200 bg-slate-900 text-stone-100 px-8 py-14 sm:px-14 space-y-6">
+          <p class="text-xs uppercase tracking-[0.2em] text-stone-400">Angel Cloud</p>
+          <h1 class="font-serif text-4xl sm:text-6xl leading-[1.08]">Your agent drafts the&nbsp;email.<br />It provably cannot send&nbsp;it.</h1>
+          <p class="text-lg sm:text-xl text-stone-300 leading-relaxed max-w-2xl">An Angel is a small toolbox you hand the AI agents you already use — it replaces none of them. The toolbox holds only what you put in it — the forbidden action isn't blocked, it <em>doesn't exist</em>. Every action the agent takes is checked twice and leaves a tamper-evident receipt.</p>
+          <p class="text-sm text-stone-400">The draft-but-never-send toolbox is the flagship acceptance test for the next milestone <span class="badge-next">in build</span>. The enforcement machinery beneath it — two gates, receipts, argument guards, credential custody — is live today <span class="badge-ship">shipped</span>.</p>
+        </div>
+        <p class="text-sm text-slate-500 max-w-2xl">This page is the marketing rendering of the Angel Cloud APRD. Every claim on it traces to the dataroom or the public FAQ; the guardrails section below says exactly what we may and may not claim in the market today.</p>
+      </header>
+
+      <!-- ══════ The core story ══════ -->
+      <section class="space-y-8">
+        <h2 class="font-serif text-3xl">The story in three sentences</h2>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
+            <p class="font-serif text-5xl text-accent">1</p>
+            <h3 class="font-medium">The forbidden action doesn't exist</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">An Angel exposes only the operations its owner allowlisted, with argument guards. Ask your agent to send an email through a read-only inbox Angel and there is no tool to call — <code class="text-xs">messages.send</code> is absent from the toolbox, not merely refused. <span class="badge-ship">shipped</span></p>
+          </article>
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
+            <p class="font-serif text-5xl text-accent">2</p>
+            <h3 class="font-medium">Enforcement is compiled, not prompted</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">The rules are compiled from a reviewed source file. No model, no prompt, no runtime config sits in the enforcement path — so there is no AI judgment call to sweet-talk, and production runs byte-for-byte what the owner published. <span class="badge-ship">shipped</span></p>
+          </article>
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
+            <p class="font-serif text-5xl text-accent">3</p>
+            <h3 class="font-medium">Every action leaves a double-checked receipt</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Two independent gates evaluate every call; each writes a hash-chained receipt; the call succeeds only when both decisions converge. If they ever disagree, the action simply doesn't happen. <span class="badge-ship">shipped</span></p>
+          </article>
+        </div>
+
+        <div class="rounded-r-lg bg-white p-6 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200 space-y-3">
+          <h3 class="font-serif text-xl">The flagship moment</h3>
+          <p class="text-slate-700 leading-relaxed">You watch a draft appear in your Gmail, written by your agent — and you know, not hope, that "send" isn't in its toolbox. The draft operation passes both gates and returns two receipts; the send operation returns <code class="text-sm">unknown_tool</code> because it was never compiled in. That single moment is the whole product promise. <span class="badge-next">in build — acceptance test E15, milestone M2</span></p>
+        </div>
+      </section>
+
+      <!-- ══════ Differentiation ══════ -->
+      <section class="space-y-8">
+        <h2 class="font-serif text-3xl">Why this is different — honestly framed</h2>
+        <p class="text-slate-700 leading-relaxed max-w-2xl">Each comparison below states the mechanism that licenses it, and states the limit of the claim. Marketing that outruns the mechanism gets walked back later; this framing doesn't.</p>
+
+        <div class="space-y-4">
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
+            <h3 class="font-medium">Versus OAuth scopes alone</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Scopes are too coarse: a single Gmail scope can permit several operations when you need exactly one. An Angel narrows <em>below</em> any single scope — a compiled allowlist plus argument guards. Example: an Angel that allows relabelling messages but forbids the values <code class="text-xs">TRASH</code>, <code class="text-xs">SPAM</code> and <code class="text-xs">SENT</code> — so an agent working through it can file a message and cannot bin it.</p>
+            <p class="text-xs text-slate-500"><strong>The honest boundary:</strong> the provider credential inside custody is still as powerful as its OAuth grant. The claim is that the agent-facing path exposes and enforces less authority — not that OAuth itself got narrower.</p>
+          </article>
+
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
+            <h3 class="font-medium">Versus a hosted Gmail MCP server</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">A hosted MCP server over Gmail constrains the <em>tools</em>, not the <em>credential</em>. A broad grant like <code class="text-xs">gmail.compose</code> authorizes <code class="text-xs">messages.send</code> — so the token behind such a server can do more than its visible tools suggest, and safety rests on which tools happen to be shown. It also gives you no argument-level guards, no tool subsetting you control, and no tamper-evident audit. An Angel covers both halves: the forbidden operation is absent from the toolbox, <em>and</em> the credential stays in custody, bounded by the compiled allowlist.</p>
+          </article>
+
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
+            <h3 class="font-medium">What two gates buy</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">The Gateway and the Broker each evaluate policy, guards, availability, and account selection from scratch; the inner gate does not trust the outer one. A bug or compromise in either enforcement path fails closed instead of slipping through, and both gates' receipts must agree before anything executes.</p>
+            <p class="text-xs text-slate-500"><strong>The honest boundary:</strong> the two gates are not independent <em>administrative</em> trust domains, and they share decision code — a shared bug can affect both. Deliberately diverse gate implementations are deferred. See the guardrails below before claiming otherwise.</p>
+          </article>
+
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
+            <h3 class="font-medium">The vault with no front door</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">The credential vault has no public URL — the Broker is reachable only over internal service bindings, never a hostname. Credentials are write-only: envelope-encrypted per account, leased only inside the Broker, never returned by any API. Once you hand over a credential, no one — including you, including us through any API — can read it back out. It can only be <em>used</em>, inside the vault, for allowed calls.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ══════ The coordinate as brand surface ══════ -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl">The coordinate is the brand <span class="badge-ship">shipped</span> <span class="badge-next">the page is not</span></h2>
+        <p class="text-slate-700 leading-relaxed max-w-2xl">Every Angel has one canonical address: <span class="font-mono text-accent">@handle/angel</span>. One spelling, no variants, short enough to say out loud — "at acme slash inbox-read". The plain address always means the live version, and a name you've seen can never quietly come to mean someone else's Angel: handles are never released, and an agent pointed at an old one still reaches the same owner. All of that answers real requests today.</p>
+        <div class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
+          <p class="text-xs uppercase tracking-wider text-slate-400">What the coordinate becomes</p>
+          <p class="font-serif text-2xl">@acme/inbox-read</p>
+          <ul class="text-sm text-slate-600 space-y-1 list-disc pl-5">
+            <li>The MCP endpoint an agent calls — paste it into any agent app. <span class="badge-ship">shipped</span></li>
+            <li>A public page anyone can read — no key, no login — showing what the Angel allows <em>before</em> deciding to trust it. Nothing on that page can reach a credential or a session, by invariant. <span class="badge-next">upcoming</span></li>
+            <li>A citation: "read the charter at the coordinate" becomes a real sentence. <span class="badge-next">upcoming</span> — it needs the page.</li>
+          </ul>
+          <p class="text-xs text-slate-500">Status: the coordinate and the handle rules are built and answering. The public page is not, and its exact content is a deliberately open decision. So the address is fair to demonstrate; the page is "upcoming", never "live". Opening a coordinate in a browser today gets you nothing to look at.</p>
+        </div>
+      </section>
+
+      <!-- ══════ The journey ══════ -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl">The journey: one command to live <span class="badge-next">in build</span></h2>
+        <p class="text-slate-700 leading-relaxed max-w-2xl">Publishing feels like publishing: you write one short policy file and run one command. Your Angel is live with an address you can paste into any agent, and its key prints exactly once, with a save-it-now warning.</p>
+        <pre class="term"><span class="p">$</span> angel publish inbox-read
+<span class="p">building angels/inbox-read/ANGEL.yaml … digest 4c1f0a92…</span>
+<span class="g">✓ published Version 1 · deployed to production</span>
+<span class="g">✓ live at https://mcp.angelmcp.ai/@acme/inbox-read</span></pre>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
+            <h3 class="font-medium">Your AI assistant can do the whole setup</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">The target journey is agent-operable from public docs: a user tells their AI assistant "set me up an Angel" and, using only the public docs site, it walks them from an empty directory to a live Angel — no GitHub account, no cloning our code, no support ticket. The docs an assistant needs — the index, <code class="text-xs">llms.txt</code> and <code class="text-xs">SKILL.md</code> — are published and readable without a login. <span class="badge-next">in build — nobody has yet watched an assistant do the whole walk, which is acceptance test E13</span></p>
+          </article>
+          <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
+            <h3 class="font-medium">Meet people where they are</h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Install paths are plural: npm now, a curl installer next. Cloning the repo is one path, never the interface. And a practice-run mode (preview) exists for those who want it — it never silently touches real data; using real accounts in preview requires saying so in so many words.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ══════ Claim guardrails ══════ -->
+      <section class="space-y-8">
+        <h2 class="font-serif text-3xl">Claim guardrails — what we can and cannot say</h2>
+        <p class="text-slate-700 leading-relaxed max-w-2xl">The working list for any copy, deck, or post. Red is a claim that would be false or would outrun the product today; its pair is the honest version that still sells. When in doubt, the dataroom wins.</p>
+        <p class="text-sm text-slate-600 max-w-2xl">Word-level rules live upstream of this page, in the dataroom's <a class="text-accent underline underline-offset-2" href="../angel-cloud-aprd.html">terminology table (§0)</a> — what each term means, the phrasing to use, and the phrasing that plants a false idea. Check a new line against that table first; these pairs are the market-facing application of it, not a second rulebook.</p>
+
+        <div class="space-y-4">
+          <!-- pair template: red left card, accent right card -->
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"An Angel drafts / reads / answers for you" — anything casting the Angel as an assistant, an actor, or a replacement for the user's agent</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Your existing agents work through an Angel." An Angel never acts on its own — it is the toolbox that bounds what your agents can touch. Every sentence should keep the agent as the actor and the Angel as the boundary.</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"Sign up today" / "Try it now"</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Access is invite-only and operator-provisioned in this phase." There is no signup, waitlist, or public catalog. Self-serve signup is an explicit later milestone.</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"Enterprise-grade uptime", "SLA", "24/7 support", or any reliability number</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"When in doubt, the system fails closed — a refused action, never a wrongly allowed one." Sell the safety posture, not service guarantees that don't exist yet.</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">Any price, plan, quota, or rate limit — even "generous free tier"</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Pricing isn't set." One true cost claim exists: making ten more Angels costs the owner nothing to operate — the platform runs three Workers total, constant as Angels multiply.</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"Always-on monitoring of your Google account" or any durable-connection claim</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Real Gmail and Docs calls are proven live." The Google OAuth app is still in External Testing, so refresh tokens expire after seven days — valid short-term proof, not a durable monitor. Say "proven", not "always-on".</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"For your team" / "share with your family"</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Built to run one person's real life first." Team roles and Family Accounts are deliberately sequenced later — the product must prove itself for one person before it multiplies.</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"Works with any API" / "call it over REST"</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Agents talk to Angels through MCP — one standard protocol, deliberately the only way in." A second surface would be a second thing to secure; REST is reserved, not built.</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"Two fully independent security domains" / "nobody can access your credentials"</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"Two independent checks on every call — and we're honest about the limit: both run in one Cloudflare account, so a Cloudflare administrator who can replace the Broker could reach custodied credentials. Buyers for whom that matters most should self-host relay, and we say so."</p>
+            </div>
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"One command and you're live" as a description of the tool people can install today</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"The platform publishes straight to production in one step." True, and demonstrable over the API. The published command-line tool still takes two commands and still calls the practice environment "staging" — it catches up in its next release. The same gap applies to deleting an Angel: the platform does it, the command does not exist yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-r-lg bg-amber-50 p-4 text-sm text-amber-900 shadow-[inset_4px_0_0_0_theme(colors.amber.500)] border-y border-r border-amber-100">
+          <strong>Also unanswerable today</strong> — decline gracefully, don't improvise: data residency and compliance, MCP setup recipes for specific agent apps, the tool catalog beyond Gmail and Docs, activity retention/search/export guarantees, and recovery from a lost key beyond rotating to a replacement.
+        </div>
+      </section>
+
+      <!-- ══════ Message map ══════ -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-3xl">Message-map candidates <span class="badge-prop">proposals — not decisions</span></h2>
+        <p class="text-slate-700 leading-relaxed max-w-2xl">Three positioning angles, each anchored to the mechanism that keeps it honest. Tap or swipe to rotate.</p>
+
+        <div data-carousel>
+          <div class="slide-stack">
+            <article class="rounded-lg border border-slate-200 bg-white p-8 space-y-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400">Angle 1 · The absence claim</p>
+              <h3 class="font-serif text-3xl">The forbidden action doesn't exist.</h3>
+              <p class="text-slate-700 leading-relaxed">Other tools block dangerous actions. The build never compiles them in — there is nothing to jailbreak, because there is nothing to call.</p>
+              <p class="text-sm text-slate-500"><strong>Mechanism:</strong> the build strips everything outside the allowlist; <code class="text-xs">tools/list</code> returns only the deployed toolbox, and an invented call gets a receipted <code class="text-xs">unknown_tool</code> before any provider request.</p>
+            </article>
+            <article class="rounded-lg border border-slate-200 bg-white p-8 space-y-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400">Angle 2 · The flagship demo</p>
+              <h3 class="font-serif text-3xl">Your agent drafts. It provably can't send.</h3>
+              <p class="text-slate-700 leading-relaxed">Give your agent real usefulness and keep the one action you'd regret out of its hands — not by policy prose, by construction.</p>
+              <p class="text-sm text-slate-500"><strong>Mechanism:</strong> eval E15 — <code class="text-xs">drafts.create</code> allowed and receipted through two gates; <code class="text-xs">messages.send</code> absent from the artifact entirely. (Lead with this only once M2 ships; until then it is "the test we're building toward".)</p>
+            </article>
+            <article class="rounded-lg border border-slate-200 bg-white p-8 space-y-4">
+              <p class="text-xs uppercase tracking-wider text-slate-400">Angle 3 · The custody claim</p>
+              <h3 class="font-serif text-3xl">Hand your agent a toolbox, not your password.</h3>
+              <p class="text-slate-700 leading-relaxed">Your credential never meets the agent. It lives in a write-only vault with no public URL and comes out for exactly one thing: allowed calls.</p>
+              <p class="text-sm text-slate-500"><strong>Mechanism:</strong> credentials are envelope-encrypted per account, leased only inside the Broker, never returned by any API; the Broker has no hostname, ever.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200 space-y-2">
+        <p>The dataroom is normative; where this page and the dataroom disagree, the dataroom wins.</p>
+        <p>Derived from the Angel Cloud APRD dataroom and docs/faq.md as of 2026-07-29.</p>
+      </footer>
+    </main>
+
+    <script>
+      // Zero-chrome carousel: dots only, magenta active, tap/swipe infinite loop.
+      document.querySelectorAll("[data-carousel]").forEach((root) => {
+        const stack = root.querySelector(".slide-stack");
+        const slides = [...stack.children];
+        if (slides.length < 2) return;
+        const nav = document.createElement("div");
+        nav.className = "flex justify-center gap-2 pt-4";
+        nav.setAttribute("role", "tablist");
+        const dots = slides.map((_, i) => {
+          const d = document.createElement("button");
+          d.className = "dot"; d.type = "button";
+          d.setAttribute("role", "tab");
+          d.setAttribute("aria-label", "Variant " + (i + 1) + " of " + slides.length);
+          d.addEventListener("click", (e) => { e.stopPropagation(); show(i); });
+          nav.appendChild(d);
+          return d;
+        });
+        root.appendChild(nav);
+        let current = 0;
+        const show = (n) => {
+          current = (n + slides.length) % slides.length;
+          slides.forEach((s, i) => s.setAttribute("aria-hidden", String(i !== current)));
+          dots.forEach((d, i) => i === current ? d.setAttribute("data-active", "") : d.removeAttribute("data-active"));
+        };
+        stack.addEventListener("click", () => show(current + 1));
+        stack.style.cursor = "pointer";
+        let x0 = null;
+        stack.addEventListener("touchstart", (e) => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+        stack.addEventListener("touchend", (e) => {
+          if (x0 === null) return;
+          const dx = e.changedTouches[0].clientX - x0;
+          if (Math.abs(dx) > 40) show(current + (dx < 0 ? 1 : -1));
+          x0 = null;
+        }, { passive: true });
+        show(0);
+      });
+    </script>
+  </body>
+</html>

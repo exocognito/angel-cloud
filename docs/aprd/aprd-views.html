@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Angel Cloud APRD — audience views</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      :root { --dot-active: #e5007a; }
+      .dot { width: 8px; height: 8px; border-radius: 9999px; background: #cbd5e1; transition: background 0.2s ease; }
+      .dot[data-active] { background: var(--dot-active); }
+      .tab[data-active] { color: #0f172a; font-weight: 600; }
+      iframe { border: 0; width: 100%; height: 100%; background: #fafaf9; }
+      @media (max-width: 640px) {
+        .hub-header { height: auto; min-height: 5.5rem; flex-wrap: wrap; gap: 0.5rem 1rem; padding-block: 0.5rem; }
+        .hub-header > p, #dots { display: none; }
+        #tabs { order: 1; width: 100%; justify-content: space-between; gap: 0.5rem; }
+        #full { order: 2; }
+        .hub-header > a:last-child { order: 2; margin-left: auto; }
+      }
+    </style>
+  </head>
+  <body class="bg-stone-100 text-slate-900 font-sans antialiased h-screen flex flex-col overflow-hidden">
+    <header class="hub-header flex items-center gap-4 px-4 h-14 shrink-0 bg-white border-b border-stone-200">
+      <p class="text-xs uppercase tracking-wider text-slate-500 whitespace-nowrap">APRD · audience views</p>
+      <nav id="tabs" class="flex items-center gap-3 text-sm text-slate-500"></nav>
+      <div id="dots" class="flex items-center gap-2 ml-auto" role="tablist"></div>
+      <a id="full" class="text-sm text-indigo-600 hover:underline whitespace-nowrap" target="_blank" rel="noopener">Open full ↗</a>
+      <a class="text-sm text-slate-500 hover:underline whitespace-nowrap" href="angel-cloud-aprd.html">Dataroom</a>
+    </header>
+    <main class="grow min-h-0">
+      <iframe id="frame" title="APRD audience view"></iframe>
+    </main>
+    <script>
+      // Full-screen preview carousel over the four audience renderings of the
+      // same APRD content. Dots and tab labels rotate the live page below;
+      // "Open full" opens the active view standalone.
+      const VIEWS = [
+        { label: "Engineering", src: "views/engineering.html?embedded=1" },
+        { label: "Design", src: "views/design.html?embedded=1" },
+        { label: "Marketing", src: "views/marketing.html?embedded=1" },
+        { label: "Support", src: "views/support.html?embedded=1" },
+      ];
+      const tabs = document.getElementById("tabs");
+      const dots = document.getElementById("dots");
+      const frame = document.getElementById("frame");
+      const full = document.getElementById("full");
+      const tabEls = [], dotEls = [];
+      VIEWS.forEach((v, i) => {
+        const t = document.createElement("button");
+        t.type = "button"; t.className = "tab"; t.textContent = v.label;
+        t.addEventListener("click", () => show(i));
+        tabs.appendChild(t); tabEls.push(t);
+        const d = document.createElement("button");
+        d.type = "button"; d.className = "dot";
+        d.setAttribute("aria-label", v.label);
+        d.addEventListener("click", () => show(i + 0));
+        dots.appendChild(d); dotEls.push(d);
+      });
+      let current = -1;
+      const show = (n) => {
+        current = (n + VIEWS.length) % VIEWS.length;
+        frame.src = VIEWS[current].src;
+        full.href = VIEWS[current].src.replace("?embedded=1", "");
+        tabEls.forEach((t, i) => i === current ? t.setAttribute("data-active", "") : t.removeAttribute("data-active"));
+        dotEls.forEach((d, i) => i === current ? d.setAttribute("data-active", "") : d.removeAttribute("data-active"));
+      };
+      addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") show(current + 1);
+        if (e.key === "ArrowLeft") show(current - 1);
+      });
+      show(0);
+    </script>
+  </body>
+</html>

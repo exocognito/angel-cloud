@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Angel Cloud APRD — Design view</title>
+    <script>if (new URLSearchParams(location.search).has("embedded")) document.documentElement.setAttribute("data-embedded", "");</script>
+    <style>html[data-embedded] [data-audience-chrome] { display: none; }</style>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style type="text/tailwindcss">
+      @theme {
+        --color-accent: #4f46e5;
+      }
+    </style>
+
+    <style>
+      :root { --dot-active: #e5007a; }
+
+      /* Carousel: zero chrome, dots only. */
+      [data-carousel] .slide-stack { display: grid; min-width: 0; max-width: 100%; }
+      [data-carousel] .slide-stack > * { grid-area: 1 / 1; min-width: 0; max-width: 100%; transition: opacity 0.25s ease; }
+      [data-carousel] .slide-stack > *[aria-hidden="true"] { opacity: 0; pointer-events: none; }
+      [data-carousel] .dot { width: 7px; height: 7px; border-radius: 9999px; background: #cbd5e1; transition: background 0.2s ease; }
+      [data-carousel] .dot[data-active] { background: var(--dot-active); }
+      @media (prefers-reduced-motion: reduce) { [data-carousel] .slide-stack > * { transition: none; } }
+
+      .badge-norm  { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#eef2ff; color:#4338ca; border:1px solid #c7d2fe; vertical-align:middle; }
+      .badge-open  { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#fafaf9; color:#57534e; border:1px dashed #a8a29e; vertical-align:middle; }
+      .badge-illus { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#fafaf9; color:#78716c; border:1px solid #e7e5e4; vertical-align:middle; }
+      .badge-feed  { display:inline-block; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:1px 6px; border-radius:4px; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; vertical-align:middle; }
+
+      pre.term { background:#1c1917; color:#d6d3d1; border-radius:8px; padding:14px 16px; font-size:12.5px; line-height:1.6; overflow-x:auto; }
+      pre.term .p { color:#a8a29e; }
+      pre.term .g { color:#4ade80; }
+      pre.term .r { color:#f87171; }
+      pre.term .y { color:#fbbf24; }
+
+      /* Wedge, as it appears in the live product. */
+      .wedge { border:1.5px dashed #d97706; background:#fffbeb; color:#92400e; border-radius:6px; padding:4px 8px; font-size:11px; }
+      @media (max-width: 640px) {
+        body { overflow-x: hidden; }
+        nav { flex-wrap: wrap; gap: 0.25rem 1rem; }
+        [data-carousel], .overflow-x-auto { min-width: 0; max-width: 100%; }
+      }
+    </style>
+  </head>
+
+  <body class="bg-stone-50 text-slate-900 font-sans antialiased">
+
+    <!-- Top bar -->
+    <div data-audience-chrome class="border-b border-stone-200 bg-white/90 backdrop-blur sticky top-0 z-40">
+      <div class="max-w-4xl mx-auto px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+        <p class="text-xs uppercase tracking-wider text-slate-500">Angel Cloud APRD · Design view · derived from the dataroom</p>
+        <nav class="flex gap-4 text-sm">
+          <a href="../angel-cloud-aprd.html" class="text-accent hover:underline">Dataroom</a>
+          <a href="engineering.html" class="text-slate-500 hover:underline">Engineering</a>
+          <a href="design.html" class="font-medium text-slate-900 underline decoration-accent underline-offset-4">Design</a>
+          <a href="marketing.html" class="text-slate-500 hover:underline">Marketing</a>
+          <a href="support.html" class="text-slate-500 hover:underline">Support</a>
+        </nav>
+      </div>
+    </div>
+
+    <main class="max-w-4xl mx-auto px-6 py-14 space-y-16">
+
+      <!-- ═══════════ HEADER ═══════════ -->
+      <header class="space-y-4">
+        <h1 class="font-serif text-4xl leading-tight">The design brief, sorted by what binds you</h1>
+        <p class="text-lg text-slate-700 leading-relaxed">
+          Everything here is derived from the dataroom. Some UI moments are <span class="badge-norm">normative</span> — the product promise depends on their exact shape, and you design around them, not over them. Other surfaces are <span class="badge-open">open</span> — deliberately unsettled, waiting for design work. Mocks on this page marked <span class="badge-illus">illustrative</span> are suggestions, not requirements.
+        </p>
+        <div class="grid sm:grid-cols-2 gap-4 text-sm">
+          <div class="bg-white p-4 rounded-r-lg shadow-[inset_4px_0_0_0_#4f46e5] border border-l-0 border-stone-200">
+            <p class="font-medium mb-1">Binding</p>
+            <p class="text-slate-600 leading-relaxed">One-time key reveal · preview refusal with two remedies · typed-slug delete · "created new Angel" before keys · calm policy denials · loud degraded states · no in-app Angel creation · no per-row key Copy.</p>
+          </div>
+          <div class="bg-white p-4 rounded-r-lg shadow-[inset_4px_0_0_0_#a8a29e] border border-l-0 border-stone-200">
+            <p class="font-medium mb-1">Open — yours to design</p>
+            <p class="text-slate-600 leading-relaxed">Public Angel page content and default (#11) · retired-handle visibility · lookalike handles · Home list row layout (new feedback below) · preview indicator · coordinate display · handle selection flow.</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- ═══════════ 1. LIVE DASHBOARD ═══════════ -->
+      <section class="space-y-4">
+        <h2 class="font-serif text-3xl">1 · The dashboard, as deployed</h2>
+        <p class="text-slate-700 leading-relaxed">
+          Start here — or rather, start here soon. This is meant to be the public demo: the real <code>www/</code> shell filled with generated sample data, nobody's account, no login. <strong>The frame below is blank, and stays blank until the docs site is next published.</strong> The step that assembles the page from <code>www/</code> at deploy time, so it shows the current product rather than an old picture of one, landed with <a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a>; before it, the docs build copied markdown only. The address in the frame already works; the zone move (<a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/issues/6">#6</a>) just gives it a shorter name later. The dataroom tags flow F an intended change for that same reason. Nothing you click will touch the live system. Home has three densities (Quiet, List, Dashboard cards); Angel detail has four panes (Allowed Tools, Agent Keys, Activity, Settings). The width toggle drives the app's own CSS breakpoints, so mobile is the product's real mobile, not a scaled thumbnail.
+        </p>
+        <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white w-fit px-1 py-1 text-sm" role="tablist" aria-label="Dashboard viewport">
+          <button id="vp-desktop" type="button" class="rounded-full px-3 py-1">Desktop</button>
+          <button id="vp-mobile" type="button" class="rounded-full px-3 py-1">Mobile</button>
+        </div>
+        <div class="rounded-lg border border-slate-200 bg-white p-3">
+          <iframe id="ui-frame" src="https://angelmcp-docs-demo.sam-633.workers.dev/demo/" title="Angel Cloud dashboard — public demo" style="display:block;margin:0 auto;width:100%;height:680px;border:1px solid #e7e5e4;border-radius:8px;transition:width .25s ease"></iframe>
+          <p class="text-xs text-slate-500 pt-2 px-1">Once <code>/demo/</code> is up, this is the same page anyone can open: reads work, every change is refused. Until then the frame is blank — expected, not a browser fault.</p>
+        </div>
+      </section>
+
+      <!-- ═══════════ 2. NORMATIVE UI MOMENTS ═══════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">2 · UI moments the design must honor</h2>
+        <p class="text-slate-700 leading-relaxed">Each of these carries a product promise. Restyle them freely; never soften, relocate, or remove the behavior.</p>
+
+        <div class="space-y-4">
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+            <h3 class="font-medium">One-time key reveal <span class="badge-norm">normative</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">A plaintext key appears exactly once — at creation, mint, or rotate — beside the <em>only</em> Copy control, with a save-it-now warning. The server keeps only a hash and fingerprint; no API can ever show the key again. So the resting key list shows <code>••••</code> + last-3 fingerprints (e.g. <code>••••415</code>) with Rotate and Revoke — and no per-row Copy, ever. The last active key cannot be revoked.</p>
+            <div class="bg-amber-50 p-4 text-sm rounded-r-lg shadow-[inset_4px_0_0_0_#f59e0b]">
+              <p class="text-xs uppercase tracking-wider text-amber-700 mb-1">Production key — shown once</p>
+              <div class="flex items-center gap-3 flex-wrap">
+                <code class="text-amber-900 bg-white/60 px-2 py-1 rounded">ak_production_9f2kq81xm3…</code>
+                <span class="rounded bg-amber-600 text-white text-xs px-3 py-1.5">Copy</span>
+              </div>
+              <p class="text-amber-800 text-xs pt-2">Save it now — it will not be shown again.</p>
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+            <h3 class="font-medium">Preview refusal names its two remedies <span class="badge-norm">normative</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Preview binds its own Connections; it never inherits production's. A preview publish with no preview bindings must fail and offer exactly the two honest ways forward. The flag spelling is indicative; the two-choice structure is not.</p>
+            <pre class="term"><span class="r">✗ preview has no Connections bound</span>
+<span class="p">Either:</span>
+<span class="p">  1. bind a Connection to preview in angel.json, or</span>
+<span class="p">  2. explicitly share production&#39;s: --share-production-credentials</span></pre>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+            <h3 class="font-medium">Delete a live Angel: retype its name <span class="badge-norm">normative</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">When production has a live or pending deployment, deletion requires the typed slug. When production is empty, or only preview is deployed, no confirmation. Delete is hard and total — keys revoked first, both environments torn down, coordinate 404 — and the slug is immediately reusable. The API does all of this today; only the command that calls it is missing, so a dashboard delete control would have a working backend the day it is designed.</p>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+            <h3 class="font-medium">"Created new Angel" announced before keys print <span class="badge-norm">normative</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Publishing a name that doesn't exist creates it — never renames. Creation must be announced before any key is shown, so a typo can't silently mint a duplicate Angel and hand you its keys as if it were the one you meant.</p>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+            <h3 class="font-medium">Policy denials are calm; degraded states are loud <span class="badge-norm">normative</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">A rule blocking an action is the product working: agents get HTTP 200 with a machine-readable denial reason, and the dashboard treats denials as normal in-flow events — never as crashes or alarms. The opposite holds for availability: when an environment is degraded (frozen, gate drift, pending repair), the warn/danger banner stays loud on the Angel's front door. Healthy states stay quiet. Do not invert this hierarchy.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ 3. NEW FEEDBACK ═══════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">3 · New feedback: the list view hides half the story</h2>
+        <div class="bg-red-50 p-5 rounded-r-lg shadow-[inset_4px_0_0_0_#dc2626] space-y-2">
+          <p class="text-sm"><span class="badge-feed">Owner · 2026-07-28</span></p>
+          <p class="text-slate-800 leading-relaxed">The Home list density leads with tool chips — labelled "what it can do" in the shipped UI, itself a phrase §0 would not allow today — and gives no column to the accounts and Connections an agent may act as through an Angel. But <strong>which identities an agent may act as through it</strong> and <strong>which tools it may use</strong> are co-equal, different, top-level facts. The list view must present both. Fold into the next dashboard design pass.</p>
+        </div>
+
+        <p class="text-slate-700 leading-relaxed">Three candidate row layouts <span class="badge-illus">illustrative</span> — tap or swipe to rotate. All use real product vocabulary: identity labels from Connections, tool groups counted as "N read" / "N allowed".</p>
+
+        <div data-carousel>
+          <div class="slide-stack">
+            <!-- Variant 1: co-equal columns -->
+            <article class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400">Variant 1 · Co-equal columns</p>
+              <p class="text-sm text-slate-600">Two labeled columns of equal weight. The header row makes the two axes explicit; scan down either one.</p>
+              <div class="text-xs border border-stone-200 rounded overflow-x-auto">
+                <div class="grid grid-cols-[1.2fr_1.5fr_1.5fr_auto] gap-2 px-3 py-2 bg-stone-100 text-slate-500 uppercase tracking-wide min-w-[560px]">
+                  <span>Angel</span><span>Agent may act as</span><span>Agent may use</span><span></span>
+                </div>
+                <div class="grid grid-cols-[1.2fr_1.5fr_1.5fr_auto] gap-2 px-3 py-2.5 border-t border-stone-100 items-center min-w-[560px]">
+                  <span class="font-medium text-sm">inbox-read</span>
+                  <span class="flex gap-1 flex-wrap"><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span></span>
+                  <span class="flex gap-1 flex-wrap"><span class="rounded bg-stone-100 px-1.5 py-0.5">1 read</span></span>
+                  <span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span>
+                </div>
+                <div class="grid grid-cols-[1.2fr_1.5fr_1.5fr_auto] gap-2 px-3 py-2.5 border-t border-stone-100 items-center min-w-[560px]">
+                  <span class="font-medium text-sm">gmail-inbox-zero</span>
+                  <span class="flex gap-1 flex-wrap"><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Work Google</span></span>
+                  <span class="flex gap-1 flex-wrap"><span class="rounded bg-stone-100 px-1.5 py-0.5">2 read</span><span class="rounded bg-stone-100 px-1.5 py-0.5">1 allowed</span></span>
+                  <span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span>
+                </div>
+              </div>
+            </article>
+
+            <!-- Variant 2: two-line row -->
+            <article class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400">Variant 2 · Two-line row</p>
+              <p class="text-sm text-slate-600">Each row gets two labeled lines under the name — reads well narrow, so the same layout survives mobile untouched.</p>
+              <div class="text-xs border border-stone-200 rounded divide-y divide-stone-100">
+                <div class="px-3 py-3 space-y-1.5">
+                  <div class="flex items-center justify-between"><span class="font-medium text-sm">gmail-inbox-zero</span><span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span></div>
+                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-20 shrink-0">agent as</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Work Google</span></div>
+                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-12 shrink-0">tools</span><span class="rounded bg-stone-100 px-1.5 py-0.5">2 read</span><span class="rounded bg-stone-100 px-1.5 py-0.5">1 allowed</span></div>
+                </div>
+                <div class="px-3 py-3 space-y-1.5">
+                  <div class="flex items-center justify-between"><span class="font-medium text-sm">inbox-read</span><span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span></div>
+                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-20 shrink-0">agent as</span><span class="rounded bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span></div>
+                  <div class="flex gap-1.5 items-baseline flex-wrap"><span class="text-slate-400 uppercase tracking-wide w-12 shrink-0">tools</span><span class="rounded bg-stone-100 px-1.5 py-0.5">1 read</span></div>
+                </div>
+              </div>
+            </article>
+
+            <!-- Variant 3: identity-tool pairs -->
+            <article class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+              <p class="text-xs uppercase tracking-wider text-slate-400">Variant 3 · Paired tuples</p>
+              <p class="text-sm text-slate-600">One compound chip per identity, carrying its tool counts. Truest to the model — availability and enforcement act on tool + Connection tuples — at the cost of denser chips.</p>
+              <div class="text-xs border border-stone-200 rounded divide-y divide-stone-100">
+                <div class="px-3 py-3 flex items-center justify-between gap-3 flex-wrap">
+                  <span class="font-medium text-sm">gmail-inbox-zero</span>
+                  <span class="flex gap-1.5 flex-wrap">
+                    <span class="inline-flex rounded overflow-hidden border border-stone-200"><span class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span><span class="bg-stone-100 px-1.5 py-0.5">2 read · 1 allowed</span></span>
+                    <span class="inline-flex rounded overflow-hidden border border-stone-200"><span class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Work Google</span><span class="bg-stone-100 px-1.5 py-0.5">2 read</span></span>
+                  </span>
+                  <span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span>
+                </div>
+                <div class="px-3 py-3 flex items-center justify-between gap-3 flex-wrap">
+                  <span class="font-medium text-sm">inbox-read</span>
+                  <span class="flex gap-1.5 flex-wrap">
+                    <span class="inline-flex rounded overflow-hidden border border-stone-200"><span class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5">Personal Google</span><span class="bg-stone-100 px-1.5 py-0.5">1 read</span></span>
+                  </span>
+                  <span class="rounded-full bg-green-50 text-green-700 px-2 py-0.5">Live</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p class="text-xs text-slate-500">Nicknames shown here are owner-facing labels — fine on the dashboard. Agents never see nicknames (they see provider-derived labels only); that boundary is the platform's, not the layout's.</p>
+      </section>
+
+      <!-- ═══════════ 4. OPEN DECISIONS ═══════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">4 · Open design decisions — do not settle here</h2>
+        <p class="text-slate-700 leading-relaxed">The dataroom leaves these open on purpose: a prior decision (PD 0003) got reversed same-day because it was made before there was a real thing to look at. Explore; don't commit.</p>
+
+        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-4">
+          <h3 class="font-medium">The public Angel page <span class="badge-open">open · #11</span></h3>
+          <p class="text-sm text-slate-600 leading-relaxed">What <em>is</em> settled: every Angel gets a public page at its coordinate, readable with no key and no login, and nothing on that path can reach a credential or session. What is open: its content (guards? digest? Version?), public-by-default vs opt-in, whether preview gets a page, and content negotiation vs split routes. The dataroom's three takes, plus one added variant, in the carousel — tap to rotate.</p>
+          <div data-carousel>
+            <div class="slide-stack">
+              <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-slate-400">Take 1 · Charter card (dataroom)</p>
+                <p class="text-xs text-slate-400">angelmcp.ai/@acme/inbox-read</p>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
+                <p class="text-slate-700 italic">"Read bounded Gmail search results. Never create, edit, send, or delete."</p>
+                <div class="flex gap-2 text-xs"><span class="rounded bg-stone-200 px-2 py-1">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-2 py-1">read-only</span></div>
+              </article>
+              <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-slate-400">Take 2 · Full policy view (dataroom)</p>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
+                <p class="text-slate-700 italic">Charter, plus every tool with its argument guards expanded, the Version number, and the full policy digest — the page <em>is</em> the audit.</p>
+                <p class="text-xs font-mono text-slate-400">v3 · sha256 4c1f0a92…</p>
+              </article>
+              <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-slate-400">Take 3 · Dual surface (dataroom)</p>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
+                <p class="text-slate-700">Same coordinate, content-negotiated: browsers get the rendered page, <code>Accept: application/json</code> gets the machine-readable charter and tools.</p>
+              </article>
+              <article class="rounded-lg border border-slate-200 bg-stone-50 p-6 space-y-3">
+                <p class="text-xs uppercase tracking-wider text-slate-400">Take 4 · Progressive charter <span class="badge-illus">new · illustrative</span></p>
+                <h4 class="font-serif text-2xl">@acme/inbox-read</h4>
+                <p class="text-slate-700">Take 1's charter card as the fold, with Take 2's full guard-and-digest detail behind a single "Show the full policy" disclosure — one page serves both the friend deciding to trust it and the auditor verifying it.</p>
+                <div class="flex gap-2 text-xs items-center"><span class="rounded bg-stone-200 px-2 py-1">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-2 py-1">read-only</span><span class="text-accent underline underline-offset-2">Show the full policy ▾</span></div>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
+            <h3 class="font-medium">Retired-handle visibility <span class="badge-open">open</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">After a rename, old MCP addresses answer in place — that part is live. Old page links will 301 to the new handle, once pages exist. Whether — and how — the UI surfaces "this handle was retired" is undecided. Decide before public signup (M3).</p>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
+            <h3 class="font-medium">Lookalike handles <span class="badge-open">open</span></h3>
+            <p class="text-sm text-slate-600 leading-relaxed">Confusable pairs (<code>rn</code>/<code>m</code>, <code>1</code>/<code>l</code>) are unhandled. Fixed inputs a future design inherits, all enforced in code today: four to thirty-two characters, the fourteen authority words reserved, handles never released. Decide before M3.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════ 5. PARITY DIGEST ═══════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">5 · Prototype parity digest</h2>
+        <p class="text-slate-700 leading-relaxed">The shipped UI deliberately diverges from the reference prototype where the backend can't back the prototype's assumptions. Update the mockup to match; none of these are bugs.</p>
+
+        <div class="rounded-lg border border-slate-200 bg-white divide-y divide-stone-100 text-sm">
+          <div class="p-4 flex gap-3"><span class="shrink-0 font-medium w-44">Banned surface</span><p class="text-slate-600">No "+ New angel" row, anywhere. Creation is a CLI journey, surfaced by the zero-Angel Home guide; an in-app row would be a dead end and the IA contract bans it.</p></div>
+          <div class="p-4 flex gap-3"><span class="shrink-0 font-medium w-44">Key rows</span><p class="text-slate-600">No per-row Copy; keys can't be re-displayed. Identifiers are <code>••••</code> + last-3 hash fingerprints, not <code>key_live_…</code> shapes. Copy exists only on the one-time reveal.</p></div>
+          <div class="p-4 flex gap-3"><span class="shrink-0 font-medium w-44">No fleet "Pause all"</span><p class="text-slate-600">No backend action pauses everything. Pause/resume is per-Angel, per-environment, on Settings → Availability.</p></div>
+          <div class="p-4 flex gap-3"><span class="shrink-0 font-medium w-44">Activity chart</span><p class="text-slate-600">Omitted — no backend produces the counts yet. Keep it in the mockup as future state; the CSS keeps the component reserved.</p></div>
+          <div class="p-4 flex gap-3"><span class="shrink-0 font-medium w-44">Group labels</span><p class="text-slate-600">Real <code>tool.group</code> values, counted "N read" / "N allowed", with a provider-level READ-ONLY badge for fully read-only providers.</p></div>
+          <div class="p-4 flex gap-3"><span class="shrink-0 font-medium w-44">Tab renames</span><p class="text-slate-600">Config → <strong>Allowed Tools</strong>; MCP &amp; Keys → <strong>Agent Keys</strong>. Activity and Settings unchanged.</p></div>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
+          <h3 class="font-medium">The one live wedge — needs a designed home</h3>
+          <p class="text-sm text-slate-600 leading-relaxed">A wedge is a dashed amber block marking real product data the approved mockup has no home for. Exactly one exists: the per-environment Version line on each Home dashboard card. It is the backbone of exact promotion — what runs where, and whether a promotion is ready — and must stay visible from Home. Give it a designed home so it can shed the wedge treatment.</p>
+          <p class="wedge w-fit">prod version 3 · preview version 4 · Version 4 ready for exact promotion <span class="opacity-70">— not in the design yet</span></p>
+        </div>
+
+        <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2 text-sm">
+          <h3 class="font-medium">Back-office relocations — know they exist</h3>
+          <ul class="list-disc pl-5 space-y-1.5 text-slate-600">
+            <li>Per-Version <code>sha256</code> digests → Settings → Version history. The front door shows no digest.</li>
+            <li>Gate alignment, bindings-available, availability revision → Settings → Availability.</li>
+            <li>Exception, by design: degraded availability stays loud on the front door (see section 2).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- ═══════════ 6. UNDESIGNED SURFACES ═══════════ -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-3xl">6 · Target-state surfaces with no design yet</h2>
+        <p class="text-slate-700 leading-relaxed">These exist in the dataroom's target state and have no visual home. The mock below is a styled HTML placeholder <span class="badge-illus">illustrative</span> — no generated imagery.</p>
+
+        <div class="grid md:grid-cols-[280px_1fr] gap-6 items-start">
+          <!-- Phone-frame placeholder mock of the public page -->
+          <div class="mx-auto">
+            <div class="w-[260px] rounded-[2rem] border-[6px] border-slate-800 bg-white overflow-hidden shadow-lg">
+              <div class="bg-slate-800 h-6 flex items-center justify-center"><span class="w-16 h-1.5 rounded-full bg-slate-600"></span></div>
+              <div class="p-4 space-y-3 text-[11px]">
+                <p class="text-slate-400 truncate">angelmcp.ai/@acme/inbox-read</p>
+                <h4 class="font-serif text-lg leading-tight">@acme/inbox-read</h4>
+                <p class="text-slate-600 italic leading-snug">"Read bounded Gmail search results. Never create, edit, send, or delete."</p>
+                <div class="flex gap-1.5 flex-wrap"><span class="rounded bg-stone-100 px-1.5 py-0.5">gmail.users.messages.list</span><span class="rounded bg-green-50 text-green-700 px-1.5 py-0.5">read-only</span></div>
+                <div class="border-t border-stone-100 pt-2 text-slate-400">Readable by anyone · no login · v3</div>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-500 text-center pt-2">HTML placeholder — illustrative only, design open (#11)</p>
+          </div>
+
+          <div class="space-y-3 text-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
+              <h3 class="font-medium">Public Angel page</h3>
+              <p class="text-slate-600 leading-relaxed">First surface strangers ever see. Constraints: no key, no login, no path to credentials. Content open — see section 4.</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
+              <h3 class="font-medium">Handle selection</h3>
+              <p class="text-slate-600 leading-relaxed">Operator-set today; a signup step at M3. Fixed rules the flow must carry, all enforced in code already: unique forever, never released, one rename per Account ever, four to thirty-two characters, the fourteen authority words reserved. "One rename, ever" needs real weight in the UI — the server answers a second attempt with a flat refusal, so the interface has to have said so first.</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
+              <h3 class="font-medium">Preview indicator</h3>
+              <p class="text-slate-600 leading-relaxed">"Staging" has become "preview" — the dashboard says preview everywhere, and preview binds its own Connections. What is still undesigned: the owner must always be able to tell at a glance which environment they're looking at, and whether preview is sharing production credentials (that sharing is explicit and typed, and the deployment record shows it). The pinned CLI still prints the old word, so error text a user pastes into a ticket may say <code>staging</code> for a while yet.</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
+              <h3 class="font-medium">Coordinate display</h3>
+              <p class="text-slate-600 leading-relaxed">Endpoints have shifted from <code>/v1/a/…</code> paths to <code>@handle/angel</code> coordinates — one canonical spelling, bare means production, <code>@preview</code> suffixes preview. The Gateway answers both, and the dashboard builds a coordinate for any Account that has a handle, falling back to the legacy path for one that does not. Agent Keys shows the endpoint; Home and the Angel header still need a home for the coordinate as the Angel's say-out-loud name.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200">
+        The dataroom is normative; where this page and the dataroom disagree, the dataroom wins.
+      </footer>
+    </main>
+
+    <script>
+      // Dashboard viewport toggle: resizing the iframe drives the embedded
+      // app's own CSS breakpoints (390px = its mobile breakpoint).
+      const setViewport = (v) => {
+        const frame = document.getElementById("ui-frame");
+        frame.style.width = v === "mobile" ? "390px" : "100%";
+        frame.style.height = v === "mobile" ? "760px" : "680px";
+        const on = "rounded-full px-3 py-1 bg-accent text-white", off = "rounded-full px-3 py-1 text-slate-600";
+        document.getElementById("vp-desktop").className = v === "desktop" ? on : off;
+        document.getElementById("vp-mobile").className = v === "mobile" ? on : off;
+      };
+      document.getElementById("vp-desktop").addEventListener("click", () => setViewport("desktop"));
+      document.getElementById("vp-mobile").addEventListener("click", () => setViewport("mobile"));
+      setViewport("desktop");
+
+      // Zero-chrome carousel: dots only, magenta active, tap/swipe infinite loop.
+      document.querySelectorAll("[data-carousel]").forEach((root) => {
+        const stack = root.querySelector(".slide-stack");
+        const slides = [...stack.children];
+        if (slides.length < 2) return;
+        const nav = document.createElement("div");
+        nav.className = "flex justify-center gap-2 pt-4";
+        nav.setAttribute("role", "tablist");
+        const dots = slides.map((_, i) => {
+          const d = document.createElement("button");
+          d.className = "dot"; d.type = "button";
+          d.setAttribute("role", "tab");
+          d.setAttribute("aria-label", "Variant " + (i + 1) + " of " + slides.length);
+          d.addEventListener("click", (e) => { e.stopPropagation(); show(i); });
+          nav.appendChild(d);
+          return d;
+        });
+        root.appendChild(nav);
+        let current = 0;
+        const show = (n) => {
+          current = (n + slides.length) % slides.length;
+          slides.forEach((s, i) => s.setAttribute("aria-hidden", String(i !== current)));
+          dots.forEach((d, i) => i === current ? d.setAttribute("data-active", "") : d.removeAttribute("data-active"));
+        };
+        stack.addEventListener("click", () => show(current + 1));
+        stack.style.cursor = "pointer";
+        let x0 = null;
+        stack.addEventListener("touchstart", (e) => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+        stack.addEventListener("touchend", (e) => {
+          if (x0 === null) return;
+          const dx = e.changedTouches[0].clientX - x0;
+          if (Math.abs(dx) > 40) show(current + (dx < 0 ? 1 : -1));
+          x0 = null;
+        }, { passive: true });
+        show(0);
+      });
+    </script>
+  </body>
+</html>

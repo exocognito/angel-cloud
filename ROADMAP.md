@@ -30,6 +30,11 @@ place to last on 2026-07-24 for that reason.
   [docs/adrs](docs/adrs/README.md) and
   [docs/product-decisions](docs/product-decisions/README.md). Anything that
   shapes the product belongs in one of those before it belongs here.
+- Those decisions are assembled into one buildable target-state document in
+  [docs/aprd](docs/aprd/README.md) — the spine, invariants, interface types,
+  evals, and the words the product is described in. It reads the ADRs and
+  product decisions; it does not replace them, and where it disagrees with a
+  decision record on a settled point, fix the APRD.
 
 ## Shortform
 
