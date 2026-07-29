@@ -233,10 +233,11 @@ describe("ManagementControl", () => {
     ]);
     const version = await publish(control, ensured.angel.id, artifact);
     // The Connection exists and is healthy — hiding it behind "not found"
-    // would misdiagnose an out-of-registry consent as a missing record.
+    // would misdiagnose an out-of-registry consent as a missing record. The
+    // per-operation 409 names the scopes that would fix it.
     await expect(stage(control, ensured.angel.id, version, artifact.digest, {
       gmail: ["con_unlabeled_google"],
-    })).rejects.toThrow(/holds no scope for any gmail operation/);
+    })).rejects.toThrow(/gmail\.users\.messages\.list \(needs one of:/);
   });
 
   test("accepts a binding whose broader grant covers every bound operation through the registry", async () => {

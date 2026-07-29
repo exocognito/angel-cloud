@@ -506,15 +506,9 @@ export class ManagementControl {
               + ` ${gaps.unknown.join(", ")} — republish the Version against the current registry`,
           );
         }
-        // A Connection the dashboard shows healthy but whose grant covers no
-        // operation of this provider (an out-of-registry consent) is a scope
-        // problem, not a missing record — a 404 here would misdiagnose it.
-        if (!connection.providers.includes(requirement.provider)) {
-          throw new ManagementError(
-            409,
-            `Connection for binding ${id} holds no scope for any ${requirement.provider} operation`,
-          );
-        }
+        // No separate provider-label check: labels derive from grantedScopes
+        // through the same registry, so a label miss is exactly "every tool
+        // uncovered" — and the per-operation 409 below names the fix.
         if (gaps.uncovered.length > 0) {
           const detail = gaps.uncovered
             .map(({ tool, accepted }) => `${tool} (needs one of: ${accepted.join(", ")})`)
