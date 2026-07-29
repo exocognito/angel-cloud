@@ -133,6 +133,19 @@ describe("Access-authenticated browser Provider API", () => {
     });
   });
 
+  test("accepts a pre-scope Broker's five-key Provider App summaries and defaults their scopes", async () => {
+    const harness = makeHarness("access-user");
+    // A rolled-back or not-yet-deployed Broker still emits the old shape;
+    // the Connections page must keep working through that window.
+    const { scopes: _scopes, ...legacyApp } = harness.app;
+    harness.legacyBrokerApp = legacyApp;
+    const listed = await request(harness, "/api/provider-apps");
+    expect(listed.status).toBe(200);
+    expect(await listed.json()).toEqual([
+      { ...legacyApp, scopes: [...DEFAULT_GOOGLE_PROVIDER_SCOPES] },
+    ]);
+  });
+
   test("rejects a Provider App registration with a malformed scope list", async () => {
     for (const scopes of ["gmail.readonly", [], [""], ["two scopes"], [42], [null]]) {
       const harness = makeHarness("access-user");
@@ -175,6 +188,7 @@ function makeHarness(subject: string) {
   const brokerRequests: Request[] = [];
   const registryCommands: unknown[] = [];
   let savedConnection: typeof connection | undefined;
+  let legacyBrokerApp: unknown;
   let authorizationState = "";
   let codeVerifier = "";
   let authorizationBody: Record<string, unknown> | undefined;
@@ -225,7 +239,7 @@ function makeHarness(subject: string) {
         const request = serviceRequest(input, init);
         brokerRequests.push(request.clone());
         const path = new URL(request.url).pathname;
-        if (path === "/internal/provider-apps") return request.method === "GET" ? Response.json([app]) : Response.json(app);
+        if (path === "/internal/provider-apps") return request.method === "GET" ? Response.json([legacyBrokerApp ?? app]) : Response.json(app);
         if (path === "/internal/connections") return Response.json([connection]);
         if (path === "/internal/oauth/authorize") {
           authorizationBody = await request.clone().json() as Record<string, unknown>;
@@ -254,6 +268,7 @@ function makeHarness(subject: string) {
     get codeVerifier() { return codeVerifier; },
     set subject(value: string) { subject = value; },
     get subject() { return subject; },
+    set legacyBrokerApp(value: unknown) { legacyBrokerApp = value; },
   };
 }
 

@@ -268,7 +268,7 @@ async function providerConnection(
 async function brokerProviderApps(env: ControlRequestEnv, accountId: string): Promise<ProviderAppSummary[]> {
   const value = await brokerJson(env, `/internal/provider-apps?accountId=${encodeURIComponent(accountId)}`, "GET");
   if (!Array.isArray(value) || !value.every(isProviderAppSummary)) throw new Error("Broker returned an invalid Provider App list");
-  return value;
+  return value.map(withDefaultScopes);
 }
 
 async function reconcileProviderConnections(
@@ -382,7 +382,7 @@ function parseCreateAuthorizationRequest(value: unknown): { providerAppId: strin
 
 function parseProviderAppSummary(value: unknown): ProviderAppSummary {
   if (!isRecord(value) || !isProviderAppSummary(value)) throw new Error("Broker returned an invalid Provider App summary");
-  return value;
+  return withDefaultScopes(value);
 }
 
 function parseConnectionSummary(value: unknown): ConnectionSummary {
@@ -390,17 +390,27 @@ function parseConnectionSummary(value: unknown): ConnectionSummary {
   return value;
 }
 
-function isProviderAppSummary(value: unknown): value is ProviderAppSummary {
+// A pre-scope Broker (rollback, or the window before its deploy) emits the
+// old five-key summary; read it as carrying the historical default set.
+function isProviderAppSummary(value: unknown): value is Omit<ProviderAppSummary, "scopes"> & { scopes?: string[] } {
   if (!isRecord(value)) return false;
-  return Object.keys(value).sort().join(",") === "accountId,clientIdSuffix,displayName,id,provider,scopes"
+  const keys = Object.keys(value).sort().join(",");
+  return (
+    keys === "accountId,clientIdSuffix,displayName,id,provider"
+    || (keys === "accountId,clientIdSuffix,displayName,id,provider,scopes"
+      && Array.isArray(value.scopes)
+      && value.scopes.length > 0
+      && value.scopes.every((scope) => typeof scope === "string" && scope !== ""))
+  )
     && typeof value.id === "string"
     && typeof value.accountId === "string"
     && value.provider === "google"
     && typeof value.displayName === "string"
-    && typeof value.clientIdSuffix === "string"
-    && Array.isArray(value.scopes)
-    && value.scopes.length > 0
-    && value.scopes.every((scope) => typeof scope === "string" && scope !== "");
+    && typeof value.clientIdSuffix === "string";
+}
+
+function withDefaultScopes(summary: Omit<ProviderAppSummary, "scopes"> & { scopes?: string[] }): ProviderAppSummary {
+  return { ...summary, scopes: summary.scopes ?? [...DEFAULT_GOOGLE_PROVIDER_SCOPES] };
 }
 
 function isConnectionSummary(value: unknown): value is ConnectionSummary {
