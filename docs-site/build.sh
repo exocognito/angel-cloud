@@ -36,12 +36,21 @@ cp "$docs/google-read-proof-manual-journey.md" "$dist/operator-journey.md"
 # for agents fetching the raw markdown. The SPA routes both names to the same slug.
 cp "$docs/google-read-proof-manual-journey.md" "$dist/google-read-proof-manual-journey.md"
 
-# 3. Images the served markdown references. Only the user manual's
+# 3. The decision records the served docs link to. The user manual and FAQ
+#    reference docs/product-decisions/*.md by relative path, and those records
+#    reference docs/adrs/*.md and ../domain-architecture.md; copying both
+#    directories under their repo-relative paths closes the link graph, so no
+#    served markdown link dangles. (tests/cloud/docs-site.test.ts crawls the
+#    closure and fails the build contract if a link ever dangles again.)
+cp -R "$docs/product-decisions" "$dist/product-decisions"
+cp -R "$docs/adrs" "$dist/adrs"
+
+# 4. Images the served markdown references. Only the user manual's
 #    manual-images/ are used; docs/screenshots/ is referenced solely by the
 #    (unserved) README, so it is deliberately not copied — no dead 9 MB payload.
 cp -R "$docs/manual-images" "$dist/manual-images"
 
-# 4. Optional interim base-URL rewrite. The committed llms.txt and SKILL.md name
+# 5. Optional interim base-URL rewrite. The committed llms.txt and SKILL.md name
 #    the canonical https://docs.angelmcp.ai; a workers.dev deploy rewrites those
 #    to the live interim host so the handed-off URLs actually resolve.
 if [[ -n "${DOCS_BASE_URL:-}" ]]; then
