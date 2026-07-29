@@ -87,7 +87,7 @@
       <section class="space-y-4">
         <h2 class="font-serif text-3xl">1 · The dashboard, as deployed</h2>
         <p class="text-slate-700 leading-relaxed">
-          Start here: this is the deployed public demo — the real <code>www/</code> shell filled with generated sample data. It is nobody's account and no login is involved. The build step that assembles it from <code>www/</code> at deploy time, so that it shows the current product rather than an old picture of one, lands with <a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a> and is not in this tree yet — the dataroom tags flow F as an intended change for the same reason. Until #21 is on <code>main</code>, a deploy of the docs worker from any other branch removes <code>/demo/</code>, so the frame below may be blank. Nothing you click touches the live system. Home has three densities (Quiet, List, Dashboard cards); Angel detail has four panes (Allowed Tools, Agent Keys, Activity, Settings). The width toggle drives the app's own CSS breakpoints, so mobile is the product's real mobile, not a scaled thumbnail.
+          Start here — or rather, start here soon. This is meant to be the public demo: the real <code>www/</code> shell filled with generated sample data, nobody's account, no login. <strong>The frame below is blank, and will stay blank until two things land.</strong> The step that assembles the page from <code>www/</code> at deploy time, so it shows the current product rather than an old picture of one, arrives with <a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a>: the docs site ships today but its build copies markdown only. The address it points at resolves once the <code>angelmcp.ai</code> zone moves (<a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/issues/6">#6</a>). The dataroom tags flow F an intended change for the same two reasons. Nothing you click will touch the live system. Home has three densities (Quiet, List, Dashboard cards); Angel detail has four panes (Allowed Tools, Agent Keys, Activity, Settings). The width toggle drives the app's own CSS breakpoints, so mobile is the product's real mobile, not a scaled thumbnail.
         </p>
         <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white w-fit px-1 py-1 text-sm" role="tablist" aria-label="Dashboard viewport">
           <button id="vp-desktop" type="button" class="rounded-full px-3 py-1">Desktop</button>
@@ -95,7 +95,7 @@
         </div>
         <div class="rounded-lg border border-slate-200 bg-white p-3">
           <iframe id="ui-frame" src="https://docs.angelmcp.ai/demo/" title="Angel Cloud dashboard — public demo" style="display:block;margin:0 auto;width:100%;height:680px;border:1px solid #e7e5e4;border-radius:8px;transition:width .25s ease"></iframe>
-          <p class="text-xs text-slate-500 pt-2 px-1">Once <code>/demo/</code> is up, this is the same page anyone can open: reads work, every change is refused. Until then the frame is blank.</p>
+          <p class="text-xs text-slate-500 pt-2 px-1">Once <code>/demo/</code> is up, this is the same page anyone can open: reads work, every change is refused. Until then the frame is blank — expected, not a browser fault.</p>
         </div>
       </section>
 
@@ -129,7 +129,7 @@
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
             <h3 class="font-medium">Delete a live Angel: retype its name <span class="badge-norm">normative</span></h3>
-            <p class="text-sm text-slate-600 leading-relaxed">When production has a live deployment, deletion requires the typed slug. When production is empty, no confirmation. Delete is hard and total — keys revoked, both environments torn down, coordinate 404 — and the slug is immediately reusable.</p>
+            <p class="text-sm text-slate-600 leading-relaxed">When production has a live or pending deployment, deletion requires the typed slug. When production is empty, or only preview is deployed, no confirmation. Delete is hard and total — keys revoked first, both environments torn down, coordinate 404 — and the slug is immediately reusable. The API does all of this today; only the command that calls it is missing, so a dashboard delete control would have a working backend the day it is designed.</p>
           </div>
 
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
@@ -265,11 +265,11 @@
         <div class="grid sm:grid-cols-2 gap-4">
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
             <h3 class="font-medium">Retired-handle visibility <span class="badge-open">open</span></h3>
-            <p class="text-sm text-slate-600 leading-relaxed">After a rename, old MCP addresses answer in place and old page links 301 to the new handle. Whether — and how — the UI surfaces "this handle was retired" is undecided. Decide before public signup (M3).</p>
+            <p class="text-sm text-slate-600 leading-relaxed">After a rename, old MCP addresses answer in place — that part is live. Old page links will 301 to the new handle, once pages exist. Whether — and how — the UI surfaces "this handle was retired" is undecided. Decide before public signup (M3).</p>
           </div>
           <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2">
             <h3 class="font-medium">Lookalike handles <span class="badge-open">open</span></h3>
-            <p class="text-sm text-slate-600 leading-relaxed">Confusable pairs (<code>rn</code>/<code>m</code>, <code>1</code>/<code>l</code>) are unhandled. Fixed inputs a future design inherits: minimum four characters, authority words reserved, handles never released. Decide before M3.</p>
+            <p class="text-sm text-slate-600 leading-relaxed">Confusable pairs (<code>rn</code>/<code>m</code>, <code>1</code>/<code>l</code>) are unhandled. Fixed inputs a future design inherits, all enforced in code today: four to thirty-two characters, the fourteen authority words reserved, handles never released. Decide before M3.</p>
           </div>
         </div>
       </section>
@@ -291,7 +291,7 @@
         <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-3">
           <h3 class="font-medium">The one live wedge — needs a designed home</h3>
           <p class="text-sm text-slate-600 leading-relaxed">A wedge is a dashed amber block marking real product data the approved mockup has no home for. Exactly one exists: the per-environment Version line on each Home dashboard card. It is the backbone of exact promotion — what runs where, and whether a promotion is ready — and must stay visible from Home. Give it a designed home so it can shed the wedge treatment.</p>
-          <p class="wedge w-fit">prod version 3 · staging version 4 · Version 4 ready for exact promotion <span class="opacity-70">— not in the design yet</span></p>
+          <p class="wedge w-fit">prod version 3 · preview version 4 · Version 4 ready for exact promotion <span class="opacity-70">— not in the design yet</span></p>
         </div>
 
         <div class="rounded-lg border border-slate-200 bg-white p-5 space-y-2 text-sm">
@@ -332,15 +332,15 @@
             </div>
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
               <h3 class="font-medium">Handle selection</h3>
-              <p class="text-slate-600 leading-relaxed">Operator-set today; a signup step at M3. Fixed rules the flow must carry: unique forever, never released, one rename per Account ever, minimum four characters, authority words reserved. "One rename, ever" needs real weight in the UI.</p>
+              <p class="text-slate-600 leading-relaxed">Operator-set today; a signup step at M3. Fixed rules the flow must carry, all enforced in code already: unique forever, never released, one rename per Account ever, four to thirty-two characters, the fourteen authority words reserved. "One rename, ever" needs real weight in the UI — the server answers a second attempt with a flat refusal, so the interface has to have said so first.</p>
             </div>
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
               <h3 class="font-medium">Preview indicator</h3>
-              <p class="text-slate-600 leading-relaxed">"Staging" becomes "preview", opt-in, with its own Connections. The owner must always be able to tell at a glance which environment they're looking at — and whether preview is sharing production credentials (that sharing is explicit and typed, and the deployment record shows it).</p>
+              <p class="text-slate-600 leading-relaxed">"Staging" has become "preview" — the dashboard says preview everywhere, and preview binds its own Connections. What is still undesigned: the owner must always be able to tell at a glance which environment they're looking at, and whether preview is sharing production credentials (that sharing is explicit and typed, and the deployment record shows it). The pinned CLI still prints the old word, so error text a user pastes into a ticket may say <code>staging</code> for a while yet.</p>
             </div>
             <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-1">
               <h3 class="font-medium">Coordinate display</h3>
-              <p class="text-slate-600 leading-relaxed">Endpoints shift from <code>/v1/a/…</code> paths to <code>@handle/angel</code> coordinates — one canonical spelling, bare means production, <code>@preview</code> suffixes preview. Agent Keys shows the endpoint today; Home and the Angel header need a home for the coordinate as the Angel's say-out-loud name.</p>
+              <p class="text-slate-600 leading-relaxed">Endpoints have shifted from <code>/v1/a/…</code> paths to <code>@handle/angel</code> coordinates — one canonical spelling, bare means production, <code>@preview</code> suffixes preview. The Gateway answers both, and the dashboard already builds its endpoints from the handle. Agent Keys shows the endpoint; Home and the Angel header still need a home for the coordinate as the Angel's say-out-loud name.</p>
             </div>
           </div>
         </div>

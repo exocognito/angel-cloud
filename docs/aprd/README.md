@@ -36,12 +36,16 @@ Prototype flow F frames the public demo at `/demo/`, which will be assembled
 from the real `www/` shell — the live product rather than a picture of it, so it
 will never need refreshing here.
 
-The build step that assembles it arrives with
-[#21](https://github.com/exocognito/angel-cloud/pull/21), so until that is on
-`main` the frame is only as good as the last deploy of the docs worker: a deploy
-from a branch without the step removes `/demo/`, and the frame goes blank. That
-is why flow F is tagged as an intended change rather than observed behaviour, and
-why [docs-site](../../docs-site/README.md) documents no `/demo/` path yet.
+Nothing serves that path today, so the frame is blank. Two things are
+outstanding. The build step that assembles the page arrives with
+[#21](https://github.com/exocognito/angel-cloud/pull/21): the docs site itself
+shipped with [#4](https://github.com/exocognito/angel-cloud/issues/4), but
+[its build](../../docs-site/README.md) copies markdown only and names no `www/`
+asset. And the frame points at the canonical `docs.angelmcp.ai`, which resolves
+once the zone moves ([#6](https://github.com/exocognito/angel-cloud/issues/6)) —
+the personal `workers.dev` host the site serves from meanwhile has no place in a
+document read outside the team. Both are why flow F is tagged as an intended
+change rather than observed behaviour.
 
 ## Hosting
 
@@ -67,4 +71,6 @@ has it. Point `FILES_BLOG_UPLOAD` at your own copy to use a different one.
 
 Local copies use relative links so cross-links resolve from a local checkout;
 the hosted copies get absolute ones. That rewrite is the only difference between
-what is committed here and what is served.
+what is committed here and what is served. Neither copy works offline: every
+page loads Tailwind from a CDN, and the dataroom and engineering view load
+Mermaid too.

@@ -108,9 +108,9 @@
               <tbody>
                 <tr><td class="font-mono">G1</td><td>Least authority, compiled: only allowlisted canonical operations with argument guards; enforcement compiled from reviewed source — never a model, prompt, or runtime config.</td><td><span class="badge-obs">observed</span></td></tr>
                 <tr><td class="font-mono">G2</td><td>M2: run one person's real daily workflows across providers. Gmail write with real guard enforcement first, then Maps, then differently shaped integrations — each adapter ships with guard enforcement, deterministic CI, and live credentialed acceptance.</td><td><span class="badge-change">change</span></td></tr>
-                <tr><td class="font-mono">G3</td><td><code>angel publish</code> goes source → live production endpoint in one step. Preview is opt-in (<code>--preview</code>) and binds its own Connections (PD 0003 + PD 0005).</td><td><span class="badge-change">change</span></td></tr>
-                <tr><td class="font-mono">G4</td><td>An agent with only the public docs (docs.angelmcp.ai: index, <code>llms.txt</code>, <code>SKILL.md</code>) can take a user zero → live Angel through the management API. Install paths plural: npm now, curl installer next; repo clone is never the interface.</td><td><span class="badge-change">change</span></td></tr>
-                <tr><td class="font-mono">G5</td><td>Every Angel has one canonical coordinate <code>@handle/angel</code> and a public page at that coordinate, readable without key or login (PD 0001, PD 0002).</td><td><span class="badge-change">change</span></td></tr>
+                <tr><td class="font-mono">G3</td><td><code>angel publish</code> goes source → live production endpoint in one step. Preview is opt-in (<code>--preview</code>) and binds its own Connections (PD 0003 + PD 0005). Server half built: <code>deployProduction</code> installs a published Version directly, <code>deployPreview</code> refuses an unbound preview deploy.</td><td><span class="badge-change">change</span> — CLI only</td></tr>
+                <tr><td class="font-mono">G4</td><td>An agent with only the public docs (docs.angelmcp.ai: index, <code>llms.txt</code>, <code>SKILL.md</code>) can take a user zero → live Angel through the management API. Install paths plural: npm now, curl installer next; repo clone is never the interface.</td><td><span class="badge-obs">observed</span> docs (#4) · <span class="badge-change">change</span> host (#6), curl, walk (#5)</td></tr>
+                <tr><td class="font-mono">G5</td><td>Every Angel has one canonical coordinate <code>@handle/angel</code> and a public page at that coordinate, readable without key or login (PD 0001, PD 0002).</td><td><span class="badge-obs">observed</span> coordinate · <span class="badge-change">change</span> page (#11)</td></tr>
                 <tr><td class="font-mono">G6</td><td>Two independent gates evaluate every executed call; each writes a hash-chained receipt; success requires convergence. Deployments are digest-pinned: production runs byte-for-byte what was published.</td><td><span class="badge-obs">observed</span></td></tr>
                 <tr><td class="font-mono">G7</td><td>Directional only, not normative: M3 stranger self-serve signup/billing; M4 Personal and Family Account shapes. Sequenced strictly after G2.</td><td><span class="badge-open">directional</span></td></tr>
               </tbody>
@@ -137,8 +137,8 @@
                 <tr><td class="font-mono">I9</td><td>Keys</td><td>Angel keys hashed at rest, plaintext shown exactly once, stable across deploys; only explicit mint/rotate/revoke changes the key set; last active key cannot be revoked. Key names 1–64 code points, no control chars, on every surface.</td><td><span class="badge-obs">observed</span> <span class="badge-change">name bounds on /v1</span></td><td>Control key routes; dashboard already enforces bounds, /v1 to adopt</td></tr>
                 <tr><td class="font-mono">I10</td><td>Overlay</td><td>The availability overlay can only remove effective availability; never adds a tool or loosens a guard. Durable authority reduction goes through source.</td><td><span class="badge-obs">observed</span></td><td>Gate availability commands (S3)</td></tr>
                 <tr><td class="font-mono">I11</td><td>Mutations</td><td>Every management mutation requires bearer + <code>Idempotency-Key</code> bound to method, path, and body; unknown JSON keys rejected; key reuse with different input fails.</td><td><span class="badge-obs">observed</span></td><td>Control /v1 (S1)</td></tr>
-                <tr><td class="font-mono">I12</td><td>Handles</td><td>Handles unique platform-wide, never released; at most one rename per Account ever; retired handle resolves to the same Account (MCP: 200 in place; pages: 301). Minimum 4 chars; authority words (<code>admin</code>, <code>support</code>, <code>official</code>, …) reserved (PD 0004).</td><td><span class="badge-change">change</span></td><td>AccountRegistry DO — resolution before DO addressing</td></tr>
-                <tr><td class="font-mono">I13</td><td>Preview isolation</td><td>Preview binds its own Connections; a preview publish with no preview bindings fails, naming the two ways forward; sharing production credentials is explicit and typed (PD 0005).</td><td><span class="badge-change">change</span></td><td>CLI + Control deploy validation</td></tr>
+                <tr><td class="font-mono">I12</td><td>Handles</td><td>Handles unique platform-wide, never released; at most one rename per Account ever (409, including back to the retired name); retired handle resolves to the same Account (MCP: 200 in place, no redirect; pages: 301). <code>^[a-z][a-z0-9-]{3,31}$</code> — 4–32 chars, 1–3 reserved for the platform (403); the 14 authority words (<code>admin</code>, <code>support</code>, <code>official</code>, <code>angelmcp</code>, …) reserved, product paths (<code>pricing</code>, <code>docs</code>) deliberately not (PD 0004).</td><td><span class="badge-obs">observed</span> <span class="badge-change">pages: 301</span></td><td><code>src/handles.ts</code>; AccountRegistry DO — resolution before DO addressing</td></tr>
+                <tr><td class="font-mono">I13</td><td>Preview isolation</td><td>Preview binds its own Connections; a preview publish with no preview bindings fails with 400 naming the two ways forward; sharing production credentials is explicit and typed (PD 0005).</td><td><span class="badge-obs">observed</span> <span class="badge-change">share flag</span></td><td><code>ManagementControl.deployPreview</code>; the typed flag is CLI surface</td></tr>
                 <tr><td class="font-mono">I14</td><td>Public surface</td><td>The public Angel page never touches the Broker, custody, or a key; no auth cookie is ever scoped to <code>.angelmcp.ai</code> (PD 0002).</td><td><span class="badge-change">change</span></td><td>Future apex dispatcher (S8)</td></tr>
               </tbody>
             </table>
@@ -154,7 +154,7 @@
               <tbody>
                 <tr><td class="font-mono">P1</td><td>Fail closed beats availability</td><td>Enforcement uncertainty (gate mismatch, custody failure, malformed provider result) refuses the call. Convergence failure = HTTP 500 / JSON-RPC −32603, and that status is intended.</td></tr>
                 <tr><td class="font-mono">P2</td><td>Isolation beats convenience; convenience beats empty ceremony</td><td>Credential/environment isolation never traded for fewer steps (PD 0005). But a step that protects nothing is a defect (PD 0003): first publish goes straight to live.</td></tr>
-                <tr><td class="font-mono">P3</td><td>Publish-time rejection beats runtime failure</td><td>Unsupported operations fail at publish (registry); missing scopes fail at deploy (409, <code>management.ts:474-481</code>), not at the provider. One live doc bug documented in the FAQ.</td></tr>
+                <tr><td class="font-mono">P3</td><td>Publish-time rejection beats runtime failure</td><td>Unsupported operations fail at publish (registry); missing scopes fail at deploy (409 per bound operation, <code>bindingOperationGaps</code> at <code>management.ts:747-770</code>), not at the provider.</td></tr>
                 <tr><td class="font-mono">P4</td><td>Document precedence</td><td>Spine &gt; Evals &gt; System diagram &gt; Prototype &gt; FAQ. ROADMAP.md owns sequence/status; ADR/PD index Status lines beat any individual record's prose (PD 0003 vs PD 0005 is the standing example).</td></tr>
               </tbody>
             </table>
@@ -169,16 +169,24 @@
 
 // bare coordinate            = production
 // @preview suffix            = preview environment
-// "latest", "production"     = rejected as suffixes
-// pinned @N addresses        = reserved in the grammar, deferred in product</pre>
+// "latest", "production",
+// "staging"                  = rejected as suffixes (404, before handle resolution)
+// pinned @N addresses        = reserved in the grammar, deferred in product (404)
+
+// Legacy route, still served through the cutover:
+/^\/v1\/a\/([^\/]+)\/([^\/]+)\/(staging|preview|production)\/mcp$/
+
+// Handle grammar (src/handles.ts)
+^[a-z][a-z0-9-]{3,31}$          // claimable: 4-32 chars
+^[a-z][a-z0-9-]*$               // coordinate-parse grammar, before platform policy</pre>
           <div class="tbl-wrap">
             <table class="ref">
               <thead><tr><th>Route</th><th>Surface</th><th>Status</th></tr></thead>
               <tbody>
-                <tr><td><code>POST https://mcp.angelmcp.ai/@handle/angel[@preview]</code></td><td>MCP invocation (S4). Bearer Angel key checked before the body is read. MCP 2025-06-18, POST only.</td><td><span class="badge-change">change</span> — old <code>/v1/a/…</code> route serves through the cutover</td></tr>
+                <tr><td><code>POST https://mcp.angelmcp.ai/@handle/angel[@preview]</code></td><td>MCP invocation (S4). Bearer Angel key checked before the body is read. MCP 2025-06-18, POST only. A retired handle answers here in place, 200, no redirect.</td><td><span class="badge-obs">observed</span> — old <code>/v1/a/…</code> route still serves through the cutover</td></tr>
                 <tr><td><code>GET angelmcp.ai/@handle/angel</code> (apex)</td><td>Public Angel page (S8), no auth, no key. Once it exists, GET at the coordinate renders it; POST still invokes.</td><td><span class="badge-change">new</span> — content design open (#11)</td></tr>
                 <tr><td><code>/v1/…</code> on Control</td><td>Management API (S1). Bearer + Access service token + derived <code>Idempotency-Key</code>.</td><td><span class="badge-obs">observed</span> <span class="badge-change">+ handle resolution, DELETE angel, preview rename</span></td></tr>
-                <tr><td><code>docs.angelmcp.ai</code></td><td>Public docs host: index, <code>llms.txt</code>, <code>SKILL.md</code>, unauthenticated at stable URLs.</td><td><span class="badge-change">change</span> — settled; ships separately and sooner than the apex page</td></tr>
+                <tr><td><code>docs.angelmcp.ai</code></td><td>Public docs host: index, <code>llms.txt</code>, <code>SKILL.md</code>, unauthenticated at stable URLs. The site is built and contract-tested; it serves from an interim workers.dev host until the zone moves.</td><td><span class="badge-obs">observed</span> content (#4) · <span class="badge-change">change</span> hostname (#6)</td></tr>
               </tbody>
             </table>
           </div>
@@ -191,14 +199,19 @@
           <p class="text-sm text-slate-600">Types quoted from source via the dataroom; they are the contract at each seam. <span class="text-orange-700 font-mono text-xs">// change:</span> lines flag intended departures.</p>
 
           <div class="space-y-2">
-            <h3 class="font-medium">S1 · CLI → Control, <code>/v1</code> management API <span class="badge-obs">observed</span> <span class="badge-change">+ handle resolution, DELETE angel, preview rename</span></h3>
-            <p class="text-sm text-slate-600">Bearer + Access service token + derived <code>Idempotency-Key</code>. Responses are parsed with <strong>exact-key strictness</strong> by pinned CLIs — adding a field to a <code>/v1</code> response breaks them (management.ts strips <code>grantedScopes</code> for exactly this reason).</p>
+            <h3 class="font-medium">S1 · CLI → Control, <code>/v1</code> management API <span class="badge-obs">observed</span>, now including handle resolution, DELETE angel, and the preview rename</h3>
+            <p class="text-sm text-slate-600">Bearer + Access service token + derived <code>Idempotency-Key</code>. Responses are parsed with <strong>exact-key strictness</strong> by pinned CLIs — adding a field to a <code>/v1</code> response breaks them. So <code>listConnections</code> strips the hosted <code>grantedScopes</code> off the wire, and the legacy routes rewrite <code>preview</code> back to <code>staging</code> for 0.2.0.</p>
             <pre class="code">PublishVersionRequest   { artifact: ManagementVersionArtifact; expectedDigest: string }
-DeployStagingRequest    { versionId: string; expectedDigest: string; bindings: ManagementBindingMap }
+DeployRequest           = DeployStagingRequest   <span class="k">// core still names it "staging"</span>
+                          { versionId: string; expectedDigest: string; bindings: ManagementBindingMap }
 PromoteProductionRequest{ stagedDeploymentId: string; expectedDigest: string; bindings: ManagementBindingMap }
-ManagementBindingMap  = Record&lt;BindingRequirementId, readonly ConnectionId[]&gt;
+ManagementBindingMap  = Readonly&lt;Record&lt;BindingRequirementId, readonly ConnectionId[]&gt;&gt;
 ManagementConnection    { id; accountId; nickname; identityLabel; credential; providers; health }
-<span class="c">// change: environment "staging" → "preview"; DELETE /v1/accounts/:account/angels/:slug (typed-slug confirm)</span></pre>
+StoredManagementConnection = ManagementConnection &amp; { grantedScopes?: readonly string[] }  <span class="k">// hosted only</span>
+
+ManagementControl.deployPreview / .deployProduction / .promoteProduction / .deleteAngel
+<span class="k">// deployStaging is gone. deployProduction installs a published Version directly.</span>
+DELETE /v1/accounts/:account/angels/:slug   body {} or { confirm: "&lt;slug&gt;" }</pre>
           </div>
 
           <div class="space-y-2">
@@ -221,14 +234,20 @@ DemoRecordedTime = {source:"recorded"; at: string} | {source:"derived"; at: null
   | {operation:"install"; gate; runtimeId; command: GateInstallCommand}
   | {operation:"availability"; gate; runtimeId; command: GateAvailabilityCommand}
   | {operation:"reconcile_keys"; gate; runtimeId; hashes: string[]}
-GateInstallCommand { accountId; angelId; environment; deploymentId; version;
-  artifact: HostedVersionArtifact; bindings: GateToolBinding[]; gatewayKeyHashes?: string[] }
-GateToolBinding { tool; connectionRef; connectionId; provider; identityLabel }</pre>
+GateInstallCommand { accountId; angelId; environment: HostedEnvironment; deploymentId; version;
+  artifact: HostedVersionArtifact; bindings: GateToolBinding[];
+  gatewayKeyHash?: string <span class="k">/* legacy single key */</span>; gatewayKeyHashes?: string[] <span class="k">/* wins */</span> }
+GateAvailabilityCommand =
+  | {kind:"all"; enabled; expectedRevision}
+  | {kind:"tool"; tool; enabled; expectedRevision}
+  | {kind:"tool_connection"; tool; connectionRef; enabled; expectedRevision}
+GateToolBinding { tool; connectionRef; connectionId; provider; identityLabel }
+HostedEnvironment = "preview" | "production"   <span class="k">// "staging" survives only at the HTTP boundary</span></pre>
           </div>
 
           <div class="space-y-2">
-            <h3 class="font-medium">S4 · Agent → Gateway (MCP) <span class="badge-obs">observed</span> <span class="badge-change">route: /v1/a/… → /@handle/angel[@preview]</span></h3>
-            <p class="text-sm text-slate-600">MCP 2025-06-18, POST only, bearer Angel key checked before the body is read. Old route serves through the cutover. Receipts to agents are redacted: no <code>connectionId</code>, no <code>identityLabel</code>, no chain hashes, no <code>accountId</code>.</p>
+            <h3 class="font-medium">S4 · Agent → Gateway (MCP) <span class="badge-obs">observed</span> on both <code>/@handle/angel[@preview]</code> and the legacy <code>/v1/a/…</code></h3>
+            <p class="text-sm text-slate-600">MCP 2025-06-18, POST only, bearer Angel key checked before the body is read. Both shapes resolve to the same Durable Object: <code>runtimeId</code> is built from the canonical environment and the opaque <code>accountId</code>. Unknown suffixes 404 <em>before</em> handle resolution, so the answer never reveals whether a handle exists. Receipts to agents are redacted: no <code>connectionId</code>, no <code>identityLabel</code>, no chain hashes, no <code>accountId</code>.</p>
             <pre class="code">AngelMcpRequest = initialize | notifications/initialized | tools/list | tools/call
 <span class="k">// tools/list injects: angel_connection {type:"string", oneOf:[{const:"arc_…", title:"gmail - …"}]}
 //   required only when connections.length &gt; 1</span>
@@ -246,16 +265,18 @@ GateReceiptIdentity = Pick&lt;GateReceipt, "deploymentId"|"version"|"policyDiges
           </div>
 
           <div class="space-y-2">
-            <h3 class="font-medium">S6/S7 · Broker → Vault → Provider <span class="badge-obs">observed</span> <span class="badge-change long-badge">#10: scopes move from compiled constant to Provider App</span></h3>
-            <p class="text-sm text-slate-600">Lease inside the Broker only; refresh → pinned origin; the sealed <code>HttpRequestTemplate</code> is materialized (path traversal and non-scalars rejected) and executed — the Broker enumerates no operations. #10 makes the consent scope set a Provider App property and derives the deploy-time floor from registry operations, removing the compiled constant.</p>
+            <h3 class="font-medium">S6/S7 · Broker → Vault → Provider <span class="badge-obs">observed</span>, including #10's configurable scopes</h3>
+            <p class="text-sm text-slate-600">Lease inside the Broker only; refresh → pinned origin; the sealed <code>HttpRequestTemplate</code> is materialized (path traversal and non-scalars rejected) and executed — the Broker enumerates no operations. #10 shipped: the consent scope set is a Provider App property, the deploy-time floor is derived per bound operation from the adapter registry (<code>bindingOperationGaps</code>), and provider labels derive from the registry too. The compiled list survives only as <code>DEFAULT_GOOGLE_PROVIDER_SCOPES</code>, the fallback when a Provider App names none.</p>
             <pre class="code">ConnectionCredentialLease { accountId; connectionId; providerAppId; provider:"google";
-  clientId; clientSecret; refreshToken; subject; grantedScopes[] }
+  clientId; clientSecret; refreshToken; subject; grantedScopes: string[] }
+StoredProviderApp { id; accountId; provider:"google"; displayName; clientId;
+  clientSecret: EncryptedValue; scopes?: string[] }   <span class="k">// absent ⇒ DEFAULT_GOOGLE_PROVIDER_SCOPES</span>
 HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefaults; queryParams[]; hasBody }</pre>
           </div>
 
           <div class="space-y-2">
             <h3 class="font-medium">S8 · Anyone → public Angel page <span class="badge-change">new (PD 0002 / #11)</span></h3>
-            <p class="text-sm text-slate-600">Read-only, no auth, at the bare coordinate on the apex. Must have no path to Broker, custody, or keys (I14). Served by the future apex dispatcher; content shape deliberately open (FAQ). <code>docs.angelmcp.ai</code> is settled and ships separately, sooner.</p>
+            <p class="text-sm text-slate-600">Read-only, no auth, at the bare coordinate on the apex. Must have no path to Broker, custody, or keys (I14). Served by the future apex dispatcher; content shape deliberately open (FAQ). The only seam here still unbuilt. <code>docs.angelmcp.ai</code> is settled and its content ships (#4); the name waits on the zone move (#6).</p>
           </div>
         </section>
 
@@ -308,7 +329,7 @@ flowchart LR
               <thead><tr><th>ID</th><th>Eval</th><th>Covers</th><th>Expected outcome (condensed)</th><th>Status</th><th>No-creds</th></tr></thead>
               <tbody>
                 <tr><td class="font-mono">E1</td><td>One command to live</td><td class="font-mono text-xs">G3 I2 I9</td><td><code>angel publish</code> on a fresh Angel: "created new Angel" announced, both environment keys print exactly once, production answers <code>tools/list</code> at the coordinate with the published digest in <code>x-angel-policy-digest</code>. Re-publish of unchanged source → same Version, no keys printed.</td><td><span class="badge-change">change</span></td><td>yes</td></tr>
-                <tr><td class="font-mono">E2</td><td>Preview refuses silent real-data use</td><td class="font-mono text-xs">I13 P2</td><td><code>--preview</code> with production bindings only: non-zero exit, nothing deployed, error names both remedies. With the explicit share flag: preview deploys bound to production's Connections and the deployment record shows sharing was requested.</td><td><span class="badge-change">change</span></td><td>yes</td></tr>
+                <tr><td class="font-mono">E2</td><td>Preview refuses silent real-data use</td><td class="font-mono text-xs">I13 P2</td><td><code>--preview</code> with production bindings only: non-zero exit, nothing deployed, error names both remedies. With the explicit share flag: preview deploys bound to production's Connections and the deployment record shows sharing was requested.</td><td><span class="badge-obs">observed</span> refusal (400) · <span class="badge-change">change</span> share flag</td><td>yes</td></tr>
                 <tr><td class="font-mono">E3</td><td>Exact promotion, stable keys</td><td class="font-mono text-xs">G6 I2 I9</td><td>Promote with <code>{stagedDeploymentId, expectedDigest, bindings}</code>: production serves the digest byte-identically, key set unchanged, <code>x-angel-version: 2</code>. Stale digest or inactive deployment → 409, nothing changes.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
                 <tr><td class="font-mono">E4</td><td>Two receipts or no result</td><td class="font-mono text-xs">G6 I3</td><td>Allowed call: <code>_meta</code> carries gateway + broker receipts agreeing on identity fields, redacted. Forced divergence: HTTP 500, <code>−32603 "Angel gates failed to converge"</code>, no provider call made.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
                 <tr><td class="font-mono">E5</td><td>Guards bind arguments</td><td class="font-mono text-xs">G1</td><td><code>forbiddenValues:[TRASH,SPAM,SENT]</code> on modify → 200, <code>isError</code>, <code>guard_denied</code>, receipted. <code>maxResults: 50</code> vs pin "5" → executes with "5". <code>messages.send</code> → <code>unknown_tool</code> (not in artifact).</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
@@ -316,12 +337,12 @@ flowchart LR
                 <tr><td class="font-mono">E7</td><td>Pause removes, resume restores</td><td class="font-mono text-xs">I4 I10</td><td>Paused tuple → <code>connection_paused</code>, other Connection still serves; last active Connection paused drops the tool from <code>tools/list</code>, direct call → <code>tool_paused</code>. Resume one restores exactly one. Availability installs Broker-first per I4.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
                 <tr><td class="font-mono">E8</td><td>Isolation is invisibility</td><td class="font-mono text-xs">I6</td><td>Any cross-Account reference — /v1, dashboard API, or MCP — → 404 with no existence signal. Preview/staging key on production → 401.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
                 <tr><td class="font-mono">E9</td><td>Custody write-only and loud</td><td class="font-mono text-xs">I5 P1</td><td>Provider App reads back as safe summary only (no client secret, ever). Revoked Connection → next call fails loudly (−32003 family, Connection <code>error</code>); row-level Reauthorize restores the <em>same</em> Connection identity with deployment, keys, Version unchanged. No fixture substitution.</td><td><span class="badge-obs">observed</span></td><td>no — credentialed acceptance</td></tr>
-                <tr><td class="font-mono">E10</td><td>Handles hold their meaning</td><td class="font-mono text-xs">I12 G5</td><td>After one rename @acme → @acme2: MCP at old handle → 200, same Account, no redirect; page → 301; second rename refused; reserved word or &lt;4-char handle rejected; retired handle never reassignable.</td><td><span class="badge-change">change</span></td><td>yes</td></tr>
-                <tr><td class="font-mono">E11</td><td>Delete is deliberate and total</td><td class="font-mono text-xs">I4</td><td>Live production: delete without typed slug → 409; with it → keys revoked first, gates reset Broker-then-Gateway, coordinate → 404, shared Connections/other Angels untouched, slug immediately reusable. Empty production needs no confirmation; idempotency key replays safely.</td><td><span class="badge-change">change</span></td><td>yes</td></tr>
-                <tr><td class="font-mono">E12</td><td>Publish-time closure</td><td class="font-mono text-xs">I1 P3</td><td>Underivable operation fails at build/publish; artifact digest/source/template disagreement with registry → 400 at publish; binding a Connection missing a required scope → 409 at deploy — before any runtime call.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
-                <tr><td class="font-mono">E13</td><td>Agent-only onboarding</td><td class="font-mono text-xs">G4</td><td>Agent with only docs.angelmcp.ai walks a user from empty directory to promoted Angel the agent can call over MCP; <code>llms.txt</code> and <code>SKILL.md</code> resolve unauthenticated at stable URLs; docs state which steps need which credential; npm and (directionally) curl paths documented.</td><td><span class="badge-change">change</span></td><td>no — manual acceptance</td></tr>
+                <tr><td class="font-mono">E10</td><td>Handles hold their meaning</td><td class="font-mono text-xs">I12 G5</td><td>After one rename @acme → @acme2: MCP at old handle → 200, same Account, no redirect; second rename refused (409, including back to @acme); reserved word → 403, 1–3 char handle → 403, <code>pricing</code> claimable; retired handle never reassignable. The remaining clause — page → 301 — has no page to run against.</td><td><span class="badge-obs">observed</span> <span class="badge-change">page 301</span></td><td>yes</td></tr>
+                <tr><td class="font-mono">E11</td><td>Delete is deliberate and total</td><td class="font-mono text-xs">I4</td><td>Live or pending production: delete without the typed slug → 409, wrong slug → 400; with it → keys revoked and persisted first, gates reset Broker-then-Gateway, coordinate → 404, shared Connections/other Angels untouched, slug immediately reusable. Preview-only or empty production needs no confirmation; idempotency key replays safely, a fresh key on a deleted slug → 404.</td><td><span class="badge-obs">observed</span> API · <span class="badge-change">change</span> <code>angel delete</code></td><td>yes</td></tr>
+                <tr><td class="font-mono">E12</td><td>Publish-time closure</td><td class="font-mono text-xs">I1 P3</td><td>Underivable operation fails at build/publish; artifact digest/source/template disagreement with registry → 400 at publish; binding a Connection missing a required scope → 409 at deploy, naming the operation and the scopes that would cover it — before any runtime call.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
+                <tr><td class="font-mono">E13</td><td>Agent-only onboarding</td><td class="font-mono text-xs">G4</td><td>Agent with only docs.angelmcp.ai walks a user from empty directory to promoted Angel the agent can call over MCP; <code>llms.txt</code> and <code>SKILL.md</code> resolve unauthenticated at stable URLs; docs state which steps need which credential; npm and (directionally) curl paths documented. Site, agent files and their stable unauthenticated URLs are built and contract-tested; the walk is unproven (#5), curl unwritten, canonical host unwired (#6).</td><td><span class="badge-obs">observed</span> docs · <span class="badge-change">change</span> walk</td><td>no — manual acceptance</td></tr>
                 <tr><td class="font-mono">E14</td><td>Transport error states</td><td class="font-mono text-xs">P1, I11</td><td>Each transport mistake gets its distinct status — see the error reference below. Same <code>Idempotency-Key</code> + different body → 409; mutation during pending repair → 409 until the identical retry completes it.</td><td><span class="badge-obs">observed</span></td><td>yes</td></tr>
-                <tr><td class="font-mono">E15</td><td>Gmail write under real guards (M2 gate)</td><td class="font-mono text-xs">G2</td><td>Draft-and-read Angel (<code>drafts.create</code> allowed, <code>messages.send</code> absent; grant covers the write scope, needs #10): draft creation succeeds through both gates with receipts; <code>messages.send</code> → <code>unknown_tool</code>; forbidden write arguments → <code>guard_denied</code>. Deterministic CI covers the transcript; live credentialed acceptance proves the write.</td><td><span class="badge-change">change</span></td><td>CI yes · live proof no</td></tr>
+                <tr><td class="font-mono">E15</td><td>Gmail write under real guards (M2 gate)</td><td class="font-mono text-xs">G2</td><td>Draft-and-read Angel (<code>drafts.create</code> allowed, <code>messages.send</code> absent; grant covers the write scope, grantable now that #10 shipped): draft creation succeeds through both gates with receipts; <code>messages.send</code> → <code>unknown_tool</code>; forbidden write arguments → <code>guard_denied</code>. Deterministic CI covers the transcript; live credentialed acceptance proves the write.</td><td><span class="badge-change">change</span></td><td>CI yes · live proof no</td></tr>
               </tbody>
             </table>
           </div>
@@ -373,7 +394,7 @@ flowchart LR
                 <tr><td><code>400</code></td><td>Artifact digest, canonical source, or sealed templates disagree with the registry at publish; unknown JSON keys (I11); invalid input; empty <code>Idempotency-Key</code>.</td></tr>
                 <tr><td><code>401</code></td><td>Missing Access identity or bearer.</td></tr>
                 <tr><td><code>404</code></td><td>Resource absent — or owned by another Account (I6: no existence signal).</td></tr>
-                <tr><td><code>409</code></td><td>Stale <code>expectedDigest</code>; inactive <code>stagedDeploymentId</code>; binding a Connection missing a required scope (deploy-time, P3); <code>Idempotency-Key</code> reuse with different method/path/body; mutation during a pending availability repair (I4); delete of a live production deployment without typed-slug confirmation.</td></tr>
+                <tr><td><code>409</code></td><td>Stale <code>expectedDigest</code>; inactive <code>stagedDeploymentId</code>; binding a Connection missing a required scope (deploy-time, P3); <code>Idempotency-Key</code> reuse with different method/path/body; mutation during a pending availability repair (I4); delete of a live or pending production deployment without typed-slug confirmation; a binding naming operations absent from the deployed adapter registry.</td></tr>
                 <tr><td><code>501</code></td><td>Provider App removal — not implemented.</td></tr>
               </tbody>
             </table>
@@ -388,9 +409,9 @@ flowchart LR
             <table class="ref">
               <thead><tr><th>Constraint</th><th>Detail</th></tr></thead>
               <tbody>
-                <tr><td>Core package pin chain</td><td>Artifact schema, compiler, registry, and CLI live in <code>exocognito/angel-core</code>; they reach angel-cloud only as the pinned npm package. A core change requires release + lockfile bump before angel-cloud sees it. The staging→preview rename and <code>angel delete</code> both cross this boundary — two-step ships.</td></tr>
+                <tr><td>Core package pin chain</td><td>Artifact schema, compiler, registry, and CLI live in <code>exocognito/angel-core</code>; they reach angel-cloud only as the pinned npm package, currently <code>@smcllns/angel-core@0.2.0</code>. That CLI offers exactly <code>build</code>, <code>publish</code> (to preview, spelled <code>staging</code>) and <code>deploy --prod</code>. Publish defaulting to production, <code>--preview</code>, the typed share flag and <code>angel delete</code> all wait on one release — and the <code>/v1</code> legacy dialect exists to keep 0.2.0 working until it lands. This is now the largest gap between the spine and the code.</td></tr>
                 <tr><td><code>/v1</code> exact-key parsing</td><td>Pinned CLIs parse <code>/v1</code> responses with exact-key strictness. Never add a response field without a core release plan (management.ts strips <code>grantedScopes</code> for this reason).</td></tr>
-                <tr><td><code>runtimeId</code> shape</td><td><code>"${accountId}:${slug}:${environment}"</code>. Handle resolution (#12) happens <em>before</em> Durable Object addressing — DO names never contain handles; gates and receipts are untouched by handle work.</td></tr>
+                <tr><td><code>runtimeId</code> shape</td><td><code>"${accountId}:${slug}:${environment}"</code>, built from the <em>canonical</em> environment. Handle resolution (#12) happens <em>before</em> Durable Object addressing — DO names never contain handles, gates and receipts were untouched by handle work, and a retired handle addresses the same object as the current one.</td></tr>
                 <tr><td>Digest computation</td><td>The artifact digest is computed over compiler-ordered <code>JSON.stringify</code> bytes — not re-canonicalized JSON. Same digest republished returns the same Version (I2).</td></tr>
                 <tr><td>Internal role tokens</td><td>Must be non-empty and pairwise distinct; misconfiguration fails closed at boot.</td></tr>
                 <tr><td>Gate key routing</td><td>Key hashes go to the gateway gate only; the broker gate rejects them. <code>presentedKey</code> is never forwarded across S5.</td></tr>
@@ -405,15 +426,25 @@ flowchart LR
         <section id="bugs" class="space-y-4">
           <h2 class="font-serif text-2xl">Known bugs &amp; open items</h2>
 
-          <h3 class="font-medium">Current behavior that is not intended</h3>
+          <h3 class="font-medium">Fixed since the first draft</h3>
+          <div class="tbl-wrap">
+            <table class="ref">
+              <thead><tr><th>Item</th><th>What it was</th><th>What fixed it</th></tr></thead>
+              <tbody>
+                <tr><td>#1 promotion vs overrides</td><td><code>connectionRef</code>s are minted per deployment; availability lives on the environment, which outlives one. So an override recorded against a ref went stale on the next promote — and the halves failed differently. The gate pruned unknown refs, silently <em>dropping</em> the override; where that override re-enabled a globally paused tool for one Connection, the tool vanished from <code>tools/list</code>. Management pruned nothing, so its copy dangled and its state read <em>threw</em>. ~4 min production outage 2026-07-27.</td><td>PR #16: <code>migrateInstalledAvailability</code> (<code>src/gate.ts:824</code>) remaps overrides through the stable <code>connectionId</code>, applied at gate install <em>and</em> at Management convergence so both stay identical. Dropped only when the Connection is no longer bound to the tool. Pre-fix state is repaired at restore by dropping, not resurrecting.</td></tr>
+                <tr><td>Manual scope sentence</td><td><code>user-manual.md</code> said a missing scope "publishes and deploys, then fails at Google".</td><td>Corrected in the same PR; the manual now describes the deploy-time 409.</td></tr>
+                <tr><td><code>ControlRequestEnv</code></td><td>Omitted the <code>GATEWAY</code> binding the registry uses.</td><td>Declared at <code>src/workers/control.ts:56</code>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 class="font-medium pt-2">Current behavior that is not intended</h3>
           <div class="tbl-wrap">
             <table class="ref">
               <thead><tr><th>Item</th><th>Detail</th><th>Disposition</th></tr></thead>
               <tbody>
-                <tr><td><span class="badge-bug">bug</span> #1 promotion vs overrides</td><td>Promotion breaks connection-scoped availability overrides. The only ticketed correctness bug; ~4 min production outage 2026-07-27.</td><td>Fix in flight: <code>fix/promote-availability-overrides</code></td></tr>
                 <tr><td><span class="badge-bug">bug</span> Reset fabricates Connections</td><td><code>POST /api/demo/reset</code> seeds <code>con_personal_google</code>/<code>con_work_google</code> as healthy over real reconciled custody state.</td><td>Classified a bug 2026-07-28: reset must preserve or clear real custody, never invent healthy Connections</td></tr>
-                <tr><td><span class="badge-bug">bug</span> /v1 key names unbounded</td><td>Dashboard enforces 1–64 code points, no control chars; <code>/v1</code> only requires non-empty.</td><td>Decision 2026-07-28: <code>/v1</code> adopts the bounds (I9)</td></tr>
-                <tr><td><span class="badge-bug">doc bug</span> Manual scope sentence</td><td><code>user-manual.md</code> says a missing scope "publishes and deploys, then fails at Google"; deploy validation actually 409s (<code>management.ts:474-481</code>).</td><td>Code and P3 are intended; the sentence is wrong</td></tr>
+                <tr><td><span class="badge-bug">bug</span> /v1 key names unbounded</td><td>Dashboard enforces 1–64 code points, no control chars (<code>control.ts:719</code>, whose own comment flags the gap); <code>/v1</code> only requires non-empty.</td><td>Decision 2026-07-28, still unbuilt: <code>/v1</code> adopts the bounds (I9)</td></tr>
                 <tr><td><span class="badge-bug">doc bug</span> README staleness</td><td>"Stable Angel keys" phrasing predates mint/rotate/revoke; HTTP-surfaces list omits custody routes and key actions; test counts drift.</td><td>Corrected silently by the APRD; the manual is the accurate doc</td></tr>
               </tbody>
             </table>
@@ -423,7 +454,7 @@ flowchart LR
           <ul class="list-disc pl-5 space-y-1 text-sm text-slate-700">
             <li><code>src/control.ts</code> still ships legacy <code>DemoControl</code> emitting <code>angelmcp.demo.v1</code>; reachable from one test file only. Deletion candidate.</li>
             <li><code>types/broker.d.ts</code> is hand-written but labeled Wrangler-generated and omits <code>CredentialVault</code> from <code>durableNamespaces</code>; <code>controlErrorResponse</code> (<code>src/workers/control.ts:600</code>) is dead code. (<code>ControlRequestEnv</code> now carries the <code>GATEWAY</code> binding — that one is fixed.)</li>
-            <li><code>google-read-proof</code> is excluded from the fixture-staleness check (the other four Angels are checked); digest verified only at acceptance-run time.</li>
+            <li><code>google-read-proof</code> is excluded from the fixture-staleness check (<code>scripts/check-fixture-staleness.ts</code> lists the other four); digest verified only at acceptance-run time.</li>
             <li>Revoked-Connection failures reach the agent by two paths (custody lease 404 vs refresh-time <code>invalid_grant</code>), both −32003-family; the asymmetry is undocumented.</li>
           </ul>
 

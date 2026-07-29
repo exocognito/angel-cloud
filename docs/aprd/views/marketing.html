@@ -129,17 +129,17 @@
 
       <!-- ══════ The coordinate as brand surface ══════ -->
       <section class="space-y-6">
-        <h2 class="font-serif text-3xl">The coordinate is the brand <span class="badge-next">upcoming</span></h2>
-        <p class="text-slate-700 leading-relaxed max-w-2xl">Every Angel gets one canonical address: <span class="font-mono text-accent">@handle/angel</span>. One spelling, no variants, short enough to say out loud — "at acme slash inbox-read". The plain address always means the live version, and a name you've seen can never quietly come to mean someone else's Angel: handles are never released, and old links keep resolving to the same owner.</p>
+        <h2 class="font-serif text-3xl">The coordinate is the brand <span class="badge-ship">shipped</span> <span class="badge-next">the page is not</span></h2>
+        <p class="text-slate-700 leading-relaxed max-w-2xl">Every Angel has one canonical address: <span class="font-mono text-accent">@handle/angel</span>. One spelling, no variants, short enough to say out loud — "at acme slash inbox-read". The plain address always means the live version, and a name you've seen can never quietly come to mean someone else's Angel: handles are never released, and an agent pointed at an old one still reaches the same owner. All of that answers real requests today.</p>
         <div class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
           <p class="text-xs uppercase tracking-wider text-slate-400">What the coordinate becomes</p>
           <p class="font-serif text-2xl">@acme/inbox-read</p>
           <ul class="text-sm text-slate-600 space-y-1 list-disc pl-5">
-            <li>The MCP endpoint an agent calls — paste it into any agent app.</li>
-            <li>A public page anyone can read — no key, no login — showing what the Angel allows <em>before</em> deciding to trust it. Nothing on that page can reach a credential or a session, by invariant.</li>
-            <li>A citation: "read the charter at the coordinate" becomes a real sentence.</li>
+            <li>The MCP endpoint an agent calls — paste it into any agent app. <span class="badge-ship">shipped</span></li>
+            <li>A public page anyone can read — no key, no login — showing what the Angel allows <em>before</em> deciding to trust it. Nothing on that page can reach a credential or a session, by invariant. <span class="badge-next">upcoming</span></li>
+            <li>A citation: "read the charter at the coordinate" becomes a real sentence. <span class="badge-next">upcoming</span> — it needs the page.</li>
           </ul>
-          <p class="text-xs text-slate-500">Status: the coordinate grammar and handle rules are specified; the public page is designed-for but not shipped, and its exact content is a deliberately open decision. Say "upcoming", never "live".</p>
+          <p class="text-xs text-slate-500">Status: the coordinate and the handle rules are built and answering. The public page is not, and its exact content is a deliberately open decision. So the address is fair to demonstrate; the page is "upcoming", never "live". Opening a coordinate in a browser today gets you nothing to look at.</p>
         </div>
       </section>
 
@@ -154,7 +154,7 @@
         <div class="grid sm:grid-cols-2 gap-4">
           <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
             <h3 class="font-medium">Your AI assistant can do the whole setup</h3>
-            <p class="text-sm text-slate-600 leading-relaxed">The target journey is agent-operable from public docs: a user tells their AI assistant "set me up an Angel" and, using only the public docs site, it walks them from an empty directory to a live Angel — no GitHub account, no cloning our code, no support ticket. <span class="badge-next">in build — acceptance test E13</span></p>
+            <p class="text-sm text-slate-600 leading-relaxed">The target journey is agent-operable from public docs: a user tells their AI assistant "set me up an Angel" and, using only the public docs site, it walks them from an empty directory to a live Angel — no GitHub account, no cloning our code, no support ticket. The docs an assistant needs — the index, <code class="text-xs">llms.txt</code> and <code class="text-xs">SKILL.md</code> — are published and readable without a login. <span class="badge-next">in build — nobody has yet watched an assistant do the whole walk, which is acceptance test E13</span></p>
           </article>
           <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
             <h3 class="font-medium">Meet people where they are</h3>
@@ -258,6 +258,17 @@
               <p class="text-sm text-slate-700">"Two independent checks on every call — and we're honest about the limit: both run in one Cloudflare account, so a Cloudflare administrator who can replace the Broker could reach custodied credentials. Buyers for whom that matters most should self-host relay, and we say so."</p>
             </div>
           </div>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="rounded-r-lg bg-red-50 p-5 shadow-[inset_4px_0_0_0_theme(colors.red.500)] border-y border-r border-red-100">
+              <p class="text-xs uppercase tracking-wider text-red-700 mb-1">Cannot say</p>
+              <p class="text-sm text-red-900">"One command and you're live" as a description of the tool people can install today</p>
+            </div>
+            <div class="rounded-r-lg bg-white p-5 shadow-[inset_4px_0_0_0_theme(colors.accent)] border-y border-r border-slate-200">
+              <p class="text-xs uppercase tracking-wider text-accent mb-1">Can say</p>
+              <p class="text-sm text-slate-700">"The platform publishes straight to production in one step." True, and demonstrable over the API. The published command-line tool still takes two commands and still calls the practice environment "staging" — it catches up in its next release. The same gap applies to deleting an Angel: the platform does it, the command does not exist yet.</p>
+            </div>
+          </div>
         </div>
 
         <div class="rounded-r-lg bg-amber-50 p-4 text-sm text-amber-900 shadow-[inset_4px_0_0_0_theme(colors.amber.500)] border-y border-r border-amber-100">
@@ -296,7 +307,7 @@
 
       <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200 space-y-2">
         <p>The dataroom is normative; where this page and the dataroom disagree, the dataroom wins.</p>
-        <p>Derived from the Angel Cloud APRD dataroom and docs/faq.md as of 2026-07-28.</p>
+        <p>Derived from the Angel Cloud APRD dataroom and docs/faq.md as of 2026-07-29.</p>
       </footer>
     </main>
 

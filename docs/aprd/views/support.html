@@ -231,10 +231,10 @@
 
       <!-- ═════════ KNOWN ISSUES ═════════ -->
       <section class="space-y-5">
-        <h2 class="font-serif text-3xl">Known issues — recognize these on sight</h2>
+        <h2 class="font-serif text-3xl">Known issues — one live, one worth remembering</h2>
         <div class="space-y-3">
-          <div class="note-red bg-red-50 p-4 text-sm text-red-900">
-            <strong>#1 · Promotion can break connection-scoped availability overrides.</strong> The one ticketed correctness bug; it took production down about four minutes on 2026-07-27, and a fix is in flight. Symptom to recognize: an environment goes dark <em>immediately after a promote</em>, and the account had tool + Connection pauses active at promotion time. Don't send the user chasing their key or their Google grant — match the timing to the promote, then escalate with the Angel and promotion time.
+          <div class="note-accent bg-teal-50/60 p-4 text-sm text-slate-700">
+            <strong>#1 · Promotion breaking connection-scoped availability overrides — fixed.</strong> The one ticketed correctness bug; it took production down about four minutes on 2026-07-27 and is now closed. Worth keeping in your head because the symptom is memorable: an environment went dark <em>immediately after a promote</em>, on accounts that had a tool paused everywhere and switched back on for one Connection. That re-enabling setting was attached to an identifier a new release replaced, so it went missing at the worst moment. Pause settings now follow the Connection across a release. If you see this symptom on a current deployment, it is <em>not</em> this bug — escalate it as new, with the Angel and the promotion time.
           </div>
           <div class="note-red bg-red-50 p-4 text-sm text-red-900">
             <strong>Admin reset paints fabricated healthy Connections.</strong> The admin reset endpoint currently seeds fake "healthy" Google Connections over real custody state. Classified a bug on 2026-07-28; it will stop. Until then: after any reset, dashboard Connection health is not evidence — a "healthy" pill may be fiction. Verify with a real call, not the pill.
@@ -263,7 +263,7 @@
               <li><strong>Environment dark right after a promote.</strong> Likely known issue #1 above — escalate with timing, don't troubleshoot the user.</li>
               <li><strong>Activity history requests.</strong> No retention, search, or export guarantee exists yet. Never promise "we can pull the logs from last month."</li>
               <li><strong>"How do I sign up?"</strong> There is no signup — one pre-provisioned Account behind Cloudflare Access. Say so; don't waitlist people informally.</li>
-              <li><strong>Naming heads-up.</strong> "Staging" is being renamed "preview". During the transition, error text and docs may say either — they mean the same environment. Translate silently; don't make the user care.</li>
+              <li><strong>Naming heads-up.</strong> "Staging" is now "preview" — the dashboard, the docs and the platform all say preview. The published command-line tool still says <code>staging</code>, and old <code>/v1/a/…/staging/mcp</code> endpoints still answer, so a user pasting CLI output or an old URL will show you the old word. They mean the same environment. Translate silently; don't make the user care.</li>
             </ul>
           </div>
         </div>
