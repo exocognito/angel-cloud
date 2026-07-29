@@ -56,10 +56,14 @@
     return null;
   }
 
-  // Allowlist, not denylist. An earlier version forwarded anything whose URL
-  // lacked "/api/", which let an absolute cross-origin URL — including the
-  // product's own /v1/ management surface — reach the network from a public
-  // page. Default is refusal; only a same-origin static GET gets through.
+  // Allowlist, not denylist, and nothing at all reaches the network. An earlier
+  // version forwarded anything whose URL lacked "/api/", which let an absolute
+  // cross-origin URL — including the product's own /v1/ management surface —
+  // out from a public page; forwarding same-origin GETs still left a
+  // redirect-to-cross-origin path and treated blob: URLs as same-origin. The
+  // fixture is read through originalFetch before this replacement is installed,
+  // and app.js fetches nothing but /api/ paths, so once installed every request
+  // is either one of the three mapped reads or refused.
   window.fetch = function (input, options) {
     var url = target(input);
     if (url === null || url.origin !== location.origin) return refused();
@@ -68,8 +72,6 @@
       || (input && typeof input !== "string" && input.method)
       || "GET").toUpperCase();
     if (method !== "GET") return refused();
-
-    if (url.pathname.indexOf("/api/") === -1) return originalFetch(input, options);
 
     var key = READS[url.pathname];
     if (key === undefined) return refused();
@@ -107,11 +109,43 @@
       for (var i = 0; i < fields.length; i += 1) {
         fields[i].removeAttribute("required");
         fields[i].disabled = true;
+        // renderProviderCustody sets provider-app-selector.disabled = false on
+        // every repaint, which would un-seal it and put it back in FormData.
+        // Pin the property so the app's assignment is a no-op.
+        Object.defineProperty(fields[i], "disabled", {
+          configurable: true,
+          get: function () { return true; },
+          set: function () {},
+        });
       }
     });
 
     document.addEventListener("beforeinput", function (event) { event.preventDefault(); }, true);
     document.addEventListener("paste", function (event) { event.preventDefault(); }, true);
+
+    // A 403 is the right answer and the wrong experience. performAction routes a
+    // failed mutation to renderBlockingError, which hides #app — so a visitor's
+    // first click on an availability toggle or Promote replaced the whole demo
+    // with an error page. The key surface dead-ended differently: its name field
+    // is created by the app, so the blockers above make it unfillable and
+    // "Create" never got past "Enter a key name."
+    //
+    // Both are answered here rather than in www/app.js, which stays unforked.
+    // This listener is on document in the capture phase, so it runs before the
+    // app's own document-level click handler. Disabling the controls instead
+    // would not hold: setActionControls reassigns `disabled` on every render.
+    document.addEventListener("click", function (event) {
+      var control = event.target.closest && event.target.closest("[data-action],[data-key-action]");
+      if (control === null || control === undefined) return;
+      event.preventDefault();
+      event.stopPropagation();
+      var toast = document.getElementById("toast");
+      if (toast === null) return;
+      toast.textContent = "Read-only demo — " + REFUSAL;
+      toast.hidden = false;
+      clearTimeout(toast.dataset.demoTimer);
+      toast.dataset.demoTimer = setTimeout(function () { toast.hidden = true; }, 4000);
+    }, true);
   }
 
   // Say what this is, in the page. Without it the shell reads as a real signed-in

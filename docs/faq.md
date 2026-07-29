@@ -218,8 +218,9 @@ It reaches nothing. The page is served by the assets-only docs worker, which has
 no service bindings, no Durable Objects and no secrets, so there is no path from
 it to the Control worker, the Broker, or a credential. In the browser, one
 injected script replaces `fetch` with an allowlist: three read paths answered
-from the bundled fixture, every other request — including any cross-origin URL —
-refused with a 403. The two custody forms are disabled, because they include a
+from the bundled fixture, every other request — cross-origin, same-origin, any
+method — refused with a 403. Once that replacement is installed nothing reaches
+the network at all. The two custody forms are disabled, because they include a
 Google client secret field and a public page should not invite anyone to type a
 secret into it.
 

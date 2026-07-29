@@ -37,19 +37,34 @@ function shimReadPaths(source: string): string[] {
 
 const FIXTURE = { state: { schema: "angelmcp.demo.v3" }, apps: ["app"], connections: ["conn"] };
 
-interface Sealable { disabled: boolean; removeAttribute(name: string): void }
+interface Sealable { disabled: boolean; removed: string[]; removeAttribute(name: string): void }
 
 // Enough of a browser for shim.js to install itself and be called. The stub
-// records what reaches the network so a pass-through can be told from a refusal.
-function loadShim(): { fetch: typeof fetch; passthrough: string[]; sealed: Sealable[] } {
+// records what reaches the network so a pass-through can be told from a refusal,
+// records removeAttribute calls, and — importantly — resolves ONLY the selectors
+// the shim is supposed to know about. An earlier version returned a live element
+// for any selector, so renaming a form in www/index.html would have left the
+// credential fields unsealed with this suite still green.
+const STATIC_FORM_SELECTORS = ["#provider-app-form", "#connection-authorize-form"];
+
+function loadShim(): {
+  fetch: typeof fetch;
+  passthrough: string[];
+  sealed: Sealable[];
+  formsFound: string[];
+} {
   const passthrough: string[] = [];
   const sealed: Sealable[] = [];
+  const formsFound: string[] = [];
   const field = (): Sealable => {
-    const el = { disabled: false, removeAttribute: () => {} };
+    const el: Sealable = {
+      disabled: false,
+      removed: [],
+      removeAttribute(name: string) { this.removed.push(name); },
+    };
     sealed.push(el);
     return el;
   };
-  const fields = [field(), field(), field(), field()];
 
   const nativeFetch = (input: unknown) => {
     const url = typeof input === "string" ? input : String(input);
@@ -59,10 +74,12 @@ function loadShim(): { fetch: typeof fetch; passthrough: string[]; sealed: Seala
     }));
   };
 
-  const element = () => ({
+  const element = (fields: Sealable[] = []) => ({
     setAttribute: () => {},
     style: { cssText: "" },
     textContent: "",
+    hidden: true,
+    dataset: {} as Record<string, unknown>,
     querySelectorAll: () => fields,
   });
 
@@ -74,8 +91,13 @@ function loadShim(): { fetch: typeof fetch; passthrough: string[]; sealed: Seala
     location: new URL("https://docs.angelmcp.ai/demo/"),
     document: {
       readyState: "complete",
-      createElement: element,
-      querySelector: () => element(),
+      createElement: () => element(),
+      querySelector: (selector: string) => {
+        if (!STATIC_FORM_SELECTORS.includes(selector)) return null;
+        formsFound.push(selector);
+        return element([field(), field(), field(), field()]);
+      },
+      getElementById: () => element(),
       addEventListener: () => {},
       head: { appendChild: () => {} },
       body: { firstChild: null, insertBefore: () => {} },
@@ -87,7 +109,7 @@ function loadShim(): { fetch: typeof fetch; passthrough: string[]; sealed: Seala
 
   // eslint-disable-next-line no-new-func
   new Function(...Object.keys(scope), shimJs)(...Object.values(scope));
-  return { fetch: scope.window.fetch, passthrough, sealed };
+  return { fetch: scope.window.fetch, passthrough, sealed, formsFound };
 }
 
 describe("public demo shim — path coverage", () => {
@@ -169,6 +191,17 @@ describe("public demo shim — behaviour", () => {
     }
   });
 
+  // Nothing reaches the network after installation — not even a same-origin
+  // static path, which previously forwarded and left a redirect-to-cross-origin
+  // route open and treated blob: URLs as same-origin.
+  test("refuses same-origin requests outside the mapped reads", async () => {
+    for (const url of ["/not-in-fixture", "/app.js", "blob:https://docs.angelmcp.ai/abc"]) {
+      const response = await shim.fetch(url);
+      expect(response.status).toBe(403);
+      expect(shim.passthrough).not.toContain(url);
+    }
+  });
+
   test("accepts a URL object without throwing", async () => {
     const response = await shim.fetch(new URL("https://docs.angelmcp.ai/api/connections"));
     expect(response.status).toBe(200);
@@ -178,8 +211,14 @@ describe("public demo shim — behaviour", () => {
     expect(shim.passthrough).toContain("fixture.json");
   });
 
-  test("disables the static credential fields", () => {
-    expect(shim.sealed.length).toBeGreaterThan(0);
-    for (const el of shim.sealed) expect(el.disabled).toBe(true);
+  test("disables the static credential fields and drops their required flag", () => {
+    // Both forms must have been located: the shim looking up a selector that no
+    // longer exists in www/index.html is the silent failure this guards.
+    expect(shim.formsFound.sort()).toEqual([...STATIC_FORM_SELECTORS].sort());
+    expect(shim.sealed.length).toBe(STATIC_FORM_SELECTORS.length * 4);
+    for (const el of shim.sealed) {
+      expect(el.disabled).toBe(true);
+      expect(el.removed).toContain("required");
+    }
   });
 });

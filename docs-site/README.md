@@ -38,8 +38,14 @@ is injected above the deferred `app.js`.
 
 That script, `public/demo/shim.js`, is the whole backend. It answers the
 dashboard's three read calls out of `fixture.json` and refuses everything else
-with a 403 — an allowlist, so a cross-origin URL or an unmapped path is refused
-rather than forwarded. It disables the two static custody forms, whose fields
+with a 403 — an allowlist, so a cross-origin URL, an unmapped path, and even a
+same-origin static path are all refused rather than forwarded. Once it is
+installed nothing reaches the network at all: the fixture is read before the
+replacement goes in. It also intercepts clicks on `[data-action]` and
+`[data-key-action]` controls and shows the refusal as a toast, because the app
+routes a failed mutation to a full-page blocking error that would otherwise
+replace the demo on a visitor's first click. It disables the two static custody
+forms, whose fields
 include a Google client secret, and drops their `required` attributes so the
 buttons reach the app and show the refusal instead of dead-ending on a
 validation bubble; dynamically created inputs are covered by a stylesheet and
