@@ -320,6 +320,16 @@ describe("every page-route 404 is byte-identical", () => {
     expect(await headResponse.text()).toBe("");
   });
 
+  test("a coordinate-shaped miss like @latest answers HEAD bodiless too", async () => {
+    const { env } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
+    const response = await handleGatewayRequest(
+      new Request("https://gateway.example/@smcllns/golden-assistant@latest", { method: "HEAD" }),
+      env,
+    );
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe("");
+  });
+
   test("@preview 404s without resolving the handle or touching a gate", async () => {
     const { env, runtimeIds } = pageEnv({ resolutions: { smcllns: "acct_m1" } });
     const response = await handleGatewayRequest(get("/@smcllns/golden-assistant@preview"), env);

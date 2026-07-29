@@ -86,6 +86,9 @@ export async function handleGatewayRequest(request: Request, env: GatewayEnv): P
       if (request.method === "GET" || request.method === "HEAD") {
         const page = coordinatePath(url.pathname);
         if (page !== null) return await servePublicAngelPage(request, env, page);
+        // A coordinate-shaped miss (`@latest`, a malformed handle) answers
+        // through the same page 404, so HEAD stays bodiless there too.
+        if (url.pathname.startsWith("/@")) return pageNotFound(request.method === "HEAD");
       }
       const target = mcpTarget(url.pathname);
       if (target !== null) {
