@@ -38,7 +38,12 @@ is injected above the deferred `app.js`.
 
 That script, `public/demo/shim.js`, is the whole backend. It answers the
 dashboard's three read calls out of `fixture.json` and refuses everything else
-with a 403, seals every input so the credential fields cannot be typed into, and
+with a 403 — an allowlist, so a cross-origin URL or an unmapped path is refused
+rather than forwarded. It disables the two static custody forms, whose fields
+include a Google client secret, and drops their `required` attributes so the
+buttons reach the app and show the refusal instead of dead-ending on a
+validation bubble; dynamically created inputs are covered by a stylesheet and
+capture-phase blockers, which per-element attributes would not survive. It also
 adds a banner saying what the page is. The fixture is generated at build time by
 `../scripts/build-demo-fixture.ts`, which drives the real `ManagementControl`,
 projects it through `buildDemoView`, and checks the result with `assertDemoView`
@@ -49,7 +54,9 @@ read-model change therefore fails the build rather than shipping a stale page.
 quietly: every literal `/api/` path `app.js` reads must be one the shim answers,
 the shim must answer nothing else, and `www/index.html` must still have the shape
 `build.sh` rewrites. Adding a read call to the dashboard fails CI until the shim
-covers it.
+covers it. The refusal half is asserted by executing the shim against a stub DOM
+rather than by reading it — the first version of this file read as though it
+refused cross-origin requests and in fact forwarded them.
 
 `build.sh` copies `../docs/*.md` verbatim into `dist/`. The only doc renamed is
 `google-read-proof-manual-journey.md` → `operator-journey.md` (a shorter public

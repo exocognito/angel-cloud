@@ -19,7 +19,7 @@ it is the whole journey as procedural instructions.
 
 - [SKILL.md](https://docs.angelmcp.ai/SKILL.md): The create → publish → promote → connect journey as loadable agent instructions, API/CLI-first, no repo clone. Marks which steps need credentials and which are offline.
 
-- [Live demo](https://docs.angelmcp.ai/demo/): The owner's dashboard as a browsable page — Angels, their tools, and the Connections each tool is bound to, on generated sample data. Read-only and keyless. Useful for showing a person what the product looks like; it exposes no API and answers no calls.
+- [Live demo](https://docs.angelmcp.ai/demo/): The dashboard as a browsable page — Angels, their tools, and the Connections each tool is bound to — filled with generated sample data rather than anyone's account. Keyless and read-only: it serves three read responses from a bundled fixture and refuses every other request, so it is worth showing a person and useless as an API.
 
 ## Reference docs
 
