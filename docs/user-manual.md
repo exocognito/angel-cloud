@@ -322,7 +322,28 @@ without them Angel Cloud requests the read-only default grant for identity,
 Gmail, and Docs ([which scopes](faq.md#which-google-scopes-are-requested)).
 The dashboard form has no scopes field and always registers the default set;
 a custom set means calling `POST /api/provider-apps` directly from the same
-Access-authenticated browser origin.
+Access-authenticated browser origin — for example, from the dashboard page's
+devtools console:
+
+```js
+await fetch("/api/provider-apps", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    providerAppId: "app_calendar",
+    provider: "google",
+    displayName: "Calendar Google",
+    clientId: "<your OAuth client ID>",
+    clientSecret: "<your OAuth client secret>",
+    scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+  }),
+});
+```
+
+`scopes` takes 1 to 64 entries, each a whitespace-free string of at most 256
+characters. Identity scopes (`openid`, `email`, `profile`, and the
+`userinfo` URLs) are rejected — every consent requests the identity scopes
+itself. The stored set is deduplicated and sorted.
 
 The dashboard row shows a Provider App's display name, provider, and client-ID
 suffix; the `GET /api/provider-apps` response carries those plus the scope set.
