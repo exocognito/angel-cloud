@@ -66,6 +66,12 @@ The minimal resource API is:
    resolution; it returns opaque management IDs but no credentials or
    agent-plane refs
 6. Reads for Angel, Version, and environment state
+7. `DELETE /v1/accounts/:account/angels/:slug` (added 2026-07-28, issue #13):
+   hard deletion. Keys are revoked first, then Broker closes before Gateway in
+   both environments — the same order as disable — then the Angel's state,
+   Deployments, and Versions are dropped. The slug is immediately reusable.
+   When production has an active or pending-repair deployment the body must
+   repeat the slug as `{"confirm": "<slug>"}`.
 
 Every mutation requires management bearer authentication and an
 `Idempotency-Key`, rejects unknown JSON keys, and accepts no credentials.

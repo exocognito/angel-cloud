@@ -605,7 +605,12 @@ export class PolicyGate {
     if (this.state.gate !== "gateway") {
       throw new Error("broker gate has no runtime keys");
     }
-    const normalized = normalizeGatewayKeyHashes(hashes);
+    // An empty set is a deliberate lockout (Angel deletion revokes every key
+    // before tearing the gates down): nothing authenticates. Install still
+    // requires at least one hash.
+    const normalized = Array.isArray(hashes) && hashes.length === 0
+      ? []
+      : normalizeGatewayKeyHashes(hashes);
     this.state.gatewayKeyHashes = normalized;
     this.state.gatewayKeyHash = normalized[0] ?? null;
     return [...normalized];
