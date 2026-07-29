@@ -543,6 +543,8 @@ export function bindingsFitVersion(
   version: PublishedAngelVersion,
   bindings: Record<string, string[]>,
 ): boolean {
+  // Deploy rejects any other persisted format outright, so it cannot fit.
+  if (version.artifact.format !== "angel.version.v2") return false;
   const requirements = [...version.artifact.bindingRequirements].sort((left, right) => left.id.localeCompare(right.id));
   if (canonicalJson(requirements.map((requirement) => requirement.id)) !== canonicalJson(Object.keys(bindings).sort())) {
     return false;

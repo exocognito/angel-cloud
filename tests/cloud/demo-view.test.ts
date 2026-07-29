@@ -150,8 +150,9 @@ describe("angelmcp.demo.v3 projection", () => {
       health: "healthy" as const,
     };
     const state = { account: { id: "acct_demo" }, connections: [readonlyConnection] } as never;
-    const versionWith = (tools: string[]) => ({
+    const versionWith = (tools: string[], format = "angel.version.v2") => ({
       artifact: {
+        format,
         bindingRequirements: [{
           id: "gmail",
           source: "gmail",
@@ -176,6 +177,8 @@ describe("angelmcp.demo.v3 projection", () => {
       connections: [{ ...readonlyConnection, health: "error" as const }],
     } as never;
     expect(bindingsFitVersion(unhealthy, versionWith(["gmail.users.messages.list"]), bindings)).toBe(false);
+    // Nor can a pre-v2 persisted Version — deploy rejects the format outright.
+    expect(bindingsFitVersion(state, versionWith(["gmail.users.messages.list"], "angel.version.v1"), bindings)).toBe(false);
   });
 
   test("offers only active production bindings for an exact staged promotion", async () => {
