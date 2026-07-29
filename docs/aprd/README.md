@@ -16,8 +16,9 @@ requirements are written in, and it governs how the product is described
 anywhere — docs, help articles, commit messages, marketing copy. Change a word
 there and it changes everywhere.
 
-Every passage has two renderings, switched in place by the toggle at the bottom
-right. **Developer** is the binding statement. **User** is derived from it — the
+Almost every passage has two renderings, switched in place by the toggle at the
+bottom right. The exceptions are the exact interface types in the system
+diagram, which have no user-visible form and say so. **Developer** is the binding statement. **User** is derived from it — the
 consequence a person will notice, written for the internal product team. The
 two are one requirement rendered twice, never two requirements.
 
@@ -31,9 +32,9 @@ the terminology table rather than restating it.
 
 ## The embedded dashboard
 
-Prototype flow F frames the public demo at `/demo/`, which is assembled from the
-real `www/` shell — the live product rather than a picture of it, so it never
-needs refreshing here.
+Prototype flow F frames the public demo at `/demo/`, which will be assembled
+from the real `www/` shell — the live product rather than a picture of it, so it
+will never need refreshing here.
 
 The build step that assembles it arrives with
 [#21](https://github.com/exocognito/angel-cloud/pull/21), so until that is on
@@ -59,11 +60,11 @@ Both modes need the six page URLs, in an untracked `urls.env` beside the script
 — the random segment is the read credential — so they are not committed, and the
 script refuses to run without them rather than guessing.
 
-Uploading additionally needs `files-blog-upload`, which lives in Sam's dotfiles
+Uploading additionally needs `files-blog-upload`, which lives in the maintainer's dotfiles
 rather than in this repository, so publishing works only from a checkout that
 has it. Point `FILES_BLOG_UPLOAD` at your own copy to use a different one.
 `DRY_RUN` does not need it.
 
-Local copies use relative links so the set works offline from this directory;
+Local copies use relative links so cross-links resolve from a local checkout;
 the hosted copies get absolute ones. That rewrite is the only difference between
 what is committed here and what is served.

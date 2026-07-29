@@ -77,7 +77,7 @@
           <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
             <p class="font-serif text-5xl text-accent">1</p>
             <h3 class="font-medium">The forbidden action doesn't exist</h3>
-            <p class="text-sm text-slate-600 leading-relaxed">An Angel exposes only the operations its owner allowlisted, with argument guards. Ask a read-only inbox Angel to send an email and there is no tool to call — <code class="text-xs">messages.send</code> is absent from the toolbox, not merely refused. <span class="badge-ship">shipped</span></p>
+            <p class="text-sm text-slate-600 leading-relaxed">An Angel exposes only the operations its owner allowlisted, with argument guards. Ask your agent to send an email through a read-only inbox Angel and there is no tool to call — <code class="text-xs">messages.send</code> is absent from the toolbox, not merely refused. <span class="badge-ship">shipped</span></p>
           </article>
           <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-3">
             <p class="font-serif text-5xl text-accent">2</p>
@@ -111,7 +111,7 @@
 
           <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
             <h3 class="font-medium">Versus a hosted Gmail MCP server</h3>
-            <p class="text-sm text-slate-600 leading-relaxed">A hosted MCP server over Gmail constrains the <em>tools</em>, not the <em>credential</em>. A broad grant like <code class="text-xs">gmail.compose</code> authorizes <code class="text-xs">messages.send</code> — so the token behind such a server can do more than its visible tools suggest, and safety rests on which tools happen to be shown. It also gives you no argument-level guards, no tool subsetting you control, and no tamper-evident audit. An Angel gives you both halves: the forbidden operation is absent from the toolbox, <em>and</em> the credential stays in custody, bounded by the compiled allowlist.</p>
+            <p class="text-sm text-slate-600 leading-relaxed">A hosted MCP server over Gmail constrains the <em>tools</em>, not the <em>credential</em>. A broad grant like <code class="text-xs">gmail.compose</code> authorizes <code class="text-xs">messages.send</code> — so the token behind such a server can do more than its visible tools suggest, and safety rests on which tools happen to be shown. It also gives you no argument-level guards, no tool subsetting you control, and no tamper-evident audit. An Angel covers both halves: the forbidden operation is absent from the toolbox, <em>and</em> the credential stays in custody, bounded by the compiled allowlist.</p>
           </article>
 
           <article class="rounded-lg border border-slate-200 bg-white p-6 space-y-2">
@@ -275,7 +275,7 @@
             <article class="rounded-lg border border-slate-200 bg-white p-8 space-y-4">
               <p class="text-xs uppercase tracking-wider text-slate-400">Angle 1 · The absence claim</p>
               <h3 class="font-serif text-3xl">The forbidden action doesn't exist.</h3>
-              <p class="text-slate-700 leading-relaxed">Other tools block dangerous actions. An Angel never compiles them in — there is nothing to jailbreak, because there is nothing to call.</p>
+              <p class="text-slate-700 leading-relaxed">Other tools block dangerous actions. The build never compiles them in — there is nothing to jailbreak, because there is nothing to call.</p>
               <p class="text-sm text-slate-500"><strong>Mechanism:</strong> the build strips everything outside the allowlist; <code class="text-xs">tools/list</code> returns only the deployed toolbox, and an invented call gets a receipted <code class="text-xs">unknown_tool</code> before any provider request.</p>
             </article>
             <article class="rounded-lg border border-slate-200 bg-white p-8 space-y-4">

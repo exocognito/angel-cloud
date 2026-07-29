@@ -17,8 +17,16 @@ here="$(cd "$(dirname "$0")" && pwd)"
 stage="$(mktemp -d)"
 trap 'rm -rf "$stage"' EXIT
 
-# shellcheck source=/dev/null
-[[ -f "$here/urls.env" ]] && source "$here/urls.env"
+# urls.env fills in only what the environment has not already set, so an operator
+# who exports a URL gets the one they asked for rather than whatever the file
+# happens to hold.
+if [[ -f "$here/urls.env" ]]; then
+  for var in APRD_URL_DATAROOM APRD_URL_HUB APRD_URL_ENGINEERING APRD_URL_DESIGN APRD_URL_MARKETING APRD_URL_SUPPORT; do
+    [[ -n "${!var:-}" ]] && continue
+    line="$(grep -E "^${var}=" "$here/urls.env" | tail -1)" || true
+    [[ -n "$line" ]] && eval "export $line"
+  done
+fi
 
 missing=()
 for var in APRD_URL_DATAROOM APRD_URL_HUB APRD_URL_ENGINEERING APRD_URL_DESIGN APRD_URL_MARKETING APRD_URL_SUPPORT; do
@@ -84,29 +92,30 @@ if [[ -n "${DRY_RUN:-}" ]]; then
   exit 0
 fi
 
-# Uploading needs files-blog-upload, which lives in Sam's dotfiles and not in
-# this repository. Check it before the first upload rather than failing partway
-# through the set; DRY_RUN has already returned above and never needs it.
-uploader="${FILES_BLOG_UPLOAD:-$HOME/Projects/dotfiles/scripts/files-blog-upload}"
-if [[ ! -x "$uploader" ]]; then
-  echo "publish: no uploader at $uploader" >&2
-  echo "  These pages are hosted from Sam's dotfiles checkout. Set FILES_BLOG_UPLOAD" >&2
-  echo "  to your own copy, or use DRY_RUN=<dir> to stage the rewritten pages only." >&2
-  exit 1
-fi
-
 # Uploading overwrites six live pages that people already hold links to, so it is
 # opt-in. A reviewer ran this script to inspect it and published for real; the
-# default is now to stage and stop, and the six targets are printed before any
-# request is made.
+# default is now to report and stop. The URLs are masked: the random segment is
+# the read credential, and a bare run is exactly the run whose output ends up in
+# a transcript or a pasted comment.
 if [[ "${PUBLISH:-}" != "1" ]]; then
   echo "publish: would replace these six pages:" >&2
   for url in "$dataroom" "$hub" "$engineering" "$design" "$marketing" "$support"; do
-    echo "  $url" >&2
+    echo "  ${url%/*}/<redacted>" >&2
   done
   echo "Nothing was uploaded. Re-run with PUBLISH=1 to replace them," >&2
   echo "or DRY_RUN=<empty-dir> to write the rewritten pages to disk instead." >&2
   exit 0
+fi
+
+# Uploading needs files-blog-upload, which lives in the maintainer's dotfiles and
+# not in this repository. Check it before the first upload rather than failing
+# partway through the set; DRY_RUN and the report above never need it.
+uploader="${FILES_BLOG_UPLOAD:-$HOME/Projects/dotfiles/scripts/files-blog-upload}"
+if [[ ! -x "$uploader" ]]; then
+  echo "publish: no uploader at $uploader" >&2
+  echo "  These pages are hosted from the maintainer's dotfiles checkout. Set FILES_BLOG_UPLOAD" >&2
+  echo "  to your own copy, or use DRY_RUN=<dir> to stage the rewritten pages only." >&2
+  exit 1
 fi
 
 upload() {
