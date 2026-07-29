@@ -201,32 +201,75 @@ describe("Angel management commands", () => {
     expect(api.requests[0]?.headers.has("x-angel-access")).toBe(false);
   });
 
-  test("rejects malformed Access service-token JSON before sending a request", async () => {
-    for (const accessToken of [
-      "",
-      "not-json",
-      JSON.stringify({ "cf-access-client-id": "client-id" }),
-      JSON.stringify({
-        "cf-access-client-id": "client-id",
-        "cf-access-client-secret": "client-secret",
-        extra: "not-allowed",
-      }),
-      JSON.stringify({
-        "cf-access-client-id": 123,
-        "cf-access-client-secret": "client-secret",
-      }),
-      JSON.stringify({
-        "cf-access-client-id": " client-id",
-        "cf-access-client-secret": "client-secret",
-      }),
-    ]) {
+  test("rejects an Access token with surrounding whitespace, such as a trailing newline", async () => {
+    const exactToken = JSON.stringify({
+      "cf-access-client-id": "client-id",
+      "cf-access-client-secret": "client-secret",
+    });
+    for (const accessToken of [`${exactToken}\n`, `${exactToken}\r\n`, ` ${exactToken}`]) {
       const api = fakeApi([jsonResponse([])]);
       await expect(new ManagementClient({
         target: "https://cloud.example",
         token: "management-secret",
         accessToken,
         fetch: api.fetch,
-      }).listConnections("acct_demo")).rejects.toThrow(/Access token/);
+      }).listConnections("acct_demo")).rejects.toThrow(
+        "Access token must be exact non-empty JSON without surrounding whitespace",
+      );
+      expect(api.requests).toHaveLength(0);
+    }
+  });
+
+  test("rejects malformed Access service-token JSON before sending a request", async () => {
+    const cases: [string, string][] = [
+      ["", "Access token must be exact non-empty JSON without surrounding whitespace"],
+      ["not-json", "Access token must be valid JSON"],
+      ["null", "Access token must be a two-key JSON object"],
+      ["42", "Access token must be a two-key JSON object"],
+      [JSON.stringify("token"), "Access token must be a two-key JSON object"],
+      ["[]", "Access token must be a two-key JSON object"],
+      [
+        JSON.stringify({ "cf-access-client-id": "client-id" }),
+        "Access token must contain exactly cf-access-client-id and cf-access-client-secret",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": "client-id",
+          "cf-access-client-secret": "client-secret",
+          extra: "not-allowed",
+        }),
+        "Access token must contain exactly cf-access-client-id and cf-access-client-secret",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": 123,
+          "cf-access-client-secret": "client-secret",
+        }),
+        "Access token values must be non-empty strings without surrounding whitespace",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": " client-id",
+          "cf-access-client-secret": "client-secret",
+        }),
+        "Access token values must be non-empty strings without surrounding whitespace",
+      ],
+      [
+        JSON.stringify({
+          "cf-access-client-id": "client-id",
+          "cf-access-client-secret": "",
+        }),
+        "Access token values must be non-empty strings without surrounding whitespace",
+      ],
+    ];
+    for (const [accessToken, message] of cases) {
+      const api = fakeApi([jsonResponse([])]);
+      await expect(new ManagementClient({
+        target: "https://cloud.example",
+        token: "management-secret",
+        accessToken,
+        fetch: api.fetch,
+      }).listConnections("acct_demo")).rejects.toThrow(message);
       expect(api.requests).toHaveLength(0);
     }
   });
@@ -280,8 +323,12 @@ describe("Angel management commands", () => {
       const body = await request.clone().json();
       expect(request.headers.get("idempotency-key")).toBe(await expectedIdempotencyKey(request, body));
     }
-    expect(output.join("\n")).toContain("preview key: ak_preview_once");
-    expect(output.join("\n")).toContain("production key: ak_production_once");
+    const createdLine = output.findIndex((line) => line.includes("created new Angel golden-assistant"));
+    const previewKeyLine = output.findIndex((line) => line.includes("preview key: ak_preview_once"));
+    const productionKeyLine = output.findIndex((line) => line.includes("production key: ak_production_once"));
+    expect(createdLine).toBeGreaterThanOrEqual(0);
+    expect(previewKeyLine).toBeGreaterThan(createdLine);
+    expect(productionKeyLine).toBeGreaterThan(createdLine);
     expect(output.join("\n")).toContain("published golden-assistant Version 1 to production");
   });
 
@@ -550,7 +597,7 @@ describe("Angel management commands", () => {
     })).rejects.toThrow(/response schema error: deployment\.environment is invalid/);
   });
 
-  test("does not print Angel keys when ensure does not return them", async () => {
+  test("does not announce creation or print keys when ensure reuses an existing Angel", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
       jsonResponse(connections()),
@@ -569,6 +616,7 @@ describe("Angel management commands", () => {
     });
 
     expect(output.join("\n")).not.toMatch(/key/i);
+    expect(output.join("\n")).not.toMatch(/created/i);
   });
 
   test("promotes the exact active preview deployment without building or publishing a Version", async () => {
@@ -740,6 +788,137 @@ describe("Angel management commands", () => {
         env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
       })).rejects.toThrow();
       expect(api.requests).toHaveLength(1);
+    }
+  });
+
+  test("deletes an Angel through the management API with a fresh idempotency key", async () => {
+    const api = fakeApi([
+      jsonResponse({ id: "ang_golden", slug: "golden-assistant", deleted: true }),
+    ]);
+    const output: string[] = [];
+
+    await runAngelCommand(["delete", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: (line) => output.push(line),
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(api.requests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toEqual([
+      "DELETE /v1/accounts/acct_demo/angels/golden-assistant",
+    ]);
+    expect(await bodies(api.requests)).toEqual([undefined]);
+    expect(api.requests[0]?.headers.get("authorization")).toBe("Bearer management-secret");
+    // The delete key must never derive from method+path+body: a deterministic
+    // key collides across delete -> recreate -> delete and replays the first
+    // response instead of deleting again. A random UUID is not a 64-hex digest.
+    const key = api.requests[0]?.headers.get("idempotency-key");
+    expect(key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    expect(output).toEqual(["deleted golden-assistant (ang_golden)"]);
+  });
+
+  test("mints a different idempotency key for each delete attempt", async () => {
+    const api = fakeApi([
+      jsonResponse({ id: "ang_golden", slug: "golden-assistant", deleted: true }),
+      jsonResponse({ id: "ang_golden_2", slug: "golden-assistant", deleted: true }),
+    ]);
+    const repoRoot = commandRepo();
+    const dependencies = {
+      repoRoot,
+      fetch: api.fetch,
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    };
+
+    await runAngelCommand(["delete", "golden-assistant"], dependencies);
+    await runAngelCommand(["delete", "golden-assistant"], dependencies);
+
+    const keys = api.requests.map((request) => request.headers.get("idempotency-key"));
+    expect(keys[0]).toBeTruthy();
+    expect(keys[1]).toBeTruthy();
+    expect(keys[0]).not.toBe(keys[1]);
+  });
+
+  test("surfaces the live-production refusal and says how to confirm", async () => {
+    const refusal = 'deleting an Angel with a live production deployment requires confirm: "golden-assistant"';
+    const api = fakeApi([jsonResponse({ error: refusal }, 409)]);
+
+    const attempt = runAngelCommand(["delete", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    await expect(attempt).rejects.toThrow(refusal);
+    await expect(attempt).rejects.toThrow("angel delete golden-assistant --confirm golden-assistant");
+  });
+
+  test("passes the typed slug confirmation through to the API", async () => {
+    const api = fakeApi([
+      jsonResponse({ id: "ang_golden", slug: "golden-assistant", deleted: true }),
+    ]);
+    const output: string[] = [];
+
+    await runAngelCommand(["delete", "golden-assistant", "--confirm", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: (line) => output.push(line),
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(api.requests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toEqual([
+      "DELETE /v1/accounts/acct_demo/angels/golden-assistant",
+    ]);
+    expect(await bodies(api.requests)).toEqual([{ confirm: "golden-assistant" }]);
+    expect(api.requests[0]?.headers.get("idempotency-key")).toBeTruthy();
+    expect(output).toEqual(["deleted golden-assistant (ang_golden)"]);
+  });
+
+  test("surfaces the API's 404 for an unknown Angel without a retry hint", async () => {
+    const api = fakeApi([jsonResponse({ error: "not found" }, 404)]);
+
+    const attempt = runAngelCommand(["delete", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    await expect(attempt).rejects.toThrow("DELETE /v1/accounts/acct_demo/angels/golden-assistant failed (HTTP 404): not found");
+    await expect(attempt).rejects.not.toThrow("--confirm");
+  });
+
+  test("rejects a delete response that is not the exact contract shape", async () => {
+    for (const body of [
+      { id: "ang_golden", slug: "golden-assistant", deleted: false },
+      { id: "ang_golden", slug: "golden-assistant" },
+      { id: "ang_golden", slug: "golden-assistant", deleted: true, extra: "no" },
+    ]) {
+      const api = fakeApi([jsonResponse(body)]);
+      await expect(runAngelCommand(["delete", "golden-assistant"], {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/response schema error/);
+    }
+  });
+
+  test("lists delete in the usage string and rejects malformed delete invocations", async () => {
+    for (const args of [
+      ["delete"],
+      ["delete", "golden-assistant", "--confirm"],
+      ["delete", "golden-assistant", "--confirm", ""],
+      ["delete", "golden-assistant", "--force"],
+      ["delete", "golden-assistant", "--confirm", "golden-assistant", "extra"],
+    ]) {
+      await expect(runAngelCommand(args, {
+        repoRoot: commandRepo(),
+        fetch: fakeApi([]).fetch,
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/usage: .*angel delete <angel> \[--confirm <slug>\]/);
     }
   });
 

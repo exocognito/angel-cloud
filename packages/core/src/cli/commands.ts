@@ -7,7 +7,7 @@ import {
   buildPortableAngel,
   type PortableBuildResult,
 } from "../build";
-import { ManagementClient } from "./client";
+import { ManagementClient, ManagementRequestError } from "./client";
 import type { FetchLike } from "./client";
 import {
   loadAngelDeploymentConfig,
@@ -25,7 +25,8 @@ export interface AngelCommandDependencies {
 }
 
 const USAGE =
-  "usage: angel build <angel> | angel publish <angel> [--preview [--share-production-credentials]] | angel deploy <angel> --prod";
+  "usage: angel build <angel> | angel publish <angel> [--preview [--share-production-credentials]]"
+  + " | angel deploy <angel> --prod | angel delete <angel> [--confirm <slug>]";
 
 export async function runAngelCommand(
   args: readonly string[],
@@ -46,6 +47,18 @@ export async function runAngelCommand(
   }
   if (command === "deploy" && angelId !== undefined && flags.length === 1 && flags[0] === "--prod") {
     await deployProduction(angelId, dependencies);
+    return;
+  }
+  if (command === "delete" && angelId !== undefined && flags.length === 0) {
+    await deleteAngel(angelId, undefined, dependencies);
+    return;
+  }
+  if (
+    command === "delete" && angelId !== undefined
+    && flags.length === 2 && flags[0] === "--confirm"
+    && flags[1] !== undefined && flags[1] !== ""
+  ) {
+    await deleteAngel(angelId, flags[1], dependencies);
     return;
   }
   throw new Error(USAGE);
@@ -95,6 +108,7 @@ async function publish(
     throw new Error("ensure Angel response does not match angel.json");
   }
   if (ensured.keys !== undefined) {
+    output(dependencies)(`created new Angel ${ensured.angel.slug} — the previous Angel, if any, is still deployed`);
     output(dependencies)(`preview key: ${ensured.keys.preview}`);
     output(dependencies)(`production key: ${ensured.keys.production}`);
   }
@@ -151,6 +165,36 @@ async function deployProduction(
     throw new Error("production deployment response does not match the active preview deployment");
   }
   output(dependencies)(`deployed ${config.angel} Version ${promoted.version} to production`);
+}
+
+async function deleteAngel(
+  angelId: string,
+  confirm: string | undefined,
+  dependencies: AngelCommandDependencies,
+): Promise<void> {
+  const config = deploymentConfig(dependencies, angelId);
+  const client = managementClient(config.target, dependencies);
+  let deleted;
+  try {
+    deleted = await client.deleteAngel(
+      config.account,
+      config.angel,
+      confirm === undefined ? {} : { confirm },
+    );
+  } catch (error) {
+    // The API refuses to delete a live production Angel without the slug typed
+    // back. Surface the refusal and say how to confirm; never bypass it.
+    if (error instanceof ManagementRequestError && error.status === 409 && confirm === undefined) {
+      throw new Error(
+        `${error.message}\nre-run with: angel delete ${angelId} --confirm ${config.angel}`,
+      );
+    }
+    throw error;
+  }
+  if (deleted.slug !== config.angel) {
+    throw new Error("delete response does not match angel.json");
+  }
+  output(dependencies)(`deleted ${config.angel} (${deleted.id})`);
 }
 
 function resolveBindings(

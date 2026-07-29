@@ -1,5 +1,6 @@
 import type { DeploymentEnvironment } from "../domain";
 import type {
+  DeleteAngelResponse,
   DeployRequest,
   EnsureAngelResponse,
   ManagementAngelView,
@@ -86,6 +87,24 @@ export class ManagementClient {
     );
   }
 
+  deleteAngel(
+    accountId: string,
+    slug: string,
+    options: { confirm?: string } = {},
+  ): Promise<DeleteAngelResponse> {
+    // The API requires an Idempotency-Key on every delete, and it must be
+    // fresh per attempt: a key derived from method+path+body would collide
+    // across delete -> recreate -> delete and replay the first response
+    // instead of deleting again.
+    return this.request(
+      "DELETE",
+      `/v1/accounts/${segment(accountId)}/angels/${segment(slug)}`,
+      options.confirm === undefined ? undefined : { confirm: options.confirm },
+      deletedAngel,
+      { idempotencyKey: crypto.randomUUID() },
+    );
+  }
+
   getAngel(accountId: string, slug: string): Promise<ManagementAngelView> {
     return this.request(
       "GET",
@@ -139,10 +158,11 @@ export class ManagementClient {
   }
 
   private async request<T>(
-    method: "GET" | "PUT" | "POST",
+    method: "GET" | "PUT" | "POST" | "DELETE",
     path: string,
     body: unknown | undefined,
     parse: (value: unknown) => T,
+    options: { idempotencyKey?: string } = {},
   ): Promise<T> {
     const canonicalPath = path.length > 1 ? path.replace(/\/+$/, "") : path;
     const headers = new Headers({ authorization: `Bearer ${this.options.token}` });
@@ -152,13 +172,19 @@ export class ManagementClient {
       headers.set("CF-Access-Client-ID", accessHeaders["CF-Access-Client-ID"]);
       headers.set("CF-Access-Client-Secret", accessHeaders["CF-Access-Client-Secret"]);
     }
+    // Every mutation needs an Idempotency-Key, body or not. Callers that must
+    // not replay across resource recreation (delete) pass an explicit key;
+    // everything else derives one from the mutation identity.
+    if (method !== "GET") {
+      headers.set(
+        "idempotency-key",
+        options.idempotencyKey
+          ?? await sha256Hex(canonicalJson({ method, path: canonicalPath, body: body ?? {} })),
+      );
+    }
     let serializedBody: string | undefined;
     if (body !== undefined) {
       headers.set("content-type", "application/json");
-      headers.set(
-        "idempotency-key",
-        await sha256Hex(canonicalJson({ method, path: canonicalPath, body })),
-      );
       serializedBody = JSON.stringify(body);
     }
     const response = await this.options.fetch(`${this.options.target}${canonicalPath}`, {
@@ -175,7 +201,10 @@ export class ManagementClient {
     }
     if (!response.ok) {
       const message = isRecord(value) && typeof value.error === "string" ? `: ${value.error}` : "";
-      throw new Error(`${method} ${canonicalPath} failed (HTTP ${response.status})${message}`);
+      throw new ManagementRequestError(
+        `${method} ${canonicalPath} failed (HTTP ${response.status})${message}`,
+        response.status,
+      );
     }
     try {
       return parse(value);
@@ -184,6 +213,23 @@ export class ManagementClient {
       throw new Error(`${method} ${canonicalPath} response schema error: ${detail}`);
     }
   }
+}
+
+export class ManagementRequestError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ManagementRequestError";
+  }
+}
+
+function deletedAngel(value: unknown): DeleteAngelResponse {
+  const result = exactRecord(value, ["id", "slug", "deleted"], "delete response");
+  if (result.deleted !== true) throw new Error("delete response.deleted must be true");
+  return {
+    id: string(result.id, "delete response.id"),
+    slug: string(result.slug, "delete response.slug"),
+    deleted: true,
+  };
 }
 
 function connections(value: unknown): ManagementConnection[] {

@@ -6,8 +6,8 @@ This package owns the portable Angel standard:
 - canonical, secret-free `angel.version.v1` artifacts and SHA-256 digests;
 - portable argument-guard semantics;
 - `angel.json` validation; and
-- the target-neutral `angel build`, `angel publish`, and
-  `angel deploy --prod` client.
+- the target-neutral `angel build`, `angel publish`, `angel deploy --prod`,
+  and `angel delete` client.
 
 `angel publish <angel>` deploys the built Version straight to production.
 `angel publish <angel> --preview` deploys to the preview environment instead,
@@ -18,7 +18,9 @@ promotes the exact active preview deployment. Older `angel.json` files must
 rename `bindings.staging` to `bindings.preview`.
 
 The CLI treats `angel.json.target` as an opaque HTTPS origin. It does not know
-Cloudflare, Angel Cloud, OAuth, or any hosted product. A compatible hosted or
+Angel Cloud, OAuth, or any hosted product. Its one Cloudflare-specific feature
+is the optional `ANGEL_ACCESS_TOKEN` service token for control planes behind
+Cloudflare Access (see Management credentials). A compatible hosted or
 self-hosted control plane implements the management contract exported by this
 package.
 
@@ -54,6 +56,32 @@ pnpm --dir packages/angel-core run angel -- build <angel>
 The checked-in `ANGEL.yaml` files are the primary policy artifacts. Deployment
 identities belong in untracked `angel.json` files; safe examples use
 `angel.example.json`.
+
+## Management credentials
+
+`angel publish` and `angel deploy --prod` read two environment variables:
+
+- `ANGEL_MANAGEMENT_TOKEN` (required) — bearer token for the management API.
+- `ANGEL_ACCESS_TOKEN` (optional) — service token for a control plane behind
+  Cloudflare Access, sent as the `CF-Access-Client-ID` and
+  `CF-Access-Client-Secret` headers.
+
+`ANGEL_ACCESS_TOKEN` must be exactly this JSON object, with no surrounding
+whitespace and no other keys:
+
+```json
+{"cf-access-client-id":"<id>","cf-access-client-secret":"<secret>"}
+```
+
+Both values must be non-empty strings, themselves free of surrounding
+whitespace. The CLI rejects anything else — including a trailing newline — instead of
+trimming, because the value is a credential and silent normalisation hides
+mistakes. Secret managers often end output with a newline; strip it when
+exporting:
+
+```sh
+export ANGEL_ACCESS_TOKEN=$(op read "op://<vault>/<item>/credential" | jq -c . | tr -d '\n\r')
+```
 
 ## Distribution
 
