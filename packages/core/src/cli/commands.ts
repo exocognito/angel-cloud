@@ -7,7 +7,7 @@ import {
   buildPortableAngel,
   type PortableBuildResult,
 } from "../build";
-import { ManagementClient } from "./client";
+import { ManagementClient, ManagementRequestError } from "./client";
 import type { FetchLike } from "./client";
 import {
   loadAngelDeploymentConfig,
@@ -42,7 +42,22 @@ export async function runAngelCommand(
     await deployProduction(angelId, dependencies);
     return;
   }
-  throw new Error("usage: angel build <angel> | angel publish <angel> | angel deploy <angel> --prod");
+  if (command === "delete" && angelId !== undefined && flags.length === 0) {
+    await deleteAngel(angelId, undefined, dependencies);
+    return;
+  }
+  if (
+    command === "delete" && angelId !== undefined
+    && flags.length === 2 && flags[0] === "--confirm"
+    && flags[1] !== undefined && flags[1] !== ""
+  ) {
+    await deleteAngel(angelId, flags[1], dependencies);
+    return;
+  }
+  throw new Error(
+    "usage: angel build <angel> | angel publish <angel> | angel deploy <angel> --prod"
+    + " | angel delete <angel> [--confirm <slug>]",
+  );
 }
 
 async function publish(angelId: string, dependencies: AngelCommandDependencies): Promise<void> {
@@ -115,6 +130,36 @@ async function deployProduction(
     throw new Error("production deployment response does not match the active staged deployment");
   }
   output(dependencies)(`deployed ${config.angel} Version ${promoted.version} to production`);
+}
+
+async function deleteAngel(
+  angelId: string,
+  confirm: string | undefined,
+  dependencies: AngelCommandDependencies,
+): Promise<void> {
+  const config = deploymentConfig(dependencies, angelId);
+  const client = managementClient(config.target, dependencies);
+  let deleted;
+  try {
+    deleted = await client.deleteAngel(
+      config.account,
+      config.angel,
+      confirm === undefined ? {} : { confirm },
+    );
+  } catch (error) {
+    // The API refuses to delete a live production Angel without the slug typed
+    // back. Surface the refusal and say how to confirm; never bypass it.
+    if (error instanceof ManagementRequestError && error.status === 409 && confirm === undefined) {
+      throw new Error(
+        `${error.message}\nre-run with: angel delete ${angelId} --confirm ${config.angel}`,
+      );
+    }
+    throw error;
+  }
+  if (deleted.slug !== config.angel) {
+    throw new Error("delete response does not match angel.json");
+  }
+  output(dependencies)(`deleted ${config.angel} (${deleted.id})`);
 }
 
 function resolveBindings(

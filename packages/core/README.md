@@ -6,8 +6,8 @@ This package owns the portable Angel standard:
 - canonical, secret-free `angel.version.v1` artifacts and SHA-256 digests;
 - portable argument-guard semantics;
 - `angel.json` validation; and
-- the target-neutral `angel build`, `angel publish`, and
-  `angel deploy --prod` client.
+- the target-neutral `angel build`, `angel publish`, `angel deploy --prod`,
+  and `angel delete` client.
 
 The CLI treats `angel.json.target` as an opaque HTTPS origin. It does not know
 Angel Cloud, OAuth, or any hosted product. Its one Cloudflare-specific feature
