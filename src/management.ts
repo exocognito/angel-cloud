@@ -485,9 +485,17 @@ export class ManagementControl {
         if (
           connection.accountId !== this.state.account.id
           || connection.credential !== requirement.credential
-          || !connection.providers.includes(requirement.provider)
         ) {
           throw new ManagementError(404, `Connection for binding ${id} not found`);
+        }
+        // A Connection the dashboard shows healthy but whose grant covers no
+        // operation of this provider (an out-of-registry consent) is a scope
+        // problem, not a missing record — a 404 here would misdiagnose it.
+        if (!connection.providers.includes(requirement.provider)) {
+          throw new ManagementError(
+            409,
+            `Connection for binding ${id} holds no scope for any ${requirement.provider} operation`,
+          );
         }
         // The grant must be able to run every bound operation — judged
         // against the registry's accepted scopes per operation, so a broader

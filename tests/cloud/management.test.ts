@@ -57,6 +57,18 @@ const connections = [
     grantedScopes: ["https://www.googleapis.com/auth/gmail.modify"],
     health: "healthy" as const,
   },
+  {
+    id: "con_unlabeled_google",
+    accountId: account.id,
+    nickname: "unlabeled-google",
+    identityLabel: "sam@unlabeled.example",
+    credential: "google_oauth" as const,
+    // A grant no registry operation accepts — possible now that a Provider
+    // App can consent to out-of-registry scopes.
+    providers: [],
+    grantedScopes: ["https://www.googleapis.com/auth/calendar.readonly"],
+    health: "healthy" as const,
+  },
 ];
 
 describe("ManagementControl", () => {
@@ -192,6 +204,20 @@ describe("ManagementControl", () => {
       unknown: [],
       uncovered: [],
     });
+  });
+
+  test("a healthy Connection with no usable scope for the provider gets a 409, not a 404", async () => {
+    const { control } = managementHarness();
+    const ensured = await ensure(control);
+    const artifact = await versionArtifact("golden-assistant", [
+      requirement("gmail", "gmail", ["gmail.users.messages.list"]),
+    ]);
+    const version = await publish(control, ensured.angel.id, artifact);
+    // The Connection exists and is healthy — hiding it behind "not found"
+    // would misdiagnose an out-of-registry consent as a missing record.
+    await expect(stage(control, ensured.angel.id, version, artifact.digest, {
+      gmail: ["con_unlabeled_google"],
+    })).rejects.toThrow(/holds no scope for any gmail operation/);
   });
 
   test("accepts a binding whose broader grant covers every bound operation through the registry", async () => {
