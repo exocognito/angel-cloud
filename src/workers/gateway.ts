@@ -238,7 +238,11 @@ interface McpTarget {
  *   `preview`.
  */
 function mcpTarget(pathname: string): McpTarget | null {
-  const coordinate = /^\/@([a-z][a-z0-9-]*)\/([a-z][a-z0-9-]*)(?:@([a-z0-9-]+))?$/.exec(pathname);
+  // The canonical coordinate pattern from docs/domain-architecture.md,
+  // verbatim. A suffix outside the closed alternation (latest, production,
+  // staging, a typo) fails the match; an all-digits suffix matches as a
+  // pinned Version address, which is reserved and deferred — both 404.
+  const coordinate = /^\/@([a-z][a-z0-9-]*)\/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$/.exec(pathname);
   if (coordinate !== null) {
     const [, handle, angelId, suffix] = coordinate;
     if (suffix !== undefined && suffix !== "preview") return null;

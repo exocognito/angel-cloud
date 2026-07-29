@@ -52,7 +52,8 @@ the bare coordinate — so every Angel has one canonical production URL.
 The suffix set is closed and product-defined — today just `preview` (bare =
 production), with room for a small fixed set later (e.g. per-PR builds).
 The canonical validation pattern, to be reused verbatim wherever coordinates
-are parsed:
+are parsed (a surface that accepts only a subset — like the acceptance
+runner's production-only URL check — embeds that subset instead):
 
 ```
 ^@([a-z][a-z0-9-]*)/([a-z][a-z0-9-]*)(?:@(preview|[0-9]+))?$
