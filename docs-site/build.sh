@@ -15,7 +15,8 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd)"
-docs="$here/../docs"
+root="$here/.."
+docs="$root/docs"
 dist="${DOCS_DIST:-$here/dist}"
 
 rm -rf "$dist"
@@ -50,7 +51,32 @@ cp -R "$docs/adrs" "$dist/adrs"
 #    (unserved) README, so it is deliberately not copied — no dead 9 MB payload.
 cp -R "$docs/manual-images" "$dist/manual-images"
 
-# 5. Optional interim base-URL rewrite. The committed llms.txt and SKILL.md name
+# 5. The public demo at /demo: the real dashboard on generated sample data.
+#    Same rule as the markdown above — the shell is copied verbatim from ../www,
+#    never forked, so the demo shows whatever the dashboard currently is. Two
+#    mechanical changes are unavoidable and are the only ones allowed here:
+#      a. /app.css and /app.js are absolute in the shipped shell; under /demo/
+#         they must resolve as siblings.
+#      b. one <script> tag, above the deferred app.js, installs the read-only
+#         fetch shim that answers from fixture.json.
+#    There is no server: the fixture is generated at build time by the same
+#    projection code the live dashboard reads, and mutations are refused.
+mkdir -p "$dist/demo"
+cp "$root/www/app.css" "$root/www/app.js" "$dist/demo/"
+LC_ALL=C sed \
+  -e 's#href="/app\.css"#href="app.css"#' \
+  -e 's#<script src="/app\.js" defer></script>#<script src="shim.js"></script>\n    <script src="app.js" defer></script>#' \
+  "$root/www/index.html" > "$dist/demo/index.html"
+
+# Fail loudly rather than publishing a shell whose assets or shim did not land.
+for marker in 'href="app.css"' '<script src="shim.js">' '<script src="app.js" defer>'; do
+  grep -qF "$marker" "$dist/demo/index.html" \
+    || { echo "demo build: expected '$marker' in dist/demo/index.html — www/index.html changed shape" >&2; exit 1; }
+done
+
+bun run "$root/scripts/build-demo-fixture.ts" "$dist/demo/fixture.json"
+
+# 6. Optional interim base-URL rewrite. The committed llms.txt and SKILL.md name
 #    the canonical https://docs.angelmcp.ai; a workers.dev deploy rewrites those
 #    to the live interim host so the handed-off URLs actually resolve.
 if [[ -n "${DOCS_BASE_URL:-}" ]]; then
