@@ -221,7 +221,7 @@ describe("Google OAuth custody boundary", () => {
         throw new Error("revocation must not be attempted for a partial grant");
       }
       return inner(request, init);
-    })).rejects.toThrow(/omitted a required scope.*was not stored.*Google Account/);
+    })).rejects.toThrow(/omitted a required scope.*was not stored.*every Connection this Google account holds/);
   });
 
   test("rejects an unverified identity, wrong audience, expired token, or missing refresh token", async () => {

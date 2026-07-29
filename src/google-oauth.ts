@@ -146,8 +146,10 @@ export async function exchangeGoogleCode(
   if (input.requiredScopes.some((scope) => !scopes.includes(scope))) {
     throw new Error(
       "Google OAuth response omitted a required scope; the grant was not stored"
-      + " — re-run consent approving every requested scope, or remove the app's"
-      + " access under Google Account permissions",
+      + " — re-run consent approving every requested scope. The unused grant"
+      + " stays live; removing the app's access under Google Account"
+      + " permissions also cuts off every Connection this Google account holds"
+      + " through the same OAuth client",
     );
   }
   const identity = await verifyGoogleIdToken(token.id_token, input.clientId, fetcher);

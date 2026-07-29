@@ -360,6 +360,14 @@ flow. The callback binds the grant to the Account, Access subject, Provider App,
 Connection, nickname, and fixed redirect URI. A healthy Connection shows its
 provider-derived identity label and granted scopes.
 
+A failed authorization — a consent screen approved with a scope unchecked, or
+a custody rejection such as a duplicate nickname — stores nothing, but the
+grant you approved stays live in your Google account. Angel Cloud never
+revokes it automatically, because Google revocation is grant-wide: removing
+the app's access under Google Account permissions cuts off every Connection
+that Google account holds through the same OAuth client. Usually the right
+move is to just re-run the authorization.
+
 The management nickname is for you and `angel.json`; agents never see it. They
 see a provider-derived label such as `gmail - Google identity` plus an opaque
 deployment-scoped selector.

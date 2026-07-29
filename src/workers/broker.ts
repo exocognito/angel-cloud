@@ -144,7 +144,10 @@ export async function handleBrokerRequest(
         // remove, and the error says where.
         const custodyError = await responseError(stored);
         return Response.json({
-          error: `${custodyError}; the Google grant was not stored — retry, or remove the app's access under Google Account permissions`,
+          error: `${custodyError}; the Google grant was not stored — retry.`
+            + " The unused grant stays live; removing the app's access under"
+            + " Google Account permissions also cuts off every Connection this"
+            + " Google account holds through the same OAuth client",
         }, { status: stored.status });
       }
       return vaultResponse(stored);

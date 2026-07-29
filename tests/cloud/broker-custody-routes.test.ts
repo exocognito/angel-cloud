@@ -229,7 +229,9 @@ describe("Broker custody lifecycle routes", () => {
     expect(calls).toContain("POST /connections/con_google/reauth");
     const body = await response.json() as { error: string };
     expect(body.error).toMatch(/same Google identity required/);
-    expect(body.error).toMatch(/grant was not stored.*Google Account/);
+    // The guidance must warn that removing the app's access is grant-wide —
+    // following it blindly would cut off sibling healthy Connections.
+    expect(body.error).toMatch(/grant was not stored.*every Connection this Google account holds/);
   });
 });
 
