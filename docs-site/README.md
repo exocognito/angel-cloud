@@ -17,6 +17,7 @@ is no forked content to drift.
 | `/styles.css`, `/viewer.js` | The SPA's own assets |
 | `/llms.txt` | LLM site map ([llmstxt.org](https://llmstxt.org) convention) |
 | `/SKILL.md` | The create → publish → operate journey as a Claude Code skill |
+| `/demo/` | The dashboard itself on generated sample data — read-only, keyless |
 
 Anything else answers 404 — no SPA fallback, so a typo'd URL fails loudly
 instead of returning the shell as `200 text/html`.
@@ -27,6 +28,41 @@ and `mermaid` from a CDN. Agents ignore all of that and fetch the `.md` / `.txt`
 directly.
 
 ## Source of truth
+
+The demo at `/demo/` follows the same rule for the app instead of the prose:
+`build.sh` copies `../www/index.html`, `app.js` and `app.css` verbatim, so the
+demo is whatever the dashboard currently is — there is no second UI to keep in
+step. Two mechanical edits are applied and no others: the shell's absolute
+`/app.css` and `/app.js` become siblings under `/demo/`, and one `<script>` tag
+is injected above the deferred `app.js`.
+
+That script, `public/demo/shim.js`, is the whole backend. It answers the
+dashboard's three read calls out of `fixture.json` and refuses everything else
+with a 403 — an allowlist, so a cross-origin URL, an unmapped path, and even a
+same-origin static path are all refused rather than forwarded. Once it is
+installed nothing reaches the network at all: the fixture is read before the
+replacement goes in. It also intercepts clicks on `[data-action]` and
+`[data-key-action]` controls and shows the refusal as a toast, because the app
+routes a failed mutation to a full-page blocking error that would otherwise
+replace the demo on a visitor's first click. It disables the two static custody
+forms, whose fields
+include a Google client secret, and drops their `required` attributes so the
+buttons reach the app and show the refusal instead of dead-ending on a
+validation bubble; dynamically created inputs are covered by a stylesheet and
+capture-phase blockers, which per-element attributes would not survive. It also
+adds a banner saying what the page is. The fixture is generated at build time by
+`../scripts/build-demo-fixture.ts`, which drives the real `ManagementControl`,
+projects it through `buildDemoView`, and checks the result with `assertDemoView`
+— the producer half of the contract `www/app.js` validates on the other side. A
+read-model change therefore fails the build rather than shipping a stale page.
+
+`tests/cloud/public-demo.test.ts` holds the seams that would otherwise break
+quietly: every literal `/api/` path `app.js` reads must be one the shim answers,
+the shim must answer nothing else, and `www/index.html` must still have the shape
+`build.sh` rewrites. Adding a read call to the dashboard fails CI until the shim
+covers it. The refusal half is asserted by executing the shim against a stub DOM
+rather than by reading it — the first version of this file read as though it
+refused cross-origin requests and in fact forwarded them.
 
 `build.sh` copies `../docs/*.md` verbatim into `dist/`. The only doc renamed is
 `google-read-proof-manual-journey.md` → `operator-journey.md` (a shorter public

@@ -19,6 +19,8 @@ it is the whole journey as procedural instructions.
 
 - [SKILL.md](https://docs.angelmcp.ai/SKILL.md): The create → publish → promote → connect journey as loadable agent instructions, API/CLI-first, no repo clone. Marks which steps need credentials and which are offline.
 
+- [Live demo](https://docs.angelmcp.ai/demo/): The dashboard as a browsable page — Angels, their tools, and the Connections each tool is bound to — filled with generated sample data rather than anyone's account. Keyless and read-only: it serves three read responses from a bundled fixture and refuses every other request, so it is worth showing a person and useless as an API.
+
 ## Reference docs
 
 - [User manual](https://docs.angelmcp.ai/user-manual.md): Canonical product mechanics — write an Angel (`ANGEL.yaml` + `angel.json`), add Google custody, authenticate management calls, build, publish to preview, promote the exact previewed deployment, connect an agent over MCP, operate and pause. The authoritative reference the SKILL journey draws from.

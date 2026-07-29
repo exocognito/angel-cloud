@@ -206,6 +206,24 @@ credential — that custody risk is the defining trade of the hosted shape.
 Self-hosted relay remains the choice when independent infrastructure ownership
 matters more than hosted operation.
 
+### What is the public demo at `/demo/`, and what can it reach?
+
+It is the dashboard itself — the same `index.html`, `app.js` and `app.css` the
+Access-gated Control worker serves, copied verbatim at build time so the demo
+cannot drift from the product. What it is not is an account. The Angels,
+Connections and receipts on it come from a fixture generated at build time by
+running the real projection code over the checked-in Angel artifacts.
+
+It reaches nothing. The page is served by the assets-only docs worker, which has
+no service bindings, no Durable Objects and no secrets, so there is no path from
+it to the Control worker, the Broker, or a credential. In the browser, one
+injected script replaces `fetch` with an allowlist: three read paths answered
+from the bundled fixture, every other request — cross-origin, same-origin, any
+method — refused with a 403. Once that replacement is installed nothing reaches
+the network at all. The two custody forms are disabled, because they include a
+Google client secret field and a public page should not invite anyone to type a
+secret into it.
+
 ### Why is enforcement not done by the model or a prompt?
 
 Both gates are compiled from your source at build time — no model and no runtime

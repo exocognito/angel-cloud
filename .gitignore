@@ -12,3 +12,6 @@ angels/*/angel.json
 
 # agent tooling session transcripts, local only
 .pi/
+
+# transient output of `bun run check` (see scripts/build-demo-fixture.ts)
+.demo-fixture.check.json
