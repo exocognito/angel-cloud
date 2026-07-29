@@ -5,7 +5,7 @@ import type { HttpRequestTemplate } from "./adapter-derive";
 import { selectRequiredScopes } from "./adapter-derive";
 import { GENERATED_ADAPTERS } from "./adapters.generated";
 
-export type DeploymentEnvironment = "staging" | "production";
+export type DeploymentEnvironment = "preview" | "production";
 export type CredentialKind = "google_oauth" | "service_token" | "bot_token" | "bridge_token";
 
 // The only request kind today. Future non-HTTP adapter kinds (mcp, local)

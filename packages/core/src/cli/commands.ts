@@ -24,6 +24,9 @@ export interface AngelCommandDependencies {
   env?: Readonly<Record<string, string | undefined>>;
 }
 
+const USAGE =
+  "usage: angel build <angel> | angel publish <angel> [--preview [--share-production-credentials]] | angel deploy <angel> --prod";
+
 export async function runAngelCommand(
   args: readonly string[],
   dependencies: AngelCommandDependencies,
@@ -34,18 +37,38 @@ export async function runAngelCommand(
     output(dependencies)(`built ${result.artifact.name} ${result.artifact.digest} in ${result.outDir}`);
     return;
   }
-  if (command === "publish" && angelId !== undefined && flags.length === 0) {
-    await publish(angelId, dependencies);
+  if (command === "publish" && angelId !== undefined) {
+    await publish(angelId, publishOptions(flags), dependencies);
     return;
   }
   if (command === "deploy" && angelId !== undefined && flags.length === 1 && flags[0] === "--prod") {
     await deployProduction(angelId, dependencies);
     return;
   }
-  throw new Error("usage: angel build <angel> | angel publish <angel> | angel deploy <angel> --prod");
+  throw new Error(USAGE);
 }
 
-async function publish(angelId: string, dependencies: AngelCommandDependencies): Promise<void> {
+interface PublishOptions {
+  environment: "preview" | "production";
+  shareProductionCredentials: boolean;
+}
+
+function publishOptions(flags: readonly string[]): PublishOptions {
+  const preview = flags.includes("--preview");
+  const share = flags.includes("--share-production-credentials");
+  const known = (preview ? 1 : 0) + (share ? 1 : 0);
+  if (flags.length !== known || (share && !preview)) throw new Error(USAGE);
+  return {
+    environment: preview ? "preview" : "production",
+    shareProductionCredentials: share,
+  };
+}
+
+async function publish(
+  angelId: string,
+  options: PublishOptions,
+  dependencies: AngelCommandDependencies,
+): Promise<void> {
   const config = deploymentConfig(dependencies, angelId);
   const built = await build(dependencies)({ repoRoot: dependencies.repoRoot, angelId });
   if (built.artifact.name !== config.angel) {
@@ -53,8 +76,13 @@ async function publish(angelId: string, dependencies: AngelCommandDependencies):
   }
   const client = managementClient(config.target, dependencies);
   const connections = await client.listConnections(config.account);
+  // PD 0005: preview binds its own Connections; sharing production's is the
+  // explicit, typed act of sending production's bindings to preview.
+  const configuredBindings = options.environment === "preview" && !options.shareProductionCredentials
+    ? config.bindings.preview
+    : config.bindings.production;
   const bindings = resolveBindings(
-    config.bindings.staging,
+    configuredBindings,
     connections,
     built.artifact.bindingRequirements,
     config.account,
@@ -64,7 +92,7 @@ async function publish(angelId: string, dependencies: AngelCommandDependencies):
     throw new Error("ensure Angel response does not match angel.json");
   }
   if (ensured.keys !== undefined) {
-    output(dependencies)(`staging key: ${ensured.keys.staging}`);
+    output(dependencies)(`preview key: ${ensured.keys.preview}`);
     output(dependencies)(`production key: ${ensured.keys.production}`);
   }
   const version = await client.publishVersion(ensured.angel.id, {
@@ -74,15 +102,15 @@ async function publish(angelId: string, dependencies: AngelCommandDependencies):
   if (version.angelId !== ensured.angel.id || version.digest !== built.artifact.digest) {
     throw new Error("published Version response does not match the built artifact");
   }
-  const deployment = await client.deployStaging(ensured.angel.id, {
+  const deployment = await client.deploy(ensured.angel.id, options.environment, {
     versionId: version.id,
     expectedDigest: built.artifact.digest,
     bindings,
   });
   if (deployment.versionId !== version.id || deployment.digest !== built.artifact.digest) {
-    throw new Error("staging deployment response does not match the published Version");
+    throw new Error(`${options.environment} deployment response does not match the published Version`);
   }
-  output(dependencies)(`published ${config.angel} Version ${version.number} to staging`);
+  output(dependencies)(`published ${config.angel} Version ${version.number} to ${options.environment}`);
 }
 
 async function deployProduction(
@@ -95,23 +123,23 @@ async function deployProduction(
   if (angel.accountId !== config.account || angel.slug !== config.angel) {
     throw new Error("Angel response does not match angel.json");
   }
-  const staging = await client.getEnvironment(angel.id, "staging");
-  if (staging.environment !== "staging" || staging.activeDeployment === null) {
-    throw new Error("no active staged deployment to promote");
+  const preview = await client.getEnvironment(angel.id, "preview");
+  if (preview.environment !== "preview" || preview.activeDeployment === null) {
+    throw new Error("no active preview deployment to promote");
   }
   const connections = await client.listConnections(config.account);
   const bindings = resolveBindings(config.bindings.production, connections, undefined, config.account);
   const promoted = await client.promoteProduction(angel.id, {
-    stagedDeploymentId: staging.activeDeployment.id,
-    expectedDigest: staging.activeDeployment.digest,
+    stagedDeploymentId: preview.activeDeployment.id,
+    expectedDigest: preview.activeDeployment.digest,
     bindings,
   });
   if (
     promoted.environment !== "production"
-    || promoted.versionId !== staging.activeDeployment.versionId
-    || promoted.digest !== staging.activeDeployment.digest
+    || promoted.versionId !== preview.activeDeployment.versionId
+    || promoted.digest !== preview.activeDeployment.digest
   ) {
-    throw new Error("production deployment response does not match the active staged deployment");
+    throw new Error("production deployment response does not match the active preview deployment");
   }
   output(dependencies)(`deployed ${config.angel} Version ${promoted.version} to production`);
 }

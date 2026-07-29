@@ -111,7 +111,7 @@ describe("angel.json", () => {
       account: "acct_personal",
       angel: "golden-assistant",
       bindings: {
-        staging: {
+        preview: {
           "gmail-read-and-draft": ["personal-google", "work-google"],
           "gdocs-read": "personal-google",
         },
@@ -125,7 +125,7 @@ describe("angel.json", () => {
       account: "acct_personal",
       angel: "golden-assistant",
       bindings: {
-        staging: {
+        preview: {
           "gmail-read-and-draft": ["personal-google", "work-google"],
           "gdocs-read": "personal-google",
         },
@@ -142,19 +142,28 @@ describe("angel.json", () => {
       target: "https://cloud.example",
       account: "acct_personal",
       angel: "gmail-inbox-zero",
-      bindings: { staging: { gmail: "personal-google" }, production: { gmail: "personal-google" } },
+      bindings: { preview: { gmail: "personal-google" }, production: { gmail: "personal-google" } },
     };
     for (const candidate of [
       { ...valid, credentials: "must-not-exist" },
-      { ...valid, bindings: { staging: valid.bindings.staging } },
+      { ...valid, bindings: { preview: valid.bindings.preview } },
       { ...valid, target: "http://cloud.example" },
       { ...valid, target: "https://token@cloud.example" },
       { ...valid, target: "https://cloud.example?account=private" },
       { ...valid, target: "https://cloud.example#private" },
-      { ...valid, bindings: { ...valid.bindings, staging: { gmail: [] } } },
+      { ...valid, bindings: { ...valid.bindings, preview: { gmail: [] } } },
     ]) {
       expect(() => parseAngelDeploymentConfig(JSON.stringify(candidate))).toThrow();
     }
+  });
+
+  test("names the staging → preview rename for a legacy bindings key", () => {
+    expect(() => parseAngelDeploymentConfig(JSON.stringify({
+      target: "https://cloud.example",
+      account: "acct_personal",
+      angel: "gmail-inbox-zero",
+      bindings: { staging: { gmail: "personal-google" }, production: { gmail: "personal-google" } },
+    }))).toThrow("angel.json bindings.staging is now bindings.preview: rename the key");
   });
 });
 
@@ -222,13 +231,16 @@ describe("Angel management commands", () => {
     }
   });
 
-  test("publishes one built artifact through the exact primitive API sequence", async () => {
+  test("publishes straight to production in one step with production's bindings", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
       jsonResponse(connections()),
-      jsonResponse({ angel: managementAngel(), keys: { staging: "ak_staging_once", production: "ak_production_once" } }),
+      jsonResponse({
+        angel: managementAngel("staging"),
+        keys: { staging: "ak_preview_once", production: "ak_production_once" },
+      }),
       jsonResponse(publishedVersion(artifact)),
-      jsonResponse(stagingDeployment(artifact)),
+      jsonResponse(productionDeployment(artifact)),
     ]);
     const output: string[] = [];
     const builds: string[] = [];
@@ -249,7 +261,7 @@ describe("Angel management commands", () => {
       "GET /v1/accounts/acct_demo/connections",
       "PUT /v1/accounts/acct_demo/angels/golden-assistant",
       "POST /v1/angels/ang_golden/versions",
-      "POST /v1/angels/ang_golden/environments/staging/deployments",
+      "POST /v1/angels/ang_golden/environments/production/deployments",
     ]);
     expect(await bodies(api.requests)).toEqual([
       undefined,
@@ -258,10 +270,7 @@ describe("Angel management commands", () => {
       {
         versionId: "ver_golden_1",
         expectedDigest: artifact.digest,
-        bindings: {
-          "gdocs-read": ["con_personal"],
-          "gmail-read-and-draft": ["con_personal", "con_work"],
-        },
+        bindings: PRODUCTION_BINDINGS,
       },
     ]);
     for (const request of api.requests) {
@@ -271,17 +280,164 @@ describe("Angel management commands", () => {
       const body = await request.clone().json();
       expect(request.headers.get("idempotency-key")).toBe(await expectedIdempotencyKey(request, body));
     }
-    expect(output.join("\n")).toContain("ak_staging_once");
-    expect(output.join("\n")).toContain("ak_production_once");
+    expect(output.join("\n")).toContain("preview key: ak_preview_once");
+    expect(output.join("\n")).toContain("production key: ak_production_once");
+    expect(output.join("\n")).toContain("published golden-assistant Version 1 to production");
+  });
+
+  test("accepts a preview-spelled ensure response once the server drops the legacy dialect", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(connections()),
+      jsonResponse({
+        angel: managementAngel("preview"),
+        keys: { preview: "ak_preview_once", production: "ak_production_once" },
+      }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse(productionDeployment(artifact)),
+    ]);
+    const output: string[] = [];
+
+    await runAngelCommand(["publish", "golden-assistant"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: (line) => output.push(line),
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(output.join("\n")).toContain("preview key: ak_preview_once");
+  });
+
+  test("deploys to preview with preview's own bindings under --preview", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(connections()),
+      jsonResponse({ angel: managementAngel("staging") }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse(previewDeployment(artifact)),
+    ]);
+    const output: string[] = [];
+
+    await runAngelCommand(["publish", "golden-assistant", "--preview"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: (line) => output.push(line),
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    });
+
+    expect(api.requests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toEqual([
+      "GET /v1/accounts/acct_demo/connections",
+      "PUT /v1/accounts/acct_demo/angels/golden-assistant",
+      "POST /v1/angels/ang_golden/versions",
+      "POST /v1/angels/ang_golden/environments/preview/deployments",
+    ]);
+    expect(await api.requests[3]!.clone().json()).toEqual({
+      versionId: "ver_golden_1",
+      expectedDigest: artifact.digest,
+      bindings: PREVIEW_BINDINGS,
+    });
+    expect(output.join("\n")).toContain("published golden-assistant Version 1 to preview");
+  });
+
+  test("sends production's bindings to preview under --share-production-credentials", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(connections()),
+      jsonResponse({ angel: managementAngel("staging") }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse(previewDeployment(artifact)),
+    ]);
+
+    await runAngelCommand(
+      ["publish", "golden-assistant", "--preview", "--share-production-credentials"],
+      {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      },
+    );
+
+    expect(new URL(api.requests[3]!.url).pathname)
+      .toBe("/v1/angels/ang_golden/environments/preview/deployments");
+    expect(await api.requests[3]!.clone().json()).toEqual({
+      versionId: "ver_golden_1",
+      expectedDigest: artifact.digest,
+      bindings: PRODUCTION_BINDINGS,
+    });
+  });
+
+  test("rejects --share-production-credentials without --preview and unknown publish flags", async () => {
+    for (const flags of [
+      ["--share-production-credentials"],
+      ["--preview", "--preview"],
+      ["--prod"],
+      ["--preview", "--share-production-bindings"],
+    ]) {
+      const api = fakeApi([]);
+      await expect(runAngelCommand(["publish", "golden-assistant", ...flags], {
+        repoRoot: commandRepo(),
+        fetch: api.fetch,
+        build: async () => ({ artifact: versionArtifact(), outDir: "/build/golden-assistant" }),
+        output: () => {},
+        env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+      })).rejects.toThrow(/usage: angel/);
+      expect(api.requests).toHaveLength(0);
+    }
+  });
+
+  test("surfaces the preview no-bindings 400 with the API's guidance", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(connections()),
+      jsonResponse({ angel: managementAngel("staging") }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse({
+        error: "preview has no Connection bindings: bind a Connection to preview, or pass production's bindings explicitly to share its credentials",
+      }, 400),
+    ]);
+
+    await expect(runAngelCommand(["publish", "golden-assistant", "--preview"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow(
+      "POST /v1/angels/ang_golden/environments/preview/deployments failed (HTTP 400): "
+      + "preview has no Connection bindings: bind a Connection to preview, "
+      + "or pass production's bindings explicitly to share its credentials",
+    );
+  });
+
+  test("rejects a staging-spelled deployment response from the preview route", async () => {
+    const artifact = versionArtifact();
+    const api = fakeApi([
+      jsonResponse(connections()),
+      jsonResponse({ angel: managementAngel("staging") }),
+      jsonResponse(publishedVersion(artifact)),
+      jsonResponse(deployment("dep_preview_1", "staging", artifact)),
+    ]);
+
+    await expect(runAngelCommand(["publish", "golden-assistant", "--preview"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact, outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow(/response schema error: deployment\.environment is invalid/);
   });
 
   test("does not print Angel keys when ensure does not return them", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
       jsonResponse(connections()),
-      jsonResponse({ angel: managementAngel() }),
+      jsonResponse({ angel: managementAngel("staging") }),
       jsonResponse(publishedVersion(artifact)),
-      jsonResponse(stagingDeployment(artifact)),
+      jsonResponse(productionDeployment(artifact)),
     ]);
     const output: string[] = [];
 
@@ -296,11 +452,11 @@ describe("Angel management commands", () => {
     expect(output.join("\n")).not.toMatch(/key/i);
   });
 
-  test("promotes the exact active staged deployment without building or publishing a Version", async () => {
+  test("promotes the exact active preview deployment without building or publishing a Version", async () => {
     const artifact = versionArtifact();
     const api = fakeApi([
-      jsonResponse(managementAngel()),
-      jsonResponse(stagingEnvironment(artifact.digest)),
+      jsonResponse(managementAngel("staging")),
+      jsonResponse(previewEnvironment(artifact.digest)),
       jsonResponse(connections()),
       jsonResponse(productionDeployment(artifact)),
     ]);
@@ -320,7 +476,7 @@ describe("Angel management commands", () => {
     expect(buildCalls).toBe(0);
     expect(api.requests.map((request) => `${request.method} ${new URL(request.url).pathname}`)).toEqual([
       "GET /v1/accounts/acct_demo/angels/golden-assistant",
-      "GET /v1/angels/ang_golden/environments/staging",
+      "GET /v1/angels/ang_golden/environments/preview",
       "GET /v1/accounts/acct_demo/connections",
       "POST /v1/angels/ang_golden/environments/production/promotions",
     ]);
@@ -329,15 +485,28 @@ describe("Angel management commands", () => {
       undefined,
       undefined,
       {
-        stagedDeploymentId: "dep_stage_1",
+        stagedDeploymentId: "dep_preview_1",
         expectedDigest: artifact.digest,
-        bindings: {
-          "gdocs-read": ["con_personal"],
-          "gmail-read-and-draft": ["con_personal", "con_work"],
-        },
+        bindings: PRODUCTION_BINDINGS,
       },
     ]);
     expect(api.requests.some((request) => new URL(request.url).pathname.endsWith("/versions"))).toBe(false);
+  });
+
+  test("stops promotion when preview has no active deployment", async () => {
+    const api = fakeApi([
+      jsonResponse(managementAngel("staging")),
+      jsonResponse(previewEnvironment(null)),
+    ]);
+
+    await expect(runAngelCommand(["deploy", "golden-assistant", "--prod"], {
+      repoRoot: commandRepo(),
+      fetch: api.fetch,
+      build: async () => ({ artifact: versionArtifact(), outDir: "/build/golden-assistant" }),
+      output: () => {},
+      env: { ANGEL_MANAGEMENT_TOKEN: "management-secret" },
+    })).rejects.toThrow("no active preview deployment to promote");
+    expect(api.requests).toHaveLength(2);
   });
 
   test("fails before mutation for a duplicate or missing Connection nickname", async () => {
@@ -377,9 +546,12 @@ describe("Angel management commands", () => {
     const replacement = { ...connections()[0]!, id: "con_replacement", health: "healthy" as const };
     const api = fakeApi([
       jsonResponse([tombstone, replacement, connections()[1]!]),
-      jsonResponse({ angel: managementAngel(), keys: { staging: "ak_staging_once", production: "ak_production_once" } }),
+      jsonResponse({
+        angel: managementAngel("staging"),
+        keys: { staging: "ak_preview_once", production: "ak_production_once" },
+      }),
       jsonResponse(publishedVersion(artifact)),
-      jsonResponse(stagingDeployment(artifact)),
+      jsonResponse(productionDeployment(artifact)),
     ]);
     await runAngelCommand(["publish", "golden-assistant"], {
       repoRoot: commandRepo(),
@@ -399,7 +571,7 @@ describe("Angel management commands", () => {
       new Response("not json", { status: 200, headers: { "content-type": "text/plain" } }),
       jsonResponse({ connections: [] }),
     ]) {
-      const api = fakeApi([response, jsonResponse({ angel: managementAngel() })]);
+      const api = fakeApi([response, jsonResponse({ angel: managementAngel("staging") })]);
       await expect(runAngelCommand(["publish", "golden-assistant"], {
         repoRoot: commandRepo(),
         fetch: api.fetch,
@@ -415,9 +587,9 @@ describe("Angel management commands", () => {
     const artifact = versionArtifact();
     const api = fakeApi([
       jsonResponse(connections()),
-      jsonResponse({ angel: managementAngel() }),
+      jsonResponse({ angel: managementAngel("staging") }),
       jsonResponse(publishedVersion(artifact)),
-      jsonResponse(stagingDeployment(artifact)),
+      jsonResponse(productionDeployment(artifact)),
     ]);
     const cleanRoot = mkdtempSync(join(tmpdir(), "angel-core-clean-cli-"));
 
@@ -430,9 +602,9 @@ describe("Angel management commands", () => {
         account: "acct_demo",
         angel: "golden-assistant",
         bindings: {
-          staging: {
+          preview: {
             "gdocs-read": "personal-google",
-            "gmail-read-and-draft": ["personal-google", "work-google"],
+            "gmail-read-and-draft": ["work-google"],
           },
           production: {
             "gdocs-read": "personal-google",
@@ -450,6 +622,16 @@ describe("Angel management commands", () => {
 
 const PACKAGE_ROOT = join(import.meta.dir, "..");
 
+const PREVIEW_BINDINGS = {
+  "gdocs-read": ["con_personal"],
+  "gmail-read-and-draft": ["con_work"],
+};
+
+const PRODUCTION_BINDINGS = {
+  "gdocs-read": ["con_personal"],
+  "gmail-read-and-draft": ["con_personal", "con_work"],
+};
+
 function commandRepo(): string {
   const root = mkdtempSync(join(tmpdir(), "angel-core-cli-"));
   const angelDir = join(root, "angels", "golden-assistant");
@@ -459,9 +641,9 @@ function commandRepo(): string {
     account: "acct_demo",
     angel: "golden-assistant",
     bindings: {
-      staging: {
+      preview: {
         "gdocs-read": "personal-google",
-        "gmail-read-and-draft": ["personal-google", "work-google"],
+        "gmail-read-and-draft": ["work-google"],
       },
       production: {
         "gdocs-read": "personal-google",
@@ -551,13 +733,16 @@ function connections() {
       nickname: "work-google",
       identityLabel: "Google work@example.test",
       credential: "google_oauth",
-      providers: ["gmail"],
+      providers: ["gmail", "docs"],
       health: "healthy",
     },
   ];
 }
 
-function environmentState(environment: "staging" | "production", activeDeploymentId: string | null) {
+function environmentState(
+  environment: "staging" | "preview" | "production",
+  activeDeploymentId: string | null,
+) {
   return {
     environment,
     keyFingerprint: "k".repeat(12),
@@ -565,10 +750,7 @@ function environmentState(environment: "staging" | "production", activeDeploymen
       id: activeDeploymentId,
       versionId: "ver_golden_1",
       digest: "d".repeat(64),
-      bindings: {
-        "gdocs-read": ["con_personal"],
-        "gmail-read-and-draft": ["con_personal", "con_work"],
-      },
+      bindings: PREVIEW_BINDINGS,
     },
     pendingDeployment: null,
     repair: null,
@@ -582,13 +764,18 @@ function environmentState(environment: "staging" | "production", activeDeploymen
   };
 }
 
-function managementAngel() {
+/**
+ * The cloud's spelling-neutral angel routes translate responses to the
+ * pinned legacy dialect ("staging") with no way to ask for the canonical
+ * spelling, so the fake serves both dialects.
+ */
+function managementAngel(spelling: "staging" | "preview") {
   return {
     id: "ang_golden",
     accountId: "acct_demo",
     slug: "golden-assistant",
     environments: {
-      staging: environmentState("staging", "dep_stage_1"),
+      [spelling]: environmentState(spelling, "dep_preview_1"),
       production: environmentState("production", null),
     },
   };
@@ -598,40 +785,31 @@ function publishedVersion(artifact: HostedVersionArtifact) {
   return { id: "ver_golden_1", angelId: "ang_golden", number: 1, digest: artifact.digest, artifact };
 }
 
-function stagingEnvironment(digest: string) {
+function previewEnvironment(digest: string | null) {
   return {
-    environment: "staging",
-    keyFingerprint: "k".repeat(12),
-    activeDeployment: {
-      id: "dep_stage_1",
+    ...environmentState("preview", digest === null ? null : "dep_preview_1"),
+    activeDeployment: digest === null ? null : {
+      id: "dep_preview_1",
       versionId: "ver_golden_1",
       digest,
-      bindings: {
-        "gdocs-read": ["con_personal"],
-        "gmail-read-and-draft": ["con_personal", "con_work"],
-      },
+      bindings: PREVIEW_BINDINGS,
     },
-    pendingDeployment: null,
-    repair: null,
-    availability: {
-      defaultEnabled: true,
-      toolOverrides: {},
-      connectionOverrides: {},
-      revision: 0,
-    },
-    pendingAvailability: null,
   };
 }
 
-function stagingDeployment(artifact: HostedVersionArtifact) {
-  return deployment("dep_stage_1", "staging", artifact);
+function previewDeployment(artifact: HostedVersionArtifact) {
+  return deployment("dep_preview_1", "preview", artifact);
 }
 
 function productionDeployment(artifact: HostedVersionArtifact) {
   return deployment("dep_prod_1", "production", artifact);
 }
 
-function deployment(id: string, environment: "staging" | "production", artifact: HostedVersionArtifact) {
+function deployment(
+  id: string,
+  environment: "staging" | "preview" | "production",
+  artifact: HostedVersionArtifact,
+) {
   return {
     id,
     angelId: "ang_golden",
@@ -639,10 +817,7 @@ function deployment(id: string, environment: "staging" | "production", artifact:
     versionId: "ver_golden_1",
     version: 1,
     digest: artifact.digest,
-    bindings: {
-      "gdocs-read": ["con_personal"],
-      "gmail-read-and-draft": ["con_personal", "con_work"],
-    },
+    bindings: PRODUCTION_BINDINGS,
   };
 }
 

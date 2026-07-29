@@ -1,5 +1,6 @@
+import type { DeploymentEnvironment } from "../domain";
 import type {
-  DeployStagingRequest,
+  DeployRequest,
   EnsureAngelResponse,
   ManagementAngelView,
   ManagementConnection,
@@ -103,16 +104,20 @@ export class ManagementClient {
     );
   }
 
-  deployStaging(angelId: string, input: DeployStagingRequest): Promise<ManagementDeploymentView> {
+  deploy(
+    angelId: string,
+    environment: DeploymentEnvironment,
+    input: DeployRequest,
+  ): Promise<ManagementDeploymentView> {
     return this.request(
       "POST",
-      `/v1/angels/${segment(angelId)}/environments/staging/deployments`,
+      `/v1/angels/${segment(angelId)}/environments/${environment}/deployments`,
       input,
       deployment,
     );
   }
 
-  getEnvironment(angelId: string, environment: "staging" | "production"): Promise<ManagementEnvironmentView> {
+  getEnvironment(angelId: string, environment: DeploymentEnvironment): Promise<ManagementEnvironmentView> {
     return this.request(
       "GET",
       `/v1/angels/${segment(angelId)}/environments/${environment}`,
@@ -218,11 +223,11 @@ function ensureResponse(value: unknown): EnsureAngelResponse {
   }
   const angel = managementAngel(root.angel);
   if (root.keys === undefined) return { angel };
-  const responseKeys = exactRecord(root.keys, ["staging", "production"], "keys");
+  const responseKeys = secondEnvironmentRecord(root.keys, "keys");
   return {
     angel,
     keys: {
-      staging: string(responseKeys.staging, "keys.staging"),
+      preview: string(responseKeys.preview, "keys.preview"),
       production: string(responseKeys.production, "keys.production"),
     },
   };
@@ -230,16 +235,37 @@ function ensureResponse(value: unknown): EnsureAngelResponse {
 
 function managementAngel(value: unknown): ManagementAngelView {
   const angel = exactRecord(value, ["id", "accountId", "slug", "environments"], "angel");
-  const environments = exactRecord(angel.environments, ["staging", "production"], "angel.environments");
+  const environments = secondEnvironmentRecord(angel.environments, "angel.environments");
   return {
     id: string(angel.id, "angel.id"),
     accountId: string(angel.accountId, "angel.accountId"),
     slug: string(angel.slug, "angel.slug"),
     environments: {
-      staging: environmentView(environments.staging),
+      preview: environmentView(environments.preview),
       production: environmentView(environments.production),
     },
   };
+}
+
+/**
+ * The spelling-neutral angel routes (ensure, get by slug) answer in the
+ * pinned legacy dialect, which spells the second environment `staging`, and
+ * offer no way to request the canonical spelling. Accept exactly one of the
+ * two spellings and normalize to `preview`.
+ */
+function secondEnvironmentRecord(
+  value: unknown,
+  label: string,
+): { preview: unknown; production: unknown } {
+  const candidate = record(value, label);
+  const keys = Object.keys(candidate).sort().join(",");
+  if (keys === "preview,production") {
+    return { preview: candidate.preview, production: candidate.production };
+  }
+  if (keys === "production,staging") {
+    return { preview: candidate.staging, production: candidate.production };
+  }
+  throw new Error(`${label} must contain exactly preview, production`);
 }
 
 function publishedVersion(value: unknown): PublishedAngelVersion {
@@ -264,7 +290,7 @@ function deployment(value: unknown): ManagementDeploymentView {
   for (const key of ["id", "angelId", "versionId", "digest"] as const) {
     string(candidate[key], `deployment.${key}`);
   }
-  if (candidate.environment !== "staging" && candidate.environment !== "production") {
+  if (candidate.environment !== "preview" && candidate.environment !== "production") {
     throw new Error("deployment.environment is invalid");
   }
   if (!Number.isInteger(candidate.version) || (candidate.version as number) < 1) {
@@ -284,9 +310,13 @@ function environmentView(value: unknown): ManagementEnvironmentView {
     "availability",
     "pendingAvailability",
   ], "environment");
-  if (candidate.environment !== "staging" && candidate.environment !== "production") {
+  // Nested inside a legacy-dialect angel view the field still spells the
+  // second environment `staging`; normalize alongside secondEnvironmentRecord.
+  const environment = candidate.environment === "staging" ? "preview" : candidate.environment;
+  if (environment !== "preview" && environment !== "production") {
     throw new Error("environment.environment is invalid");
   }
+  candidate.environment = environment;
   string(candidate.keyFingerprint, "environment.keyFingerprint");
   deploymentSummary(candidate.activeDeployment, "environment.activeDeployment");
   deploymentSummary(candidate.pendingDeployment, "environment.pendingDeployment");

@@ -9,7 +9,7 @@ export interface AngelDeploymentConfig {
   account: string;
   angel: string;
   bindings: {
-    staging: DeploymentBindingMap;
+    preview: DeploymentBindingMap;
     production: DeploymentBindingMap;
   };
 }
@@ -30,13 +30,18 @@ export function parseAngelDeploymentConfig(raw: string): AngelDeploymentConfig {
   const account = nonEmptyString(root.account, "account");
   const angel = nonEmptyString(root.angel, "angel");
   const bindings = record(root.bindings, "bindings");
-  exactKeys(bindings, ["staging", "production"], "bindings");
+  // The second environment was renamed staging → preview; a legacy file gets
+  // the rename instruction instead of the generic exact-keys error.
+  if ("staging" in bindings) {
+    throw new Error("angel.json bindings.staging is now bindings.preview: rename the key");
+  }
+  exactKeys(bindings, ["preview", "production"], "bindings");
   return {
     target,
     account,
     angel,
     bindings: {
-      staging: parseBindingMap(bindings.staging, "bindings.staging"),
+      preview: parseBindingMap(bindings.preview, "bindings.preview"),
       production: parseBindingMap(bindings.production, "bindings.production"),
     },
   };

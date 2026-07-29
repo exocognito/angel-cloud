@@ -9,6 +9,14 @@ This package owns the portable Angel standard:
 - the target-neutral `angel build`, `angel publish`, and
   `angel deploy --prod` client.
 
+`angel publish <angel>` deploys the built Version straight to production.
+`angel publish <angel> --preview` deploys to the preview environment instead,
+using `angel.json`'s `bindings.preview`; preview binds its own Connections and
+never inherits production's. Adding `--share-production-credentials` sends
+production's bindings to preview explicitly. `angel deploy <angel> --prod`
+promotes the exact active preview deployment. Older `angel.json` files must
+rename `bindings.staging` to `bindings.preview`.
+
 The CLI treats `angel.json.target` as an opaque HTTPS origin. It does not know
 Cloudflare, Angel Cloud, OAuth, or any hosted product. A compatible hosted or
 self-hosted control plane implements the management contract exported by this

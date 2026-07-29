@@ -31,7 +31,7 @@ tools:
         target,
         account: "acct",
         angel: "mail",
-        bindings: { staging: {}, production: {} },
+        bindings: { preview: {}, production: {} },
       })).target).toBe(target);
     }
   });

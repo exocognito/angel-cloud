@@ -87,7 +87,7 @@ export interface PublishVersionRequest {
   expectedDigest: string;
 }
 
-export interface DeployStagingRequest {
+export interface DeployRequest {
   versionId: string;
   expectedDigest: string;
   bindings: ManagementBindingMap;
