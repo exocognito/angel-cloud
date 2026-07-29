@@ -31,13 +31,16 @@ the terminology table rather than restating it.
 
 ## The embedded dashboard
 
-Prototype flow F frames the deployed public demo at `/demo/`, which is assembled
-from the real `www/` shell — the live product rather than a picture of it, so it
-never needs refreshing here. The page is deployed and the frame renders, but the
-build step that assembles it arrives with
-[#21](https://github.com/exocognito/angel-cloud/pull/21); until that merges,
-[docs-site](../../docs-site/README.md) documents no `/demo/` path and flow F is
-tagged as an intended change rather than observed behaviour.
+Prototype flow F frames the public demo at `/demo/`, which is assembled from the
+real `www/` shell — the live product rather than a picture of it, so it never
+needs refreshing here.
+
+The build step that assembles it arrives with
+[#21](https://github.com/exocognito/angel-cloud/pull/21), so until that is on
+`main` the frame is only as good as the last deploy of the docs worker: a deploy
+from a branch without the step removes `/demo/`, and the frame goes blank. That
+is why flow F is tagged as an intended change rather than observed behaviour, and
+why [docs-site](../../docs-site/README.md) documents no `/demo/` path yet.
 
 ## Hosting
 
@@ -46,10 +49,16 @@ identity of each page — the script never mints new ones, so a link shared once
 keeps working. `DRY_RUN=<dir> ./publish.sh` stages the rewritten pages without
 uploading, which is the way to check a change before it ships.
 
-Uploading needs `files-blog-upload`, which lives in Sam's dotfiles rather than
-in this repository, so publishing works only from a checkout that has it. Point
-`FILES_BLOG_UPLOAD` at your own copy to use a different one. `DRY_RUN` needs
-nothing beyond this directory.
+Both modes need the six page URLs, in an untracked `urls.env` beside the script
+(`APRD_URL_DATAROOM`, `APRD_URL_HUB`, `APRD_URL_ENGINEERING`, `APRD_URL_DESIGN`,
+`APRD_URL_MARKETING`, `APRD_URL_SUPPORT`) or exported. They are capability URLs
+— the random segment is the read credential — so they are not committed, and the
+script refuses to run without them rather than guessing.
+
+Uploading additionally needs `files-blog-upload`, which lives in Sam's dotfiles
+rather than in this repository, so publishing works only from a checkout that
+has it. Point `FILES_BLOG_UPLOAD` at your own copy to use a different one.
+`DRY_RUN` does not need it.
 
 Local copies use relative links so the set works offline from this directory;
 the hosted copies get absolute ones. That rewrite is the only difference between

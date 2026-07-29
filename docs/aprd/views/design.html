@@ -87,7 +87,7 @@
       <section class="space-y-4">
         <h2 class="font-serif text-3xl">1 · The dashboard, as deployed</h2>
         <p class="text-slate-700 leading-relaxed">
-          Start here: this is the deployed public demo — the real <code>www/</code> shell filled with generated sample data. It is nobody's account and no login is involved. The build step that assembles it from <code>www/</code> at deploy time, so that it shows the current product rather than an old picture of one, lands with <a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a> and is not in this tree yet — the dataroom tags flow F as an intended change for the same reason. Nothing you click touches the live system. Home has three densities (Quiet, List, Dashboard cards); Angel detail has four panes (Allowed Tools, Agent Keys, Activity, Settings). The width toggle drives the app's own CSS breakpoints, so mobile is the product's real mobile, not a scaled thumbnail.
+          Start here: this is the deployed public demo — the real <code>www/</code> shell filled with generated sample data. It is nobody's account and no login is involved. The build step that assembles it from <code>www/</code> at deploy time, so that it shows the current product rather than an old picture of one, lands with <a class="underline underline-offset-2" href="https://github.com/exocognito/angel-cloud/pull/21">#21</a> and is not in this tree yet — the dataroom tags flow F as an intended change for the same reason. Until #21 is on <code>main</code>, a deploy of the docs worker from any other branch removes <code>/demo/</code>, so the frame below may be blank. Nothing you click touches the live system. Home has three densities (Quiet, List, Dashboard cards); Angel detail has four panes (Allowed Tools, Agent Keys, Activity, Settings). The width toggle drives the app's own CSS breakpoints, so mobile is the product's real mobile, not a scaled thumbnail.
         </p>
         <div class="flex items-center gap-1 rounded-full border border-slate-300 bg-white w-fit px-1 py-1 text-sm" role="tablist" aria-label="Dashboard viewport">
           <button id="vp-desktop" type="button" class="rounded-full px-3 py-1">Desktop</button>
@@ -149,7 +149,7 @@
         <h2 class="font-serif text-3xl">3 · New feedback: the list view hides half the story</h2>
         <div class="bg-red-50 p-5 rounded-r-lg shadow-[inset_4px_0_0_0_#dc2626] space-y-2">
           <p class="text-sm"><span class="badge-feed">Sam · 2026-07-28</span></p>
-          <p class="text-slate-800 leading-relaxed">The Home list density leads with tool chips ("what it can do") and gives no column to the accounts and Connections an agent may act as through an Angel. But <strong>which identities an agent may act as through it</strong> and <strong>which tools it may use</strong> are co-equal, different, top-level facts. The list view must present both. Fold into the next dashboard design pass.</p>
+          <p class="text-slate-800 leading-relaxed">The Home list density leads with tool chips — labelled "what it can do" in the shipped UI, itself a phrase §0 would not allow today — and gives no column to the accounts and Connections an agent may act as through an Angel. But <strong>which identities an agent may act as through it</strong> and <strong>which tools it may use</strong> are co-equal, different, top-level facts. The list view must present both. Fold into the next dashboard design pass.</p>
         </div>
 
         <p class="text-slate-700 leading-relaxed">Three candidate row layouts <span class="badge-illus">illustrative</span> — tap or swipe to rotate. All use real product vocabulary: identity labels from Connections, tool groups counted as "N read" / "N allowed".</p>
@@ -162,7 +162,7 @@
               <p class="text-sm text-slate-600">Two labeled columns of equal weight. The header row makes the two axes explicit; scan down either one.</p>
               <div class="text-xs border border-stone-200 rounded overflow-x-auto">
                 <div class="grid grid-cols-[1.2fr_1.5fr_1.5fr_auto] gap-2 px-3 py-2 bg-stone-100 text-slate-500 uppercase tracking-wide min-w-[560px]">
-                  <span>Angel</span><span>Acts as</span><span>May use</span><span></span>
+                  <span>Angel</span><span>Agent may act as</span><span>May use</span><span></span>
                 </div>
                 <div class="grid grid-cols-[1.2fr_1.5fr_1.5fr_auto] gap-2 px-3 py-2.5 border-t border-stone-100 items-center min-w-[560px]">
                   <span class="font-medium text-sm">inbox-read</span>
