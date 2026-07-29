@@ -21,6 +21,7 @@ import type {
   MutationIdentity,
 } from "../src/management-contract";
 import { assertDemoView, buildDemoView } from "../src/demo-view";
+import type { ConnectionSummary, ProviderAppSummary } from "../src/provider-management";
 
 // Fixed so two builds of the same source produce the same bytes.
 const NOW = "2026-07-22T09:30:00.000Z";
@@ -150,41 +151,54 @@ const view = await buildDemoView(
 assertDemoView(view);
 
 // The three GET responses the dashboard needs to render. `state` is the
-// validated projection; the other two mirror the provider-custody summaries the
-// Control worker returns, with no secret material of any kind.
-const fixture = {
-  state: view,
-  apps: [
-    { id: "pa_google_primary", displayName: "Google Primary", provider: "google", clientIdSuffix: "j2k9" },
-  ],
-  connections: [
-    {
-      id: "con_personal_google",
-      nickname: "personal-google",
-      displayName: "Personal Google",
-      provider: "google",
-      health: "healthy",
-      grantedScopes: [
-        "https://www.googleapis.com/auth/gmail.readonly",
-        "https://www.googleapis.com/auth/gmail.compose",
-        "https://www.googleapis.com/auth/gmail.modify",
-        "https://www.googleapis.com/auth/gmail.labels",
-        "https://www.googleapis.com/auth/documents.readonly",
-      ],
-    },
-    {
-      id: "con_work_google",
-      nickname: "work-google",
-      displayName: "Work Google",
-      provider: "google",
-      health: "healthy",
-      grantedScopes: [
-        "https://www.googleapis.com/auth/gmail.readonly",
-        "https://www.googleapis.com/auth/gmail.compose",
-      ],
-    },
-  ],
-};
+// validated projection; the other two are the provider-custody summaries the
+// Control worker returns, typed against the same interfaces it serves
+// (src/workers/control.ts enforces those key sets exactly), with no secret
+// material of any kind — an app carries only the last four characters of its
+// client ID, and a Connection carries only its granted scopes.
+const apps: ProviderAppSummary[] = [
+  {
+    id: "pa_google_primary",
+    accountId: "acct_demo",
+    provider: "google",
+    displayName: "Google Primary",
+    clientIdSuffix: "j2k9",
+  },
+];
+
+const connections: ConnectionSummary[] = [
+  {
+    id: "con_personal_google",
+    accountId: "acct_demo",
+    nickname: "personal-google",
+    providerAppId: "pa_google_primary",
+    provider: "google",
+    displayName: "Personal Google",
+    grantedScopes: [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.compose",
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.labels",
+      "https://www.googleapis.com/auth/documents.readonly",
+    ],
+    health: "healthy",
+  },
+  {
+    id: "con_work_google",
+    accountId: "acct_demo",
+    nickname: "work-google",
+    providerAppId: "pa_google_primary",
+    provider: "google",
+    displayName: "Work Google",
+    grantedScopes: [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.compose",
+    ],
+    health: "healthy",
+  },
+];
+
+const fixture = { state: view, apps, connections };
 
 writeFileSync(outputPath, JSON.stringify(fixture));
 console.log(`demo fixture: ${view.angels.length} angels, validated against assertDemoView`);
