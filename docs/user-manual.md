@@ -586,8 +586,9 @@ through the cutover — `staging` is the old spelling of `preview`, and
 `<account>` is either the internal `acct_*` id or the handle.
 
 Today `<gateway>` is `angelmcp-gateway-demo.sam-633.workers.dev`. The MCP
-protocol answers only POST; `GET` on the bare production coordinate serves the
-[public page](#the-public-page), and every other method gets `405`.
+protocol answers only POST; `GET` and `HEAD` on the bare production coordinate
+serve the [public page](#the-public-page) (HEAD returns headers only), and
+every other method gets `405`.
 
 ![The Agent Keys pane: the active environment's MCP endpoint ready to paste into an agent client, and named keys with masked fingerprints, Rotate, and Revoke](manual-images/agent-keys-pane.png)
 
