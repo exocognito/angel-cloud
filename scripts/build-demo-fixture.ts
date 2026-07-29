@@ -156,6 +156,9 @@ assertDemoView(view);
 // (src/workers/control.ts enforces those key sets exactly), with no secret
 // material of any kind — an app carries only the last four characters of its
 // client ID, and a Connection carries only its granted scopes.
+// The app's scopes are the consent set it requests, so they must cover every
+// scope its Connections were granted below — otherwise the demo would show a
+// Connection holding a scope its own Provider App never asked for.
 const apps: ProviderAppSummary[] = [
   {
     id: "pa_google_primary",
@@ -163,6 +166,13 @@ const apps: ProviderAppSummary[] = [
     provider: "google",
     displayName: "Google Primary",
     clientIdSuffix: "j2k9",
+    scopes: [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.compose",
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.labels",
+      "https://www.googleapis.com/auth/documents.readonly",
+    ],
   },
 ];
 
