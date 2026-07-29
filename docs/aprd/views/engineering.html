@@ -223,7 +223,8 @@ DemoEnvironmentView { version; digest; deploymentId; keyFingerprint;
   availability {defaultEnabled; overrides; revision; changedAt: DemoRecordedTime};
   keys; bindings; tools; lifecycle }
 DemoRecordedTime = {source:"recorded"; at: string} | {source:"derived"; at: null}   <span class="k">// honesty-typed</span>
-<span class="k">// endpoints are built from the handle: `${origin}/@${handle}/${angel}`</span></pre>
+<span class="k">// endpoint from the handle when there is one: `${origin}/@${handle}/${angel}`
+// (`@preview` suffixed), else the legacy `${origin}/v1/a/${account}/${angel}/${env}/mcp`</span></pre>
           </div>
 
           <div class="space-y-2">
@@ -444,7 +445,7 @@ flowchart LR
               <thead><tr><th>Item</th><th>Detail</th><th>Disposition</th></tr></thead>
               <tbody>
                 <tr><td><span class="badge-bug">bug</span> Reset fabricates Connections</td><td><code>POST /api/demo/reset</code> seeds <code>con_personal_google</code>/<code>con_work_google</code> as healthy over real reconciled custody state.</td><td>Classified a bug 2026-07-28: reset must preserve or clear real custody, never invent healthy Connections</td></tr>
-                <tr><td><span class="badge-bug">bug</span> /v1 key names unbounded</td><td>Dashboard enforces 1–64 code points, no control chars (<code>control.ts:719</code>, whose own comment flags the gap); <code>/v1</code> only requires non-empty.</td><td>Decision 2026-07-28, still unbuilt: <code>/v1</code> adopts the bounds (I9)</td></tr>
+                <tr><td><span class="badge-bug">bug</span> /v1 key names unbounded</td><td>Dashboard enforces 1–64 code points, no control chars (<code>src/workers/control.ts:719</code>, whose own comment flags the gap); <code>/v1</code> only requires non-empty.</td><td>Decision 2026-07-28, still unbuilt: <code>/v1</code> adopts the bounds (I9)</td></tr>
                 <tr><td><span class="badge-bug">doc bug</span> README staleness</td><td>"Stable Angel keys" phrasing predates mint/rotate/revoke; HTTP-surfaces list omits custody routes and key actions; test counts drift.</td><td>Corrected silently by the APRD; the manual is the accurate doc</td></tr>
               </tbody>
             </table>

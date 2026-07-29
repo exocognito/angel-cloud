@@ -61,7 +61,7 @@
       const show = (n) => {
         current = (n + VIEWS.length) % VIEWS.length;
         frame.src = VIEWS[current].src;
-        full.href = VIEWS[current].src;
+        full.href = VIEWS[current].src.replace("?embedded=1", "");
         tabEls.forEach((t, i) => i === current ? t.setAttribute("data-active", "") : t.removeAttribute("data-active"));
         dotEls.forEach((d, i) => i === current ? d.setAttribute("data-active", "") : d.removeAttribute("data-active"));
       };
