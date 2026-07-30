@@ -74,7 +74,9 @@ interface AngelDeploymentConfig {
   account: string;
   angel: string;
   bindings: {
-    staging: BindingMap;
+    // Named `staging` when this ADR was accepted; renamed `preview` by PD 0003.
+    // `@smcllns/angel-core@0.3.0` rejects the old spelling.
+    preview: BindingMap;
     production: BindingMap;
   };
 }

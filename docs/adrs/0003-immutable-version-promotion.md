@@ -26,7 +26,8 @@ interface PublishedAngelVersion {
 interface Deployment {
   id: string;
   angelId: string;
-  environment: "staging" | "production";
+  // Named "staging" when this ADR was accepted; renamed "preview" by PD 0003.
+  environment: "preview" | "production";
   versionId: string;
   digest: string;
   bindings: InstalledBindingMap;

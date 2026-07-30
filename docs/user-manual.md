@@ -456,13 +456,17 @@ Check the second line. A package manager configured with a minimum release age
 will silently resolve an older version, and versions before 0.3.0 spell the
 preview environment `staging`, which makes the rest of this page wrong.
 
-It has exactly three subcommands:
+It has four subcommands:
 
 ```text
 pnpm exec angel build   <angel>
-pnpm exec angel publish <angel>
+pnpm exec angel publish <angel> [--preview [--share-production-credentials]]
 pnpm exec angel deploy  <angel> --prod
+pnpm exec angel delete  <angel> [--confirm <slug>]
 ```
+
+Bare `angel publish` deploys straight to production against
+`bindings.production`; `--preview` is the opt-in (PD 0003).
 
 Publish and deploy read two environment variables:
 
@@ -489,10 +493,11 @@ artifact) and `build/angel.version.sha256` (its digest). You never need to run
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
 ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
-pnpm exec angel publish google-read-proof
+pnpm exec angel publish google-read-proof --preview
 ```
 
-One command does four things:
+One command does four things. Keep `--preview`: without it, publish deploys to
+production instead, and steps 4 and 7 below describe a different journey.
 
 1. Builds the artifact.
 2. Ensures the Angel exists under your Account. **On first creation the response
@@ -507,8 +512,9 @@ One command does four things:
    requirement's provider. A preview deploy with no bindings for a Version
    that requires them fails and names the two ways forward (PD 0005). The
    server can also take a published Version straight to production in one step
-   (`POST /v1/angels/{id}/environments/production/deployments`); the CLI
-   default moves there with the next `@smcllns/angel-core` release (PD 0003).
+   (`POST /v1/angels/{id}/environments/production/deployments`), and since core
+   0.3.0 bare `angel publish` is exactly that — production is the CLI default and
+   preview is opt-in (PD 0003).
 
 Every mutation carries an idempotency key: resend the same key to retry a call
 safely, and never reuse a key for different input.

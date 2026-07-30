@@ -80,11 +80,16 @@ whose tools write should make the shared-credential state impossible to miss.
 Separate Connections per environment remain the answer for anyone who wants a
 true sandbox, and the platform must keep making that easy.
 
-## What runs instead today
+## What ran before this decision
 
-`angel publish` deploys to staging and nothing else. Production requires
-`angel deploy --prod`. There is no way to publish an Angel live in one step,
-and the word "staging" appears in the CLI, the route grammar, and the docs.
+`angel publish` deployed to `staging` and nothing else; production required
+`angel deploy --prod`, so there was no way to publish an Angel live in one step,
+and the word "staging" ran through the CLI, the route grammar, and the docs.
+
+Shipped since: the server deploys straight to production, and
+`@smcllns/angel-core@0.3.0` made production the CLI default with `--preview` as
+the opt-in. `staging` survives only in the legacy `/v1` dialect, for clients
+pinned before the rename.
 
 ## Open
 

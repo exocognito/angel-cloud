@@ -72,9 +72,18 @@ Check the second line. A package manager configured with a minimum release age
 will silently resolve an older version, and versions before 0.3.0 spell the
 preview environment `staging`, which makes the rest of this document wrong.
 
-Invoke it with `pnpm exec angel <command>`. The CLI accepts exactly three
-subcommands — `build`, `publish`, and `deploy … --prod` — and prints a `usage:`
-line for anything else, so your first real use is the build in step 5.
+Invoke it with `pnpm exec angel <command>`. The CLI accepts four subcommands and
+prints a `usage:` line for anything else, so your first real use is the build in
+step 5:
+
+```text
+angel build <angel>
+angel publish <angel> [--preview [--share-production-credentials]]
+angel deploy <angel> --prod
+angel delete <angel> [--confirm <slug>]
+```
+
+Bare `angel publish` deploys to **production**; `--preview` is the opt-in.
 
 If you cannot or prefer not to run the CLI, every publish/promote step has a
 raw-HTTP equivalent — see [Appendix: raw management API](#appendix-raw-management-api).
@@ -167,12 +176,13 @@ request.
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
 ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
-pnpm exec angel publish google-read-proof
+pnpm exec angel publish google-read-proof --preview
 ```
 
-Publish rebuilds, lists healthy Connections, resolves the preview bindings,
-ensures the Angel, publishes the immutable Version, and installs it in the
-preview environment.
+`publish --preview` rebuilds, lists healthy Connections, resolves the preview
+bindings, ensures the Angel, publishes the immutable Version, and installs it in
+the preview environment. **`--preview` is not optional.** Bare `angel publish`
+goes straight to production against `bindings.production` (PD 0003).
 
 **On the first ensure, the response prints the shown-once preview and
 production Angel keys.** Capture them immediately into a secret store — later reads expose

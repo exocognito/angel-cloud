@@ -84,16 +84,16 @@ canonical, secret-free `build/angel.version.json` and
 
 ```text
 bun run angel build golden-assistant
-bun run angel publish golden-assistant
+bun run angel publish golden-assistant --preview
 bun run angel deploy golden-assistant --prod
 ```
 
-`publish` builds, ensures the Angel, publishes an immutable Version, and deploys
-it to the preview environment. `deploy --prod` promotes the exact active previewed deployment; it does
+`publish --preview` builds, ensures the Angel, publishes an immutable Version,
+and deploys it to the preview environment; bare `publish` deploys to production. `deploy --prod` promotes the exact active previewed deployment; it does
 not build or publish. Server-side, `POST
 /v1/angels/{id}/environments/production/deployments` already takes a published
-Version live in one step; the CLI default flips to it with the next
-`@smcllns/angel-core` release (PD 0003). M1 Control is Access-protected: CLI publish and
+Version live in one step, and since core 0.3.0 the CLI defaults to it too:
+bare `publish` goes to production, `--preview` is the opt-in (PD 0003). M1 Control is Access-protected: CLI publish and
 deploy require both `ANGEL_MANAGEMENT_TOKEN` and `ANGEL_ACCESS_TOKEN`.
 
 ## Deterministic CI (golden proof)

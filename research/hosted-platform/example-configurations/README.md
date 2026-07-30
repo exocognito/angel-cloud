@@ -158,7 +158,8 @@ two-element binding array is sufficient.
 ## Environment and availability invariants
 
 Each environment owns its deployment, bindings, stable agent key, and runtime
-availability overlay. Publishing builds and deploys to staging. Production
+availability overlay. `publish --preview` builds and deploys to preview; bare
+`publish` goes to production. Production
 promotion names the exact active staged deployment and digest while supplying
 the production binding map; it does not rebuild or republish.
 

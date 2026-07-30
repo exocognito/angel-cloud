@@ -57,7 +57,7 @@ No whole live-facing gap remains. The Gateway answers the
 renders 0002's trust page at the bare production coordinate, the
 second environment is named `preview` and binds only its own explicit
 Connections (0003/0005), and the server deploys a published Version straight
-to production in one step. What remains CLI-side — `angel publish` defaulting
-to production, `--preview`, and the typed share flag — waits on
-`@smcllns/angel-core`, whose pinned release still speaks the legacy `staging`
-dialect that the `/v1` surface keeps serving through the cutover.
+to production in one step. The CLI side landed in `@smcllns/angel-core@0.3.0`:
+`angel publish` defaults to production, `--preview` is the opt-in, and the typed
+share flag exists. The `/v1` legacy `staging` dialect keeps serving clients
+pinned before that release, through the cutover.
