@@ -135,23 +135,27 @@ removes the collision by construction, and two further rules keep it safe:
 2. Add Workers custom domains/routes for Control (`dash.`, `api.`, `auth.`),
    Gateway (`mcp.`), and the Docs worker (`docs.`); add apex redirects for
    `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
-3. Update `CONTROL_BASE_URL` (`dash.`), `AUTH_BASE_URL` (`auth.`), and
-   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc`, regenerate
-   `types/control.d.ts` (the generated types embed var values, and `bun run
-   check` fails on drift), and redeploy.
-4. Add `dash.`, `api.`, and `auth.angelmcp.ai` to the Cloudflare Access
+3. Add `dash.`, `api.`, and `auth.angelmcp.ai` to the Cloudflare Access
    application. `auth.` must be listed: the callback is a Control path, so it
    needs an Access identity like every other one. Because Access cookies are
    host-only, Google's redirect reaches `auth.` without one and Access
    re-issues from the existing team-domain session — verify a live connect
    through the new host rather than assuming that hop is transparent.
-5. **Add** `auth.angelmcp.ai/oauth/google/callback` to the Google OAuth client
+4. **Add** `auth.angelmcp.ai/oauth/google/callback` to the Google OAuth client
    alongside the existing `workers.dev` URI — do not replace it (an
    operator-in-a-browser step in Google Cloud Console). An authorization issued
-   just before step 3 carries the old redirect URI inside its stored state, and
+   just before step 5 carries the old redirect URI inside its stored state, and
    the token exchange replays that stored string, so removing the old URI now
    would break those in-flight callbacks. Registering `dash.` too costs nothing
    and makes a callback rollback a var change with no Google edit.
+5. Only now update `CONTROL_BASE_URL` (`dash.`), `AUTH_BASE_URL` (`auth.`), and
+   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc`, regenerate
+   `types/control.d.ts` (the generated types embed var values, and `bun run
+   check` fails on drift), and redeploy. Steps 3 and 4 are prerequisites, not
+   follow-ups: this deploy is the moment new authorizations start sending the
+   `auth.` redirect URI and the post-connect redirect starts landing on `dash.`,
+   so an unregistered URI fails consent with `redirect_uri_mismatch` and a host
+   missing from the Access application 401s every path.
 6. Keep `workers.dev` URLs and the old redirect URI alive through the cutover,
    then disable and remove them.
 
