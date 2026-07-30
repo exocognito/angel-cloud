@@ -300,7 +300,12 @@
             <li>The <strong>Dogfood guide</strong> tab is disposable in full. Delete the
               panel and write a new one; everything in it is dated.</li>
             <li>On <strong>Getting started</strong>, rewrite the <code>hosts.env</code>
-              block. It is the only dated thing on that tab.</li>
+              block and the literal <code>target</code> origin in step 4. Those are the
+              dated things on that tab.</li>
+            <li>Rewrite the two-sentence lead in the page header. It names this run's
+              blockers, and both expire — one when core 0.3.0 clears the age gate, one
+              when <a class="underline" href="https://github.com/exocognito/angel-cloud/issues/36">#36</a>
+              lands.</li>
             <li>This <strong>Brief</strong> should survive untouched. If it needs
               rewriting, the product changed shape — say so in the commit subject.</li>
           </ul>
@@ -418,9 +423,11 @@ minimumReleaseAgeExclude:
               <code>staging</code> the CLI's spelling — but keep the occurrences that
               document the legacy wire route, which still answers. Then redeploy the docs
               worker; a merge alone will not move the served copy. Tracked in
-              <a class="underline" href="https://github.com/exocognito/angel-cloud/issues/36">#36</a>,
-              fixed in
-              <a class="underline" href="https://github.com/exocognito/angel-cloud/pull/40">PR #40</a>.
+              <a class="underline" href="https://github.com/exocognito/angel-cloud/issues/36">#36</a>. A fix is
+              proposed in
+              <a class="underline" href="https://github.com/exocognito/angel-cloud/pull/40">PR #40</a>,
+              still open — the served docs teach <code>staging</code> until it merges and
+              the docs worker redeploys.
             </p>
           </div>
         </section>
@@ -479,7 +486,8 @@ minimumReleaseAgeExclude:
             <strong class="text-warn">Likeliest mid-run failure.</strong>
             <span class="text-ink2">Google External-Testing refresh tokens die about every
             seven days, and a Gateway 500 reading <code>Connection is error</code> is the
-            usual symptom. Try row-level Reauthorize in the dashboard first. But a 500
+            reported symptom, but nobody has confirmed that is what happened. Try row-level
+            Reauthorize in the dashboard first. But a 500
             carries no cause, and other states produce the same message, so do not assume
             expiry — if reauthorising does not fix it, read a log rather than retrying.
             Tracked in
@@ -542,7 +550,7 @@ minimumReleaseAgeExclude:
           <h3 class="font-serif text-xl">Deltas with the APRD</h3>
           <p class="text-ink2 leading-relaxed">
             The APRD reads <code>docs/aprd/angel-cloud-aprd.html</code>, re-baselined
-            2026-07-29 against <code>main@a160c10</code>. Three merges have landed since.
+            2026-07-29 against <code>main@a160c10</code>. Six merges have landed since then.
             Its own <code>observed</code> and <code>change</code> tags are the thing that
             has drifted.
           </p>
@@ -856,7 +864,8 @@ pnpm exec angel</code></pre>
               <h4 class="font-serif text-lg">Build the Version</h4>
               <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel build &lt;slug&gt;</code></pre>
               <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong>
-              <code>build/angel.version.json</code> and <code>.sha256</code> appear, offline.
+              <code>angels/&lt;slug&gt;/build/angel.version.json</code> and
+              <code>angels/&lt;slug&gt;/build/angel.version.sha256</code> appear, offline.
               Run it twice — the digest must not move.</p>
             </li>
             <li class="relative pl-12">
@@ -1037,7 +1046,7 @@ pnpm exec angel</code></pre>
                 </tr>
                 <tr>
                   <td class="p-3"><code>500</code> reading <code>Connection is error</code></td>
-                  <td class="p-3">Cause not reported. Usually an expired Google grant — try row-level Reauthorize first; if that does not fix it, read a log (<a class="underline" href="https://github.com/exocognito/angel-cloud/issues/38">#38</a>)</td>
+                  <td class="p-3">Cause not reported. An expired Google grant is one candidate — try row-level Reauthorize first; if that does not fix it, read a log (<a class="underline" href="https://github.com/exocognito/angel-cloud/issues/38">#38</a>)</td>
                 </tr>
               </tbody>
             </table>
