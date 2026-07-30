@@ -853,7 +853,7 @@ The ordinary golden journey injects a deterministic provider at the Broker
 boundary. It needs no Google or Cloudflare credentials, yet exercises the real
 CLI, artifact digests, the Account API, both gates, MCP auth, Connection
 selection, availability, exact promotion, key stability, and Account isolation.
-The hosted repo runs this against the public `@smcllns/angel-core@0.2.0` pin, and
+The hosted repo runs this against the public `@smcllns/angel-core@0.3.0` pin, and
 remote CI is green.
 
 ### Full deployed comparison journey
