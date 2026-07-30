@@ -411,10 +411,14 @@ minimumReleaseAgeExclude:
               <code>angel publish</code> hard-stops.
             </p>
             <p class="mt-3 text-sm text-ink2 leading-relaxed">
-              Fix while running: write <code>"preview"</code>. Fix properly: a docs sweep
-              of the seven <code>staging</code> occurrences in <code>SKILL.md</code> and
-              five in <code>user-manual.md</code>, then a docs redeploy — a merge alone
-              will not move it. Not yet ticketed.
+              Fix while running: write <code>"preview"</code>. Fix properly: correct the
+              <code>angel.json</code> examples and the prose that calls
+              <code>staging</code> the CLI's spelling — but keep the occurrences that
+              document the legacy wire route, which still answers. Then redeploy the docs
+              worker; a merge alone will not move the served copy. Tracked in
+              <a class="underline" href="https://github.com/exocognito/angel-cloud/issues/36">#36</a>,
+              fixed in
+              <a class="underline" href="https://github.com/exocognito/angel-cloud/pull/40">PR #40</a>.
             </p>
           </div>
         </section>
@@ -483,8 +487,10 @@ minimumReleaseAgeExclude:
         <section class="space-y-3">
           <h3 class="font-serif text-xl">Not yet built</h3>
           <p class="text-ink2 leading-relaxed">
-            Most of the gap is CLI-side. The server halves shipped; the commands that
-            reach them did not.
+            Core 0.3.0 closed most of the old CLI gap. What is left is below. If the APRD
+            or a decision record still lists <code>angel delete</code>, the publish default
+            flip, or <code>--share-production-credentials</code> as pending, the record is
+            stale — all three shipped in 0.3.0.
           </p>
           <div class="overflow-x-auto rounded-lg border border-line bg-card">
             <table class="w-full text-sm">
@@ -496,21 +502,6 @@ minimumReleaseAgeExclude:
                 </tr>
               </thead>
               <tbody class="text-ink2">
-                <tr class="border-b border-line">
-                  <td class="p-3"><code>angel publish</code> defaulting to production, <code>--preview</code> opt-in</td>
-                  <td class="p-3">Built — one-step deploy to production works</td>
-                  <td class="p-3">You publish then promote: two commands, not one</td>
-                </tr>
-                <tr class="border-b border-line">
-                  <td class="p-3"><code>--share-production-credentials</code></td>
-                  <td class="p-3">Built — the refusal names both remedies</td>
-                  <td class="p-3">Preview needs its own Connection; no way to opt out</td>
-                </tr>
-                <tr class="border-b border-line">
-                  <td class="p-3"><code>angel delete</code></td>
-                  <td class="p-3">Built — <code>DELETE /v1/…/angels/:slug</code></td>
-                  <td class="p-3">Deleting means raw curl</td>
-                </tr>
                 <tr class="border-b border-line">
                   <td class="p-3">The <code>curl</code> installer</td>
                   <td class="p-3">n/a</td>
@@ -576,8 +567,8 @@ minimumReleaseAgeExclude:
             <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#b3452e]">
               <strong>The served docs conflict with the shipped CLI.</strong>
               <span class="text-ink2"> Blocker 2 above. §0 lists <code>staging</code> under
-              "never say", and the two documents an agent is told to read say it twelve
-              times between them.</span>
+              "never say", and both documents an agent is told to read print it as the
+              <code>angel.json</code> key.</span>
             </div>
             <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#b3452e]">
               <strong>"Retired at cutover" is not what the wire does.</strong>
@@ -738,32 +729,32 @@ source ./hosts.env</code></pre>
               </thead>
               <tbody class="text-ink2">
                 <tr class="border-b border-line">
-                  <td class="p-3"><code>$DOCS/llms.txt</code></td>
+                  <td class="p-3"><a class="underline" href="https://angelmcp-docs-demo.sam-633.workers.dev/llms.txt">llms.txt</a></td>
                   <td class="p-3">The agent's entry point</td>
                   <td class="p-3">You are the agent. Start here.</td>
                 </tr>
                 <tr class="border-b border-line">
-                  <td class="p-3"><code>$DOCS/SKILL.md</code></td>
+                  <td class="p-3"><a class="underline" href="https://angelmcp-docs-demo.sam-633.workers.dev/SKILL.md">SKILL.md</a></td>
                   <td class="p-3">The eight-step journey as instructions</td>
                   <td class="p-3">You read one file only.</td>
                 </tr>
                 <tr class="border-b border-line">
-                  <td class="p-3"><code>$DOCS/user-manual.md</code></td>
+                  <td class="p-3"><a class="underline" href="https://angelmcp-docs-demo.sam-633.workers.dev/user-manual.md">user-manual.md</a></td>
                   <td class="p-3">Canonical mechanics</td>
                   <td class="p-3">SKILL.md was too terse.</td>
                 </tr>
                 <tr class="border-b border-line">
-                  <td class="p-3"><code>$DOCS/faq.md</code></td>
+                  <td class="p-3"><a class="underline" href="https://angelmcp-docs-demo.sam-633.workers.dev/faq.md">faq.md</a></td>
                   <td class="p-3">Rationale, boundaries, limits</td>
                   <td class="p-3">You want to know why, not how.</td>
                 </tr>
                 <tr class="border-b border-line">
-                  <td class="p-3"><code>$DOCS/operator-journey.md</code></td>
+                  <td class="p-3"><a class="underline" href="https://angelmcp-docs-demo.sam-633.workers.dev/operator-journey.md">operator-journey.md</a></td>
                   <td class="p-3">A worked credentialed lifecycle</td>
                   <td class="p-3">You are stuck and want a transcript.</td>
                 </tr>
                 <tr>
-                  <td class="p-3"><code>$DOCS/demo/</code></td>
+                  <td class="p-3"><a class="underline" href="https://angelmcp-docs-demo.sam-633.workers.dev/demo/">demo/</a></td>
                   <td class="p-3">The dashboard on sample data, keyless</td>
                   <td class="p-3">You want to see the product before touching it.</td>
                 </tr>
@@ -771,8 +762,9 @@ source ./hosts.env</code></pre>
             </table>
           </div>
           <p class="leading-relaxed text-ink2">Then hand your agent one line and stop helping:</p>
-          <pre class="overflow-x-auto rounded-lg border border-line bg-card p-4 text-sm"><code>Read $DOCS/llms.txt and set me up an Angel whose tools reach only my
-Gmail search results and one Google Doc, and nothing else.</code></pre>
+          <pre class="overflow-x-auto rounded-lg border border-line bg-card p-4 text-sm"><code>Read https://angelmcp-docs-demo.sam-633.workers.dev/llms.txt and set me up
+an Angel whose tools reach only my Gmail search results and one Google Doc,
+and nothing else.</code></pre>
         </section>
 
         <!-- The eight steps -->
@@ -797,9 +789,12 @@ pnpm exec angel</code></pre>
                 confirm with <code>pnpm ls @smcllns/angel-core</code> before you go on.
                 <code>bun add</code> does the same thing. Blocker 1.
               </div>
-              <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> a
-              <code>usage:</code> line naming exactly <code>build</code>,
-              <code>publish</code>, <code>deploy</code>. It runs under Bun.</p>
+              <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong>
+              <code>pnpm ls @smcllns/angel-core</code> reads 0.3.0 or later, and the
+              <code>usage:</code> line names four commands — <code>build</code>,
+              <code>publish</code>, <code>deploy</code>, <code>delete</code>. Three
+              commands means you are on an older version and the rest of this rail is
+              wrong. It runs under Bun.</p>
             </li>
             <li class="relative pl-12">
               <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">2</span>
@@ -862,24 +857,32 @@ pnpm exec angel</code></pre>
             <li class="relative pl-12">
               <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">6</span>
               <h4 class="font-serif text-lg">Publish to preview</h4>
-              <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel publish &lt;slug&gt;</code></pre>
+              <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel publish &lt;slug&gt; --preview</code></pre>
               <p class="mt-2 text-sm text-ink2">
                 Rebuilds, lists healthy Connections, resolves preview bindings, publishes the
                 immutable Version, installs it in preview.
               </p>
+              <div class="mt-2 rounded-r-md bg-dangerbg p-3 text-sm text-danger shadow-[inset_4px_0_0_0_#b3452e]">
+                <code>--preview</code> is not optional. Since core 0.3.0, bare
+                <code>angel publish</code> deploys <em>straight to production</em>. Drop the
+                flag and you have a live Angel while believing it is quarantined.
+              </div>
               <div class="mt-2 rounded-r-md bg-warnbg p-3 text-sm text-warn shadow-[inset_4px_0_0_0_#8a5e17]">
                 Both Angel keys print here, once. Capture them before you scroll.
               </div>
               <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> the
-              staged tool list is exactly the operations you wrote — no more.</p>
+              preview tool list is exactly the operations you wrote — no more.</p>
             </li>
             <li class="relative pl-12">
               <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">7</span>
-              <h4 class="font-serif text-lg">Promote the exact staged deployment</h4>
+              <h4 class="font-serif text-lg">Promote the exact previewed deployment</h4>
               <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel deploy &lt;slug&gt; --prod</code></pre>
               <p class="mt-2 text-sm text-ink2">
                 Promotes that exact Version and digest under production's own bindings. It
-                does not build, publish, or pick a newer Version.
+                does not build, publish, or pick a newer Version. Skip step 6's
+                <code>--preview</code> and this step throws
+                <code>no active preview deployment to promote</code>, because bare publish
+                already went to production.
               </p>
               <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> the
               production digest equals the preview digest you just read.</p>
@@ -957,8 +960,8 @@ pnpm exec angel</code></pre>
                 </tr>
                 <tr class="border-b border-line">
                   <td class="p-3">Name an Angel you do not own</td>
-                  <td class="p-3">404, no existence signal</td>
-                  <td class="p-3">Isolation is invisibility (I6, E8)</td>
+                  <td class="p-3">401, identical to a wrong key</td>
+                  <td class="p-3">Isolation is invisibility — a 404 would confirm the handle exists (I6, E8)</td>
                 </tr>
                 <tr class="border-b border-line">
                   <td class="p-3">Publish to preview with production bindings only</td>
