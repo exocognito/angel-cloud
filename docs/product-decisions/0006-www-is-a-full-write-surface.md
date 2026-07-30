@@ -17,17 +17,22 @@ and publish it without switching to a terminal.
 
 This adds a surface, not a second policy model:
 
-1. www edits the same `ANGEL.yaml` shape as the CLI.
-2. The same portable compiler produces the same secret-free, digest-addressed
+1. www edits the same `ANGEL.yaml` shape as the CLI, including either direct
+   `tools:` or composed `angels:` children.
+2. Control stores the owner-only source draft. The browser runs the same pinned
+   portable compiler and produces the same secret-free, digest-addressed
    artifact.
-3. Control still accepts only the canonical artifact. It does not accept source
-   YAML or run arbitrary user code.
+3. The publish boundary still accepts only the canonical artifact. Control
+   stores source as data but does not compile it or run arbitrary user code.
 4. Publish keeps the same immutable Version, binding, digest, and exact
    promotion rules on every surface.
 
 The complete product design keeps this parity even when a release ships a
 smaller subset first. The v2.1 phase is CLI-first; it does not make CLI-only
 authoring the end state.
+
+[ADR 0006](../adrs/0006-browser-source-and-client-compilation.md) owns this
+source-storage and client-compilation boundary.
 
 ## Why the earlier boundary changed
 

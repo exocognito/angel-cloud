@@ -77,10 +77,14 @@ waiting to be uncovered.
 
 ### Does Angel Cloud run my code?
 
-No. There is no code-execution engine — a settled design decision. The platform
-accepts a canonical, secret-free artifact; it never accepts source YAML and
-never runs your build. "Compiled" here means canonical declarative data the
-runtime interprets but cannot edit.
+No server runs your code or your build — that is a settled design decision.
+Today the publish boundary accepts only a canonical, secret-free artifact.
+When www authoring lands, Control will store `ANGEL.yaml` as owner-only data
+and the browser will compile it; the publish and runtime boundaries will still
+receive only the artifact
+([ADR 0006](adrs/0006-browser-source-and-client-compilation.md)).
+"Compiled" here means canonical declarative data the runtime interprets but
+cannot edit.
 
 ## Design choices
 
