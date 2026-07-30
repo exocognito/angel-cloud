@@ -330,6 +330,9 @@ async function providerRequest(
     });
   }
   if (url.pathname === "/oauth/google/callback" && request.method === "GET") {
+    // Before spending the code: a deploy can change CONTROL_BASE_URL while an
+    // authorization is in flight, and the redirect that reads it runs last.
+    httpsOrigin(env.CONTROL_BASE_URL, "CONTROL_BASE_URL");
     const state = requiredString(url.searchParams.get("state"), "state");
     const code = requiredString(url.searchParams.get("code"), "code");
     const taken = parseTakenOAuthState(await registryValue(registry, {

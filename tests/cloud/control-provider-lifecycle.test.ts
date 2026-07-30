@@ -183,7 +183,32 @@ describe("Access-authenticated browser Provider API", () => {
       expect(response.status).toBe(500);
       expect(await response.json()).toEqual({ error: "CONTROL_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials" });
       expect(harness.brokerRequests.some((request) => new URL(request.url).pathname === "/internal/oauth/authorize")).toBe(false);
+
+      // Reauth shares startGoogleAuthorization; pin that it fails as early.
+      const reauth = await request(harness, "/api/connections/con_google/reauthorize", "POST", {});
+      expect(reauth.status).toBe(500);
+      expect(harness.brokerRequests.some((request) => new URL(request.url).pathname === "/internal/oauth/authorize")).toBe(false);
     }
+  });
+
+  // A deploy can change CONTROL_BASE_URL between authorize and callback, so the
+  // callback must reject before spending the single-use code.
+  test("rejects a malformed Control base URL at the callback before exchanging the code", async () => {
+    const harness = makeHarness("access-user");
+    await request(harness, "/api/provider-apps", "POST", {
+      providerAppId: "app_google",
+      provider: "google",
+      displayName: "Family Google",
+      clientId: "client-id",
+      clientSecret: "secret",
+    });
+    await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
+    harness.env.CONTROL_BASE_URL = "https://control.test/base";
+    const callback = await request(harness, `/oauth/google/callback?state=${encodeURIComponent(harness.authorizationState)}&code=google-code`);
+    expect(callback.status).toBe(500);
+    expect(await callback.json()).toEqual({ error: "CONTROL_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials" });
+    expect(harness.exchangeBody).toBeUndefined();
+    expect(harness.savedConnection).toBeUndefined();
   });
 });
 
