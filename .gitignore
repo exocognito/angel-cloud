@@ -7,6 +7,9 @@ node_modules/
 # personal scratch pad, local only
 docs/sam-feedback.md
 
+# Sam's raw notes and screenshots, local only — summaries go in docs/
+.sam/
+
 # actual deployment configuration, local only
 angels/*/angel.json
 
