@@ -1,4 +1,5 @@
 /// <reference path="../../types/control.d.ts" />
+/// <reference path="../../types/control-secrets.d.ts" />
 
 import { DurableObject } from "cloudflare:workers";
 import { canonicalJson } from "@smcllns/angel-core";
