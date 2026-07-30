@@ -339,7 +339,7 @@
 
           <div class="rounded-r-lg bg-dangerbg p-5 shadow-[inset_5px_0_0_0_#b3452e]">
             <p class="text-xs uppercase tracking-wider text-danger">Blocker 1 · verified</p>
-            <h4 class="font-serif text-lg mt-1">The seven-day age gate hides the CLI, and Bun hides it silently</h4>
+            <h4 class="font-serif text-lg mt-1">The seven-day age gate silently pins the CLI to 0.1.0, in pnpm and Bun alike</h4>
             <p class="mt-2 text-sm text-ink2 leading-relaxed">
               Core 0.3.0 published 2026-07-29. The seven-day cutoff sits at
               2026-07-23, so the newest version that clears it is <strong>0.1.0</strong>.
@@ -834,7 +834,7 @@ pnpm exec angel</code></pre>
                 config and stays untracked.
               </p>
               <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>{
-  "target": "$CONTROL",
+  "target": "https://angelmcp-control-demo.sam-633.workers.dev",
   "account": "acct_…",
   "angel": "&lt;slug&gt;",
   "bindings": {
@@ -1093,7 +1093,6 @@ pnpm exec angel</code></pre>
 
         const nav = document.createElement("div");
         nav.className = "flex justify-center gap-2 pt-4";
-        nav.setAttribute("role", "tablist");
         const dots = slides.map((_, i) => {
           const d = document.createElement("button");
           d.className = "dot";
