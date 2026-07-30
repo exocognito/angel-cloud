@@ -138,9 +138,9 @@ removes the collision by construction, and two further rules keep it safe:
 3. Add `dash.`, `api.`, and `auth.angelmcp.ai` to the Cloudflare Access
    application. `auth.` must be listed: the callback is a Control path, so it
    needs an Access identity like every other one. Because Access cookies are
-   host-only, Google's redirect reaches `auth.` without one and Access
-   re-issues from the existing team-domain session — verify a live connect
-   through the new host rather than assuming that hop is transparent.
+   host-only, Google's redirect reaches `auth.` without one and Access must
+   re-issue from the existing team-domain session — a hop to prove rather than
+   assume, at step 5, once a live connect through `auth.` is possible.
 4. **Add** `auth.angelmcp.ai/oauth/google/callback` to the Google OAuth client
    alongside the existing `workers.dev` URI — do not replace it (an
    operator-in-a-browser step in Google Cloud Console). An authorization issued
@@ -152,12 +152,18 @@ removes the collision by construction, and two further rules keep it safe:
    `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc`, run `bun run
    types:generate` (the generated types embed var values, and `bun run check`
    fails on drift — use that script, not bare `wrangler types`, or a local
-   `.dev.vars` re-injects the secret declarations), and redeploy. Steps 3 and 4 are prerequisites, not
-   follow-ups: this deploy is the moment new authorizations start sending the
-   `auth.` redirect URI and the post-connect redirect starts landing on `dash.`,
-   so an unregistered URI fails consent with `redirect_uri_mismatch` and a host
-   missing from the Access application 401s every path.
-6. Keep `workers.dev` URLs and the old redirect URI alive through the cutover,
+   `.dev.vars` re-injects the secret declarations), and redeploy. Steps 3 and 4
+   are prerequisites, not follow-ups: this deploy is the moment new
+   authorizations start sending the `auth.` redirect URI and the post-connect
+   redirect starts landing on `dash.`, so an unregistered URI fails consent with
+   `redirect_uri_mismatch` and a host missing from the Access application 401s
+   every path. Then connect a Provider through `auth.` end to end, which is the
+   first point the Access re-issue hop from step 3 can be proven.
+6. Replace the hardcoded `workers.dev` origins that step 7 would otherwise
+   break: `docs-site/public/SKILL.md` names the Control origin the CLI targets,
+   and the interim-URL notes in `docs-site/README.md` and `docs-site/build.sh`
+   describe the old host. Rebuild and redeploy the docs worker.
+7. Keep `workers.dev` URLs and the old redirect URI alive through the cutover,
    then disable and remove them.
 
 ## Open questions
