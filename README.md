@@ -243,10 +243,9 @@ Four separate authentication paths:
 
 Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
 `ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, `AUTH_BASE_URL`, and `GATEWAY_BASE_URL`.
-Control
-authenticates browser requests through Access and service-token requests
-through `CF-Access-Client-ID` and `CF-Access-Client-Secret` headers before
-routing to private state or provider custody.
+Control authenticates browser requests through Access and service-token
+requests through `CF-Access-Client-ID` and `CF-Access-Client-Secret` headers
+before routing to private state or provider custody.
 
 Each internal token belongs to one caller/callee pair. Control also requires
 all of its credentials and its response-replay encryption key to be non-empty
