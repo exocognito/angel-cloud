@@ -7,16 +7,25 @@
   "compatibility_flags": ["nodejs_compat"],
   // Secrets: MANAGEMENT_API_TOKEN, CONTROL_RESPONSE_KEK, CONTROL_GATEWAY_TOKEN,
   // CONTROL_BROKER_TOKEN, DEMO_ADMIN_TOKEN
+  // All three Control hosts must be listed on the Access application before this
+  // deploys, `auth.` included — every Control path needs an Access identity, the
+  // OAuth callback no exception. Deploying these routes also needs the
+  // `angelmcp.ai` zone already active in this account (migration checklist step 1).
+  "routes": [
+    { "pattern": "dash.angelmcp.ai", "custom_domain": true },
+    { "pattern": "api.angelmcp.ai", "custom_domain": true },
+    { "pattern": "auth.angelmcp.ai", "custom_domain": true }
+  ],
   "vars": {
     "ACCOUNT_ID": "acct_m1",
     "ACCESS_TEAM_DOMAIN": "https://angel-cloud.cloudflareaccess.com",
     "ACCESS_AUDIENCE": "4848f84b13d92d4c9a219e35662c5ca84cd9b6188b5e556df801e34fb7bf1da7",
-    "CONTROL_BASE_URL": "https://angelmcp-control-demo.sam-633.workers.dev",
+    "CONTROL_BASE_URL": "https://dash.angelmcp.ai",
     // The Google OAuth client stores one redirect URI per host, so the callback
     // host moves independently of the dashboard host. Both must sit inside the
     // Access app: every Control path, the callback included, needs an identity.
-    "AUTH_BASE_URL": "https://angelmcp-control-demo.sam-633.workers.dev",
-    "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev"
+    "AUTH_BASE_URL": "https://auth.angelmcp.ai",
+    "GATEWAY_BASE_URL": "https://mcp.angelmcp.ai"
   },
   "durable_objects": {
     "bindings": [

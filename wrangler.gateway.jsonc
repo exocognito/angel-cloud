@@ -6,6 +6,12 @@
   "compatibility_date": "2026-07-18",
   "compatibility_flags": ["nodejs_compat"],
   // Secrets: CONTROL_GATEWAY_TOKEN, GATEWAY_BROKER_INVOKE_TOKEN
+  // `mcp.` is the only public MCP host (docs/domain-architecture.md). Deploying
+  // these routes needs the `angelmcp.ai` zone already active in this account —
+  // migration checklist step 1 — or wrangler refuses to attach the domain.
+  "routes": [
+    { "pattern": "mcp.angelmcp.ai", "custom_domain": true }
+  ],
   "durable_objects": {
     "bindings": [
       { "name": "GATES", "class_name": "GateRuntime" },

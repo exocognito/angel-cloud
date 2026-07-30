@@ -15,13 +15,16 @@
   "assets": {
     "directory": "./dist"
   },
+  // The canonical docs host. build.sh already writes this URL into llms.txt and
+  // SKILL.md, so deploy from a plain `./build.sh` — the DOCS_BASE_URL rewrite
+  // exists only for the interim workers.dev host. Needs the `angelmcp.ai` zone
+  // active in this account first (docs/domain-architecture.md, step 1). The apex
+  // `/docs` + `/llms.txt` redirects still wait on the apex dispatcher.
+  "routes": [
+    { "pattern": "docs.angelmcp.ai", "custom_domain": true }
+  ],
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
   }
-  // Custom domain: after the `angelmcp.ai` zone moves into this account
-  // (docs/domain-architecture.md migration checklist, step 1), bind
-  // `docs.angelmcp.ai` here (the settled canonical docs host) and wire the apex
-  // `/docs` + `/llms.txt` redirects to it. Until then the stable URL is
-  // https://angelmcp-docs-demo.sam-633.workers.dev.
 }
