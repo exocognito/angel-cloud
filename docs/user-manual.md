@@ -716,9 +716,11 @@ Angel detail has four panes:
 
 ![Settings Version history: each immutable Version with its tool count, full sha256 digest, and Staged or Live status](manual-images/settings-version-history.png)
 
-The endpoint comes from the management read model; the page never constructs one.
-The web UI does not author, build, or publish policy — those actions stay in
-reviewable source and the CLI
+The endpoint comes from the management read model; the page never constructs
+one. Today the web UI does not author, build, or publish policy, so those
+actions still use reviewable source and the CLI. That is an unbuilt product
+path, not the end-state boundary: [PD 0006](product-decisions/0006-www-is-a-full-write-surface.md)
+sets www parity under the same source, compiler, and immutable publish contract
 ([why](faq.md#can-i-author-or-publish-an-angel-from-the-web-ui)).
 
 ## Pause and resume

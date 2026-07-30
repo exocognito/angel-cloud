@@ -44,6 +44,13 @@ withdrew it the same day. **ADR 0003's binding-isolation stance stands as
 written.** Preview binds its own Connections; sharing production's is
 available and must be asked for.
 
+**ADR 0003's browser-surface exclusion is superseded.**
+[PD 0006](../product-decisions/0006-www-is-a-full-write-surface.md),
+2026-07-30, makes www a full-parity authoring and publishing surface. The
+record changes the old API-first scope cut, not ADR 0003's core: every surface
+still compiles the same canonical artifact and publishes immutable,
+digest-pinned Versions through the same binding and promotion rules.
+
 **The artifact format is `angel.version.v2`.** ADRs 0001 and 0004 name
 `angel.version.v1`. The compiler emits v2 and validation rejects anything else.
 The shape of the decision holds: a canonical, secret-free byte string plus a

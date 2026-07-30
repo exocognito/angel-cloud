@@ -334,10 +334,16 @@ source again yourself.
 
 ### Can I author or publish an Angel from the web UI?
 
-No, and that is deliberate. The dashboard can promote an already-staged Version,
-manage keys, and pause or resume tools — nothing more
-([the dashboard](user-manual.md#use-the-dashboard)). Policy always enters
-through reviewed source and the CLI ([ship it](user-manual.md#ship-it)).
+Not today. The dashboard can promote an already-staged Version, manage keys,
+and pause or resume tools, but it cannot yet author, build, or publish source
+([the dashboard](user-manual.md#use-the-dashboard)).
+
+That is now an implementation gap, not a permanent boundary.
+[PD 0006](product-decisions/0006-www-is-a-full-write-surface.md) makes www a
+full-parity write surface. Its future editor will write the same `ANGEL.yaml`
+shape, use the same compiler, and publish the same immutable artifact as the
+CLI. Until that work lands, policy still enters through reviewed source and
+the CLI ([ship it](user-manual.md#ship-it)).
 
 ### What's the difference between pause/resume and disabling an Angel?
 
