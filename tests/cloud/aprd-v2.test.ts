@@ -5,6 +5,14 @@ const html = readFileSync(
   new URL("../../docs/aprd/angel-cloud-aprd.html", import.meta.url),
   "utf8",
 );
+const aprdReadme = readFileSync(
+  new URL("../../docs/aprd/README.md", import.meta.url),
+  "utf8",
+);
+const roadmap = readFileSync(
+  new URL("../../ROADMAP.md", import.meta.url),
+  "utf8",
+);
 
 function count(pattern: RegExp): number {
   return [...html.matchAll(pattern)].length;
@@ -73,6 +81,8 @@ describe("APRD v2", () => {
   });
 
   test("records the code-grounded map regrades", () => {
+    expect(html).toContain('text-amber-600">home:MagicLinkForm');
+    expect(html).not.toContain('text-red-600">home:MagicLinkForm');
     expect(html).toContain('text-amber-600">angels:create → new:CharterEditor');
     expect(html).toContain('text-amber-600">[slug]:Publish → hero result');
     expect(html).toContain('text-amber-600">[slug]:PolicyEditor');
@@ -80,6 +90,7 @@ describe("APRD v2", () => {
     expect(html).toContain('text-emerald-700">[slug]:KeysPanel.New → Revoke');
     expect(html).toContain('text-amber-600">angel keys new|revoke');
     expect(html).toContain("sends <span class=\"font-mono\">pause_tool</span> / <span class=\"font-mono\">resume_tool</span>");
+    expect(html).toContain("The current page does make other writes — Promote, availability changes, and key lifecycle actions");
   });
 
   test("keeps the CLI-first phase coherent with its human web steps", () => {
@@ -97,8 +108,28 @@ describe("APRD v2", () => {
 
   test("marks only the actual system additions as future", () => {
     expect(html).toContain('BA["Better Auth<br/>D1 storage · email links"]');
-    expect(html).toContain("class SRV,BA change");
+    expect(html).toContain('APX["Apex public-page route<br/>angelmcp.ai/@handle/angel"]');
+    expect(html).toContain("class SRV,BA,APX change");
     expect(html).not.toContain("class SRV,C change");
+    expect(html).not.toContain('G["Gateway<br/>mcp. — POST invokes,<br/>GET renders the trust page"]');
+  });
+
+  test("retains v1 safety and precedence clauses", () => {
+    expect(html).toContain("Neither gate falls back to an older Version or availability state.");
+    expect(html).toContain("Custody failure throws; it never substitutes a fixture.");
+    expect(html).toContain("Fail closed beats");
+    expect(html).toContain("Publish-time rejection beats runtime failure.");
+    expect(html).toContain("ROADMAP.md owns delivery sequence and status.");
+  });
+
+  test("keeps the APRD entry points aligned with v2", () => {
+    expect(aprdReadme).toContain("The goals map (§2) and");
+    expect(aprdReadme).toContain("Phasing (§8) chooses build order and never narrows that design.");
+    expect(aprdReadme).not.toContain("Spine > Evals");
+    expect(aprdReadme).not.toContain("toggle at the bottom right");
+    expect(aprdReadme).not.toContain("Prototype flow F");
+    expect(roadmap).toContain("the goals map, demonstrable commitments,");
+    expect(roadmap).not.toContain("the spine, invariants, interface types,");
   });
 
   test("keeps the flagship wording visibly open", () => {

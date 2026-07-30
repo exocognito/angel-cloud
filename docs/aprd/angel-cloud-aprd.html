@@ -160,9 +160,15 @@
           </table>
         </div>
         <div class="rounded-r-lg bg-stone-100 p-4 text-sm text-slate-700 shadow-[inset_4px_0_0_0_theme(colors.slate.400)]">
-          <strong>Precedence.</strong> The goals map (§2) and commitments (§3)
-          are normative. Station subsections (§4) elaborate them. Phasing (§8)
-          binds order, never design.
+          <p><strong>Document precedence.</strong> This APRD owns the assembled
+          target product. ROADMAP.md owns delivery sequence and status. The
+          ADR/PD index Status line says whether a record governs; when a settled
+          record and this page conflict, fix this page. Inside the APRD, the
+          goals map (§2) and commitments (§3) are normative, station subsections
+          (§4) elaborate them, and phasing (§8) binds order, never design.</p>
+          <p class="mt-3"><strong>When goals conflict.</strong> Fail closed beats
+          availability. Isolation beats convenience, while convenience beats an
+          empty step. Publish-time rejection beats runtime failure.</p>
         </div>
       </section>
 
@@ -194,8 +200,8 @@
                 <div class="p-2 text-[10px] uppercase tracking-wider text-slate-500 font-medium border-b border-slate-200">agent</div>
 
                 <!-- 1 get in -->
-                <a href="#s1" class="m-1 rounded border-2 border-red-300 bg-red-50 p-2 font-mono hover:bg-red-100"><span class="text-[9px] font-sans uppercase tracking-wider text-red-500">1 ↓</span><br/>get in</a>
-                <div class="p-2 font-mono border-t border-slate-100 text-red-600">home:MagicLinkForm</div>
+                <a href="#s1" class="m-1 rounded border-2 border-amber-300 bg-amber-50 p-2 font-mono hover:bg-amber-100"><span class="text-[9px] font-sans uppercase tracking-wider text-amber-600">1 ↓</span><br/>get in</a>
+                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">home:MagicLinkForm</div>
                 <div class="p-2 font-mono border-t border-slate-100 text-amber-600">angel account login</div>
                 <div class="p-2 font-mono border-t border-slate-100 text-amber-600">"read llms.txt" → guided</div>
 
@@ -276,7 +282,7 @@
       <section id="commitments" class="space-y-5">
         <h2 class="font-serif text-3xl">3 · Demonstrable commitments</h2>
         <p class="text-slate-700 leading-relaxed">
-          This section replaces v1's "Invariants — what must never happen"; every invariant survives inside a commitment. Each card is a commitment demonstrable in the product, the code, or the logs. The lines are the requirements; the colors are today's score, recomputed on every release. The serif line on each card says what the end user will notice.
+          This section replaces v1's "Invariants — what must never happen" and carries those properties forward as demonstrable commitments. Each card is demonstrable in the product, the code, or the logs. The lines are the requirements; the colors are today's score, recomputed on every release. The serif line on each card says what the end user will notice.
         </p>
         <div class="rounded-lg border border-slate-200 bg-white p-4 flex flex-wrap gap-x-5 gap-y-2 items-center text-[13px] font-mono">
           <span class="font-semibold" style="color:#177245">● 20 green</span>
@@ -310,7 +316,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>One invocation surface, fixed service topology</h4>
-          <p class="dev">MCP is the only invocation surface — REST invocation is reserved, unbuilt — and the platform is three Workers total, constant as Angels multiply. The Broker has no route at all.</p>
+          <p class="dev">MCP is the only invocation surface — REST invocation is reserved, unbuilt. Execution and control use three shared Workers, constant as Angels multiply; the future public apex route is another shared edge, never per-Angel infrastructure. The Broker has no route at all.</p>
           <p class="demo">the three wrangler configs; the Broker's <code>workers_dev</code> is disabled with no public route declared.</p>
           <p class="user">Adding an Angel never means deploying another service. People can make several small toolboxes — one for email, one for documents — rather than one that can do everything.</p>
         </div>
@@ -333,7 +339,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Two receipts or nothing happens</h4>
-          <p class="dev">Gateway and Broker evaluate every executed call independently; the response carries both hash-chained receipts, redacted for agents (<code>AgentSafeGateReceipt</code>). Forced divergence: HTTP 500 / −32603 and no provider call — that status is intended.</p>
+          <p class="dev">Gateway and Broker evaluate every executed call independently; the response carries both hash-chained receipts, redacted for agents (<code>AgentSafeGateReceipt</code>). Forced divergence: HTTP 500 / −32603 and no provider call — that status is intended. Neither gate falls back to an older Version or availability state.</p>
           <p class="demo">eval E4 — the harness forces the gates apart and asserts the refusal reaches the agent with no Google call made.</p>
           <p class="user">Two separate systems check every provider action before it executes, and both checks come back attached to the result. A first-gate denial stops there; if the two gates disagree, nothing happens. When in doubt, the answer is no.</p>
         </div>
@@ -372,7 +378,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Credentials go in, never out</h4>
-          <p class="dev">Provider credentials are write-only: envelope-encrypted per Account, leased only inside the Broker, never returned by any API. Only the Broker holds the KEK — and the Broker has no public hostname, ever.</p>
+          <p class="dev">Provider credentials are write-only: envelope-encrypted per Account, leased only inside the Broker, never returned by any API. Only the Broker holds the KEK — and the Broker has no public hostname, ever. Custody failure throws; it never substitutes a fixture.</p>
           <p class="demo">eval E9 (credentialed acceptance); Provider Apps read back as safe summaries with no client secret; the Broker declares no route.</p>
           <p class="user">When you connect a Google account, its credential goes into a vault nothing on the internet can reach. It can be used for allowed actions, but never read back out — not by your assistant, not by us, not by you.</p>
         </div>
@@ -645,7 +651,7 @@
 <span class="r">✗ preview has no Connections bound</span>
 <span class="p">  1. bind a Connection to preview in angel.json, or</span>
 <span class="p">  2. explicitly share production's: --share-production-credentials</span></pre>
-          <p class="text-sm text-slate-600">The refusal with its two named ways forward is required (PD 0005) and shipped. D21 makes www a full-parity write surface, so <span class="font-mono">[slug]:Publish</span> must drive the same build-and-publish contract and return the digest in the hero. That web action is unbuilt; the current page only reads deployed state.</p>
+          <p class="text-sm text-slate-600">The refusal with its two named ways forward is required (PD 0005) and shipped. D21 makes www a full-parity write surface, so <span class="font-mono">[slug]:Publish</span> must drive the same build-and-publish contract and return the digest in the hero. That publish action is unbuilt. The current page does make other writes — Promote, availability changes, and key lifecycle actions — but it cannot build and publish a source artifact.</p>
         </div>
 
         <!-- s6 -->
@@ -712,7 +718,7 @@ Authorization: Bearer ak_production_9f2…
       <section class="space-y-5">
         <h2 class="font-serif text-3xl">5 · System diagram</h2>
         <p class="text-slate-700 leading-relaxed">
-          Three Workers, constant as angels multiply — plus the two v2 additions, marked orange: <span class="font-mono text-sm">angel serve</span> on the user's machine, and Better Auth mounted on the control worker (D18). The public trust page, new in v1, is live now: GET on the bare coordinate renders it; POST still invokes MCP.
+          Three shared execution/control Workers, constant as angels multiply — plus three unbuilt pieces, marked orange: <span class="font-mono text-sm">angel serve</span> on the user's machine, Better Auth mounted on the control worker (D18), and the public-page route at <span class="font-mono text-sm">angelmcp.ai/@handle/angel</span>. Today the Gateway serves that trust page on its current host; the end state keeps MCP POST on <span class="font-mono text-sm">mcp.</span> and moves the public GET to the apex. The apex router's exact form remains open (§7).
         </p>
         <div class="rounded-lg border border-slate-200 bg-white p-4">
           <pre class="mermaid">
@@ -729,7 +735,8 @@ flowchart LR
   subgraph cf ["Cloudflare (dedicated account)"]
     C["Control<br/>dashboard · management API"]
     BA["Better Auth<br/>D1 storage · email links"]
-    G["Gateway<br/>mcp. — POST invokes,<br/>GET renders the trust page"]
+    APX["Apex public-page route<br/>angelmcp.ai/@handle/angel"]
+    G["Gateway<br/>mcp. — POST invokes"]
     B["Broker<br/>no hostname, ever"]
     AR[("AccountRegistry DO")]
     GD[("Gate DOs ×2")]
@@ -741,7 +748,8 @@ flowchart LR
   BA --> C
   AG -- "MCP @handle/angel" --> G
   AG -. "MCP localhost" .-> SRV
-  PUB -- "GET trust page" --> G
+  PUB -- "GET trust page" --> APX
+  APX -. "read-only page data<br/>exact route form open" .-> G
   C --- AR
   C -- "install / availability" --> G
   C -- "+ custody" --> B
@@ -752,7 +760,7 @@ flowchart LR
   B -- "sealed template" --> GOOG
   SRV -- "user's own tokens" --> GOOG
   classDef change stroke:#c2410c,stroke-width:2px;
-  class SRV,BA change
+  class SRV,BA,APX change
           </pre>
         </div>
         <p class="text-sm text-slate-600">
@@ -767,7 +775,7 @@ flowchart LR
           <li><strong>No oracle.</strong> Angel never issues a safety verdict; there is no judge above the policy. The only claim is fidelity to the compiled policy the charter describes — whether that is a wise policy is for the owner and their own LLM to judge from the charter, the spec, the allow list, and the bundle. Any copy implying a "this is secure" assessment mis-sells the product (D6 — ADR candidate).</li>
           <li><strong>No code-execution engine.</strong> The platform accepts canonical secret-free artifacts; it never accepts source YAML and never runs a user's build.</li>
           <li><strong>MCP is the only invocation surface.</strong> REST invocation stays reserved, unbuilt.</li>
-          <li><strong>Omission never means fan-out</strong> (ADR 0002), <strong>the Broker never gets a hostname</strong>, and <strong>no per-Angel service deployment</strong> — three Worker services total; Durable Object state scopes each Angel.</li>
+          <li><strong>Omission never means fan-out</strong> (ADR 0002), <strong>the Broker never gets a hostname</strong>, and <strong>no per-Angel service deployment</strong> — shared services stay constant as Angels multiply; Durable Object state scopes each Angel.</li>
           <li><strong>Reversed from v1:</strong> "no authoring or publishing from the web UI" is gone. www is a full-parity write surface (D21). Do not cite v1's non-goal.</li>
           <li><strong>Deliberately not verified</strong> (D15), so they never sneak back in as requirements: byte-identity of the production <em>server code</em> (unverifiable from outside in principle; the policy artifact plus replay is the meaningful surface) · provider-side effects (what Google did with a forwarded request is Google's ledger) · <span class="font-mono text-sm">availabilityDigest</span> matching a local build (it is runtime state, correctly).</li>
           <li><strong>Deferred, on the record:</strong> signed attestation (D14, committed-later); hosting multiple engine versions (D8 is staged — v2 pins and refuses, multi-version hosting is its own milestone); sharing/catalog (J6, parked until the first hundred users); signup-at-scale, billing, quotas, teams (out of scope until the milestone gate passes).</li>
@@ -784,6 +792,7 @@ flowchart LR
           <li>Billing/pricing appears on the Account page sketch but was never discussed.</li>
           <li>Delete-account cascade details beyond "cascades angels · keys · apps".</li>
           <li>Sharing/catalog (J6): parked until the first hundred users exist.</li>
+          <li>The apex public-page route's form: one dispatcher Worker, or a marketing host with an <code>@</code>-path carve-out.</li>
           <li>Whether commitments regeneration is scripted in-repo or stays manual per release.</li>
         </ul>
       </section>
@@ -826,6 +835,7 @@ flowchart LR
         <p class="text-slate-700 leading-relaxed text-[15px]">
           <strong>v2.1 in one sentence:</strong> a developer (or their agent) reading only the public docs signs in, creates, connects, runs locally, publishes with the digest on screen, verifies it, and watches receipts they can anchor — from the terminal, with only the small web surfaces that human auth and consent require. <strong>v2.2</strong> brings www to write parity (D20/D21 stay on the map throughout) and adds the CLI key path; its exact cut remains a proposal. <strong>Later</strong> phases carry their own gates: the hosted Google tier waits on Google; multi-version engine hosting and the catalog are their own milestones. Engine-pin work is the poster child for doing the monorepo migration first — it cuts core and cloud — but that migration is separate, approved work; this document references it and does not perform it.
         </p>
+        <p class="text-sm text-slate-600"><strong>Shared platform marks:</strong> Better Auth is v2.1 because CLI login depends on it. The apex public-page route and host cutover are later; their user-facing destination is fixed, while the router shape stays open in §7.</p>
       </section>
 
       <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200 space-y-1">

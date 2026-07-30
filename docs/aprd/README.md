@@ -9,41 +9,27 @@ the product team can read and approve. Open it in a browser.
 The dataroom is the source of truth. Where any other page here disagrees with
 it, the dataroom wins.
 
-Inside the dataroom, precedence runs **Spine > Evals > System diagram >
-Prototype > FAQ**, and the Spine wins all conflicts. Terminology (§0) sits
-outside that order: it states no requirement, it defines the words the
-requirements are written in, and it governs how the product is described
-anywhere — docs, help articles, commit messages, marketing copy. Change a word
-there and it changes everywhere.
+Terminology (§0) defines the words used everywhere. The goals map (§2) and
+commitments (§3) state the complete target product; station detail (§4) expands
+them. The system diagram (§5), non-goals (§6), and open questions (§7) set its
+boundary. Phasing (§8) chooses build order and never narrows that design.
 
-Almost every passage has two renderings, switched in place by the toggle at the
-bottom right. The exceptions are the exact interface types in the system
-diagram, which have no user-visible form and say so. **Developer** is the binding statement. **User** is derived from it — the
-consequence a person will notice, written for the internal product team. The
-two are one requirement rendered twice, never two requirements.
+ROADMAP.md owns delivery sequence and status. The ADR/PD index Status line says
+whether a record governs; when a settled record and the APRD conflict, fix the
+APRD.
 
 ## The audience views
 
-`views/` holds four renderings of the same content, organised the way each
-specialist reads: `engineering`, `design`, `marketing`, `support`. Open
-`aprd-views.html` for a full-screen carousel across all four. They are derived,
-not authoritative — the marketing view's claim guardrails, for instance, apply
-the terminology table rather than restating it.
+`views/` and `aprd-views.html` still hold the four audience renderings generated
+from v1. They are stale snapshots, not v2 requirements. Regenerate all four
+from the finished v2 dataroom before publishing them as current.
 
 ## The embedded dashboard
 
-Prototype flow F frames the public demo at `/demo/`, which will be assembled
-from the real `www/` shell — the live product rather than a picture of it, so it
-will never need refreshing here.
-
-The build step that assembles the page landed on `main` with
-[#21](https://github.com/exocognito/angel-cloud/pull/21) and was deployed on
-2026-07-29: before it, [the docs build](../../docs-site/README.md) copied
-markdown only and named no `www/` asset. The path is live, so flow F is tagged
-observed. The frame points at the interim host the rest of the repo uses; the
-zone move ([#6](https://github.com/exocognito/angel-cloud/issues/6)) later
-settles `docs.angelmcp.ai` as the canonical address, but the page does not wait
-on it.
+The v2 APRD does not frame the demo. `/demo/` remains separate proof: the docs
+build serves the real `www/` shell over a generated read-only fixture, not a
+screenshot. The canonical `docs.angelmcp.ai` host still waits on the zone move
+([#6](https://github.com/exocognito/angel-cloud/issues/6)).
 
 ## Hosting
 
