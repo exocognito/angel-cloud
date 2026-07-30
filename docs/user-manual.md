@@ -804,8 +804,11 @@ Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
 `ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, `AUTH_BASE_URL`, and `GATEWAY_BASE_URL`.
 `CONTROL_BASE_URL` is the dashboard origin the post-connect redirect returns to;
 `AUTH_BASE_URL` is the origin whose `/oauth/google/callback` is registered with
-Google. They may name the same host. The internal tokens
-must be non-empty and pairwise distinct; every Worker fails closed otherwise.
+Google. They may name the same host. Both vars only decide which host Control
+*names back to itself* in a redirect — one Control Worker serves every path on
+every host bound to it, so the management-API examples below work against any of
+them. The internal tokens must be non-empty and pairwise distinct; every Worker
+fails closed otherwise.
 `ACCOUNT_ID` must carry the `acct_` prefix — Control refuses to serve with a
 handle-shaped id. The Broker has `workers_dev` disabled and no public route.
 
