@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Angel Cloud — dogfooding guide</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-ground: #f2f0e8;
+        --color-card: #faf9f3;
+        --color-line: #ddd9cb;
+        --color-line2: #cdc9b8;
+        --color-ink: #1b1a17;
+        --color-ink2: #5b584d;
+        --color-ink3: #928f81;
+        --color-navy: #1d3f5e;
+        --color-link: #2c5f9e;
+        --color-good: #3f7d52;
+        --color-goodbg: #e7efe3;
+        --color-warn: #8a5e17;
+        --color-warnbg: #f6ecd8;
+        --color-danger: #b3452e;
+        --color-dangerbg: #f5e2dc;
+      }
+    </style>
+
+    <style>
+      /* Plain CSS reads these, so they live outside @theme — v4 drops any theme
+         variable no utility class references. */
+      :root {
+        --dot-active: #e5007a;
+        --rule: #cdc9b8;
+      }
+
+      [data-carousel] .slide-stack { display: grid; }
+      [data-carousel] .slide-stack > * { grid-area: 1 / 1; transition: opacity 0.25s ease; }
+      [data-carousel] .slide-stack > *[aria-hidden="true"] { opacity: 0; pointer-events: none; }
+      [data-carousel] .dot {
+        width: 7px; height: 7px; border-radius: 9999px;
+        background: #cdc9b8; transition: background 0.2s ease;
+      }
+      [data-carousel] .dot[data-active] { background: var(--dot-active); }
+      @media (prefers-reduced-motion: reduce) {
+        [data-carousel] .slide-stack > * { transition: none; }
+      }
+
+      /* Run-sheet rail: the numbered ladder is the page's spine. */
+      .rail { position: relative; }
+      .rail::before {
+        content: ""; position: absolute; left: 15px; top: 30px; bottom: 12px;
+        width: 1px; background: var(--rule);
+      }
+
+      /* The disposable band. Perforation above and below marks the cut line. */
+      .perforated {
+        border-top: 2px dashed #cdc9b8;
+        border-bottom: 2px dashed #cdc9b8;
+      }
+
+      code { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+      :focus-visible { outline: 2px solid #2c5f9e; outline-offset: 2px; }
+    </style>
+  </head>
+
+  <body class="bg-ground text-ink font-sans antialiased">
+    <main class="max-w-4xl mx-auto px-6 py-14 space-y-16">
+
+      <!-- ── Throughline ──────────────────────────────────────────────────── -->
+      <header class="space-y-4">
+        <p class="text-xs uppercase tracking-wider text-ink3">
+          Angel Cloud · issue #5 · dogfooding run sheet
+        </p>
+        <h1 class="font-serif text-4xl leading-tight">Dogfood the first Angel</h1>
+        <p class="text-xl text-ink2 leading-relaxed">
+          Two things stop you before step&nbsp;6 — a seven-day npm age gate and a
+          bindings key the published docs still spell <code>staging</code> — and both
+          have one-line fixes below. Everything past them has never been walked by
+          anyone, which is the whole point of the run.
+        </p>
+        <p class="text-sm text-ink3 leading-relaxed">
+          Standing guide first; the dated session sheet at the foot carries everything
+          that will be wrong next month.
+          <a class="text-link underline" href="#session">Jump to today's coordinates and blockers →</a>
+        </p>
+      </header>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!--  STANDING GUIDE — survives between runs. Edit sparingly.           -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+
+      <!-- ── Rules of the run ─────────────────────────────────────────────── -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-2xl">Rules of the run</h2>
+        <p class="leading-relaxed text-ink2">
+          The definition of done in <code>ROADMAP.md</code>: starting from an empty
+          directory with no repo clone, you and an agent create, publish, promote, and
+          query a new Angel over MCP; every friction found becomes an issue.
+        </p>
+
+        <ul class="space-y-3 text-ink2">
+          <li class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#1d3f5e]">
+            <strong class="text-ink">Empty directory, no clone.</strong>
+            If you or the agent reaches for <code>git clone exocognito/angel-cloud</code>
+            or runs <code>bun run angel</code> inside the product repo, the run is void —
+            the clone hides the friction the run exists to find.
+          </li>
+          <li class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#1d3f5e]">
+            <strong class="text-ink">Give the agent the docs URL and nothing else.</strong>
+            No context from this page, no repo paths. What the agent cannot work out
+            from <code>llms.txt</code> is the finding.
+          </li>
+          <li class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#b3452e]">
+            <strong class="text-ink">Both management credentials are environment
+            variables only.</strong>
+            Never in source, <code>angel.json</code>, a log, a command transcript, or an
+            Angel artifact — including anything you paste into a chat.
+          </li>
+          <li class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+            <strong class="text-ink">The Angel keys print exactly once.</strong>
+            On the first ensure, publish prints the preview and production keys and
+            never shows them again. Have somewhere to put them before you run it.
+          </li>
+        </ul>
+      </section>
+
+      <!-- ── The secrets ledger (hand-built) ──────────────────────────────── -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-2xl">Three secrets, three rules</h2>
+        <div class="overflow-x-auto rounded-lg border border-line bg-card">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-line text-left text-xs uppercase tracking-wider text-ink3">
+                <th class="p-3 font-medium">Secret</th>
+                <th class="p-3 font-medium">Held by</th>
+                <th class="p-3 font-medium">May appear in</th>
+                <th class="p-3 font-medium">Never appears in</th>
+              </tr>
+            </thead>
+            <tbody class="text-ink2">
+              <tr class="border-b border-line">
+                <td class="p-3"><code>ANGEL_MANAGEMENT_TOKEN</code></td>
+                <td class="p-3">You</td>
+                <td class="p-3">Shell environment</td>
+                <td class="p-3">Any file, any transcript</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3"><code>ANGEL_ACCESS_TOKEN</code></td>
+                <td class="p-3">You</td>
+                <td class="p-3">Shell environment</td>
+                <td class="p-3">Any file, any transcript</td>
+              </tr>
+              <tr>
+                <td class="p-3">Angel key <code>ak_…</code></td>
+                <td class="p-3">The agent</td>
+                <td class="p-3">Your secret store; the agent's MCP config</td>
+                <td class="p-3">The repo; a second environment</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-sm text-ink3 leading-relaxed">
+          The Google credential is not on this list because you never hold it. It goes
+          into Broker custody write-only and no API reads it back.
+        </p>
+      </section>
+
+      <!-- ── What each step costs you ─────────────────────────────────────── -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-2xl">What each step needs</h2>
+        <p class="leading-relaxed text-ink2">
+          Two steps cannot be driven from a shell. Knowing which before you start is the
+          difference between a smooth run and a stall waiting on a browser.
+        </p>
+        <div class="overflow-x-auto rounded-lg border border-line bg-card p-5">
+          <div class="flex min-w-[640px] gap-1">
+            <div class="flex-1 pt-2 shadow-[inset_0_4px_0_0_#cdc9b8]">
+              <p class="text-[10px] uppercase tracking-wider text-ink3">Offline</p>
+              <p class="mt-1 text-sm text-ink">1 · install</p>
+            </div>
+            <div class="flex-[2] pt-2 shadow-[inset_0_4px_0_0_#b3452e]">
+              <p class="text-[10px] uppercase tracking-wider text-danger">A person, in a browser</p>
+              <p class="mt-1 text-sm text-ink">2 · credentials &nbsp;·&nbsp; 3 · Google Connection</p>
+            </div>
+            <div class="flex-[2] pt-2 shadow-[inset_0_4px_0_0_#cdc9b8]">
+              <p class="text-[10px] uppercase tracking-wider text-ink3">Offline</p>
+              <p class="mt-1 text-sm text-ink">4 · author &nbsp;·&nbsp; 5 · build</p>
+            </div>
+            <div class="flex-[2] pt-2 shadow-[inset_0_4px_0_0_#1d3f5e]">
+              <p class="text-[10px] uppercase tracking-wider text-navy">Bearer + Access token</p>
+              <p class="mt-1 text-sm text-ink">6 · publish &nbsp;·&nbsp; 7 · deploy</p>
+            </div>
+            <div class="flex-1 pt-2 shadow-[inset_0_4px_0_0_#3f7d52]">
+              <p class="text-[10px] uppercase tracking-wider text-good">Angel key</p>
+              <p class="mt-1 text-sm text-ink">8 · call</p>
+            </div>
+          </div>
+        </div>
+        <p class="text-sm text-ink3">
+          Steps 2 and 3 have no headless path. Everything else you can drive from a shell.
+        </p>
+      </section>
+
+      <!-- ── Getting started ──────────────────────────────────────────────── -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-2xl">Getting started</h2>
+        <p class="leading-relaxed text-ink2">
+          Set the three hosts once from the session sheet, then every command on this
+          page works unchanged when the zone moves.
+        </p>
+        <pre class="overflow-x-auto rounded-lg border border-line bg-card p-4 text-sm leading-relaxed"><code>mkdir ~/dogfood-angel &amp;&amp; cd ~/dogfood-angel
+source ./hosts.env          # the export block in the session sheet below</code></pre>
+
+        <h3 class="font-serif text-lg pt-2">What to read, in this order</h3>
+        <div class="overflow-x-auto rounded-lg border border-line bg-card">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-line text-left text-xs uppercase tracking-wider text-ink3">
+                <th class="p-3 font-medium">Path</th>
+                <th class="p-3 font-medium">What it is</th>
+                <th class="p-3 font-medium">Read it if</th>
+              </tr>
+            </thead>
+            <tbody class="text-ink2">
+              <tr class="border-b border-line">
+                <td class="p-3"><code>$DOCS/llms.txt</code></td>
+                <td class="p-3">The agent's entry point</td>
+                <td class="p-3">You are the agent. Start here.</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3"><code>$DOCS/SKILL.md</code></td>
+                <td class="p-3">The eight-step journey as instructions</td>
+                <td class="p-3">You read one file only.</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3"><code>$DOCS/user-manual.md</code></td>
+                <td class="p-3">Canonical mechanics</td>
+                <td class="p-3">SKILL.md was too terse.</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3"><code>$DOCS/faq.md</code></td>
+                <td class="p-3">Rationale, boundaries, limits</td>
+                <td class="p-3">You want to know why, not how.</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3"><code>$DOCS/operator-journey.md</code></td>
+                <td class="p-3">A worked credentialed lifecycle</td>
+                <td class="p-3">You are stuck and want a transcript.</td>
+              </tr>
+              <tr>
+                <td class="p-3"><code>$DOCS/demo/</code></td>
+                <td class="p-3">The dashboard on sample data, keyless</td>
+                <td class="p-3">You want to see the product before touching it.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="leading-relaxed text-ink2">
+          Then hand your agent one line and stop helping:
+        </p>
+        <pre class="overflow-x-auto rounded-lg border border-line bg-card p-4 text-sm"><code>Read $DOCS/llms.txt and set me up an Angel whose tools reach only my
+Gmail search results and one Google Doc, and nothing else.</code></pre>
+      </section>
+
+      <!-- ── The required path ────────────────────────────────────────────── -->
+      <section class="space-y-6">
+        <h2 class="font-serif text-2xl">The required path</h2>
+        <p class="leading-relaxed text-ink2">
+          Eight steps. The right-hand line is what proves the step landed — if you
+          cannot see it, the step did not happen, whatever the exit code said.
+        </p>
+
+        <ol class="rail space-y-5">
+          <!-- 1 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">1</span>
+            <h3 class="font-serif text-lg">Install the CLI</h3>
+            <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm add @smcllns/angel-core
+pnpm exec angel</code></pre>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> a
+            <code>usage:</code> line naming exactly <code>build</code>,
+            <code>publish</code>, <code>deploy</code>. It runs under Bun.</p>
+          </li>
+          <!-- 2 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">2</span>
+            <h3 class="font-serif text-lg">Take the two management credentials</h3>
+            <p class="mt-2 text-sm text-ink2">
+              <code>ANGEL_MANAGEMENT_TOKEN</code> is a bearer.
+              <code>ANGEL_ACCESS_TOKEN</code> is a Cloudflare Access service token as JSON
+              with exactly <code>cf-access-client-id</code> and
+              <code>cf-access-client-secret</code>. There is no self-service endpoint.
+            </p>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> both
+            set in the shell and in no file.</p>
+          </li>
+          <!-- 3 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">3</span>
+            <h3 class="font-serif text-lg">Authorize a Google Connection</h3>
+            <p class="mt-2 text-sm text-ink2">
+              In the Access-protected dashboard: save a Provider App (your own Google OAuth
+              client — the secret stores write-only), then walk Google's consent screen and
+              give the Connection a nickname.
+            </p>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> the
+            Connection reads healthy, with a nickname you will use in
+            <code>angel.json</code>.</p>
+          </li>
+          <!-- 4 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">4</span>
+            <h3 class="font-serif text-lg">Author the Angel</h3>
+            <p class="mt-2 text-sm text-ink2">
+              <code>angels/&lt;slug&gt;/ANGEL.yaml</code> is portable policy — no targets,
+              no secrets. <code>angels/&lt;slug&gt;/angel.json</code> is local deployment
+              config and stays untracked.
+            </p>
+            <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>{
+  "target": "$CONTROL",
+  "account": "acct_…",
+  "angel": "&lt;slug&gt;",
+  "bindings": {
+    "preview":    { "gmail": "&lt;nickname&gt;", "docs": "&lt;nickname&gt;" },
+    "production": { "gmail": "&lt;nickname&gt;", "docs": "&lt;nickname&gt;" }
+  }
+}</code></pre>
+            <div class="mt-2 rounded-r-md bg-dangerbg p-3 text-sm text-danger shadow-[inset_4px_0_0_0_#b3452e]">
+              <code>preview</code>, not <code>staging</code> — see blocker&nbsp;2 in the
+              session sheet. The docs you are reading say otherwise and are wrong.
+            </div>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong>
+            <code>name</code> in the YAML matches the directory name.</p>
+          </li>
+          <!-- 5 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">5</span>
+            <h3 class="font-serif text-lg">Build the Version</h3>
+            <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel build &lt;slug&gt;</code></pre>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong>
+            <code>build/angel.version.json</code> and <code>.sha256</code> appear, offline.
+            Run it twice — the digest must not move.</p>
+          </li>
+          <!-- 6 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">6</span>
+            <h3 class="font-serif text-lg">Publish to preview</h3>
+            <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel publish &lt;slug&gt;</code></pre>
+            <p class="mt-2 text-sm text-ink2">
+              Rebuilds, lists healthy Connections, resolves preview bindings, publishes the
+              immutable Version, installs it in preview.
+            </p>
+            <div class="mt-2 rounded-r-md bg-warnbg p-3 text-sm text-warn shadow-[inset_4px_0_0_0_#8a5e17]">
+              Both Angel keys print here, once. Capture them before you scroll.
+            </div>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> the
+            staged tool list is exactly the operations you wrote — no more.</p>
+          </li>
+          <!-- 7 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">7</span>
+            <h3 class="font-serif text-lg">Promote the exact staged deployment</h3>
+            <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>pnpm exec angel deploy &lt;slug&gt; --prod</code></pre>
+            <p class="mt-2 text-sm text-ink2">
+              Promotes that exact Version and digest under production's own bindings. It
+              does not build, publish, or pick a newer Version.
+            </p>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> the
+            production digest equals the preview digest you just read.</p>
+          </li>
+          <!-- 8 -->
+          <li class="relative pl-12">
+            <span class="absolute left-0 top-0 flex h-8 w-8 items-center justify-center rounded-full bg-navy text-sm text-card">8</span>
+            <h3 class="font-serif text-lg">Call it over MCP</h3>
+            <pre class="mt-2 overflow-x-auto rounded-lg border border-line bg-card p-3 text-sm"><code>curl -sS "$GATEWAY/@&lt;handle&gt;/&lt;slug&gt;" \
+  -H "Authorization: Bearer $ANGEL_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -H "MCP-Protocol-Version: 2025-06-18" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'</code></pre>
+            <p class="mt-2 text-sm text-ink2">
+              Bare coordinate means production. <code>@preview</code> is the only suffix
+              that names an environment; <code>latest</code> and <code>production</code>
+              are rejected.
+            </p>
+            <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong>
+            <code>tools/call</code> returns provider data in
+            <code>structuredContent</code> and two redacted receipts — gateway and broker —
+            in <code>_meta</code>. Two receipts or the call did not really pass.</p>
+          </li>
+        </ol>
+
+        <div class="rounded-r-md bg-goodbg p-4 text-sm text-good shadow-[inset_4px_0_0_0_#3f7d52]">
+          <strong>Acceptance.</strong> An agent holding only the production Angel key can
+          <code>initialize</code>, <code>tools/list</code>, and <code>tools/call</code>
+          against production and get real Google data back. Nothing else counts, and no
+          repo is needed to prove it.
+        </div>
+      </section>
+
+      <!-- ── Optional paths ───────────────────────────────────────────────── -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-2xl">Optional paths</h2>
+        <p class="leading-relaxed text-ink2">
+          Each one exercises a promise the product makes. Ordered by how much you learn
+          per minute spent.
+        </p>
+        <div class="overflow-x-auto rounded-lg border border-line bg-card">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-line text-left text-xs uppercase tracking-wider text-ink3">
+                <th class="p-3 font-medium">Try</th>
+                <th class="p-3 font-medium">Expect</th>
+                <th class="p-3 font-medium">Promise under test</th>
+              </tr>
+            </thead>
+            <tbody class="text-ink2">
+              <tr class="border-b border-line">
+                <td class="p-3">Open <code>$GATEWAY/@&lt;handle&gt;/&lt;slug&gt;</code> in a browser, no key</td>
+                <td class="p-3">Charter and tools render</td>
+                <td class="p-3">Shareable without a login (PD 0002)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Same URL with <code>Accept: application/json</code></td>
+                <td class="p-3">Machine-readable charter and tools</td>
+                <td class="p-3">One coordinate, two renderings</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Ask for <code>maxResults: 50</code> against a pinned guard</td>
+                <td class="p-3">Executes with 5</td>
+                <td class="p-3">Guards bind arguments (E5)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Call <code>gmail.users.messages.send</code></td>
+                <td class="p-3"><code>unknown_tool</code></td>
+                <td class="p-3">Absent means absent, not refused (E5)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Present the preview key to production</td>
+                <td class="p-3">401</td>
+                <td class="p-3">Keys are per environment (E8)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Name an Angel you do not own</td>
+                <td class="p-3">404, no existence signal</td>
+                <td class="p-3">Isolation is invisibility (I6, E8)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Publish to preview with production bindings only</td>
+                <td class="p-3">Refusal naming both remedies</td>
+                <td class="p-3">Preview never touches real data (I13, E2)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Pause one tool + Connection pair, then resume it</td>
+                <td class="p-3"><code>connection_paused</code>, then restored</td>
+                <td class="p-3">Pause only removes (I10, E7)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Revoke the grant at Google, then Reauthorize</td>
+                <td class="p-3">Loud failure, then recovery with keys unchanged</td>
+                <td class="p-3">Custody is loud (I5, E9)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Bind two Connections to one tool, then omit the selector</td>
+                <td class="p-3"><code>connection_required</code></td>
+                <td class="p-3">Never fan-out (I7, E6)</td>
+              </tr>
+              <tr class="border-b border-line">
+                <td class="p-3">Call the legacy <code>/v1/a/…/mcp</code> route</td>
+                <td class="p-3">Still answers</td>
+                <td class="p-3">The cutover does not break anyone</td>
+              </tr>
+              <tr>
+                <td class="p-3"><code>DELETE /v1/accounts/…/angels/&lt;slug&gt;</code> without the typed slug</td>
+                <td class="p-3">409, then works with it</td>
+                <td class="p-3">Delete is deliberate (E11)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="rounded-r-md bg-warnbg p-4 text-sm text-warn shadow-[inset_4px_0_0_0_#8a5e17]">
+          Handle rename is <strong>not</strong> on this list. One rename per Account,
+          ever, and a handle is never released. Spending it to test it costs the real one.
+        </div>
+      </section>
+
+      <!-- ── Signals ──────────────────────────────────────────────────────── -->
+      <section class="space-y-5">
+        <h2 class="font-serif text-2xl">What I want back</h2>
+        <p class="leading-relaxed text-ink2">
+          Pass or fail is the least useful thing you can tell me. These seven are worth
+          more than a green run.
+        </p>
+        <ol class="list-decimal space-y-3 pl-6 text-ink2 leading-relaxed marker:text-ink3">
+          <li><strong class="text-ink">Where did you stop trusting the docs?</strong>
+            Name the sentence, not the section.</li>
+          <li><strong class="text-ink">Did the agent try to clone the repo?</strong>
+            If so, what sentence made it want to? That is a docs defect, not an agent one.</li>
+          <li><strong class="text-ink">What did you have to already know?</strong>
+            Anything you supplied from memory is a hole in the published path.</li>
+          <li><strong class="text-ink">When something failed, did the error say what to do
+            next — or only what went wrong?</strong>
+            That is the exact class of bug in #27, and I expect more of it.</li>
+          <li><strong class="text-ink">Did you ever lose track of which environment you
+            were looking at?</strong>
+            Preview and production diverging quietly is the failure I most expect.</li>
+          <li><strong class="text-ink">Was the one-time key reveal survivable?</strong>
+            If you lost a key, say so — the recovery story is unwritten and I need to know
+            it hurts.</li>
+          <li><strong class="text-ink">Could you explain the finished thing to someone
+            else?</strong>
+            If the sentence you reach for puts the Angel in the driving seat, the product's
+            own words are not landing.</li>
+        </ol>
+
+        <h3 class="font-serif text-lg pt-4">How to record friction — pick one</h3>
+        <p class="text-sm text-ink3">Tap to rotate.</p>
+        <div data-carousel>
+          <div class="slide-stack">
+            <article class="rounded-lg border border-line bg-card p-6 space-y-2">
+              <h4 class="font-serif text-lg">One issue per friction, as you hit it</h4>
+              <p class="text-ink2 text-sm leading-relaxed">
+                Stop, file, continue. Matches the definition of done literally and nothing
+                gets lost. Costs you the flow of the run, and the first three will be
+                titled better than the last ten.
+              </p>
+            </article>
+            <article class="rounded-lg border border-line bg-card p-6 space-y-2">
+              <h4 class="font-serif text-lg">One running log, split afterwards</h4>
+              <p class="text-ink2 text-sm leading-relaxed">
+                A single scratch file with a timestamped line per snag. The run stays
+                honest because you never stop to write prose. I turn it into issues after,
+                and you review the titles. Risk: a line that made sense at the time
+                reads as nothing an hour later.
+              </p>
+            </article>
+            <article class="rounded-lg border border-line bg-card p-6 space-y-2">
+              <h4 class="font-serif text-lg">Record the terminal, say it out loud</h4>
+              <p class="text-ink2 text-sm leading-relaxed">
+                <code>script dogfood.log</code> plus a voice memo running. Catches the
+                hesitations that never reach a written note — the ten seconds spent
+                deciding what a message meant is the finding. Heaviest to review.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Maintenance contract ─────────────────────────────────────────── -->
+      <section class="space-y-4">
+        <h2 class="font-serif text-2xl">Reusing this page next run</h2>
+        <ul class="list-disc space-y-2 pl-6 text-ink2 leading-relaxed">
+          <li>Delete the dated session sheet below, whole, and write a new one.</li>
+          <li>Rewrite the <code>hosts.env</code> export block. Nothing above it names a host.</li>
+          <li>Everything else should survive untouched. If a standing section needs
+            rewriting, the product changed shape — say so in the commit subject.</li>
+        </ul>
+      </section>
+
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!--  BEGIN DISPOSABLE SESSION SHEET — delete this whole <section>      -->
+      <!--  and write a new one for the next dogfooding run.                  -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <section id="session" class="perforated -mx-6 space-y-12 bg-[#eae7dc] px-6 py-12">
+        <header class="space-y-2">
+          <p class="text-xs uppercase tracking-wider text-ink3">
+            Disposable · replace wholesale next run
+          </p>
+          <h2 class="font-serif text-3xl">Session sheet — 2026-07-29</h2>
+          <p class="text-ink2 leading-relaxed">
+            Everything below is true of <code>main@faf4beb</code> today and will be wrong
+            soon. Nothing above depends on it except the host names.
+          </p>
+        </header>
+
+        <!-- Coordinates -->
+        <div class="space-y-3">
+          <h3 class="font-serif text-xl">Today's coordinates</h3>
+          <pre class="overflow-x-auto rounded-lg border border-line2 bg-card p-4 text-sm leading-relaxed"><code># hosts.env — interim workers.dev hosts. angelmcp.ai resolves nowhere
+# until the zone move (#6).
+export DOCS=https://angelmcp-docs-demo.sam-633.workers.dev
+export CONTROL=https://angelmcp-control-demo.sam-633.workers.dev
+export GATEWAY=https://angelmcp-gateway-demo.sam-633.workers.dev</code></pre>
+          <p class="text-sm text-ink3 leading-relaxed">
+            The docs build rewrites <code>docs.angelmcp.ai</code> to the interim host in
+            <code>llms.txt</code> and <code>SKILL.md</code> only. Links inside the manual
+            and FAQ are relative, so they resolve on whichever host serves them. Pinned
+            versions: <code>@smcllns/angel-core@0.3.0</code>, MCP protocol
+            <code>2025-06-18</code>.
+          </p>
+        </div>
+
+        <!-- Blockers -->
+        <div class="space-y-4">
+          <h3 class="font-serif text-xl">Two blockers before step 6</h3>
+
+          <div class="rounded-r-lg bg-dangerbg p-5 shadow-[inset_5px_0_0_0_#b3452e]">
+            <p class="text-xs uppercase tracking-wider text-danger">Blocker 1 · verified</p>
+            <h4 class="font-serif text-lg mt-1">The npm age gate refuses the CLI</h4>
+            <p class="mt-2 text-sm text-ink2 leading-relaxed">
+              <code>pnpm add @smcllns/angel-core</code> in an empty directory fails with
+              <code>ERR_PNPM_NO_MATURE_MATCHING_VERSION</code>. Your pnpm wrapper sets
+              <code>minimumReleaseAge=10080</code> — seven days — and 0.3.0 published on
+              2026-07-29. The product repo exempts it in
+              <code>pnpm-workspace.yaml</code>; an empty directory has no such file.
+            </p>
+            <p class="mt-3 text-sm text-ink2">Fix, verified to install 0.3.0:</p>
+            <pre class="mt-2 overflow-x-auto rounded border border-line2 bg-card p-3 text-sm"><code># pnpm-workspace.yaml, in the new project
+minimumReleaseAgeExclude:
+  - "@smcllns/angel-core"</code></pre>
+            <p class="mt-3 text-sm text-ink2 leading-relaxed">
+              That fix is itself a finding: any stranger following <code>SKILL.md</code> on
+              a hardened pnpm hits this for a week after every core release, and no doc
+              mentions it.
+            </p>
+          </div>
+
+          <div class="rounded-r-lg bg-dangerbg p-5 shadow-[inset_5px_0_0_0_#b3452e]">
+            <p class="text-xs uppercase tracking-wider text-danger">Blocker 2 · verified</p>
+            <h4 class="font-serif text-lg mt-1">The published docs print a bindings key the CLI rejects</h4>
+            <p class="mt-2 text-sm text-ink2 leading-relaxed">
+              Core 0.3.0's config parser throws on a legacy file:
+              <code>angel.json bindings.staging is now bindings.preview: rename the key</code>.
+              <code>SKILL.md</code> step 4 and <code>user-manual.md:293</code> both still
+              print <code>"staging"</code>. Copy either verbatim and
+              <code>angel publish</code> hard-stops.
+            </p>
+            <p class="mt-3 text-sm text-ink2 leading-relaxed">
+              Fix while running: write <code>"preview"</code>. Fix properly: a docs sweep
+              of the seven <code>staging</code> occurrences in <code>SKILL.md</code> and
+              five in <code>user-manual.md</code>, then a docs redeploy. Not yet ticketed
+              — I can raise it before you start if you would rather not meet it.
+            </p>
+          </div>
+        </div>
+
+        <!-- Known issues -->
+        <div class="space-y-4">
+          <h3 class="font-serif text-xl">Known issues, and why each is still open</h3>
+          <div class="space-y-3">
+            <div class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="text-sm"><strong>#24 — the demo hides receipts and promotion.</strong>
+              <span class="text-ink2">The fixture promotes both Angels at once, so
+              <code>readyForProduction</code> is null and the Promote card never draws;
+              nothing drives the gate fleet, so activity is empty everywhere. The most
+              substantive of the four: the demo omits the two surfaces carrying the
+              product's whole argument. Deferred so it would not invalidate #21's
+              consensus mid-review.</span></p>
+            </div>
+            <div class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="text-sm"><strong>#25 — the dashboard drops the server's error text.</strong>
+              <span class="text-ink2"><code>runAction</code> discards
+              <code>payload.error</code>; two sibling paths already do the right thing. Out
+              of scope for a demo PR because it changes what an owner sees on every failed
+              mutation.</span></p>
+            </div>
+            <div class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="text-sm"><strong>#26 — the demo's read-only guarantee covers
+              <code>fetch</code> only.</strong>
+              <span class="text-ink2">The claim holds today by luck: the shell happens to
+              use only <code>fetch</code>, and the test greps for <code>fetch(</code>. The
+              whole premise is that the shell is copied verbatim and may change without
+              re-review.</span></p>
+            </div>
+            <div class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="text-sm"><strong>#27 — Home says "needs attention" and names neither
+              environment nor reason.</strong>
+              <span class="text-ink2">Found while dogfooding, in the first session on the
+              merged preview world. Health requires both environments aligned; preview had
+              an installation mismatch while production was clean, so every page looked
+              green and the banner read as stale. It was not stale. Expect siblings of
+              this.</span></p>
+            </div>
+            <div class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="text-sm"><strong>#30 — the R2 copies of the APRD go stale.</strong>
+              <span class="text-ink2">Twice in one afternoon. The real question underneath
+              is unanswered — see the carousel below.</span></p>
+            </div>
+            <div class="rounded-r-md bg-card p-4 shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="text-sm"><strong>#6 — the zone has not moved.</strong>
+              <span class="text-ink2">Which is why every host above ends
+              <code>workers.dev</code> and every canonical URL in the docs is rewritten at
+              build time.</span></p>
+            </div>
+          </div>
+
+          <div class="rounded-r-md bg-warnbg p-4 text-sm shadow-[inset_4px_0_0_0_#8a5e17]">
+            <strong class="text-warn">Likeliest mid-run failure, not ticketed.</strong>
+            <span class="text-ink2">Google External-Testing refresh tokens die about every
+            seven days. The symptom is a Gateway 500 reading
+            <code>Connection is error</code> — it looks like a platform fault and is not.
+            The fix is row-level Reauthorize in the dashboard. If the run spans days,
+            budget for this.</span>
+          </div>
+        </div>
+
+        <!-- Not built -->
+        <div class="space-y-3">
+          <h3 class="font-serif text-xl">Not yet built</h3>
+          <p class="text-ink2 leading-relaxed">
+            Most of the gap is CLI-side. The server halves shipped; the commands that
+            reach them did not.
+          </p>
+          <div class="overflow-x-auto rounded-lg border border-line2 bg-card">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="border-b border-line2 text-left text-xs uppercase tracking-wider text-ink3">
+                  <th class="p-3 font-medium">Missing</th>
+                  <th class="p-3 font-medium">Server side</th>
+                  <th class="p-3 font-medium">Consequence for the run</th>
+                </tr>
+              </thead>
+              <tbody class="text-ink2">
+                <tr class="border-b border-line2">
+                  <td class="p-3"><code>angel publish</code> defaulting to production, <code>--preview</code> opt-in</td>
+                  <td class="p-3">Built — one-step deploy to production works</td>
+                  <td class="p-3">You publish then promote: two commands, not one</td>
+                </tr>
+                <tr class="border-b border-line2">
+                  <td class="p-3"><code>--share-production-credentials</code></td>
+                  <td class="p-3">Built — the refusal names both remedies</td>
+                  <td class="p-3">Preview needs its own Connection; no way to opt out</td>
+                </tr>
+                <tr class="border-b border-line2">
+                  <td class="p-3"><code>angel delete</code></td>
+                  <td class="p-3">Built — <code>DELETE /v1/…/angels/:slug</code></td>
+                  <td class="p-3">Deleting means raw curl</td>
+                </tr>
+                <tr class="border-b border-line2">
+                  <td class="p-3">The <code>curl</code> installer</td>
+                  <td class="p-3">n/a</td>
+                  <td class="p-3">npm is the only documented install path</td>
+                </tr>
+                <tr class="border-b border-line2">
+                  <td class="p-3">Gmail write, Maps, further adapters (M2)</td>
+                  <td class="p-3">Scopes are configurable now</td>
+                  <td class="p-3">Two read operations are all you can reach</td>
+                </tr>
+                <tr class="border-b border-line2">
+                  <td class="p-3">A rollback command</td>
+                  <td class="p-3">Re-promotion works</td>
+                  <td class="p-3">Undo is manual</td>
+                </tr>
+                <tr class="border-b border-line2">
+                  <td class="p-3">Key-name bounds on <code>/v1</code></td>
+                  <td class="p-3">Dashboard enforces 1–64; <code>/v1</code> only non-empty</td>
+                  <td class="p-3">Raw curl accepts key names the dashboard refuses</td>
+                </tr>
+                <tr>
+                  <td class="p-3">Signup, billing, quotas (M3); multiplayer (M4)</td>
+                  <td class="p-3">n/a</td>
+                  <td class="p-3">Out of horizon; do not test</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- APRD deltas -->
+        <div class="space-y-5">
+          <h3 class="font-serif text-xl">Deltas with the APRD</h3>
+          <p class="text-ink2 leading-relaxed">
+            The APRD reads <code>docs/aprd/angel-cloud-aprd.html</code>, re-baselined
+            2026-07-29 against <code>main@a160c10</code>. Three merges have landed since.
+            Its own <code>observed</code> and <code>change</code> tags are the thing that
+            has drifted.
+          </p>
+
+          <h4 class="font-serif text-lg pt-1">The APRD is behind the code</h4>
+          <div class="space-y-3">
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#3f7d52]">
+              <strong>The public Angel page shipped; the APRD says it has not.</strong>
+              <span class="text-ink2"> #28 merged and ROADMAP marks #11 done. Five places
+              still say otherwise: G5 ("nothing serves a browser at the coordinate yet"),
+              I14 tagged <code>change</code>, S8 ("the only seam here still unbuilt"), flow
+              D's open design note, and the deferred clauses in E10, E13 and E14. Retag the
+              lot.</span>
+            </div>
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#3f7d52]">
+              <strong>The pin moved to core 0.3.0.</strong>
+              <span class="text-ink2"> §6 names 0.2.0 and calls it "the single largest gap
+              between this document and the code". #32 bumped it. The §0 Production/preview
+              row and G3 both still say the pinned CLI "spells it staging" — 0.3.0 rejects
+              that spelling in <code>angel.json</code> outright. Whatever remains of the gap
+              is smaller and differently shaped.</span>
+            </div>
+          </div>
+
+          <h4 class="font-serif text-lg pt-2">Conflicts</h4>
+          <div class="space-y-3">
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#b3452e]">
+              <strong>The served docs conflict with the shipped CLI.</strong>
+              <span class="text-ink2"> Blocker 2 above. §0 lists <code>staging</code> under
+              "never say", and the two documents an agent is told to read say it twelve
+              times between them.</span>
+            </div>
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#b3452e]">
+              <strong>"Retired at cutover" is not what the wire does.</strong>
+              <span class="text-ink2"> §0 calls <code>staging</code> the legacy route name,
+              retired. On the live system the legacy MCP route answers, and the
+              spelling-neutral management routes answer in the legacy dialect
+              unconditionally. The table governs prose and the wire keeps its dialect —
+              defensible, but nowhere written down, so a reader of both gets whiplash. One
+              sentence in §0 exempting the wire would settle it.</span>
+            </div>
+          </div>
+
+          <h4 class="font-serif text-lg pt-2">True of the build, absent from the APRD</h4>
+          <div class="space-y-3">
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#1d3f5e]">
+              <strong>The management dialect is per-route, not per-version.</strong>
+              <span class="text-ink2"> <code>GET/PUT /v1/accounts/{acct}/angels/{slug}</code>
+              answer in <code>staging</code> whatever the caller does; environment-segment
+              routes speak <code>preview</code>. S1 describes the legacy dialect as a
+              compatibility shim for a pinned CLI and does not say it is unconditional on
+              some routes. Anyone driving raw curl needs this.</span>
+            </div>
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#1d3f5e]">
+              <strong>The docs site cannot drift, and that is a real commitment.</strong>
+              <span class="text-ink2"> <code>build.sh</code> copies the dashboard shell
+              verbatim under two mechanical edits, checks three markers, and generates the
+              fixture with production projection code — so a read-model change fails the
+              docs build. Flow F describes the outcome; nothing states the invariant as
+              something the builder is held to.</span>
+            </div>
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#1d3f5e]">
+              <strong>The interim-host rewrite covers two files.</strong>
+              <span class="text-ink2"> <code>DOCS_BASE_URL</code> rewrites
+              <code>llms.txt</code> and <code>SKILL.md</code>; every other served document
+              relies on relative links. Load-bearing until #6, and unrecorded.</span>
+            </div>
+            <div class="rounded-r-md bg-card p-4 text-sm shadow-[inset_4px_0_0_0_#1d3f5e]">
+              <strong>Google grants expire on a clock, not just on revocation.</strong>
+              <span class="text-ink2"> E9 covers revoke and reauthorize as deliberate acts.
+              The External-Testing seven-day expiry is neither, and it is what will
+              actually interrupt a multi-day run.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- The open question -->
+        <div class="space-y-4">
+          <h3 class="font-serif text-xl">One decision I need — where the APRD lives (#30)</h3>
+          <p class="text-ink2 leading-relaxed">
+            The R2 copies went stale twice in an afternoon because two things claim to be
+            the document. Tap to rotate.
+          </p>
+          <div data-carousel>
+            <div class="slide-stack">
+              <article class="rounded-lg border border-line2 bg-card p-6 space-y-2">
+                <h4 class="font-serif text-lg">Internal only, shared by capability URL</h4>
+                <p class="text-ink2 text-sm leading-relaxed">
+                  The repo owns it; R2 holds a copy you re-upload when you want to send it.
+                  Staleness stays possible but becomes your explicit act rather than a
+                  build's omission. Cheapest, and honest about who reads it.
+                </p>
+              </article>
+              <article class="rounded-lg border border-line2 bg-card p-6 space-y-2">
+                <h4 class="font-serif text-lg">Part of the docs site, built at deploy time</h4>
+                <p class="text-ink2 text-sm leading-relaxed">
+                  Same treatment as <code>/demo/</code>: <code>build.sh</code> copies it, so
+                  it cannot go stale and there is no second copy. Costs you a target-state
+                  document being publicly readable — including its open questions and its
+                  list of suspicious code.
+                </p>
+              </article>
+              <article class="rounded-lg border border-line2 bg-card p-6 space-y-2">
+                <h4 class="font-serif text-lg">Repo only; retire the hosted copies</h4>
+                <p class="text-ink2 text-sm leading-relaxed">
+                  Close #30 by deleting the R2 objects. Anyone who needs it reads it on
+                  GitHub. Nothing to keep in sync, and the rendered toggle — the thing that
+                  makes it readable by the product team — is lost.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ledger -->
+        <div class="space-y-3">
+          <h3 class="font-serif text-xl">What I checked, and what I did not</h3>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <div class="rounded-r-md bg-goodbg p-4 text-sm shadow-[inset_4px_0_0_0_#3f7d52]">
+              <p class="font-medium text-good">Verified</p>
+              <ul class="mt-2 list-disc space-y-1 pl-4 text-ink2">
+                <li>Both blockers reproduced, and blocker 1's fix installs 0.3.0</li>
+                <li>Core 0.3.0's parser rejects <code>bindings.staging</code>, read from the published tarball</li>
+                <li><code>llms.txt</code>, <code>SKILL.md</code> and <code>/demo/</code> all answer 200</li>
+                <li><code>/v1</code> without Access headers redirects to login</li>
+              </ul>
+            </div>
+            <div class="rounded-r-md bg-warnbg p-4 text-sm shadow-[inset_4px_0_0_0_#8a5e17]">
+              <p class="font-medium text-warn">Not verified</p>
+              <ul class="mt-2 list-disc space-y-1 pl-4 text-ink2">
+                <li>That the deployed Gateway serves the public page — it needs a real coordinate, and I have no key</li>
+                <li>Any publish or promote: no credentials were spent</li>
+                <li>The demo page in a browser; byte-identity to the tested source was checked instead</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+      <!--  END DISPOSABLE SESSION SHEET                                      -->
+      <!-- ══════════════════════════════════════════════════════════════════ -->
+
+      <!-- ── Next ─────────────────────────────────────────────────────────── -->
+      <section class="space-y-3">
+        <h2 class="font-serif text-2xl">Before you start</h2>
+        <ul class="list-disc space-y-1 pl-6 text-ink2">
+          <li>Say whether to fix the <code>staging</code> docs first or meet it live.</li>
+          <li>Pick a way to record friction.</li>
+          <li>Answer #30 — the APRD's home.</li>
+        </ul>
+      </section>
+
+      <footer class="border-t border-line pt-6 text-xs text-ink3">
+        Standing guide plus session sheet for 2026-07-29 ·
+        <code>docs/dogfooding-guide.html</code> · issue #5
+      </footer>
+    </main>
+
+    <script>
+      document.querySelectorAll("[data-carousel]").forEach((root) => {
+        const stack = root.querySelector(".slide-stack");
+        const slides = [...stack.children];
+        if (slides.length < 2) return;
+
+        const nav = document.createElement("div");
+        nav.className = "flex justify-center gap-2 pt-4";
+        nav.setAttribute("role", "tablist");
+        const dots = slides.map((_, i) => {
+          const d = document.createElement("button");
+          d.className = "dot";
+          d.type = "button";
+          d.setAttribute("role", "tab");
+          d.setAttribute("aria-label", `Variant ${i + 1} of ${slides.length}`);
+          d.addEventListener("click", (e) => { e.stopPropagation(); show(i); });
+          nav.appendChild(d);
+          return d;
+        });
+        root.appendChild(nav);
+
+        let current = 0;
+        const show = (n) => {
+          current = (n + slides.length) % slides.length;
+          slides.forEach((s, i) => s.setAttribute("aria-hidden", String(i !== current)));
+          dots.forEach((d, i) =>
+            i === current ? d.setAttribute("data-active", "") : d.removeAttribute("data-active"),
+          );
+        };
+
+        stack.addEventListener("click", () => show(current + 1));
+        stack.style.cursor = "pointer";
+
+        let x0 = null;
+        stack.addEventListener("touchstart", (e) => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+        stack.addEventListener("touchend", (e) => {
+          if (x0 === null) return;
+          const dx = e.changedTouches[0].clientX - x0;
+          if (Math.abs(dx) > 40) show(current + (dx < 0 ? 1 : -1));
+          x0 = null;
+        }, { passive: true });
+
+        show(0);
+      });
+    </script>
+  </body>
+</html>
