@@ -1,6 +1,7 @@
 node_modules/
 .secrets/
 .env
+.dev.vars*
 *.local
 .DS_Store
 
