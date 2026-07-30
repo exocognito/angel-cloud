@@ -452,7 +452,7 @@ pnpm add @smcllns/angel-core
 pnpm ls @smcllns/angel-core   # must read 0.3.0 or later
 ```
 
-Check the second line. A package manager configured with a minimum release age
+The last line must read `@smcllns/angel-core@0.3.0` or later. A package manager configured with a minimum release age
 will silently resolve an older version, and versions before 0.3.0 spell the
 preview environment `staging`, which makes the rest of this page wrong.
 
@@ -539,9 +539,12 @@ dashboard's promote button does the same thing, with a drift check on top
 
 ### Delete an Angel
 
-There is no CLI command yet; call the management API directly with the same
-authentication as every mutation (Access identity, management bearer, and an
-`Idempotency-Key`):
+Core 0.3.0 ships `pnpm exec angel delete <angel>`. The API refuses to delete a
+live production Angel until you type the slug back, so it will tell you to
+re-run as `pnpm exec angel delete <angel> --confirm <slug>`.
+
+Or call the management API directly, with the same authentication as every
+mutation (Access identity, management bearer, and an `Idempotency-Key`):
 
 ```sh
 curl -X DELETE "$CONTROL_BASE_URL/v1/accounts/<account>/angels/<slug>" \

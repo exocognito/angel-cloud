@@ -48,7 +48,7 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | 3. Add a Google Connection | Browser (Cloudflare Access + Google consent) | Interactive login — no headless path |
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
-| 6. Publish to preview | `angel publish` / API | Management bearer + Access token |
+| 6. Publish to preview | `angel publish --preview` / API | Management bearer + Access token |
 | 7. Promote to production | `angel deploy --prod` / API | Management bearer + Access token |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
@@ -68,7 +68,7 @@ pnpm add @smcllns/angel-core
 pnpm ls @smcllns/angel-core   # must read 0.3.0 or later
 ```
 
-Check the second line. A package manager configured with a minimum release age
+The last line must read `@smcllns/angel-core@0.3.0` or later. A package manager configured with a minimum release age
 will silently resolve an older version, and versions before 0.3.0 spell the
 preview environment `staging`, which makes the rest of this document wrong.
 

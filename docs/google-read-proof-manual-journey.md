@@ -63,11 +63,13 @@ monitoring yet.
    Control endpoint, run:
 
    ```sh
-   ANGEL_MANAGEMENT_TOKEN=... ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' bun run angel publish google-read-proof
+   ANGEL_MANAGEMENT_TOKEN=... ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' bun run angel publish google-read-proof --preview
    ```
 
    This builds the checked-in policy, publishes its immutable artifact, and
-   installs the exact bindings in the preview environment. Verify the tool
+   installs the exact bindings in the preview environment. Keep `--preview`:
+   since core 0.3.0 bare `publish` deploys to production instead, and step 6
+   then fails with `no active preview deployment to promote`. Verify the tool
    list contains only
    `gmail.users.messages.list` and `docs.documents.get`.
 6. **Local operator shell — deploy production.** With both the management
