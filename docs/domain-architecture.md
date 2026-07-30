@@ -149,9 +149,10 @@ removes the collision by construction, and two further rules keep it safe:
    would break those in-flight callbacks. Registering `dash.` too costs nothing
    and makes a callback rollback a var change with no Google edit.
 5. Only now update `CONTROL_BASE_URL` (`dash.`), `AUTH_BASE_URL` (`auth.`), and
-   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc`, regenerate
-   `types/control.d.ts` (the generated types embed var values, and `bun run
-   check` fails on drift), and redeploy. Steps 3 and 4 are prerequisites, not
+   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc`, run `bun run
+   types:generate` (the generated types embed var values, and `bun run check`
+   fails on drift — use that script, not bare `wrangler types`, or a local
+   `.dev.vars` re-injects the secret declarations), and redeploy. Steps 3 and 4 are prerequisites, not
    follow-ups: this deploy is the moment new authorizations start sending the
    `auth.` redirect URI and the post-connect redirect starts landing on `dash.`,
    so an unregistered URI fails consent with `redirect_uri_mismatch` and a host

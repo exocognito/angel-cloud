@@ -5,6 +5,8 @@
 // merging keeps types/control.d.ts pure generated output, so regenerating it
 // during the domain cutover cannot quietly drop the secrets.
 //
+// Regenerate with `bun run types:generate`, never bare `wrangler types`.
+//
 // `bun run types:check` guards the generated file, but only against drift from
 // wrangler.control.jsonc: `wrangler types --check` compares a hash of the config,
 // never the file body, so a hand-edit inside types/control.d.ts still passes. It
