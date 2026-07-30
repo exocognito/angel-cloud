@@ -169,6 +169,12 @@ describe("Access-authenticated browser Provider API", () => {
       const response = await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
       expect(response.status).toBe(500);
       expect(await response.json()).toEqual({ error: "AUTH_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials" });
+      expect(harness.brokerRequests.some((request) => new URL(request.url).pathname === "/internal/oauth/authorize")).toBe(false);
+
+      // Reauth shares startGoogleAuthorization; pin that it fails as early.
+      const reauth = await request(harness, "/api/connections/con_google/reauthorize", "POST", {});
+      expect(reauth.status).toBe(500);
+      expect(harness.brokerRequests.some((request) => new URL(request.url).pathname === "/internal/oauth/authorize")).toBe(false);
     }
   });
 
