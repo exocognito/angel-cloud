@@ -125,7 +125,9 @@
           </p>
           <p class="leading-relaxed text-ink2">
             Nothing you do sits on a branch. The run talks to the deployed workers over
-            HTTP, so there is no checkout to keep current and no build to run.
+            HTTP, so there is no checkout to keep current and no platform to build. You
+            still run <code>angel build</code> on your own Angel — that is step 5, and it
+            is offline.
           </p>
         </section>
 
@@ -474,12 +476,15 @@ minimumReleaseAgeExclude:
           </div>
 
           <div class="rounded-r-md bg-warnbg p-4 text-sm shadow-[inset_4px_0_0_0_#8a5e17]">
-            <strong class="text-warn">Likeliest mid-run failure, not ticketed.</strong>
+            <strong class="text-warn">Likeliest mid-run failure.</strong>
             <span class="text-ink2">Google External-Testing refresh tokens die about every
-            seven days. The symptom is a Gateway 500 reading
-            <code>Connection is error</code> — it looks like a platform fault and is not.
-            The fix is row-level Reauthorize in the dashboard. If the run spans days,
-            budget for this.</span>
+            seven days, and a Gateway 500 reading <code>Connection is error</code> is the
+            usual symptom. Try row-level Reauthorize in the dashboard first. But a 500
+            carries no cause, and other states produce the same message, so do not assume
+            expiry — if reauthorising does not fix it, read a log rather than retrying.
+            Tracked in
+            <a class="underline" href="https://github.com/exocognito/angel-cloud/issues/38">#38</a>.
+            If the run spans days, budget for this.</span>
           </div>
         </section>
 
@@ -1032,7 +1037,7 @@ pnpm exec angel</code></pre>
                 </tr>
                 <tr>
                   <td class="p-3"><code>500</code> reading <code>Connection is error</code></td>
-                  <td class="p-3">The Google grant expired. Row-level Reauthorize in the dashboard</td>
+                  <td class="p-3">Cause not reported. Usually an expired Google grant — try row-level Reauthorize first; if that does not fix it, read a log (<a class="underline" href="https://github.com/exocognito/angel-cloud/issues/38">#38</a>)</td>
                 </tr>
               </tbody>
             </table>
