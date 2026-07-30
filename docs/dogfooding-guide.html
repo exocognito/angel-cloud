@@ -356,23 +356,28 @@
                 <tbody class="text-ink2">
                   <tr class="border-b border-line2">
                     <td class="p-3"><code>pnpm add @smcllns/angel-core</code></td>
-                    <td class="p-3">Fails loudly: <code>ERR_PNPM_NO_MATURE_MATCHING_VERSION</code></td>
+                    <td class="p-3">Succeeds, and installs <strong>0.1.0</strong> — two releases back, no warning</td>
+                  </tr>
+                  <tr class="border-b border-line2">
+                    <td class="p-3"><code>bun add @smcllns/angel-core</code></td>
+                    <td class="p-3">Succeeds, and installs <strong>0.1.0</strong> — same silent downgrade</td>
                   </tr>
                   <tr>
-                    <td class="p-3"><code>bun add @smcllns/angel-core</code></td>
-                    <td class="p-3">Succeeds, and installs <strong>0.1.0</strong> — three releases back, no warning</td>
+                    <td class="p-3"><code>pnpm add @smcllns/angel-core@0.3.0</code></td>
+                    <td class="p-3">Fails loudly: <code>ERR_PNPM_NO_MATURE_MATCHING_VERSION</code></td>
                   </tr>
                 </tbody>
               </table>
             </div>
             <p class="mt-3 text-sm text-ink2 leading-relaxed">
-              The Bun case is the dangerous one. The global <code>bunfig.toml</code> lists
-              <code>"@smcllns/*"</code> under <code>minimumReleaseAgeExcludes</code>, but
-              Bun matches by exact full package name only — no scopes, no globs — so that
-              entry exempts nothing, exactly as the file's own comment warns. The install
-              then quietly resolves to the newest mature version instead of failing, and
-              you get a CLI that predates the coordinate work, the preview rename, and the
-              bindings-key change. It will fail later, somewhere confusing.
+              The silence is the hazard. Only an explicit version pin gives you an error;
+              the plain command both docs tell you to run resolves to the newest mature
+              version and reports success. You end up on a CLI that predates the coordinate
+              work, the preview rename, and the bindings-key change, and it fails later,
+              somewhere confusing. The global <code>bunfig.toml</code> looks like it
+              exempts the package — it lists <code>"@smcllns/*"</code> — but Bun matches by
+              exact full name only, so that entry does nothing, exactly as the file's own
+              comment warns.
             </p>
             <p class="mt-3 text-sm text-ink2">Fix for pnpm, verified to install 0.3.0:</p>
             <pre class="mt-2 overflow-x-auto rounded border border-line2 bg-card p-3 text-sm"><code># pnpm-workspace.yaml, in the new project
@@ -380,14 +385,18 @@ minimumReleaseAgeExclude:
   - "@smcllns/angel-core"</code></pre>
             <p class="mt-3 text-sm text-ink2 leading-relaxed">
               Fix for Bun: add the exact name <code>"@smcllns/angel-core"</code> to
-              <code>minimumReleaseAgeExcludes</code> in the global bunfig. Whichever you
-              use, <strong>check the installed version before step 5</strong> —
-              <code>pnpm exec angel</code> on 0.1.0 looks fine and is not.
+              <code>minimumReleaseAgeExcludes</code> in the global bunfig.
             </p>
+            <div class="mt-3 rounded-r-md bg-warnbg p-3 text-sm shadow-[inset_4px_0_0_0_#8a5e17]">
+              <strong class="text-warn">Assert the version before step 5.</strong>
+              <span class="text-ink2"><code>pnpm ls @smcllns/angel-core</code> must read
+              0.3.0. A silent downgrade passes every other check — <code>pnpm exec
+              angel</code> on 0.1.0 prints a usage line and looks entirely healthy.</span>
+            </div>
             <p class="mt-3 text-sm text-ink2 leading-relaxed">
               This is itself a finding, and the sharpest one so far: anyone on a hardened
               setup meets it for a week after every core release, no doc mentions it, and
-              on Bun it is not an error at all.
+              it is not an error at all.
             </p>
           </div>
 
@@ -782,11 +791,11 @@ Gmail search results and one Google Doc, and nothing else.</code></pre>
 pnpm exec angel</code></pre>
               <div class="note mt-2 rounded-r-md bg-dangerbg p-3 text-sm text-ink2">
                 <span class="text-xs uppercase tracking-wider text-danger">Dogfooder note</span><br />
-                This fails today with <code>ERR_PNPM_NO_MATURE_MATCHING_VERSION</code>.
-                Write a <code>pnpm-workspace.yaml</code> holding
-                <code>minimumReleaseAgeExclude: ["@smcllns/angel-core"]</code> first. If you
-                reach for <code>bun add</code> instead it will succeed and silently give you
-                0.1.0 — check the version either way. Blocker 1.
+                This reports success today and installs 0.1.0, two releases back. Write a
+                <code>pnpm-workspace.yaml</code> holding
+                <code>minimumReleaseAgeExclude: ["@smcllns/angel-core"]</code> first, and
+                confirm with <code>pnpm ls @smcllns/angel-core</code> before you go on.
+                <code>bun add</code> does the same thing. Blocker 1.
               </div>
               <p class="mt-2 text-sm text-ink2"><strong class="text-ink">Proof:</strong> a
               <code>usage:</code> line naming exactly <code>build</code>,
