@@ -12,6 +12,10 @@
     "ACCESS_TEAM_DOMAIN": "https://angel-cloud.cloudflareaccess.com",
     "ACCESS_AUDIENCE": "4848f84b13d92d4c9a219e35662c5ca84cd9b6188b5e556df801e34fb7bf1da7",
     "CONTROL_BASE_URL": "https://angelmcp-control-demo.sam-633.workers.dev",
+    // The Google OAuth client stores one redirect URI per host, so the callback
+    // host moves independently of the dashboard host. Both must sit inside the
+    // Access app: every Control path, the callback included, needs an identity.
+    "AUTH_BASE_URL": "https://angelmcp-control-demo.sam-633.workers.dev",
     "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev"
   },
   "durable_objects": {

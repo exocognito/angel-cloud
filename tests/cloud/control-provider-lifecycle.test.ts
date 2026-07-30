@@ -41,13 +41,13 @@ describe("Access-authenticated browser Provider API", () => {
     expect(authorization.status).toBe(200);
     const authorizationUrl = new URL((await authorization.json() as { authorizationUrl: string }).authorizationUrl);
     expect(authorizationUrl.origin).toBe("https://accounts.google.com");
-    expect(authorizationUrl.searchParams.get("redirect_uri")).toBe("https://control.test/oauth/google/callback");
+    expect(authorizationUrl.searchParams.get("redirect_uri")).toBe("https://auth.test/oauth/google/callback");
     expect(authorizationUrl.searchParams.get("state")).toBe(harness.authorizationState);
     expect(harness.authorizationBody).toMatchObject({
       accountId: "acct_m1",
       providerAppId: "app_google",
       state: harness.authorizationState,
-      redirectUri: "https://control.test/oauth/google/callback",
+      redirectUri: "https://auth.test/oauth/google/callback",
     });
 
     const callback = await request(harness, `/oauth/google/callback?state=${encodeURIComponent(harness.authorizationState)}&code=google-code`);
@@ -61,7 +61,7 @@ describe("Access-authenticated browser Provider API", () => {
       nickname: "family-google",
       code: "google-code",
       codeVerifier: harness.codeVerifier,
-      redirectUri: "https://control.test/oauth/google/callback",
+      redirectUri: "https://auth.test/oauth/google/callback",
     });
     expect(JSON.stringify(callbackBody)).not.toContain("stable-google-sub");
     expect(JSON.stringify(callbackBody)).not.toContain("refresh-token");
@@ -162,11 +162,29 @@ describe("Access-authenticated browser Provider API", () => {
     }
   });
 
-  test("rejects a non-HTTPS or non-origin Control base URL", async () => {
+  test("rejects a non-HTTPS or non-origin auth base URL when building the redirect URI", async () => {
+    for (const baseUrl of ["http://auth.test", "https://auth.test/base", "https://auth.test/?unsafe=1", "https://user:pass@auth.test"]) {
+      const harness = makeHarness("access-user");
+      harness.env.AUTH_BASE_URL = baseUrl;
+      const response = await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
+      expect(response.status).toBe(500);
+      expect(await response.json()).toEqual({ error: "AUTH_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials" });
+    }
+  });
+
+  test("rejects a non-HTTPS or non-origin Control base URL when building the post-connect redirect", async () => {
     for (const baseUrl of ["http://control.test", "https://control.test/base", "https://control.test/?unsafe=1", "https://user:pass@control.test"]) {
       const harness = makeHarness("access-user");
+      await request(harness, "/api/provider-apps", "POST", {
+        providerAppId: "app_google",
+        provider: "google",
+        displayName: "Family Google",
+        clientId: "client-id",
+        clientSecret: "secret",
+      });
+      await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
       harness.env.CONTROL_BASE_URL = baseUrl;
-      const response = await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
+      const response = await request(harness, `/oauth/google/callback?state=${encodeURIComponent(harness.authorizationState)}&code=google-code`);
       expect(response.status).toBe(500);
       expect(await response.json()).toEqual({ error: "CONTROL_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials" });
     }
@@ -198,6 +216,7 @@ function makeHarness(subject: string) {
     ACCESS_TEAM_DOMAIN: "https://team.cloudflareaccess.com",
     ACCESS_AUDIENCE: "audience",
     CONTROL_BASE_URL: "https://control.test",
+    AUTH_BASE_URL: "https://auth.test",
     MANAGEMENT_API_TOKEN: "management-must-not-be-required",
     CONTROL_RESPONSE_KEK: "response-kek",
     CONTROL_GATEWAY_TOKEN: "gateway-token",
@@ -243,7 +262,7 @@ function makeHarness(subject: string) {
         if (path === "/internal/connections") return Response.json([connection]);
         if (path === "/internal/oauth/authorize") {
           authorizationBody = await request.clone().json() as Record<string, unknown>;
-          return Response.json({ authorizationUrl: `https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=${encodeURIComponent("https://control.test/oauth/google/callback")}&state=${encodeURIComponent(String(authorizationBody.state))}` });
+          return Response.json({ authorizationUrl: `https://accounts.google.com/o/oauth2/v2/auth?redirect_uri=${encodeURIComponent(String(authorizationBody.redirectUri))}&state=${encodeURIComponent(String(authorizationBody.state))}` });
         }
         if (path === "/internal/oauth/exchange") {
           exchangeBody = await request.clone().json() as Record<string, unknown>;

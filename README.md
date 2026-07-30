@@ -242,7 +242,8 @@ Four separate authentication paths:
   only Gateway MCP endpoint and Angel key (public production surface).
 
 Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
-`ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, and `GATEWAY_BASE_URL`. Control
+`ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, `AUTH_BASE_URL`, and `GATEWAY_BASE_URL`.
+Control
 authenticates browser requests through Access and service-token requests
 through `CF-Access-Client-ID` and `CF-Access-Client-Secret` headers before
 routing to private state or provider custody.

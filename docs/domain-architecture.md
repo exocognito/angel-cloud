@@ -135,9 +135,14 @@ removes the collision by construction, and two further rules keep it safe:
 2. Add Workers custom domains/routes for Control (`dash.`, `api.`, `auth.`),
    Gateway (`mcp.`), and the Docs worker (`docs.`); add apex redirects for
    `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
-3. Update `CONTROL_BASE_URL` / `GATEWAY_BASE_URL` vars in
-   `wrangler.control.jsonc` and redeploy.
-4. Update the Cloudflare Access application URL to `dash.angelmcp.ai`.
+3. Update `CONTROL_BASE_URL` (`dash.`), `AUTH_BASE_URL` (`auth.`), and
+   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc` and redeploy.
+4. Add `dash.`, `api.`, and `auth.angelmcp.ai` to the Cloudflare Access
+   application. `auth.` must be listed: the callback is a Control path, so it
+   needs an Access identity like every other one. Because Access cookies are
+   host-only, Google's redirect reaches `auth.` without one and Access
+   re-issues from the existing team-domain session — verify a live connect
+   through the new host rather than assuming that hop is transparent.
 5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
    (operator-in-a-browser step in Google Cloud Console).
 6. Keep `workers.dev` URLs alive through the cutover, then disable.

@@ -324,7 +324,7 @@ in the page. There is no headless API for this step.
 
 On the **Connections** page, under **Google custody**, add a private app
 nickname, a display name, and your Google OAuth client ID and secret. Configure
-the deployed `/oauth/google/callback` URL on that Google OAuth client. A
+`<AUTH_BASE_URL>/oauth/google/callback` on that Google OAuth client. A
 `POST /api/provider-apps` body may name the OAuth scopes the app consents to;
 without them Angel Cloud requests the read-only default grant for identity,
 Gmail, and Docs ([which scopes](faq.md#which-google-scopes-are-requested)).
@@ -801,7 +801,10 @@ Required secrets:
   `MANAGEMENT_API_TOKEN`, `CONTROL_RESPONSE_KEK`, `DEMO_ADMIN_TOKEN`.
 
 Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
-`ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, and `GATEWAY_BASE_URL`. The internal tokens
+`ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, `AUTH_BASE_URL`, and `GATEWAY_BASE_URL`.
+`CONTROL_BASE_URL` is the dashboard origin the post-connect redirect returns to;
+`AUTH_BASE_URL` is the origin whose `/oauth/google/callback` is registered with
+Google. They may name the same host. The internal tokens
 must be non-empty and pairwise distinct; every Worker fails closed otherwise.
 `ACCOUNT_ID` must carry the `acct_` prefix — Control refuses to serve with a
 handle-shaped id. The Broker has `workers_dev` disabled and no public route.

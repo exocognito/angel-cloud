@@ -52,6 +52,7 @@ export interface ControlRequestEnv {
   ACCESS_TEAM_DOMAIN: string;
   ACCESS_AUDIENCE: string;
   CONTROL_BASE_URL: string;
+  AUTH_BASE_URL: string;
   BROKER: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
   GATEWAY: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
 }
@@ -433,7 +434,7 @@ async function reconcileProviderConnections(
 }
 
 function fixedRedirectUri(env: ControlRequestEnv): string {
-  return new URL("/oauth/google/callback", fixedControlBase(env)).toString();
+  return new URL("/oauth/google/callback", httpsOrigin(env.AUTH_BASE_URL, "AUTH_BASE_URL")).toString();
 }
 
 function newConnectionId(): string {
@@ -441,16 +442,16 @@ function newConnectionId(): string {
 }
 
 function fixedUiRedirect(env: ControlRequestEnv): string {
-  return new URL("/?connection=connected", fixedControlBase(env)).toString();
+  return new URL("/?connection=connected", httpsOrigin(env.CONTROL_BASE_URL, "CONTROL_BASE_URL")).toString();
 }
 
-function fixedControlBase(env: ControlRequestEnv): URL {
+function httpsOrigin(value: string, variableName: string): URL {
   try {
-    const base = new URL(env.CONTROL_BASE_URL);
+    const base = new URL(value);
     if (base.protocol !== "https:" || base.pathname !== "/" || base.username !== "" || base.password !== "" || base.search !== "" || base.hash !== "") throw new Error();
     return base;
   } catch {
-    throw new Error("CONTROL_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials");
+    throw new Error(`${variableName} must be an HTTPS origin without a path, query, hash, or credentials`);
   }
 }
 
