@@ -290,7 +290,7 @@ Exactly four keys:
   "account": "acct_m1",
   "angel": "google-read-proof",
   "bindings": {
-    "staging":    { "gmail": "proof-google", "docs": "proof-google" },
+    "preview":    { "gmail": "proof-google", "docs": "proof-google" },
     "production": { "gmail": "proof-google", "docs": "proof-google" }
   }
 }
@@ -300,8 +300,7 @@ Exactly four keys:
   credentials.
 - `account` — your Account ID.
 - `angel` — the Angel slug; must equal the artifact's `name`.
-- `bindings` — a `staging` map (the pinned CLI's spelling of the preview
-  environment) and a `production` map, each keyed by the
+- `bindings` — a `preview` map and a `production` map, each keyed by the
   artifact's binding-requirement IDs. For a direct Angel the ID is the provider
   name (`gmail`); for a composed Angel it is the child name
   (`gmail-read-and-draft`), or `<child>:<provider>` when one child uses two
@@ -309,6 +308,10 @@ Exactly four keys:
   the agent a choice. Production never inherits preview's bindings, and
   preview never inherits production's (PD 0005)
   ([why](faq.md#why-cant-production-reuse-my-staging-bindings-automatically)).
+
+Core 0.3.0 renamed the local config key from `staging` to `preview`. Rename that
+key in any `angel.json` created for core 0.2.0. The server still accepts
+`staging` only as a legacy management-API environment spelling.
 
 ## Add Google custody
 
@@ -860,7 +863,7 @@ The ordinary golden journey injects a deterministic provider at the Broker
 boundary. It needs no Google or Cloudflare credentials, yet exercises the real
 CLI, artifact digests, the Account API, both gates, MCP auth, Connection
 selection, availability, exact promotion, key stability, and Account isolation.
-The hosted repo runs this against the public `@smcllns/angel-core@0.2.0` pin, and
+The hosted repo runs this against the public `@smcllns/angel-core@0.3.0` pin, and
 remote CI is green.
 
 ### Full deployed comparison journey

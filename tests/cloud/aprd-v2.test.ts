@@ -40,6 +40,20 @@ const productDecisionIndex = readFileSync(
   new URL("../../docs/product-decisions/README.md", import.meta.url),
   "utf8",
 );
+const previewDecision = readFileSync(
+  new URL(
+    "../../docs/product-decisions/0003-preview-is-opt-in.md",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const previewBindingsDecision = readFileSync(
+  new URL(
+    "../../docs/product-decisions/0005-preview-binds-its-own-connections.md",
+    import.meta.url,
+  ),
+  "utf8",
+);
 const productDecision = readFileSync(
   new URL(
     "../../docs/product-decisions/0006-www-is-a-full-write-surface.md",
@@ -116,8 +130,10 @@ describe("APRD v2", () => {
     ]) {
       expect(html).toContain(`<h4>${title}</h4>`);
     }
-    expect(html).toContain("Receipt <code>sequence</code>, <code>previousHash</code>, and <code>hash</code> become agent-facing in v2");
+    expect(html).toContain("<code>sequence</code>, <code>previousHash</code>, and <code>hash</code> become agent-facing so the client can anchor");
     expect(html).toContain("the first receipt's <code>previousHash</code> must equal the remembered hash");
+    expect(html).toContain("Receipt <code>argumentsDigest</code> becomes agent-facing for local replay");
+    expect(html).toContain("the v2 agent-facing receipt carries the cloud's <code>argumentsDigest</code>");
     expect(html).not.toContain("chain hashes appear on no agent-facing surface");
     expect(html).toContain("execution is trusted, bounded by replay");
   });
@@ -186,8 +202,17 @@ describe("APRD v2", () => {
     expect(corePackageManifest.version).toBe("0.3.0");
     expect(roadmap).not.toContain("waits on `@smcllns/angel-core`");
     expect(rootReadme).toContain("to production by default");
+    expect(rootReadme).toContain("bun run angel publish golden-assistant --preview");
     expect(userManual).toContain("Production is the default in `@smcllns/angel-core` 0.3.0");
     expect(userManual).toContain("pnpm exec angel delete  <angel> [--confirm <slug>]");
+    expect(userManual).toContain('"preview":');
+    expect(userManual).not.toContain('"staging":');
+    expect(userManual).toContain("runs this against the public `@smcllns/angel-core@0.3.0` pin");
+    expect(previewDecision).toContain("- Implemented: Yes");
+    expect(previewBindingsDecision).toContain("- Implemented: Yes");
+    expect(productDecisionIndex).toContain("| [0003](0003-preview-is-opt-in.md)");
+    expect(productDecisionIndex).toContain("| [0005](0005-preview-binds-its-own-connections.md)");
+    expect(productDecisionIndex).not.toContain("| Partly | [#3]");
 
     const build: PortableBuildResult = {
       artifact: {

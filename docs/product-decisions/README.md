@@ -44,9 +44,9 @@ writing a new record that supersedes the old one, never editing the old one.
 | --- | --- | --- | --- | --- |
 | [0001](0001-angel-coordinate-scheme.md) | Address every Angel as `@account/angel[@suffix]`; bare means production | 2026-07-23 | Yes | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
 | [0002](0002-public-angel-page.md) | Every Angel has a public page anyone can read without a key | 2026-07-23 | Yes | [#11](https://github.com/exocognito/angel-cloud/issues/11) |
-| [0003](0003-preview-is-opt-in.md) | Publishing goes live; `preview` is opt-in and shares credentials | 2026-07-28 | Partly | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
+| [0003](0003-preview-is-opt-in.md) | Publishing goes live; `preview` is opt-in and shares credentials | 2026-07-28 | Yes | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
 | [0004](0004-account-handles.md) | Account handles are permanent, renameable once, and never released | 2026-07-28 | Partly | [#12](https://github.com/exocognito/angel-cloud/issues/12) |
-| [0005](0005-preview-binds-its-own-connections.md) | Preview binds its own Connections; sharing production's must be asked for | 2026-07-28 | Partly | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
+| [0005](0005-preview-binds-its-own-connections.md) | Preview binds its own Connections; sharing production's must be asked for | 2026-07-28 | Yes | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
 | [0006](0006-www-is-a-full-write-surface.md) | www can create, edit, build, and publish through the same artifact contract | 2026-07-30 | Partly | none yet |
 
 0005 supersedes point 3 of 0003 — same day, before either shipped. The reversal

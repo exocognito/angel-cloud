@@ -83,7 +83,7 @@ canonical, secret-free `build/angel.version.json` and
 
 ```text
 bun run angel build golden-assistant
-bun run angel publish golden-assistant
+bun run angel publish golden-assistant --preview
 bun run angel deploy golden-assistant --prod
 ```
 

@@ -2,9 +2,9 @@
 
 - Status: Agreed
 - Date: 2026-07-28
-- Implemented: Partly — a preview deploy takes only its own explicit bindings
-  and an unbound one fails naming both ways forward; the typed share flag is
-  CLI surface and waits on `@smcllns/angel-core`
+- Implemented: Yes — a preview deploy takes only its own explicit bindings,
+  an unbound one fails naming both ways forward, and core 0.3.0 provides the
+  typed `--preview --share-production-credentials` path
 - Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
 - Supersedes: point 3 of [PD 0003](0003-preview-is-opt-in.md)
 

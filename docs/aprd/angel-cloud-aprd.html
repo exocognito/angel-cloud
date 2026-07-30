@@ -392,7 +392,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Nicknames never reach agents</h4>
-          <p class="dev">Agents receive opaque deployment-scoped refs (<code>arc_…</code>) and provider-derived labels. Nicknames, Connection IDs, account IDs, and credentials appear on no agent-facing surface. Receipt <code>sequence</code>, <code>previousHash</code>, and <code>hash</code> become agent-facing in v2 so the client can anchor and verify its chain tail (D11).</p>
+          <p class="dev">Agents receive opaque deployment-scoped refs (<code>arc_…</code>) and provider-derived labels. Nicknames, Connection IDs, account IDs, and credentials appear on no agent-facing surface. Receipt <code>argumentsDigest</code> becomes agent-facing for local replay (D10); <code>sequence</code>, <code>previousHash</code>, and <code>hash</code> become agent-facing so the client can anchor and verify its chain tail (D11).</p>
           <p class="demo">eval E6; the <code>AgentSafeGateReceipt</code> field list is the redaction contract.</p>
           <p class="user">Say you nickname a linked account "therapy inbox". Your assistant never sees that private nickname. It sees an opaque choice plus the identity label the provider supplied.</p>
         </div>
@@ -508,7 +508,7 @@
 
         <div class="card o"><span class="chip">Orange</span>
           <h4>Behavior spot-checkable by replay</h4>
-          <p class="dev">For calls its own agent made, the client holds the arguments. <code>angel serve</code> re-runs the same tool + arguments through the local engine over the same bundle and compares decision, detail, and the recomputed <code>argumentsDigest</code> (D10). Sampling, not proof — but evidence the platform cannot manufacture. Rides on serve (D7).</p>
+          <p class="dev">For calls its own agent made, the client holds the arguments and the v2 agent-facing receipt carries the cloud's <code>argumentsDigest</code>. <code>angel serve</code> re-runs the same tool + arguments through the local engine over the same bundle and compares decision, detail, and the recomputed digest (D10). Today <code>agentSafeGateReceipt</code> strips <code>argumentsDigest</code>. Sampling, not proof — but evidence the platform cannot manufacture. Rides on serve (D7).</p>
           <p class="demo">a replay run over recorded calls reporting decisions and argument digests all matching — or naming the first one that doesn't.</p>
           <p class="user">You can re-run any of your own calls at home and check that the cloud judged it exactly as your own copy of the rules would.</p>
         </div>
@@ -708,7 +708,7 @@ Authorization: Bearer ak_production_9f2…
 
 → 200 · x-angel-policy-digest · x-angel-version
   result._meta = { gateway: ⟨receipt⟩, broker: ⟨receipt⟩ }   two receipts, redacted</span></pre>
-          <p class="text-sm text-slate-600">Two changes land here from §3's new commitments: responses stop stripping <span class="font-mono">sequence</span>, <span class="font-mono">previousHash</span>, and <span class="font-mono">hash</span> so clients can anchor and verify the chain tail (D11), and the receipt identity grows from seven fields to eight with the engine version (D12).</p>
+          <p class="text-sm text-slate-600">Three changes land here from §3's new commitments: responses stop stripping <span class="font-mono">argumentsDigest</span> for replay (D10); they expose <span class="font-mono">sequence</span>, <span class="font-mono">previousHash</span>, and <span class="font-mono">hash</span> so clients can anchor and verify the chain tail (D11); and the receipt identity grows from seven fields to eight with the engine version (D12).</p>
         </div>
 
         <!-- s8 -->
