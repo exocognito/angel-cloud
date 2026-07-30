@@ -186,7 +186,7 @@
       <section id="map" class="space-y-4">
         <h2 class="font-serif text-3xl">2 · Goals map</h2>
         <p class="text-slate-700 leading-relaxed">
-          One lifecycle spine, ten stations, three surfaces. A row read across is one station on every surface; a column read down is one surface's whole life with an angel. Each station number links to its long version in §4.
+          One lifecycle spine, ten stations, three surfaces. A row read across is one station on every surface; a column read down is one surface's whole primary journey with an angel. Supporting paths such as rollback stay in the design without becoming extra stations. Each station number links to its long version in §4.
         </p>
 
         <div class="rounded-lg border border-slate-200 bg-white overflow-hidden">
@@ -392,7 +392,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Nicknames never reach agents</h4>
-          <p class="dev">Agents receive opaque deployment-scoped refs (<code>arc_…</code>) and provider-derived labels. Nicknames, Connection IDs, account IDs, and credentials appear on no agent-facing surface. Receipt <code>sequence</code> and <code>hash</code> become agent-facing in v2 so the client can anchor its chain tail (D11).</p>
+          <p class="dev">Agents receive opaque deployment-scoped refs (<code>arc_…</code>) and provider-derived labels. Nicknames, Connection IDs, account IDs, and credentials appear on no agent-facing surface. Receipt <code>sequence</code>, <code>previousHash</code>, and <code>hash</code> become agent-facing in v2 so the client can anchor and verify its chain tail (D11).</p>
           <p class="demo">eval E6; the <code>AgentSafeGateReceipt</code> field list is the redaction contract.</p>
           <p class="user">Say you nickname a linked account "therapy inbox". Your assistant never sees that private nickname. It sees an opaque choice plus the identity label the provider supplied.</p>
         </div>
@@ -438,7 +438,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Every Angel has a public trust page</h4>
-          <p class="dev">GET on the bare production coordinate renders the trust page; <code>Accept: application/json</code> returns the identical content for machines; POST still invokes MCP. The page shows charter, tools with guards, Version, and digest — never scopes, provider origins, Connection identities, or source. The route touches no key or Broker and sets no cookie; no auth cookie is ever scoped to <code>.angelmcp.ai</code>, so sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14).</p>
+          <p class="dev">GET on the bare production coordinate renders the trust page; <code>Accept: application/json</code> returns the identical content for machines; POST still invokes MCP. The page shows the charter; each tool's provider App, operation, and guards; Version and digest; and the immutable-artifact line. It permanently omits Connection identities and source. The settled page also omits OAuth scopes, adapter/origin details, and child Angels, while PD 0002 leaves widening those three open. The route touches no key or Broker and sets no cookie; no auth cookie is ever scoped to <code>.angelmcp.ai</code>, so sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14).</p>
           <p class="demo">PR #28, deployed — open the coordinate in a browser, no login. Route logic at <code>src/workers/gateway.ts:299</code>.</p>
           <p class="user">Every live Angel has a web page anyone can open — no login needed. It shows exactly what the Angel allows, so people can read the rules before connecting their assistant to it.</p>
         </div>
@@ -494,8 +494,8 @@
 
         <div class="card o"><span class="chip">Orange</span>
           <h4>Anchored receipt tail</h4>
-          <p class="dev">Every call response returns the receipt's <code>sequence</code> and <code>hash</code>; the client remembers the newest pair; the activity API serves fetch-by-sequence-range. Rewriting history must then fool a tail the platform no longer holds, and a gap in your own calls' sequence numbers bounds omission (D11). Today <code>agentSafeGateReceipt</code> (<code>src/mcp.ts:212</code>) strips all three chain fields.</p>
-          <p class="demo">a response whose receipts carry <code>sequence</code> + <code>hash</code>; a range fetch that replays chain continuity against a remembered tail.</p>
+          <p class="dev">Every call response returns the receipt's <code>sequence</code>, <code>previousHash</code>, and <code>hash</code>; the client remembers the newest sequence and hash; the activity API serves fetch-by-sequence-range. For a fetched range, the first receipt's <code>previousHash</code> must equal the remembered hash and each later <code>previousHash</code> must equal the prior receipt's <code>hash</code>. Rewriting history must then fool a tail the platform no longer holds, and a gap in your own calls' sequence numbers bounds omission (D11). Today <code>agentSafeGateReceipt</code> (<code>src/mcp.ts:212</code>) strips all three chain fields.</p>
+          <p class="demo">a response whose receipts carry <code>sequence</code> + <code>previousHash</code> + <code>hash</code>; a range fetch whose first link extends the remembered tail and whose later links form one continuous chain.</p>
           <p class="user">Your assistant keeps a small stub from every receipt. If the record were ever rewritten, the stubs would stop matching — and a gap in the numbering would show that something was left out.</p>
         </div>
 
@@ -612,10 +612,10 @@
                     <div class="px-3 py-2.5">
                       <div class="flex items-center justify-between py-1"><span class="font-mono text-slate-700">gmail.search_threads</span><span class="text-emerald-600">on</span></div>
                       <div class="flex items-center justify-between py-1"><span class="font-mono text-slate-400">gmail.list_labels</span><span class="text-slate-400">off</span></div>
-                      <div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-300 text-slate-400">never, per charter: <span class="font-mono line-through">send_message</span> · <span class="font-mono line-through">delete_thread</span></div>
+                      <div class="mt-1.5 pt-1.5 border-t border-dashed border-slate-300 text-slate-400">absent from policy: <span class="font-mono line-through">send_message</span> · <span class="font-mono line-through">delete_thread</span></div>
                     </div>
                   </div>
-                  <p class="text-[11px] text-slate-500">Take 2 — one glance line fuses health, version, environment, provider; Copy is the page's only button; the charter's "never" verbs become struck-out, toggle-less rows at the foot of the list.</p>
+                  <p class="text-[11px] text-slate-500">Take 2 — one glance line fuses health, version, environment, provider; Copy is the page's only button; operations absent from policy become struck-out, toggle-less rows at the foot of the list.</p>
                 </article>
                 <article class="space-y-2">
                   <div class="rounded-lg border border-slate-300 bg-white overflow-hidden text-[10px] leading-normal">
@@ -627,7 +627,7 @@
                         <div class="rounded border border-slate-200 text-slate-300 py-2">📤<br/>send</div>
                         <div class="rounded border border-dashed border-slate-300 text-slate-400 py-2">＋<br/>add</div>
                       </div>
-                      <div class="text-slate-400 text-center pt-1.5">tap a tile to allow / disallow · greyed = disallowed by charter</div>
+                      <div class="text-slate-400 text-center pt-1.5">tap a tile to allow / disallow · greyed = absent from policy</div>
                     </div>
                   </div>
                   <p class="text-[11px] text-slate-500">Take 3 — tools as tappable tiles, allowed in color, disallowed greyed. The same page works as the mobile view.</p>
@@ -708,7 +708,7 @@ Authorization: Bearer ak_production_9f2…
 
 → 200 · x-angel-policy-digest · x-angel-version
   result._meta = { gateway: ⟨receipt⟩, broker: ⟨receipt⟩ }   two receipts, redacted</span></pre>
-          <p class="text-sm text-slate-600">Two changes land here from §3's new commitments: responses stop stripping <span class="font-mono">sequence</span> and <span class="font-mono">hash</span> so clients can anchor the chain tail (D11), and the receipt identity grows from seven fields to eight with the engine version (D12).</p>
+          <p class="text-sm text-slate-600">Two changes land here from §3's new commitments: responses stop stripping <span class="font-mono">sequence</span>, <span class="font-mono">previousHash</span>, and <span class="font-mono">hash</span> so clients can anchor and verify the chain tail (D11), and the receipt identity grows from seven fields to eight with the engine version (D12).</p>
         </div>
 
         <!-- s8 -->
@@ -817,6 +817,9 @@ flowchart LR
           <li>Billing/pricing appears on the Account page sketch but was never discussed.</li>
           <li>Delete-account cascade details beyond "cascades angels · keys · apps".</li>
           <li>Sharing/catalog (J6): parked until the first hundred users exist.</li>
+          <li>Public trust-page widening: whether to add OAuth scopes, provider adapter/origin details, or child Angels. PD 0002 excludes all three today without settling the end state.</li>
+          <li>How registration and display handle Unicode lookalikes and confusable ASCII names beyond the current grammar and reserved-word list.</li>
+          <li>Rollback as a supporting path: today the owner republishes old source and promotes it through the normal two-gate path; a dedicated CLI command, www control, and direct selection of a pinned earlier Version remain unsettled.</li>
           <li>The apex public-page route's form: one dispatcher Worker, or a marketing host with an <code>@</code>-path carve-out.</li>
           <li>Whether commitments regeneration is scripted in-repo or stays manual per release.</li>
         </ul>

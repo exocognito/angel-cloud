@@ -112,7 +112,7 @@ agents can see the policy moved without losing their credentials
 ### Can I rotate an Angel key? Is it shown more than once?
 
 A key's plaintext is shown exactly once, on the first ensure and again each time
-you mint or rotate one ([publish](user-manual.md#publish-to-preview)). Later
+you mint or rotate one ([publish](user-manual.md#publish-to-production)). Later
 reads show only fingerprints. Rotation and revocation are explicit actions on
 the dashboard's Agent Keys pane, never a side effect of a deploy
 ([the dashboard](user-manual.md#use-the-dashboard)). Keys are hashed at rest, so

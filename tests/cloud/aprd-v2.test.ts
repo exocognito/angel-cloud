@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "bun:test";
+import { runAngelCommand } from "@smcllns/angel-core/cli";
+import type { PortableBuildResult } from "@smcllns/angel-core/build";
 
 const html = readFileSync(
   new URL("../../docs/aprd/angel-cloud-aprd.html", import.meta.url),
@@ -13,6 +15,22 @@ const roadmap = readFileSync(
   new URL("../../ROADMAP.md", import.meta.url),
   "utf8",
 );
+const rootReadme = readFileSync(
+  new URL("../../README.md", import.meta.url),
+  "utf8",
+);
+const packageManifest = JSON.parse(
+  readFileSync(new URL("../../package.json", import.meta.url), "utf8"),
+) as { dependencies: Record<string, string> };
+const corePackageManifest = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../node_modules/@smcllns/angel-core/package.json",
+      import.meta.url,
+    ),
+    "utf8",
+  ),
+) as { version: string };
 const faq = readFileSync(new URL("../../docs/faq.md", import.meta.url), "utf8");
 const userManual = readFileSync(
   new URL("../../docs/user-manual.md", import.meta.url),
@@ -98,7 +116,8 @@ describe("APRD v2", () => {
     ]) {
       expect(html).toContain(`<h4>${title}</h4>`);
     }
-    expect(html).toContain("Receipt <code>sequence</code> and <code>hash</code> become agent-facing in v2");
+    expect(html).toContain("Receipt <code>sequence</code>, <code>previousHash</code>, and <code>hash</code> become agent-facing in v2");
+    expect(html).toContain("the first receipt's <code>previousHash</code> must equal the remembered hash");
     expect(html).not.toContain("chain hashes appear on no agent-facing surface");
     expect(html).toContain("execution is trusted, bounded by replay");
   });
@@ -160,6 +179,64 @@ describe("APRD v2", () => {
     expect(aprdReadme).not.toContain("Prototype flow F");
     expect(roadmap).toContain("the goals map, demonstrable commitments,");
     expect(roadmap).not.toContain("the spine, invariants, interface types,");
+  });
+
+  test("checks current publish behavior against the package pin and public docs", async () => {
+    expect(packageManifest.dependencies["@smcllns/angel-core"]).toBe("0.3.0");
+    expect(corePackageManifest.version).toBe("0.3.0");
+    expect(roadmap).not.toContain("waits on `@smcllns/angel-core`");
+    expect(rootReadme).toContain("to production by default");
+    expect(userManual).toContain("Production is the default in `@smcllns/angel-core` 0.3.0");
+    expect(userManual).toContain("pnpm exec angel delete  <angel> [--confirm <slug>]");
+
+    const build: PortableBuildResult = {
+      artifact: {
+        format: "angel.version.v2",
+        name: "publish-default-probe",
+        charter: "",
+        children: [],
+        providers: {},
+        bindingRequirements: [{
+          id: "probe",
+          source: "publish-default-probe",
+          provider: "gmail",
+          credential: "google_oauth",
+          requiredScopes: [],
+          tools: [],
+        }],
+        tools: [],
+        canonicalSource: "{}",
+        digest: "a".repeat(64),
+      },
+      outDir: "/tmp/not-written",
+    };
+    const config = {
+      target: "https://control.example",
+      account: "acct_probe",
+      angel: "publish-default-probe",
+      bindings: {
+        preview: { probe: "preview-only" },
+        production: { probe: "production-only" },
+      },
+    };
+    const dependencies = {
+      repoRoot: "/tmp/not-read",
+      env: { ANGEL_MANAGEMENT_TOKEN: "test-token" },
+      build: async () => build,
+      loadDeploymentConfig: () => config,
+      fetch: async () => Response.json([]),
+      output: () => {},
+    };
+
+    await expect(
+      runAngelCommand(["publish", "publish-default-probe"], dependencies),
+    ).rejects.toThrow("Connection nickname production-only was not found");
+    await expect(
+      runAngelCommand(
+        ["publish", "publish-default-probe", "--preview"],
+        dependencies,
+      ),
+    ).rejects.toThrow("Connection nickname preview-only was not found");
   });
 
   test("defines every commitment evidence id in the normative document", () => {

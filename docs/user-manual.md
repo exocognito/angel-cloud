@@ -438,8 +438,9 @@ flowchart LR
     ART --> PUB["angel publish"]
     J["angel.json\n(target, Account,\nbindings)"] --> PUB
     PUB --> V["immutable Version"]
-    V --> S["preview deployment"]
-    S -->|"angel deploy --prod\nor dashboard promote"| PR["production deployment"]
+    V -->|"publish (default)"| PR["production deployment"]
+    V -->|"publish --preview"| S["preview deployment"]
+    S -->|"angel deploy --prod\nor dashboard promote"| PR
 ```
 
 ### Install the CLI
@@ -452,12 +453,13 @@ clone of this repository — install it and invoke it with `pnpm exec angel`:
 pnpm add @smcllns/angel-core
 ```
 
-It has exactly three subcommands:
+It has four subcommands:
 
 ```text
 pnpm exec angel build   <angel>
-pnpm exec angel publish <angel>
+pnpm exec angel publish <angel> [--preview [--share-production-credentials]]
 pnpm exec angel deploy  <angel> --prod
+pnpm exec angel delete  <angel> [--confirm <slug>]
 ```
 
 Publish and deploy read two environment variables:
@@ -480,7 +482,7 @@ children) and writes `build/angel.version.json` (the canonical, secret-free
 artifact) and `build/angel.version.sha256` (its digest). You never need to run
 `build` by hand — `publish` runs it — but it is a cheap, offline preview.
 
-### Publish to preview
+### Publish to production
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -497,19 +499,23 @@ One command does four things:
    read the plaintext back**
    ([can I rotate?](faq.md#can-i-rotate-an-angel-key-is-it-shown-more-than-once)).
 3. Publishes the Version. The same digest returns the same Version.
-4. Deploys it to the preview environment, resolving your `staging` binding
-   nicknames (the CLI's legacy spelling of preview) against the Account's live
-   Connections. Each nickname must exist, be `healthy`, and cover its
-   requirement's provider. A preview deploy with no bindings for a Version
-   that requires them fails and names the two ways forward (PD 0005). The
-   server can also take a published Version straight to production in one step
-   (`POST /v1/angels/{id}/environments/production/deployments`); the CLI
-   default moves there with the next `@smcllns/angel-core` release (PD 0003).
+4. Deploys it to production, resolving the `production` binding nicknames in
+   `angel.json` against the Account's live Connections. Each nickname must
+   exist, be `healthy`, and cover its requirement's provider.
+
+Production is the default in `@smcllns/angel-core` 0.3.0 (PD 0003). To inspect a
+Version in preview first, add `--preview`; that uses the separate `preview`
+bindings. A preview deploy with no bindings for a Version that requires them
+fails and names the two ways forward (PD 0005). To make preview reuse
+production's bindings, add the explicit
+`--preview --share-production-credentials` flags.
 
 Every mutation carries an idempotency key: resend the same key to retry a call
 safely, and never reuse a key for different input.
 
 ### Promote the exact previewed deployment
+
+This path is optional because bare `publish` now deploys straight to production.
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -529,16 +535,19 @@ dashboard's promote button does the same thing, with a drift check on top
 
 ### Delete an Angel
 
-There is no CLI command yet; call the management API directly with the same
-authentication as every mutation (Access identity, management bearer, and an
-`Idempotency-Key`):
+Use the same authentication variables as publish and deploy:
 
 ```sh
-curl -X DELETE "$CONTROL_BASE_URL/v1/accounts/<account>/angels/<slug>" \
-  -H "CF-Access-Client-Id: <service-token-id>" \
-  -H "CF-Access-Client-Secret: <service-token-secret>" \
-  -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
-  -H "Idempotency-Key: $(uuidgen)"
+ANGEL_MANAGEMENT_TOKEN=... \
+ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
+pnpm exec angel delete google-read-proof
+```
+
+If production has a live or pending deployment, the server refuses the first
+call and the CLI prints the exact confirmation command:
+
+```sh
+pnpm exec angel delete google-read-proof --confirm google-read-proof
 ```
 
 Deletion is hard and complete: every agent key is revoked first (nothing
@@ -551,14 +560,14 @@ gets renamed. Account handles are different — they are
 
 When production has a deployment — active, or pending repair after a failed
 convergence — the request must repeat the slug in the body —
-`{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose production is
+`{"confirm": "<slug>"}` — or it fails with `409`. The CLI's `--confirm` flag
+sends that field. An Angel whose production is
 empty deletes without a body; a live preview deployment does not require
 confirmation. Replaying the same `Idempotency-Key` returns the original
-response; a fresh delete of an already-deleted slug returns `404`. Mint a fresh
-key per delete (as the `uuidgen` above does) — a key derived from
-method+path+body would collide across delete → recreate → delete and replay the
-first response instead of deleting again. If a gate call fails mid-teardown the
-Angel stays visible with its keys revoked — call delete again to finish.
+response; a fresh delete of an already-deleted slug returns `404`. The CLI mints
+a fresh idempotency key for each delete so delete → recreate → delete cannot
+replay the first response. If a gate call fails mid-teardown the Angel stays
+visible with its keys revoked — call delete again to finish.
 
 ## Connect an agent
 
