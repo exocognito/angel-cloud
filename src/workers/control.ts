@@ -787,10 +787,11 @@ async function managementCommand(
   accountId: string;
   command: ManagementCommand;
   /**
-   * Rewrites a successful response into the pinned CLI's legacy dialect,
-   * where the second environment is still spelled `staging`. Present on the
-   * legacy-spelled routes and on the spelling-neutral routes the pinned CLI
-   * validates exactly; new `preview`-spelled routes answer canonically.
+   * Rewrites a successful response into the legacy dialect spoken by CLIs on
+   * core 0.2.0 or older, where the second environment is still spelled
+   * `staging`. Present on the legacy-spelled routes and on the
+   * spelling-neutral routes those CLIs validate exactly; `preview`-spelled
+   * routes answer canonically.
    */
   translate?: (value: unknown) => unknown;
 }> {

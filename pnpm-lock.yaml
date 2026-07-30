@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@smcllns/angel-core':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.3.0
+        version: 0.3.0
       yaml:
         specifier: ^2.4.5
         version: 2.9.0
@@ -415,8 +415,8 @@ packages:
     resolution: {integrity: sha512-P1Cz1dWaFfR4IR+U13mqqiGsLFf1KbayybWwdd2vfctdV6hDpUkgCY0nKOLLTMSoRd/jJNjtbqzf13K8DCCXQw==}
     engines: {node: '>=18'}
 
-  '@smcllns/angel-core@0.2.0':
-    resolution: {integrity: sha512-/8O/PmTRTS6n4isJbJT46n+blJn7u6JZTb4/Ued3yY8fl53wvh5iW2ZhbmcMdSdH/sr2P6jgyrHytnNvalC8Qw==}
+  '@smcllns/angel-core@0.3.0':
+    resolution: {integrity: sha512-taID3iPF89XFzjyZnEi+ZF6rA3GlvzlNH8F/UOBY4mSvQBHPW7dQqGmQz4a2PhzHgzbmYt/rkn4cKcfK5rvcXg==}
     hasBin: true
 
   '@speed-highlight/core@1.2.17':
@@ -772,7 +772,7 @@ snapshots:
 
   '@sindresorhus/is@7.2.0': {}
 
-  '@smcllns/angel-core@0.2.0':
+  '@smcllns/angel-core@0.3.0':
     dependencies:
       yaml: 2.9.0
 

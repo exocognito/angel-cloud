@@ -30,12 +30,12 @@ describe("google-read-proof fixture", () => {
     const example = JSON.parse(readFileSync(
       join(repoRoot, "angels/google-read-proof/angel.example.json"),
       "utf8",
-    )) as { bindings: { staging: Record<string, string>; production: Record<string, string> } };
+    )) as { bindings: { preview: Record<string, string>; production: Record<string, string> } };
 
     expect(tracked).toEqual(JSON.parse(artifact.canonicalSource));
     expect(tracked.name).toBe("google-read-proof");
     expect(tracked.tools.map(({ name }) => name)).toEqual([...GOOGLE_READ_PROOF_OPERATIONS].sort());
-    expect(example.bindings.staging).toEqual({ docs: "proof-google", gmail: "proof-google" });
+    expect(example.bindings.preview).toEqual({ docs: "proof-google", gmail: "proof-google" });
     expect(example.bindings.production).toEqual({ docs: "proof-google", gmail: "proof-google" });
   });
 });

@@ -3,7 +3,7 @@
   "account": "acct_demo",
   "angel": "golden-assistant",
   "bindings": {
-    "staging": {
+    "preview": {
       "gdocs-read": "personal-google",
       "gmail-read-and-draft": [
         "personal-google",
