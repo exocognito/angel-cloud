@@ -172,21 +172,17 @@ describe("Access-authenticated browser Provider API", () => {
     }
   });
 
-  test("rejects a non-HTTPS or non-origin Control base URL when building the post-connect redirect", async () => {
+  // A malformed dashboard origin must fail before Google is involved: the
+  // post-connect redirect is the only reader of CONTROL_BASE_URL, and failing
+  // there would spend a real consent and save the Connection before throwing.
+  test("rejects a non-HTTPS or non-origin Control base URL at authorize time, before any Google round trip", async () => {
     for (const baseUrl of ["http://control.test", "https://control.test/base", "https://control.test/?unsafe=1", "https://user:pass@control.test"]) {
       const harness = makeHarness("access-user");
-      await request(harness, "/api/provider-apps", "POST", {
-        providerAppId: "app_google",
-        provider: "google",
-        displayName: "Family Google",
-        clientId: "client-id",
-        clientSecret: "secret",
-      });
-      await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
       harness.env.CONTROL_BASE_URL = baseUrl;
-      const response = await request(harness, `/oauth/google/callback?state=${encodeURIComponent(harness.authorizationState)}&code=google-code`);
+      const response = await request(harness, "/api/connections/authorize", "POST", { providerAppId: "app_google", nickname: "family-google" });
       expect(response.status).toBe(500);
       expect(await response.json()).toEqual({ error: "CONTROL_BASE_URL must be an HTTPS origin without a path, query, hash, or credentials" });
+      expect(harness.brokerRequests.some((request) => new URL(request.url).pathname === "/internal/oauth/authorize")).toBe(false);
     }
   });
 });

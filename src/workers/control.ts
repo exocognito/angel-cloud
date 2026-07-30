@@ -383,6 +383,10 @@ async function startGoogleAuthorization(
   identity: AccessIdentity,
   input: { providerAppId: string; connectionId: string; nickname: string; flow: "create" | "reauth" },
 ): Promise<Response> {
+  // Both origins are validated up front. The post-connect redirect only reads
+  // CONTROL_BASE_URL after the Google round trip, and failing there would burn a
+  // real consent and save the Connection before throwing.
+  httpsOrigin(env.CONTROL_BASE_URL, "CONTROL_BASE_URL");
   const issued = await issueOAuthState({
     accountId: identity.accountId,
     accessSubject: identity.subject,
