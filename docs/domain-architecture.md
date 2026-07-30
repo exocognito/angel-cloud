@@ -136,16 +136,24 @@ removes the collision by construction, and two further rules keep it safe:
    Gateway (`mcp.`), and the Docs worker (`docs.`); add apex redirects for
    `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
 3. Update `CONTROL_BASE_URL` (`dash.`), `AUTH_BASE_URL` (`auth.`), and
-   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc` and redeploy.
+   `GATEWAY_BASE_URL` (`mcp.`) vars in `wrangler.control.jsonc`, regenerate
+   `types/control.d.ts` (the generated types embed var values, and `bun run
+   check` fails on drift), and redeploy.
 4. Add `dash.`, `api.`, and `auth.angelmcp.ai` to the Cloudflare Access
    application. `auth.` must be listed: the callback is a Control path, so it
    needs an Access identity like every other one. Because Access cookies are
    host-only, Google's redirect reaches `auth.` without one and Access
    re-issues from the existing team-domain session — verify a live connect
    through the new host rather than assuming that hop is transparent.
-5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
-   (operator-in-a-browser step in Google Cloud Console).
-6. Keep `workers.dev` URLs alive through the cutover, then disable.
+5. **Add** `auth.angelmcp.ai/oauth/google/callback` to the Google OAuth client
+   alongside the existing `workers.dev` URI — do not replace it (an
+   operator-in-a-browser step in Google Cloud Console). An authorization issued
+   just before step 3 carries the old redirect URI inside its stored state, and
+   the token exchange replays that stored string, so removing the old URI now
+   would break those in-flight callbacks. Registering `dash.` too costs nothing
+   and makes a callback rollback a var change with no Google edit.
+6. Keep `workers.dev` URLs and the old redirect URI alive through the cutover,
+   then disable and remove them.
 
 ## Open questions
 
