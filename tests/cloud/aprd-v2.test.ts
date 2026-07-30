@@ -29,6 +29,13 @@ const productDecision = readFileSync(
   ),
   "utf8",
 );
+const architectureDecision = readFileSync(
+  new URL(
+    "../../docs/adrs/0006-browser-source-and-client-compilation.md",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function count(pattern: RegExp): number {
   return [...html.matchAll(pattern)].length;
@@ -99,7 +106,7 @@ describe("APRD v2", () => {
   test("records the code-grounded map regrades", () => {
     expect(html).toContain('text-amber-600">home:MagicLinkForm');
     expect(html).not.toContain('text-red-600">home:MagicLinkForm');
-    expect(html).toContain('text-amber-600">angels:create → new:CharterEditor');
+    expect(html).toContain('text-amber-600">angels:create → new:CharterEditor (tools|children)');
     expect(html).toContain('text-amber-600">[slug]:Publish → hero result');
     expect(html).toContain('text-amber-600">[slug]:PolicyEditor');
     expect(html).not.toContain('text-emerald-700">[slug]:ToolRow.toggle');
@@ -110,6 +117,7 @@ describe("APRD v2", () => {
     expect(html).toContain('<span class="text-emerald-700">[slug]:Settings.Availability</span> · <span class="text-amber-600">MasterToggle</span>');
     expect(html).not.toContain("This station is red");
     expect(html).toContain("This station is amber — agreed and unbuilt");
+    expect(html).toContain('href="#s2" class="m-1 rounded border-2 border-emerald-300');
   });
 
   test("keeps the CLI-first phase coherent with its human web steps", () => {
@@ -130,7 +138,8 @@ describe("APRD v2", () => {
   test("marks only the actual system additions as future", () => {
     expect(html).toContain('BA["Better Auth<br/>D1 storage · email links"]');
     expect(html).toContain('APX["Apex public-page route<br/>angelmcp.ai/@handle/angel"]');
-    expect(html).toContain("class SRV,BA,APX change");
+    expect(html).toContain('SRC[("Source drafts<br/>inside AccountRegistry<br/>owner-only")]');
+    expect(html).toContain("class SRV,BA,APX,SRC change");
     expect(html).not.toContain("class SRV,C change");
     expect(html).not.toContain('G["Gateway<br/>mcp. — POST invokes,<br/>GET renders the trust page"]');
   });
@@ -164,11 +173,15 @@ describe("APRD v2", () => {
   test("records www parity as a product decision and updates current docs", () => {
     expect(productDecision).toContain("- Status: Agreed");
     expect(productDecision).toContain("The www product is a full-parity Angel write surface.");
-    expect(productDecision).toContain("Control still accepts only the canonical artifact.");
+    expect(productDecision).toContain("The publish boundary still accepts only the canonical artifact.");
     expect(productDecisionIndex).toContain("[0006](0006-www-is-a-full-write-surface.md)");
     expect(faq).toContain("That is now an implementation gap, not a permanent boundary.");
     expect(userManual).toContain("That is an unbuilt product");
     expect(faq).not.toContain("No, and that is deliberate.");
+    expect(architectureDecision).toContain("browser compiles them:");
+    expect(architectureDecision).toContain("For composed `angels:` policies");
+    expect(html).toContain("owner reviews the complete source diff");
+    expect(html).toContain("no auth cookie is ever scoped to <code>.angelmcp.ai</code>");
   });
 
   test("keeps the flagship wording visibly open", () => {

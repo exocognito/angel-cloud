@@ -206,10 +206,10 @@
                 <div class="p-2 font-mono border-t border-slate-100 text-amber-600">"read llms.txt" → guided</div>
 
                 <!-- 2 create -->
-                <a href="#s2" class="m-1 rounded border-2 border-amber-300 bg-amber-50 p-2 font-mono hover:bg-amber-100"><span class="text-[9px] font-sans uppercase tracking-wider text-amber-600">2 ↓</span><br/>create</a>
-                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">angels:create → new:CharterEditor</div>
+                <a href="#s2" class="m-1 rounded border-2 border-emerald-300 bg-emerald-50 p-2 font-mono hover:bg-emerald-100"><span class="text-[9px] font-sans uppercase tracking-wider text-emerald-600">2 ↓</span><br/>create</a>
+                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">angels:create → new:CharterEditor (tools|children)</div>
                 <div class="p-2 font-mono border-t border-slate-100"><span class="text-emerald-700">YAML by hand</span> · <span class="text-amber-600">angel create</span></div>
-                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">YAML from a sentence; owner approves</div>
+                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">YAML from a sentence; owner reviews full source</div>
 
                 <!-- 3 connect -->
                 <a href="#s3" class="m-1 rounded border-2 border-emerald-300 bg-emerald-50 p-2 font-mono hover:bg-emerald-100"><span class="text-[9px] font-sans uppercase tracking-wider text-emerald-600">3 ↓</span><br/>connect</a>
@@ -245,7 +245,7 @@
                 <a href="#s8" class="m-1 rounded border-2 border-emerald-300 bg-emerald-50 p-2 font-mono hover:bg-emerald-100"><span class="text-[9px] font-sans uppercase tracking-wider text-emerald-600">8 ↓</span><br/>edit policy</a>
                 <div class="p-2 font-mono border-t border-slate-100 text-amber-600">[slug]:PolicyEditor</div>
                 <div class="p-2 font-mono border-t border-slate-100 text-emerald-700">edit YAML → build → publish</div>
-                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">proposes diff; owner approves</div>
+                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">proposes full source diff; owner reviews policy</div>
 
                 <!-- 9 pause -->
                 <a href="#s9" class="m-1 rounded border-2 border-emerald-300 bg-emerald-50 p-2 font-mono hover:bg-emerald-100"><span class="text-[9px] font-sans uppercase tracking-wider text-emerald-600">9 ↓</span><br/>pause</a>
@@ -309,7 +309,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Rules are compiled, never judged</h4>
-          <p class="dev">The platform stores and enforces compiled, digest-addressed artifacts. It never accepts source YAML, never runs a user's build, and no model or prompt sits anywhere in the decision path.</p>
+          <p class="dev">The runtime stores and enforces compiled, digest-addressed artifacts, and no model or prompt sits anywhere in the decision path. Control may store an owner-only source draft for www editing; the pinned compiler runs in the browser, and only its canonical artifact crosses the publish boundary. No server runs a user's build (ADR 0006).</p>
           <p class="demo">publish accepts only the built <code>angel.version.json</code> plus its digest; the gate evaluator is pure allowlist-and-guard logic (ADR 0005).</p>
           <p class="user">What your assistant is allowed to do is written in a short file you approve up front. No AI decides on the fly whether something seems okay — the engine follows fixed policy rules.</p>
         </div>
@@ -438,7 +438,7 @@
 
         <div class="card g"><span class="chip">Green</span>
           <h4>Every Angel has a public trust page</h4>
-          <p class="dev">GET on the bare production coordinate renders the trust page; <code>Accept: application/json</code> returns the identical content for machines; POST still invokes MCP. The page shows charter, tools with guards, Version, and digest — never scopes, provider origins, Connection identities, or source. The route touches no key, no Broker, and sets no cookie (I14).</p>
+          <p class="dev">GET on the bare production coordinate renders the trust page; <code>Accept: application/json</code> returns the identical content for machines; POST still invokes MCP. The page shows charter, tools with guards, Version, and digest — never scopes, provider origins, Connection identities, or source. The route touches no key or Broker and sets no cookie; no auth cookie is ever scoped to <code>.angelmcp.ai</code>, so sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14).</p>
           <p class="demo">PR #28, deployed — open the coordinate in a browser, no login. Route logic at <code>src/workers/gateway.ts:299</code>.</p>
           <p class="user">Every live Angel has a web page anyone can open — no login needed. It shows exactly what the Angel allows, so people can read the rules before connecting their assistant to it.</p>
         </div>
@@ -561,13 +561,14 @@
         <div id="s2" class="space-y-3">
           <h3 class="font-serif text-2xl">4.2 · Create</h3>
           <p class="text-slate-700 leading-relaxed">
-            Three doors, one file. <span class="font-mono text-sm">ANGEL.yaml</span> holds the charter and the policy. The charter is notes; the policy is the only authority (D3) — and checking that they agree is a preflight in the authoring <em>skill</em>, run by the agent before build or publish, never by the engine. Any valid action in the provider's source spec may be allowed: the spec is the menu, the policy is the filter, and there is no curated action allowlist to maintain (D4).
+            Three doors, one file. <span class="font-mono text-sm">ANGEL.yaml</span> holds the charter and the policy. The charter is notes; the policy is the only authority (D3) — and checking that they agree is a preflight in the authoring <em>skill</em>, run by the agent before build or publish, never by the engine. The owner reviews the complete source — charter plus the enforced <span class="font-mono text-sm">tools:</span> or <span class="font-mono text-sm">angels:</span> policy — before build. Any valid action in the provider's source spec may be allowed: the spec is the menu, the policy is the filter, and there is no curated action allowlist to maintain (D4).
           </p>
           <ul class="list-disc pl-5 space-y-1.5 text-slate-700 leading-relaxed text-[15px]">
             <li><strong>CLI</strong> — writing the YAML by hand works today; <span class="font-mono text-sm">angel create &lt;slug&gt;</span> scaffolds it (agreed, unbuilt). <span class="font-mono text-sm">angel delete</span>, with typed-slug confirmation while production is live, shipped in 0.3.0.</li>
-            <li><strong>www</strong> — <span class="font-mono text-sm">angels:create → new:CharterEditor</span>. The www surface is full-parity for writes (D21): create an angel, add tools, edit guards — everything the CLI can do. A www edit writes the same YAML and goes through the same build-and-publish pipe. Nothing of this exists yet.</li>
-            <li><strong>agent</strong> — YAML from a sentence; the owner approves the charter before anything builds (agreed, unbuilt).</li>
+            <li><strong>www</strong> — <span class="font-mono text-sm">angels:create → new:CharterEditor</span>. The editor has the source schema's mutually exclusive direct-tools and child-Angels modes: create an Angel, add tools and guards, or compose sibling Angels — everything the CLI compiler accepts. Control stores the owner-only, secret-free source draft; the browser runs the pinned package-root <span class="font-mono text-sm">compileHostedAngel</span> compiler, resolving child source from the same Account, and sends only the canonical artifact and digest to publish (ADR 0006). A missing child draft blocks with an import-<span class="font-mono text-sm">ANGEL.yaml</span> prompt; source is never guessed from an artifact. Source never reaches either gate, and no server runs the build. Nothing of this source path exists yet.</li>
+            <li><strong>agent</strong> — YAML from a sentence; the owner reviews the complete source diff, including every allowed tool, guard, or child Angel, before anything builds (agreed, unbuilt).</li>
           </ul>
+          <p class="text-sm text-slate-600"><strong>Feasibility checked:</strong> the pinned <span class="font-mono">@smcllns/angel-core@0.3.0</span> package root bundles for a browser target and exports <span class="font-mono">compileHostedAngel</span>. Its Node-only <span class="font-mono">./build</span> filesystem wrapper is not part of the www path.</p>
           <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3">
             <p class="text-xs uppercase tracking-wider text-slate-400">The www write surface — three takes on Angel Detail, tap to rotate</p>
             <div data-carousel>
@@ -714,7 +715,7 @@ Authorization: Bearer ak_production_9f2…
         <div id="s8" class="space-y-3">
           <h3 class="font-serif text-2xl">4.8 · Edit policy</h3>
           <p class="text-slate-700 leading-relaxed">
-            Both sides may edit (D16). The CLI edits <span class="font-mono text-sm">ANGEL.yaml</span> and republishes; www edits with full parity (D21) through the same compile-and-publish pipe; an agent proposes a diff the owner approves. There is no sync protocol: the published digest arbitrates, <span class="font-mono text-sm">angel verify</span> flags divergence between a local file and production, and reconciliation is manual. The standing rule from the overlay commitment applies on every surface: a toggle can only remove; adding a tool or loosening a guard goes through source, build, publish.
+            Both sides may edit (D16). The CLI edits <span class="font-mono text-sm">ANGEL.yaml</span> and republishes; www edits with full parity (D21) through the same compile-and-publish pipe; an agent proposes a complete source diff and the owner reviews both charter and enforced policy. There is no sync protocol: the published digest arbitrates, <span class="font-mono text-sm">angel verify</span> flags divergence between a local file and production, and reconciliation is manual. The standing rule from the overlay commitment applies on every surface: a toggle can only remove; adding a tool or loosening a guard goes through source, build, publish.
           </p>
           <p class="text-sm text-slate-600"><strong>Today:</strong> CLI source edit → build → publish works end to end. The www allow/disallow toggle is not policy editing: <span class="font-mono">renderConnectionToggle</span> sends <span class="font-mono">pause_tool</span> / <span class="font-mono">resume_tool</span> and the Settings copy says it never edits or republishes the Version. The www PolicyEditor and agent diff flow are unbuilt.</p>
         </div>
@@ -740,7 +741,7 @@ Authorization: Bearer ak_production_9f2…
       <section class="space-y-5">
         <h2 class="font-serif text-3xl">5 · System diagram</h2>
         <p class="text-slate-700 leading-relaxed">
-          Three shared execution/control Workers, constant as angels multiply — plus three unbuilt pieces, marked orange: <span class="font-mono text-sm">angel serve</span> on the user's machine, Better Auth mounted on the control worker (D18), and the public-page route at <span class="font-mono text-sm">angelmcp.ai/@handle/angel</span>. Today the Gateway serves that trust page on its current host; the end state keeps MCP POST on <span class="font-mono text-sm">mcp.</span> and moves the public GET to the apex. The apex router's exact form remains open (§7).
+          Three shared execution/control Workers, constant as angels multiply — plus four unbuilt pieces, marked orange: <span class="font-mono text-sm">angel serve</span> on the user's machine, Better Auth mounted on the control worker (D18), owner-only source drafts inside the Account registry with browser-side compilation (ADR 0006), and the public-page route at <span class="font-mono text-sm">angelmcp.ai/@handle/angel</span>. Today the Gateway serves that trust page on its current host; the end state keeps MCP POST on <span class="font-mono text-sm">mcp.</span> and moves the public GET to the apex. The apex router's exact form remains open (§7).
         </p>
         <div class="rounded-lg border border-slate-200 bg-white p-4">
           <pre class="mermaid">
@@ -761,6 +762,7 @@ flowchart LR
     G["Gateway<br/>mcp. — POST invokes"]
     B["Broker<br/>no hostname, ever"]
     AR[("AccountRegistry DO")]
+    SRC[("Source drafts<br/>inside AccountRegistry<br/>owner-only")]
     GD[("Gate DOs ×2")]
     CV[("CredentialVault DO")]
   end
@@ -773,6 +775,7 @@ flowchart LR
   PUB -- "GET trust page" --> APX
   APX -. "read-only page data<br/>exact route form open" .-> G
   C --- AR
+  C -- "store / fetch source" --> SRC
   C -- "install / availability" --> G
   C -- "+ custody" --> B
   G --- GD
@@ -782,7 +785,7 @@ flowchart LR
   B -- "sealed template" --> GOOG
   SRV -- "user's own tokens" --> GOOG
   classDef change stroke:#c2410c,stroke-width:2px;
-  class SRV,BA,APX change
+  class SRV,BA,APX,SRC change
           </pre>
         </div>
         <p class="text-sm text-slate-600">
@@ -795,7 +798,7 @@ flowchart LR
         <h2 class="font-serif text-3xl">6 · Non-goals and deliberately-not-verified</h2>
         <ul class="list-disc pl-5 space-y-2 text-slate-700 leading-relaxed">
           <li><strong>No oracle.</strong> Angel never issues a safety verdict; there is no judge above the policy. The only claim is fidelity to the compiled policy the charter describes — whether that is a wise policy is for the owner and their own LLM to judge from the charter, the spec, the allow list, and the bundle. Any copy implying a "this is secure" assessment mis-sells the product (D6 — ADR candidate).</li>
-          <li><strong>No code-execution engine.</strong> The platform accepts canonical secret-free artifacts; it never accepts source YAML and never runs a user's build.</li>
+          <li><strong>No server-side build or code-execution engine.</strong> Control stores secret-free source drafts for their owner, but the pinned compiler runs in the browser. The publish and runtime boundaries accept only canonical artifacts; source never reaches Gateway or Broker (ADR 0006).</li>
           <li><strong>MCP is the only invocation surface.</strong> REST invocation stays reserved, unbuilt.</li>
           <li><strong>Omission never means fan-out</strong> (ADR 0002), <strong>the Broker never gets a hostname</strong>, and <strong>no per-Angel service deployment</strong> — shared services stay constant as Angels multiply; Durable Object state scopes each Angel.</li>
           <li><strong>Reversed from v1:</strong> "no authoring or publishing from the web UI" is gone. www is a full-parity write surface (D21). Do not cite v1's non-goal.</li>
@@ -841,7 +844,7 @@ flowchart LR
             </thead>
             <tbody class="divide-y divide-slate-100 font-mono">
               <tr><td class="p-2 font-sans font-medium">1 get in</td><td class="p-2"><span class="phase-chip p21">v2.1</span> MagicLinkForm + Better Auth (required by CLI login)</td><td class="p-2"><span class="phase-chip p21">v2.1</span> account login</td><td class="p-2"><span class="phase-chip p21">v2.1</span> llms.txt guides</td></tr>
-              <tr><td class="p-2 font-sans font-medium">2 create</td><td class="p-2"><span class="phase-chip p22">v2.2</span> CharterEditor</td><td class="p-2"><span class="phase-chip p21">v2.1</span> angel create</td><td class="p-2"><span class="phase-chip p21">v2.1</span> YAML from a sentence</td></tr>
+              <tr><td class="p-2 font-sans font-medium">2 create</td><td class="p-2"><span class="phase-chip p22">v2.2</span> source store · browser compiler · CharterEditor tools|children</td><td class="p-2"><span class="phase-chip p21">v2.1</span> angel create</td><td class="p-2"><span class="phase-chip p21">v2.1</span> YAML + full-source approval</td></tr>
               <tr><td class="p-2 font-sans font-medium">3 connect</td><td class="p-2"><span class="phase-chip p21">v2.1</span> fix the 500 · console checklist &nbsp;<span class="phase-chip plater">later</span> hosted Google tier (external)</td><td class="p-2"><span class="phase-chip p21">v2.1</span> apps connect</td><td class="p-2 text-slate-400 font-sans">— consent stays human</td></tr>
               <tr><td class="p-2 font-sans font-medium">4 run locally</td><td class="p-2 text-slate-400 font-sans">—</td><td class="p-2"><span class="phase-chip p21">v2.1</span> serve · replay</td><td class="p-2"><span class="phase-chip p21">v2.1</span> localhost endpoint</td></tr>
               <tr><td class="p-2 font-sans font-medium">5 publish</td><td class="p-2"><span class="phase-chip p22">v2.2</span> [slug]:Publish + hero result</td><td class="p-2"><span class="phase-chip pdone">done</span> publish · <span class="phase-chip p21">v2.1</span> digest line + engine-pin gate</td><td class="p-2"><span class="phase-chip p21">v2.1</span> runs publish</td></tr>
