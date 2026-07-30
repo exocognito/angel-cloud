@@ -78,7 +78,7 @@ guarded in source. It is a runtime routing argument, not policy content.
   "account": "acct_example",
   "angel": "research-assistant",
   "bindings": {
-    "staging": {
+    "preview": {
       "gmail": ["google-primary", "google-work"],
       "docs": "google-primary"
     },
@@ -158,9 +158,9 @@ two-element binding array is sufficient.
 ## Environment and availability invariants
 
 Each environment owns its deployment, bindings, stable agent key, and runtime
-availability overlay. Publishing builds and deploys to staging. Production
-promotion names the exact active staged deployment and digest while supplying
-the production binding map; it does not rebuild or republish.
+availability overlay. `publish --preview` builds and deploys to preview.
+Production promotion names the exact active preview deployment and digest while
+supplying the production binding map; it does not rebuild or republish.
 
 Pause/resume changes runtime availability, not the immutable Version. It can
 target all tools, one canonical tool, or one `(tool, Connection)` tuple. The

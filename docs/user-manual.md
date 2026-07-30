@@ -51,10 +51,10 @@ this project explores for the same idea; to weigh it against the others, see
 
 Milestone 1 runs a single pre-provisioned Account, `acct_m1`, behind Cloudflare
 Access. As of 2026-07-22 the Broker, Gateway, and Control Workers are deployed
-in the dedicated Cloudflare account, and remote CI is green against the public
-`@smcllns/angel-core@0.2.0` pin. Provider App `google-primary` is stored
-write-only in Broker custody, and its safe summary reads without returning the
-client secret.
+in the dedicated Cloudflare account. Public `@smcllns/angel-core@0.3.0` is
+published, and the repository pins it with a matching lockfile. Provider App
+`google-primary` is stored write-only in Broker custody, and its safe summary
+reads without returning the client secret.
 
 **Live and proven end to end:**
 
@@ -126,8 +126,7 @@ flowchart TD
 - **Environment** — `preview` or `production`, nothing else. Each has its own
   deployment, bindings, availability state, and Angel key. A preview key cannot
   call production. `preview` was named `staging` until 2026-07-28 (PD 0003);
-  the pinned CLI and its `angel.json` still use the old spelling, and the
-  server accepts it as a legacy dialect.
+  the server accepts the old spelling only as a legacy management-API dialect.
 - **Deployment** — one Version installed into one environment, with explicit
   **bindings** that map each of the artifact's requirements to Connections.
 - **Angel key** — the bearer an agent presents. Each environment gets a default
@@ -863,8 +862,8 @@ The ordinary golden journey injects a deterministic provider at the Broker
 boundary. It needs no Google or Cloudflare credentials, yet exercises the real
 CLI, artifact digests, the Account API, both gates, MCP auth, Connection
 selection, availability, exact promotion, key stability, and Account isolation.
-The hosted repo runs this against the public `@smcllns/angel-core@0.3.0` pin, and
-remote CI is green.
+The hosted repository runs this against public `@smcllns/angel-core@0.3.0` with
+its matching lockfile.
 
 ### Full deployed comparison journey
 

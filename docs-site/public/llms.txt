@@ -31,7 +31,7 @@ it is the whole journey as procedural instructions.
 
 - Management API base (today): `https://angelmcp-control-demo.sam-633.workers.dev` — all `/v1/...` routes need a Cloudflare Access identity **and** `Authorization: Bearer <management token>`; mutations need an `Idempotency-Key` header.
 - MCP endpoint (today): `POST https://angelmcp-gateway-demo.sam-633.workers.dev/@<handle>/<angel>` for production, `.../@<handle>/<angel>@preview` for preview, with `Authorization: Bearer <Angel key>`, MCP streamable HTTP, protocol `2025-06-18`. The legacy `/v1/a/<account>/<angel>/<staging|preview|production>/mcp` route still answers.
-- CLI: `@smcllns/angel-core` on npm (`bin: angel`); run with `bun`. Subcommands: `angel build`, `angel publish`, `angel deploy --prod`.
+- CLI: `@smcllns/angel-core` on npm (`bin: angel`); run with `bun`. Production is the default; add `--preview` to publish to preview. Subcommands: `angel build`, `angel publish`, `angel deploy --prod`, `angel delete`.
 
 ## Optional
 

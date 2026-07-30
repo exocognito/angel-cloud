@@ -436,8 +436,9 @@ credentials ([comparison journey](user-manual.md#full-deployed-comparison-journe
 Yes. It merged to main on 2026-07-23 (PR #1), and Broker, Gateway, and Control
 are deployed and live in the dedicated Cloudflare account: an unauthenticated
 Control root request redirects to Access (`302`), a valid service token reaches
-the app (`200`), live reset and state reads pass, and the public
-`@smcllns/angel-core@0.2.0` pin and remote CI are green
+the app (`200`), and live reset and state reads pass. Public
+`@smcllns/angel-core@0.3.0` is published, and the repository pins it with a
+matching lockfile
 ([status](user-manual.md#milestone-1-what-is-live)). Cloudflare account login,
 Google consent, publish/deploy, seeded Gmail and Docs reads, loud revoke
 failure, row-level reauthorization on the same Connection, and the final pass

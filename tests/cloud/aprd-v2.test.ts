@@ -36,6 +36,51 @@ const userManual = readFileSync(
   new URL("../../docs/user-manual.md", import.meta.url),
   "utf8",
 );
+const operatorJourney = readFileSync(
+  new URL("../../docs/google-read-proof-manual-journey.md", import.meta.url),
+  "utf8",
+);
+const publicSkill = readFileSync(
+  new URL("../../docs-site/public/SKILL.md", import.meta.url),
+  "utf8",
+);
+const publicLlms = readFileSync(
+  new URL("../../docs-site/public/llms.txt", import.meta.url),
+  "utf8",
+);
+const publicIndex = readFileSync(
+  new URL("../../docs-site/public/index.html", import.meta.url),
+  "utf8",
+);
+const researchConfigurationReadme = readFileSync(
+  new URL(
+    "../../research/hosted-platform/example-configurations/README.md",
+    import.meta.url,
+  ),
+  "utf8",
+);
+const researchConfigurations = [
+  "communications-stack.angel.json",
+  "gmail-inbox-zero.angel.json",
+  "golden-research-assistant.angel.json",
+].map((name) =>
+  JSON.parse(
+    readFileSync(
+      new URL(
+        `../../research/hosted-platform/example-configurations/${name}`,
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ) as { bindings: Record<string, unknown> }
+);
+const v1AudienceViews = [
+  "../../docs/aprd/aprd-views.html",
+  "../../docs/aprd/views/design.html",
+  "../../docs/aprd/views/engineering.html",
+  "../../docs/aprd/views/marketing.html",
+  "../../docs/aprd/views/support.html",
+].map((path) => readFileSync(new URL(path, import.meta.url), "utf8"));
 const productDecisionIndex = readFileSync(
   new URL("../../docs/product-decisions/README.md", import.meta.url),
   "utf8",
@@ -207,7 +252,7 @@ describe("APRD v2", () => {
     expect(userManual).toContain("pnpm exec angel delete  <angel> [--confirm <slug>]");
     expect(userManual).toContain('"preview":');
     expect(userManual).not.toContain('"staging":');
-    expect(userManual).toContain("runs this against the public `@smcllns/angel-core@0.3.0` pin");
+    expect(userManual).toContain("The hosted repository runs this against public");
     expect(previewDecision).toContain("- Implemented: Yes");
     expect(previewBindingsDecision).toContain("- Implemented: Yes");
     expect(productDecisionIndex).toContain("| [0003](0003-preview-is-opt-in.md)");
@@ -262,6 +307,46 @@ describe("APRD v2", () => {
         dependencies,
       ),
     ).rejects.toThrow("Connection nickname preview-only was not found");
+  });
+
+  test("keeps the core 0.3 migration aligned across every current journey", () => {
+    for (const currentDoc of [rootReadme, userManual, faq]) {
+      expect(currentDoc).toMatch(
+        /Public\s+`@smcllns\/angel-core@0\.3\.0` is\s+published/,
+      );
+      expect(currentDoc).toContain("matching lockfile");
+      expect(currentDoc).not.toContain("remote CI is green");
+    }
+
+    expect(publicSkill).toContain("The CLI accepts four subcommands");
+    expect(publicSkill).toContain("and `delete`");
+    expect(publicSkill).toContain('"preview":');
+    expect(publicSkill).not.toContain('"staging":');
+    expect(publicSkill).toContain("pnpm exec angel publish google-read-proof --preview");
+    expect(publicSkill).toContain("Without `--preview`, core 0.3.0 publishes to production.");
+    expect(publicSkill).not.toContain("the pinned CLI");
+
+    expect(operatorJourney).toContain("in the `preview` and");
+    expect(operatorJourney).toContain("bun run angel publish google-read-proof --preview");
+    expect(operatorJourney).not.toContain("in the `staging` map");
+
+    expect(publicLlms).toContain("Production is the default; add `--preview`");
+    expect(publicLlms).toContain("`angel delete`");
+    expect(publicIndex).toContain("Publish to production (default) or preview (opt in)");
+    expect(publicIndex).toContain("<code>angel publish --preview</code>");
+
+    expect(researchConfigurationReadme).toContain('"preview":');
+    expect(researchConfigurationReadme).not.toContain('"staging":');
+    expect(researchConfigurationReadme).toContain("`publish --preview` builds and deploys to preview");
+    for (const config of researchConfigurations) {
+      expect(config.bindings.preview).toBeDefined();
+      expect(config.bindings.staging).toBeUndefined();
+    }
+
+    for (const view of v1AudienceViews) {
+      expect(view).toContain("V1 audience snapshot.");
+      expect(view).toContain("APRD v2 dataroom");
+    }
   });
 
   test("defines every commitment evidence id in the normative document", () => {
