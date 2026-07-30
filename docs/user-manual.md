@@ -125,9 +125,9 @@ flowchart TD
   ([why](faq.md#why-are-versions-immutable)).
 - **Environment** — `preview` or `production`, nothing else. Each has its own
   deployment, bindings, availability state, and Angel key. A preview key cannot
-  call production. `preview` was named `staging` until 2026-07-28 (PD 0003);
-  the pinned CLI and its `angel.json` still use the old spelling, and the
-  server accepts it as a legacy dialect.
+  call production. `preview` was named `staging` until 2026-07-28 (PD 0003).
+  `angel.json` must use the new spelling; the server still accepts the old one
+  on the wire, as a legacy dialect, for CLIs pinned before the rename.
 - **Deployment** — one Version installed into one environment, with explicit
   **bindings** that map each of the artifact's requirements to Connections.
 - **Angel key** — the bearer an agent presents. Each environment gets a default
@@ -290,7 +290,7 @@ Exactly four keys:
   "account": "acct_m1",
   "angel": "google-read-proof",
   "bindings": {
-    "staging":    { "gmail": "proof-google", "docs": "proof-google" },
+    "preview":    { "gmail": "proof-google", "docs": "proof-google" },
     "production": { "gmail": "proof-google", "docs": "proof-google" }
   }
 }
@@ -300,8 +300,7 @@ Exactly four keys:
   credentials.
 - `account` — your Account ID.
 - `angel` — the Angel slug; must equal the artifact's `name`.
-- `bindings` — a `staging` map (the pinned CLI's spelling of the preview
-  environment) and a `production` map, each keyed by the
+- `bindings` — a `preview` map and a `production` map, each keyed by the
   artifact's binding-requirement IDs. For a direct Angel the ID is the provider
   name (`gmail`); for a composed Angel it is the child name
   (`gmail-read-and-draft`), or `<child>:<provider>` when one child uses two
@@ -450,7 +449,12 @@ clone of this repository — install it and invoke it with `pnpm exec angel`:
 
 ```sh
 pnpm add @smcllns/angel-core
+pnpm ls @smcllns/angel-core   # must read 0.3.0 or later
 ```
+
+Check the second line. A package manager configured with a minimum release age
+will silently resolve an older version, and versions before 0.3.0 spell the
+preview environment `staging`, which makes the rest of this page wrong.
 
 It has exactly three subcommands:
 
@@ -497,9 +501,9 @@ One command does four things:
    read the plaintext back**
    ([can I rotate?](faq.md#can-i-rotate-an-angel-key-is-it-shown-more-than-once)).
 3. Publishes the Version. The same digest returns the same Version.
-4. Deploys it to the preview environment, resolving your `staging` binding
-   nicknames (the CLI's legacy spelling of preview) against the Account's live
-   Connections. Each nickname must exist, be `healthy`, and cover its
+4. Deploys it to the preview environment, resolving your `preview` binding
+   nicknames against the Account's live Connections. Each nickname must exist,
+   be `healthy`, and cover its
    requirement's provider. A preview deploy with no bindings for a Version
    that requires them fails and names the two ways forward (PD 0005). The
    server can also take a published Version straight to production in one step

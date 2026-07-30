@@ -30,8 +30,8 @@ stop — you have taken the wrong path. Work in the user's own empty directory.
 - **Environment** — `preview` and `production`, each a mutable pointer to one
   Version plus its bindings, keys, and availability. Production is the default:
   the bare coordinate addresses it, and only `@preview` names an environment.
-  The pinned CLI and its `angel.json` still spell `preview` as `staging`; the
-  server accepts both spellings.
+  Write `preview`. The server still accepts the older `staging` spelling on the
+  wire for CLIs pinned before the rename, but `angel.json` must not use it.
 - **Connection** — a custodied provider credential (e.g. a Google OAuth grant).
   Bindings map an Angel's requirements to Connections by nickname.
 - **Angel key** — the opaque bearer an agent presents to the MCP endpoint. It
@@ -48,7 +48,7 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | 3. Add a Google Connection | Browser (Cloudflare Access + Google consent) | Interactive login — no headless path |
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
-| 6. Publish to preview (the CLI still says staging) | `angel publish` / API | Management bearer + Access token |
+| 6. Publish to preview | `angel publish` / API | Management bearer + Access token |
 | 7. Promote to production | `angel deploy --prod` / API | Management bearer + Access token |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
@@ -65,7 +65,12 @@ has a `#!/usr/bin/env bun` shebang). Install Bun if it is missing
 
 ```sh
 pnpm add @smcllns/angel-core
+pnpm ls @smcllns/angel-core   # must read 0.3.0 or later
 ```
+
+Check the second line. A package manager configured with a minimum release age
+will silently resolve an older version, and versions before 0.3.0 spell the
+preview environment `staging`, which makes the rest of this document wrong.
 
 Invoke it with `pnpm exec angel <command>`. The CLI accepts exactly three
 subcommands — `build`, `publish`, and `deploy … --prod` — and prints a `usage:`
@@ -136,13 +141,14 @@ requirement in each environment. Keep the real `angel.json` untracked.
   "account": "acct_...",
   "angel": "google-read-proof",
   "bindings": {
-    "staging":    { "gmail": "<connection-nickname>", "docs": "<connection-nickname>" },
+    "preview":    { "gmail": "<connection-nickname>", "docs": "<connection-nickname>" },
     "production": { "gmail": "<connection-nickname>", "docs": "<connection-nickname>" }
   }
 }
 ```
 
-The `staging` key is the pinned CLI's spelling of the preview environment.
+Files written before the rename spell that key `staging`. The CLI rejects them
+and tells you to rename it.
 Production bindings are explicit and never inherit from preview. Details:
 [Write an Angel](https://docs.angelmcp.ai/user-manual.md#write-an-angel).
 
@@ -166,11 +172,11 @@ pnpm exec angel publish google-read-proof
 
 Publish rebuilds, lists healthy Connections, resolves the preview bindings,
 ensures the Angel, publishes the immutable Version, and installs it in the
-preview environment (the pinned CLI prints and sends `staging` for it).
+preview environment.
 
 **On the first ensure, the response prints the shown-once preview and
 production Angel keys.** Capture them immediately into a secret store — later reads expose
-only fingerprints. Then verify the staged tool list is exactly what you expect
+only fingerprints. Then verify the preview tool list is exactly what you expect
 (here: `gmail.users.messages.list` and `docs.documents.get`).
 
 ## Step 7 — Promote the exact staged deployment
