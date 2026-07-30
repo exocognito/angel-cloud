@@ -13,6 +13,22 @@ const roadmap = readFileSync(
   new URL("../../ROADMAP.md", import.meta.url),
   "utf8",
 );
+const faq = readFileSync(new URL("../../docs/faq.md", import.meta.url), "utf8");
+const userManual = readFileSync(
+  new URL("../../docs/user-manual.md", import.meta.url),
+  "utf8",
+);
+const productDecisionIndex = readFileSync(
+  new URL("../../docs/product-decisions/README.md", import.meta.url),
+  "utf8",
+);
+const productDecision = readFileSync(
+  new URL(
+    "../../docs/product-decisions/0006-www-is-a-full-write-surface.md",
+    import.meta.url,
+  ),
+  "utf8",
+);
 
 function count(pattern: RegExp): number {
   return [...html.matchAll(pattern)].length;
@@ -91,6 +107,9 @@ describe("APRD v2", () => {
     expect(html).toContain('text-amber-600">angel keys new|revoke');
     expect(html).toContain("sends <span class=\"font-mono\">pause_tool</span> / <span class=\"font-mono\">resume_tool</span>");
     expect(html).toContain("The current page does make other writes — Promote, availability changes, and key lifecycle actions");
+    expect(html).toContain('<span class="text-emerald-700">[slug]:Settings.Availability</span> · <span class="text-amber-600">MasterToggle</span>');
+    expect(html).not.toContain("This station is red");
+    expect(html).toContain("This station is amber — agreed and unbuilt");
   });
 
   test("keeps the CLI-first phase coherent with its human web steps", () => {
@@ -98,6 +117,8 @@ describe("APRD v2", () => {
     expect(html).toContain('<span class="phase-chip p22">v2.2</span> PolicyEditor: charter · tools · guards');
     expect(html).toContain('<span class="phase-chip pdone">done</span> KeysPanel New → Revoke');
     expect(html).not.toContain('<span class="phase-chip pdone">done</span> toggle');
+    expect(html).toContain('<td class="p-2 text-slate-400 font-sans">— consent stays human</td>');
+    expect(html).not.toContain('<span class="phase-chip pdone">done</span> stays human');
   });
 
   test("pins the reproducible digest and explains the newline footgun", () => {
@@ -130,6 +151,24 @@ describe("APRD v2", () => {
     expect(aprdReadme).not.toContain("Prototype flow F");
     expect(roadmap).toContain("the goals map, demonstrable commitments,");
     expect(roadmap).not.toContain("the spine, invariants, interface types,");
+  });
+
+  test("defines every commitment evidence id in the normative document", () => {
+    for (let i = 1; i <= 15; i += 1) {
+      expect(html).toContain(`id="e${i}"`);
+      expect(html).toContain(`<strong>E${i} ·`);
+    }
+    expect(html).toContain("Evidence contracts · E1–E15");
+  });
+
+  test("records www parity as a product decision and updates current docs", () => {
+    expect(productDecision).toContain("- Status: Agreed");
+    expect(productDecision).toContain("The www product is a full-parity Angel write surface.");
+    expect(productDecision).toContain("Control still accepts only the canonical artifact.");
+    expect(productDecisionIndex).toContain("[0006](0006-www-is-a-full-write-surface.md)");
+    expect(faq).toContain("That is now an implementation gap, not a permanent boundary.");
+    expect(userManual).toContain("That is an unbuilt product");
+    expect(faq).not.toContain("No, and that is deliberate.");
   });
 
   test("keeps the flagship wording visibly open", () => {

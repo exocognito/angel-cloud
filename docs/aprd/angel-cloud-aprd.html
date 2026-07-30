@@ -248,8 +248,8 @@
                 <div class="p-2 font-mono border-t border-slate-100 text-amber-600">proposes diff; owner approves</div>
 
                 <!-- 9 pause -->
-                <a href="#s9" class="m-1 rounded border-2 border-amber-300 bg-amber-50 p-2 font-mono hover:bg-amber-100"><span class="text-[9px] font-sans uppercase tracking-wider text-amber-600">9 ↓</span><br/>pause</a>
-                <div class="p-2 font-mono border-t border-slate-100 text-amber-600">[slug]:MasterToggle</div>
+                <a href="#s9" class="m-1 rounded border-2 border-emerald-300 bg-emerald-50 p-2 font-mono hover:bg-emerald-100"><span class="text-[9px] font-sans uppercase tracking-wider text-emerald-600">9 ↓</span><br/>pause</a>
+                <div class="p-2 font-mono border-t border-slate-100"><span class="text-emerald-700">[slug]:Settings.Availability</span> · <span class="text-amber-600">MasterToggle</span></div>
                 <div class="p-2 font-mono border-t border-slate-100 text-slate-400">not this surface</div>
                 <div class="p-2 font-mono border-t border-slate-100 text-slate-400">not this surface</div>
 
@@ -519,6 +519,28 @@
           <p class="demo">the verify transcript in §4.6; a copy sweep finding no surface that claims remote execution is provable.</p>
           <p class="user">We tell you exactly where proof ends and trust begins, inside the tool itself — instead of letting you assume a guarantee no host can honestly make.</p>
         </div>
+
+        <details class="rounded-lg border border-slate-200 bg-white p-5">
+          <summary class="cursor-pointer font-serif text-xl">Evidence contracts · E1–E15</summary>
+          <p class="mt-3 text-sm text-slate-600">Commitment cards cite these stable ids. Each line is a concrete input → expected output contract; target-state lines become the acceptance test for their phase.</p>
+          <ol class="mt-4 space-y-3 text-sm text-slate-700 leading-relaxed">
+            <li id="e1"><strong>E1 · One command to live.</strong> Given a fresh valid Angel and one healthy Connection, <code>angel publish</code> creates it, prints both environment keys once, and serves the published digest; an unchanged republish returns the same Version and no keys.</li>
+            <li id="e2"><strong>E2 · Preview refuses real data silently.</strong> Given production bindings only, <code>angel publish --preview</code> exits non-zero and names both remedies; the explicit share flag deploys preview with a recorded production-Connection share.</li>
+            <li id="e3"><strong>E3 · Exact promotion, stable keys.</strong> Promoting one active staged deployment with its expected digest installs those bytes and preserves production keys; a stale digest or inactive deployment returns 409 and changes nothing.</li>
+            <li id="e4"><strong>E4 · Two receipts or no result.</strong> An allowed call returns agreeing Gateway and Broker receipts; forced identity divergence returns HTTP 500 / JSON-RPC −32603 and makes no provider call.</li>
+            <li id="e5"><strong>E5 · Guards bind arguments.</strong> A forbidden label returns receipted <code>guard_denied</code>; a pinned result count executes at the pin; an absent send operation returns <code>unknown_tool</code>.</li>
+            <li id="e6"><strong>E6 · Selection, never fan-out.</strong> Two bound Connections make <code>angel_connection</code> required with opaque refs; omission or a stale ref fails, while one available Connection may be selected implicitly.</li>
+            <li id="e7"><strong>E7 · Pause removes, resume restores.</strong> Pausing one tool+Connection affects only that tuple; the last active Connection removes the tool from discovery; pause all then resume one restores only that one, Broker-first.</li>
+            <li id="e8"><strong>E8 · Isolation is invisibility.</strong> Cross-Account management resources return the same 404 as absent ones; an unknown handle or wrong environment key returns the same 401 as a bad key.</li>
+            <li id="e9"><strong>E9 · Custody is write-only and loud.</strong> Provider Apps read back as safe summaries; revoked custody makes the next call fail without a fixture; reauthorization restores the same Connection identity.</li>
+            <li id="e10"><strong>E10 · Handles hold their meaning.</strong> A retired handle keeps reaching the same Account, a second rename fails, reserved short or authority names return 403, and no other Account can claim the old name; public pages later add the 301.</li>
+            <li id="e11"><strong>E11 · Delete is deliberate and total.</strong> A live delete needs the exact slug; success revokes keys, resets Broker then Gateway, removes the coordinate, preserves shared Connections and other Angels, and replays idempotently.</li>
+            <li id="e12"><strong>E12 · Publish-time closure.</strong> An operation the registry cannot derive or an artifact whose sealed content disagrees fails at build/publish; missing Connection scopes fail at deploy with the operation and covering scopes named.</li>
+            <li id="e13"><strong>E13 · Agent-guided onboarding.</strong> An agent starting with the public docs can guide a person from an empty directory to a callable Angel, with each human credential step stated and every agent document available without login.</li>
+            <li id="e14"><strong>E14 · Transport error states.</strong> Wrong key, method, content negotiation, content type, origin, protocol version, idempotency reuse, and mutation-during-repair each return their specified distinct error before unsafe work.</li>
+            <li id="e15"><strong>E15 · Gmail write under real guards.</strong> A draft-and-read Angel creates a real Gmail draft through both gates with receipts, exposes no send operation, denies forbidden write arguments, and passes deterministic plus live credentialed acceptance.</li>
+          </ol>
+        </details>
       </section>
 
       <!-- ══════════════ 4 · STATIONS ══════════════ -->
@@ -532,7 +554,7 @@
           <p class="text-slate-700 leading-relaxed">
             Identity is Better Auth self-hosted on the control worker, with Cloudflare D1 for auth storage and email delivery for the links (D18) — auth stays inside the same Cloudflare trust boundary as everything else. Sign-in is an email magic link with a days-long expiry, not minutes; a passkey is offered after the first sign-in, never required before it; recovery contacts never drop below one. Delete account cascades angels · keys · apps and gives a fresh start (cascade details open — §7). The CLI signs in with <span class="font-mono text-sm">angel account login</span>: a browser hop, then a token on the machine. The agent path is guided — reading <span class="font-mono text-sm">llms.txt</span> is enough to walk a user through sign-up, but the magic link lands in a human inbox, so the human stays in the loop.
           </p>
-          <p class="text-sm text-slate-600"><strong>Today:</strong> none of it. Entry is a Cloudflare Access owner invite, and the tenant is hardcoded (<span class="font-mono">ACCOUNT_ID: "acct_m1"</span>, <span class="font-mono">wrangler.control.jsonc:11</span>). No signup, no logout, no delete. This station is red and blocks every organic dogfood.</p>
+          <p class="text-sm text-slate-600"><strong>Today:</strong> none of it. Entry is a Cloudflare Access owner invite, and the tenant is hardcoded (<span class="font-mono">ACCOUNT_ID: "acct_m1"</span>, <span class="font-mono">wrangler.control.jsonc:11</span>). No signup, no logout, no delete. This station is amber — agreed and unbuilt — and blocks every organic dogfood today.</p>
         </div>
 
         <!-- s2 -->
@@ -820,7 +842,7 @@ flowchart LR
             <tbody class="divide-y divide-slate-100 font-mono">
               <tr><td class="p-2 font-sans font-medium">1 get in</td><td class="p-2"><span class="phase-chip p21">v2.1</span> MagicLinkForm + Better Auth (required by CLI login)</td><td class="p-2"><span class="phase-chip p21">v2.1</span> account login</td><td class="p-2"><span class="phase-chip p21">v2.1</span> llms.txt guides</td></tr>
               <tr><td class="p-2 font-sans font-medium">2 create</td><td class="p-2"><span class="phase-chip p22">v2.2</span> CharterEditor</td><td class="p-2"><span class="phase-chip p21">v2.1</span> angel create</td><td class="p-2"><span class="phase-chip p21">v2.1</span> YAML from a sentence</td></tr>
-              <tr><td class="p-2 font-sans font-medium">3 connect</td><td class="p-2"><span class="phase-chip p21">v2.1</span> fix the 500 · console checklist &nbsp;<span class="phase-chip plater">later</span> hosted Google tier (external)</td><td class="p-2"><span class="phase-chip p21">v2.1</span> apps connect</td><td class="p-2"><span class="phase-chip pdone">done</span> stays human</td></tr>
+              <tr><td class="p-2 font-sans font-medium">3 connect</td><td class="p-2"><span class="phase-chip p21">v2.1</span> fix the 500 · console checklist &nbsp;<span class="phase-chip plater">later</span> hosted Google tier (external)</td><td class="p-2"><span class="phase-chip p21">v2.1</span> apps connect</td><td class="p-2 text-slate-400 font-sans">— consent stays human</td></tr>
               <tr><td class="p-2 font-sans font-medium">4 run locally</td><td class="p-2 text-slate-400 font-sans">—</td><td class="p-2"><span class="phase-chip p21">v2.1</span> serve · replay</td><td class="p-2"><span class="phase-chip p21">v2.1</span> localhost endpoint</td></tr>
               <tr><td class="p-2 font-sans font-medium">5 publish</td><td class="p-2"><span class="phase-chip p22">v2.2</span> [slug]:Publish + hero result</td><td class="p-2"><span class="phase-chip pdone">done</span> publish · <span class="phase-chip p21">v2.1</span> digest line + engine-pin gate</td><td class="p-2"><span class="phase-chip p21">v2.1</span> runs publish</td></tr>
               <tr><td class="p-2 font-sans font-medium">6 verify</td><td class="p-2"><span class="phase-chip p22">v2.2</span> DigestBadge</td><td class="p-2"><span class="phase-chip p21">v2.1</span> angel verify</td><td class="p-2"><span class="phase-chip p21">v2.1</span> runs verify</td></tr>
