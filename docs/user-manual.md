@@ -52,7 +52,7 @@ this project explores for the same idea; to weigh it against the others, see
 Milestone 1 runs a single pre-provisioned Account, `acct_m1`, behind Cloudflare
 Access. As of 2026-07-22 the Broker, Gateway, and Control Workers are deployed
 in the dedicated Cloudflare account, and remote CI is green against the public
-`@smcllns/angel-core@0.2.0` pin. Provider App `google-primary` is stored
+`@smcllns/angel-core@0.3.0` pin. Provider App `google-primary` is stored
 write-only in Broker custody, and its safe summary reads without returning the
 client secret.
 

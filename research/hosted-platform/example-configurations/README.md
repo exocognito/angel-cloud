@@ -78,7 +78,7 @@ guarded in source. It is a runtime routing argument, not policy content.
   "account": "acct_example",
   "angel": "research-assistant",
   "bindings": {
-    "staging": {
+    "preview": {
       "gmail": ["google-primary", "google-work"],
       "docs": "google-primary"
     },

@@ -54,8 +54,8 @@ monitoring yet.
    ```
 
    Set the real control target, Account, Angel slug, and the same healthy
-   Connection nickname under both `docs` and `gmail` in the `staging` map (the
-   pinned CLI's spelling of the preview environment) and the `production` map.
+   Connection nickname under both `docs` and `gmail` in the `preview` map and the
+   `production` map.
    The real `angel.json` is ignored. `ANGEL.yaml` remains portable and
    target-neutral.
 5. **Local operator shell — publish preview.** With the operator's management
