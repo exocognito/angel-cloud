@@ -58,6 +58,9 @@
       .phase-chip.p22 { background:#fdf4ff; color:#a21caf; border:1px solid #f5d0fe; }
       .phase-chip.plater { background:#f5f5f4; color:#78716c; border:1px solid #e7e5e4; }
       .phase-chip.pdone { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+      .contract-list { counter-reset: contract-step; }
+      .contract-list > li { counter-increment: contract-step; }
+      .contract-list > li::marker { content: counter(contract-step) ". "; font-weight: 700; color: #4338ca; }
     </style>
   </head>
 
@@ -66,7 +69,14 @@
 
       <!-- ══════════════ HEADER + 1 · FLAGSHIP ══════════════ -->
       <header class="space-y-4">
-        <p class="text-xs uppercase tracking-wider text-slate-500">Angel Cloud · APRD v2 · 2026-07-30 · replaces v1 in place (git history keeps v1)</p>
+        <p class="text-xs uppercase tracking-wider text-slate-500">Angel Cloud · APRD v2 · 2026-07-30 · unapproved draft</p>
+        <div class="rounded-r-lg bg-amber-50 p-4 text-sm text-amber-950 shadow-[inset_4px_0_0_0_theme(colors.amber.500)]">
+          <strong>Do not build from this draft.</strong> The
+          <a href="../product-ledger.html" class="underline">Angel Product Ledger</a>
+          now owns the roadmap, learning reconciliation, and milestone approval.
+          This APRD predates that reconciliation. Its next-milestone scope must be
+          derived again after the ledger is approved.
+        </div>
         <h1 class="font-serif text-4xl leading-tight">Angel APRD v2 — the complete end state</h1>
         <p class="text-xl text-slate-700 leading-relaxed">
           Angel's complete end state is one inspectable policy bundle that runs
@@ -160,12 +170,14 @@
           </table>
         </div>
         <div class="rounded-r-lg bg-stone-100 p-4 text-sm text-slate-700 shadow-[inset_4px_0_0_0_theme(colors.slate.400)]">
-          <p><strong>Document precedence.</strong> This APRD owns the assembled
-          target product. ROADMAP.md owns delivery sequence and status. The
-          ADR/PD index Status line says whether a record governs; when a settled
-          record and this page conflict, fix this page. Inside the APRD, the
-          goals map (§2) and commitments (§3) are normative, station subsections
-          (§4) elaborate them, and phasing (§8) binds order, never design.</p>
+          <p><strong>Document precedence.</strong> The Product Ledger owns the
+          final goal, roadmap, learning disposition, and build approval. An
+          approved APRD owns only its next-milestone build contract; this draft
+          is not yet approved. The ADR/PD index Status line says whether a record
+          governs; when a settled record and this page conflict, fix this page.
+          Inside an approved APRD, the goals map and commitments are normative,
+          station subsections elaborate them, and phasing may not widen the
+          ledger-approved milestone.</p>
           <p class="mt-3"><strong>When goals conflict.</strong> Fail closed beats
           availability. Isolation beats convenience, while convenience beats an
           empty step. Publish-time rejection beats runtime failure.</p>
@@ -810,19 +822,39 @@ flowchart LR
       <!-- ══════════════ 7 · OPEN QUESTIONS ══════════════ -->
       <section class="space-y-4">
         <h2 class="font-serif text-3xl">7 · Open questions</h2>
-        <p class="text-slate-700 leading-relaxed">Undecided, and deliberately so. Blank space here is a choice, not an oversight.</p>
-        <ul class="list-disc pl-5 space-y-2 text-slate-700 leading-relaxed">
-          <li>Final flagship sentence wording — §1 is a draft until Sam approves it.</li>
-          <li>Google verification timeline for the hosted connect tier (external dependency).</li>
-          <li>Billing/pricing appears on the Account page sketch but was never discussed.</li>
-          <li>Delete-account cascade details beyond "cascades angels · keys · apps".</li>
-          <li>Sharing/catalog (J6): parked until the first hundred users exist.</li>
-          <li>Public trust-page widening: whether to add OAuth scopes, provider adapter/origin details, or child Angels. PD 0002 excludes all three today without settling the end state.</li>
-          <li>How registration and display handle Unicode lookalikes and confusable ASCII names beyond the current grammar and reserved-word list.</li>
-          <li>Rollback as a supporting path: today the owner republishes old source and promotes it through the normal two-gate path; a dedicated CLI command, www control, and direct selection of a pinned earlier Version remain unsettled.</li>
-          <li>The apex public-page route's form: one dispatcher Worker, or a marketing host with an <code>@</code>-path carve-out.</li>
-          <li>Whether commitments regeneration is scripted in-repo or stays manual per release.</li>
-        </ul>
+        <p class="text-slate-700 leading-relaxed">Undecided questions are sorted by decision horizon so deferred choices do not block v2.1 by implication.</p>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <h3 class="font-serif text-lg">Merge copy</h3>
+            <ul class="mt-2 list-disc pl-5 space-y-2 text-sm text-slate-700 leading-relaxed">
+              <li>Final flagship sentence wording — §1 is a draft until Sam approves it. This is a positioning copy decision; it changes terminology, not implementation scope or v2.1 acceptance.</li>
+            </ul>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <h3 class="font-serif text-lg">v2.1 blocker</h3>
+            <ul class="mt-2 list-disc pl-5 space-y-2 text-sm text-slate-700 leading-relaxed">
+              <li>Whether commitments regeneration is scripted in-repo or stays manual per release, because the v2.1 exit proof must mechanically produce the 29-row target matrix in §8.2.</li>
+            </ul>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <h3 class="font-serif text-lg">v2.2</h3>
+            <ul class="mt-2 list-disc pl-5 space-y-2 text-sm text-slate-700 leading-relaxed">
+              <li>Delete-account cascade details beyond "cascades angels · keys · apps".</li>
+              <li>Public trust-page widening: whether to add OAuth scopes, provider adapter/origin details, or child Angels. PD 0002 excludes all three today without settling the end state.</li>
+              <li>How registration and display handle Unicode lookalikes and confusable ASCII names beyond the current grammar and reserved-word list.</li>
+              <li>Rollback as a supporting path: today the owner republishes old source and promotes it through the normal two-gate path; a dedicated CLI command, www control, and direct selection of a pinned earlier Version remain unsettled.</li>
+            </ul>
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <h3 class="font-serif text-lg">Later or external</h3>
+            <ul class="mt-2 list-disc pl-5 space-y-2 text-sm text-slate-700 leading-relaxed">
+              <li>Google verification timeline for the hosted connect tier — external dependency, not a CLI-first v2.1 blocker.</li>
+              <li>Billing/pricing appears on the Account page sketch but was never discussed.</li>
+              <li>Sharing/catalog (J6): parked until the first hundred users exist.</li>
+              <li>The apex public-page route's form: one dispatcher Worker, or a marketing host with an <code>@</code>-path carve-out.</li>
+            </ul>
+          </div>
+        </div>
       </section>
 
       <!-- ══════════════ 8 · IMPLEMENTATION PHASING ══════════════ -->
@@ -864,6 +896,74 @@ flowchart LR
           <strong>v2.1 in one sentence:</strong> a developer (or their agent) reading only the public docs signs in, creates, connects, runs locally, publishes with the digest on screen, verifies it, and watches receipts they can anchor — from the terminal, with only the small web surfaces that human auth and consent require. <strong>v2.2</strong> brings www to write parity (D20/D21 stay on the map throughout) and adds the CLI key path; its exact cut remains a proposal. <strong>Later</strong> phases carry their own gates: the hosted Google tier waits on Google; multi-version engine hosting and the catalog are their own milestones. Engine-pin work is the poster child for doing the monorepo migration first — it cuts core and cloud — but that migration is separate, approved work; this document references it and does not perform it.
         </p>
         <p class="text-sm text-slate-600"><strong>Shared platform marks:</strong> Better Auth is v2.1 because CLI login depends on it. The apex public-page route and host cutover are later; their user-facing destination is fixed, while the router shape stays open in §7.</p>
+
+        <div class="space-y-4">
+          <h3 class="font-serif text-2xl">8.1 · Normative CLI-first golden path contract</h3>
+          <div class="rounded-r-lg bg-indigo-50 p-4 text-sm text-indigo-950 shadow-[inset_4px_0_0_0_theme(colors.indigo.500)]">
+            This is the executable v2.1 contract. The complete command owner is <a href="v2.1-cli-user-guide.md" class="underline">v2.1 CLI user guide</a>; the proof owner is <a href="v2.1-generative-evals.md" class="underline">v2.1 generative eval specification</a>. If implementation wants a different command shape, it changes those target-state docs and this APRD first.
+          </div>
+          <div class="rounded-lg border border-slate-200 bg-white p-4 space-y-3 text-sm text-slate-700 leading-relaxed">
+            <p><strong>Persona and start:</strong> persona: a developer's own agent helping a developer-owner; empty starting state: a new directory with no repository clone, no <code>ANGEL.yaml</code>, no <code>angel.json</code>, no Angel Cloud account session, no local token, no provider Connection, no Angel key, and no Gmail draft.</p>
+            <p><strong>Public entry and install:</strong> public-doc-only entry point: https://docs.angelmcp.ai/llms.txt, which points to https://docs.angelmcp.ai/SKILL.md. v2.1 install path: <code>pnpm add --global @smcllns/angel-core@v2.1</code>. The installed binary is the bare <code>angel</code> command. The current user manual remains the shipped Milestone 1 manual; it must not present target v2.1 commands as shipped behavior before implementation.</p>
+            <p><strong>Human-only handoffs:</strong> human-only handoffs: magic-link browser sign-in, Google Cloud OAuth-client setup, provider consent, and final Gmail draft review. The agent may open the browser and prepare forms, but only the owner authenticates, consents, and confirms the Gmail draft.</p>
+            <ol class="contract-list pl-5 space-y-3">
+              <li><strong>Sign in.</strong> Run <code>angel account login --control https://control.angelmcp.ai --account &lt;handle&gt;</code>. Human-only handoff: magic-link browser sign-in. The CLI stores an Account-scoped management token in the OS keychain and prints the Account handle; it never prints bearer tokens.</li>
+              <li><strong>Create source.</strong> Run <code>angel create gmail-draft-assistant --template gmail-draft-without-send</code>. The command writes <code>angels/gmail-draft-assistant/ANGEL.yaml</code> with <code>gmail.users.drafts.create</code> allowed and no <code>gmail.users.messages.send</code> tool. source/policy approval boundary: owner approves ANGEL.yaml before build, serve, publish, verify, receipt pull, or replay. If the source contains an unknown operation, a charter/policy mismatch, forbidden <code>angel_connection</code>, or a write scope not named in policy, the CLI fails here or at build before network or provider work.</li>
+              <li><strong>Connect Gmail.</strong> Run <code>angel apps connect google --nickname personal-gmail --scopes gmail.compose --app owner-google</code>. Human-only handoffs: Google Cloud OAuth-client setup for the own-client tier, browser auth, and provider consent. The command writes only the binding nickname into <code>angels/gmail-draft-assistant/angel.json</code>; provider secrets stay in custody. A missing consent, missing scope, unhealthy Connection, or wrong Account fails before publish or provider calls.</li>
+              <li><strong>Build.</strong> Run <code>angel build gmail-draft-assistant</code>. It emits <code>build/angel.version.json</code>, <code>build/angel.version.sha256</code>, and the bundle's pinned engine version. Build is offline and secret-free.</li>
+              <li><strong>Serve locally.</strong> Run <code>angel serve gmail-draft-assistant --port 7423</code>. local MCP proof: <code>angel serve gmail-draft-assistant --port 7423</code> prints <code>http://localhost:7423/mcp</code>, the bundle digest, the engine pin, and the keychain token label. A real MCP client can <code>initialize</code>, <code>tools/list</code>, and call <code>gmail.users.drafts.create</code> through that endpoint against the user's own local OAuth token. Local serve never uses Cloudflare, a hosted credential, or a fixture fallback.</li>
+              <li><strong>Publish to production.</strong> production-default publish: <code>angel publish gmail-draft-assistant</code>. It builds, ensures the Angel, resolves production bindings, publishes the immutable Version, deploys it to production, prints the produced bundle path, digest, engine pin, production MCP endpoint, and first-time preview and production Angel keys. no-op replay: the unchanged publish returns the same Version and digest and prints no new keys. Preview remains opt-in with <code>--preview</code>; production is the bare default.</li>
+              <li><strong>Verify production.</strong> verify: <code>angel verify gmail-draft-assistant --production</code>. It fetches production artifact bytes, hashes them locally, compares them to the local build digest and engine pin, prints the production endpoint, and prints <code>trust boundary: everything attestable is client-checkable; execution is trusted, bounded by replay.</code></li>
+              <li><strong>Call from an agent.</strong> agent call: tools/list, then tools/call gmail.users.drafts.create against <code>POST https://mcp.angelmcp.ai/@&lt;handle&gt;/gmail-draft-without-send</code> with the production Angel key. A successful draft call returns provider data and two receipts: Gateway and Broker. anchored tail: sequence, previousHash, hash appear in each agent-facing receipt, plus the digest fields needed for replay. A send attempt returns <code>unknown_tool</code>, not a denial.</li>
+              <li><strong>Pull receipts and replay.</strong> Pull an anchored range with <code>angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson</code>, then run replay spot-check with <code>angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json --fail-on-tamper</code>. The local engine recomputes decisions and argument digests for sampled calls and names the first mismatch.</li>
+              <li><strong>Stop before unsafe work.</strong> failure boundaries: every unsafe step fails before provider work. Unknown tools fail at build or <code>tools/list</code>; missing scopes fail at connect or publish; digest or engine mismatch fails at publish or verify; gate divergence returns HTTP 500 / JSON-RPC -32603 with no provider call; idempotency-key reuse with different input returns 409 before mutation; wrong key, bad method, bad content negotiation, bad content type, bad protocol version, and bad Origin fail before a gate or provider call.</li>
+              <li><strong>Acceptance.</strong> Human-only handoff: final Gmail draft review. done: Gmail contains a draft and no sent message. The done proof is a transcript showing the public-doc entry, install, exact commands above, local MCP endpoint, production MCP endpoint, bundle path, digest, engine pin, first-time keys, verify trust boundary, two receipts with anchored tail fields, receipt pull, replay spot-check result, <code>unknown_tool</code> for send, the human-confirmed draft-without-send result, and generated E2E evidence from the five eval families.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <h3 class="font-serif text-2xl">8.2 · Normative v2.1 commitment target matrix</h3>
+          <p class="text-slate-700 leading-relaxed">Every commitment below must be green at the v2.1 release commit. Current color is the grounded <code>main@faf4beb</code> score from §3. The target column is not a forecast; it is the v2.1 exit bar. v2.1 exit criterion: 29 green, 0 yellow, 0 orange, 0 red.</p>
+          <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+            <table class="w-full min-w-[900px] text-[12px]">
+              <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500">
+                <tr><th class="p-2 text-left font-medium">Commitment</th><th class="p-2 text-left font-medium">Current</th><th class="p-2 text-left font-medium">v2.1 target</th><th class="p-2 text-left font-medium">Evidence to turn or keep green</th></tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 align-top text-slate-700">
+                <tr data-commitment-target="An Angel cannot act" data-current="green" data-v21-target="green" data-evidence="e4"><td class="p-2 font-medium">An Angel cannot act</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e4">E4</a> plus a trigger sweep showing no scheduler, queue consumer, mailbox, or Angel-owned loop can initiate provider work.</td></tr>
+                <tr data-commitment-target="Rules are compiled, never judged" data-current="green" data-v21-target="green" data-evidence="e12"><td class="p-2 font-medium">Rules are compiled, never judged</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e12">E12</a> plus browser-source proof that only canonical artifact bytes and digest cross the publish boundary.</td></tr>
+                <tr data-commitment-target="One invocation surface, fixed service topology" data-current="green" data-v21-target="green" data-evidence="e4"><td class="p-2 font-medium">One invocation surface, fixed service topology</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e4">E4</a> plus wrangler route inspection showing MCP POST remains the only invocation surface and Broker has no hostname.</td></tr>
+                <tr data-commitment-target="Absence, not refusal" data-current="green" data-v21-target="green" data-evidence="e5"><td class="p-2 font-medium">Absence, not refusal</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e5">E5</a>: absent send returns <code>unknown_tool</code> and is absent from <code>tools/list</code>.</td></tr>
+                <tr data-commitment-target="Guards bind arguments" data-current="green" data-v21-target="green" data-evidence="e5"><td class="p-2 font-medium">Guards bind arguments</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e5">E5</a>: forbidden values deny with receipts, pins override requested values, and both paths run in deterministic CI.</td></tr>
+                <tr data-commitment-target="Two receipts or nothing happens" data-current="green" data-v21-target="green" data-evidence="e4"><td class="p-2 font-medium">Two receipts or nothing happens</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e4">E4</a>: allowed calls return Gateway and Broker receipts; forced divergence makes no provider call.</td></tr>
+                <tr data-commitment-target="What can't execute doesn't deploy" data-current="green" data-v21-target="green" data-evidence="e12"><td class="p-2 font-medium">What can't execute doesn't deploy</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e12">E12</a>: registry gaps fail at build or publish, and missing scopes fail at deploy with covering scopes named.</td></tr>
+                <tr data-commitment-target="Byte-for-byte promotion" data-current="green" data-v21-target="green" data-evidence="e3"><td class="p-2 font-medium">Byte-for-byte promotion</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e3">E3</a>: production promotion consumes the exact preview Version and digest and preserves keys.</td></tr>
+                <tr data-commitment-target="One command to live" data-current="green" data-v21-target="green" data-evidence="e1"><td class="p-2 font-medium">One command to live</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e1">E1</a>: production-default publish prints endpoint, bundle path, digest, engine pin, first-time keys, and no-op replay result.</td></tr>
+                <tr data-commitment-target="Preview never touches real data silently" data-current="green" data-v21-target="green" data-evidence="e2"><td class="p-2 font-medium">Preview never touches real data silently</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e2">E2</a>: preview without bindings refuses and names both remedies; share-production requires the explicit flag.</td></tr>
+                <tr data-commitment-target="Credentials go in, never out" data-current="green" data-v21-target="green" data-evidence="e9"><td class="p-2 font-medium">Credentials go in, never out</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e9">E9</a>: Provider App reads are safe summaries, custody failure is loud, and serve/cloud token paths never leak secrets.</td></tr>
+                <tr data-commitment-target="Other tenants don't exist" data-current="green" data-v21-target="green" data-evidence="e8"><td class="p-2 font-medium">Other tenants don't exist</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e8">E8</a>: cross-Account management resources return 404 and unknown handles match wrong-key 401.</td></tr>
+                <tr data-commitment-target="Nicknames never reach agents" data-current="green" data-v21-target="green" data-evidence="e6"><td class="p-2 font-medium">Nicknames never reach agents</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e6">E6</a> plus receipt redaction proof: only opaque refs, provider labels, digest, and anchor fields reach agents.</td></tr>
+                <tr data-commitment-target="Selection, never fan-out" data-current="green" data-v21-target="green" data-evidence="e6"><td class="p-2 font-medium">Selection, never fan-out</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e6">E6</a>: multiple eligible Connections require <code>angel_connection</code>; omission and stale refs fail.</td></tr>
+                <tr data-commitment-target="Reset must never invent custody" data-current="red" data-v21-target="green" data-evidence="e9"><td class="p-2 font-medium">Reset must never invent custody</td><td class="p-2">red at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e9">E9</a> plus reset-path proof that demo reset preserves real custody or clears it, and never seeds healthy fake Connections.</td></tr>
+                <tr data-commitment-target="Plaintext once, stable across deploys" data-current="green" data-v21-target="green" data-evidence="e1"><td class="p-2 font-medium">Plaintext once, stable across deploys</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e1">E1</a>: first publish prints keys once; unchanged republish returns same Version and no keys.</td></tr>
+                <tr data-commitment-target="Key names bounded on every surface" data-current="red" data-v21-target="green" data-evidence="e11"><td class="p-2 font-medium">Key names bounded on every surface</td><td class="p-2">red at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e11">E11</a> plus API, dashboard, and CLI validation proving key names are 1-64 code points with no control or format characters.</td></tr>
+                <tr data-commitment-target="Handles hold their meaning" data-current="green" data-v21-target="green" data-evidence="e10"><td class="p-2 font-medium">Handles hold their meaning</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e10">E10</a>: retired handles keep resolving, second rename fails, reserved names fail, and no other Account can claim the old handle.</td></tr>
+                <tr data-commitment-target="Every Angel has a public trust page" data-current="green" data-v21-target="green" data-evidence="e13"><td class="p-2 font-medium">Every Angel has a public trust page</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e13">E13</a> plus public coordinate browser and JSON proof showing charter, tools, guards, Version, digest, and no private custody data.</td></tr>
+                <tr data-commitment-target="Pause only removes" data-current="green" data-v21-target="green" data-evidence="e7"><td class="p-2 font-medium">Pause only removes</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e7">E7</a>: pause and resume only reduce or restore existing availability and install Broker-first.</td></tr>
+                <tr data-commitment-target="Delete is deliberate and total" data-current="green" data-v21-target="green" data-evidence="e11"><td class="p-2 font-medium">Delete is deliberate and total</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e11">E11</a>: typed confirmation for live production, keys revoked first, gates cleared, receipts dropped, coordinate 404.</td></tr>
+                <tr data-commitment-target="Mutations are idempotent" data-current="green" data-v21-target="green" data-evidence="e14"><td class="p-2 font-medium">Mutations are idempotent</td><td class="p-2">green at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e14">E14</a>: all strict mutations bind idempotency keys to method, path, and body; replay is stable; key reuse with different input 409s.</td></tr>
+                <tr data-commitment-target="The docs are open to any agent" data-current="yellow" data-v21-target="green" data-evidence="e13"><td class="p-2 font-medium">The docs are open to any agent</td><td class="p-2">yellow at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e13">E13</a>: canonical docs host, <code>llms.txt</code>, <code>SKILL.md</code>, and demo are public, stable, and enough for the no-clone journey.</td></tr>
+                <tr data-commitment-target="An agent can do the whole journey alone" data-current="orange" data-v21-target="green" data-evidence="e13"><td class="p-2 font-medium">An agent can do the whole journey alone</td><td class="p-2">orange at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e13">E13</a>: observed run from empty directory through public docs, with only human auth and consent handoffs, ending in a callable production Angel.</td></tr>
+                <tr data-commitment-target="The flagship moment: draft, never send" data-current="orange" data-v21-target="green" data-evidence="e15"><td class="p-2 font-medium">The flagship moment: draft, never send</td><td class="p-2">orange at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e15">E15</a>: real Gmail draft created through both gates, send absent as <code>unknown_tool</code>, forbidden write arguments denied, live and deterministic acceptance pass.</td></tr>
+                <tr data-commitment-target="Anchored receipt tail" data-current="orange" data-v21-target="green" data-evidence="e4"><td class="p-2 font-medium">Anchored receipt tail</td><td class="p-2">orange at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e4">E4</a> plus agent-facing receipts with <code>sequence</code>, <code>previousHash</code>, and <code>hash</code>; fetched ranges extend the remembered tail without gaps.</td></tr>
+                <tr data-commitment-target="Engine pinned per angel" data-current="orange" data-v21-target="green" data-evidence="e12"><td class="p-2 font-medium">Engine pinned per angel</td><td class="p-2">orange at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e12">E12</a>: bundle carries the engine pin, publish rejects mismatches, receipts include the engine version in the identity check.</td></tr>
+                <tr data-commitment-target="Behavior spot-checkable by replay" data-current="orange" data-v21-target="green" data-evidence="e4"><td class="p-2 font-medium">Behavior spot-checkable by replay</td><td class="p-2">orange at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e4">E4</a> plus <code>argumentsDigest</code> in agent-facing receipts and <code>angel serve --replay</code> comparing decisions, details, and argument digests.</td></tr>
+                <tr data-commitment-target="The trust boundary is stated, not implied" data-current="orange" data-v21-target="green" data-evidence="e14"><td class="p-2 font-medium">The trust boundary is stated, not implied</td><td class="p-2">orange at main@faf4beb</td><td class="p-2">green</td><td class="p-2"><a href="#e14">E14</a>: <code>angel verify</code> prints the trust boundary and copy sweep proves no surface claims remote execution is provable.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <footer class="text-xs text-slate-400 pt-8 border-t border-stone-200 space-y-1">
