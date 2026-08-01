@@ -254,7 +254,12 @@ describe("APRD v2", () => {
     expect(aprdReadme).toContain("**not approved for implementation**");
     expect(aprdReadme).toContain("its v2.1 phase");
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
-    expect(roadmap).toContain("proposed, not approved");
+    expect(roadmap).toContain("Product/repository approval covers **WS1**");
+    expect(roadmap).toContain("Separate evidence-only approval covers");
+    expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
+    expect(roadmap).toContain("remain proposed and unapproved");
+    expect(roadmap).toContain("APRD v2");
+    expect(roadmap).toContain("remains unapproved for implementation");
     expect(roadmap).not.toContain("This file is the canonical plan of record");
   });
 

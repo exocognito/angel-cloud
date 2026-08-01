@@ -22,7 +22,9 @@ that list and its completed M0/M1 record.
 
 ## Current gate
 
-The Product Ledger reconciliation is under owner review. Its orphan count is
-zero, but the next build milestone is **proposed, not approved**. No Angel
-product implementation starts until Sam and Pi agree on the reconciliation and
-close every decision or contradiction that blocks that milestone.
+Sam approved Product Ledger contract v0.1, the Angel Product Ledger, and WS1 on
+2026-08-01. Product/repository approval covers **WS1**, which starts after
+dotfiles PR #307 and Angel PR #43 merge. Separate evidence-only approval covers
+**WS-E** after WS1; its seven decision briefs authorize no product implementation. O10 then gates
+**WS2 and Dogfood Round 2**, which remain proposed and unapproved. APRD v2
+remains unapproved for implementation.
