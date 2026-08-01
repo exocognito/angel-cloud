@@ -270,7 +270,7 @@ describe("APRD v2", () => {
     expect(roadmap).not.toContain("waits on `@smcllns/angel-core`");
     expect(rootReadme).toContain("to production by default");
     expect(rootReadme).toContain("bun run angel publish golden-assistant --preview");
-    expect(rootReadme).toContain("593 hosted tests / 6,508 assertions");
+    expect(rootReadme).toContain("594 hosted tests / 6,522 assertions");
     expect(rootReadme).toContain("95 core tests / 284 assertions");
     expect(rootReadme).toMatch(/registry network access and\s+the pinned toolchain/);
     expect(rootReadme).not.toContain("482 tests / 2,982 assertions");

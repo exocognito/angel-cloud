@@ -104,7 +104,7 @@ bun run check
 
 The canonical check runs:
 
-- 593 hosted tests / 6,508 assertions; and
+- 594 hosted tests / 6,522 assertions; and
 - 95 core tests / 284 assertions.
 
 The hosted suite and golden journey use in-memory Worker and
