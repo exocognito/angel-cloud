@@ -180,6 +180,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(ledger).toContain("one-time external attestation");
     expect(ledger).toContain("npm SRI provenance");
     expect(ledger).toContain("last-registry-tarball parity proof");
+    expect(ledger).toContain("O1 owns future package identity and publication");
 
     const ownershipAdr = read("docs/adrs/0005-spec-derived-execution-closure.md");
     expect(ownershipAdr).toContain("`packages/core/adapters/<provider>/`");
