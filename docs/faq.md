@@ -481,15 +481,16 @@ example in the research notes is illustrative — those adapters do not exist.
 
 ### Why did the repos split, and where does what live now?
 
-Three ownership areas. The comparison repository keeps the Executor, lite, and
-relay slices and the research. The `angels` core owns the source schema,
-compiler, artifact format, target-neutral CLI, and management contract — and
-publishes as `@smcllns/angel-core`. `angel-cloud` owns the hosted Workers,
-custody, www, and deployment, pinned to a core version. The stable interface is
-the versioned artifact plus the strict management contract; the core CLI treats
-`target` as an opaque HTTPS origin and knows nothing of Cloudflare or Angel
-Cloud. A shared source subtree was rejected because it would create drift under
-the appearance of reuse.
+One canonical repository now owns both product areas. `exocognito/angelmcp`
+keeps the hosted Workers, custody, www, deployment, and research at its root. Its
+`packages/core` workspace owns the source schema, compiler, artifact format,
+target-neutral CLI, and management contract, and publishes unchanged as
+`@smcllns/angel-core`. The stable boundary remains the versioned artifact plus
+the strict management contract: the core CLI treats `target` as an opaque HTTPS
+origin and knows nothing of Cloudflare or Angel Cloud. The move preserves the
+standalone source history through a documented rewrite map and the archived
+literal repository. [ADR 0007](adrs/0007-monorepo-source-and-release-integrity.md)
+records the ownership and release-integrity contract.
 
 ### Can I self-host a compatible control plane?
 

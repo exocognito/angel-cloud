@@ -3,7 +3,7 @@
 This package owns the portable Angel standard:
 
 - `ANGEL.yaml` source parsing and local composition;
-- canonical, secret-free `angel.version.v1` artifacts and SHA-256 digests;
+- canonical, secret-free `angel.version.v2` artifacts and SHA-256 digests;
 - portable argument-guard semantics;
 - `angel.json` validation; and
 - the target-neutral `angel build`, `angel publish`, `angel deploy --prod`,

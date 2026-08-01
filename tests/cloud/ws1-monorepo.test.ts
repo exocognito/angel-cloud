@@ -57,6 +57,8 @@ describe("WS1 behavior-neutral monorepo", () => {
     });
     expect(corePackage.dependencies).toEqual({ yaml: "^2.4.5" });
     expect(corePackage.private).not.toBe(true);
+    expect(read("packages/core/README.md")).toContain("`angel.version.v2` artifacts");
+    expect(read("packages/core/README.md")).not.toContain("`angel.version.v1` artifacts");
   });
 
   test("records rewritten core history without pretending commit ids stayed literal", () => {
@@ -163,6 +165,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     const canonicalDocs = [
       "README.md",
       "packages/core/README.md",
+      "docs/faq.md",
       "NEXT.md",
       "docs-site/public/SKILL.md",
       "docs-site/public/llms.txt",
