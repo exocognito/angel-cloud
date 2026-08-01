@@ -1,10 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
-const ledger = readFileSync(
-  new URL("../../docs/product-ledger.html", import.meta.url),
-  "utf8",
-);
+const ledgerUrl = new URL("../../docs/product-ledger.html", import.meta.url);
+const ledger = readFileSync(ledgerUrl, "utf8");
 const roadmap = readFileSync(
   new URL("../../ROADMAP.md", import.meta.url),
   "utf8",
@@ -437,6 +436,14 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "Source artifacts", "Last verified",
     ]);
     expect(ledger).not.toMatch(/N\/A —\s*(?:<|&lt;)/);
+  });
+
+  test("resolves every repository-relative evidence link from the Ledger file", () => {
+    for (const href of values(/<a href="([^"]+)"/g)) {
+      if (/^(?:#|https?:|mailto:)/.test(href)) continue;
+      const target = new URL(href, ledgerUrl);
+      expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
+    }
   });
 
   test("is self-contained and uses visible status text", () => {
