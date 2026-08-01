@@ -20,7 +20,7 @@ path-prefixed into `packages/core` and merged without squashing. The source,
 package-split, path-prefixed, and merge mappings live in
 `docs/evidence/ws1-core-history.json`. That record also stores the inherited
 history secret-audit scope and zero-match result. Literal source commit IDs and
-the `v0.2.0` tag remain in the archived `exocognito/angel-core` repository.
+the `v0.2.0` tag remain in the archived `exocognito/angel-core-history` repository.
 
 The public package keeps its name, version, exports, bin, dependencies, and
 runtime bytes. O1 and later approved work own any public package rename or CLI

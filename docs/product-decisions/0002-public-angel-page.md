@@ -2,11 +2,11 @@
 
 - Status: Agreed
 - Date: 2026-07-23; design settled 2026-07-29
-  ([the five decisions](https://github.com/exocognito/angel-cloud/issues/11#issuecomment-5123175434))
-- Implemented: Yes — [#28](https://github.com/exocognito/angel-cloud/pull/28);
+  ([the five decisions](https://github.com/exocognito/angelmcp/issues/11#issuecomment-5123175434))
+- Implemented: Yes — [#28](https://github.com/exocognito/angelmcp/pull/28);
   the Gateway answers `GET` on the bare production coordinate until the DNS
   cutover moves the renderer to the apex
-- Tracked: [#11](https://github.com/exocognito/angel-cloud/issues/11)
+- Tracked: [#11](https://github.com/exocognito/angelmcp/issues/11)
 
 ## Decision
 
@@ -31,7 +31,7 @@ Gateway became key-only, and this page replaces it.
 ## The settled design
 
 Design settled with Sam on 2026-07-29, recorded on
-[#11](https://github.com/exocognito/angel-cloud/issues/11#issuecomment-5123175434):
+[#11](https://github.com/exocognito/angelmcp/issues/11#issuecomment-5123175434):
 
 1. **Placement.** The Gateway answers `GET` on the bare coordinate now, with
    the renderer as its own module so it lifts to the apex dispatcher at the

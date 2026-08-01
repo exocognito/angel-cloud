@@ -55,6 +55,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     const history = json<{
       sourceRepository: string;
       sourceTip: string;
+      archivedRepository: string;
       sourcePrefix: string;
       targetPrefix: string;
       splitTip: string;
@@ -65,6 +66,7 @@ describe("WS1 behavior-neutral monorepo", () => {
 
     expect(history.sourceRepository).toBe("https://github.com/exocognito/angel-core");
     expect(history.sourceTip).toBe("8d08c42ff1fd47420f969d268d03ab0e0d7a3de9");
+    expect(history.archivedRepository).toBe("https://github.com/exocognito/angel-core-history");
     expect(history.sourcePrefix).toBe("packages/angel-core");
     expect(history.targetPrefix).toBe("packages/core");
     expect(history.splitTip).toMatch(/^[0-9a-f]{40}$/);

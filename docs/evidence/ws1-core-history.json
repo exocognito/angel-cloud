@@ -1,6 +1,7 @@
 {
   "schema": "angelmcp.ws1.core-history.v1",
   "sourceRepository": "https://github.com/exocognito/angel-core",
+  "archivedRepository": "https://github.com/exocognito/angel-core-history",
   "sourceTip": "8d08c42ff1fd47420f969d268d03ab0e0d7a3de9",
   "sourcePrefix": "packages/angel-core",
   "packageSplitTip": "4caa10a98a7d2ed21370e63e2ca8a98753b9fb30",

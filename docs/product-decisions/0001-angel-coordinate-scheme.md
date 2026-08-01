@@ -4,7 +4,7 @@
 - Date: 2026-07-23
 - Implemented: Yes — the Gateway answers `/@handle/angel[@preview]` with bare
   meaning production; pinned `@N` addresses stay reserved and answer 404
-- Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
+- Tracked: [#3](https://github.com/exocognito/angelmcp/issues/3)
 
 ## Decision
 
@@ -65,7 +65,7 @@ exist as an address.
 
 Account handles do not exist. Today's identifiers are `acct_demo` and
 `acct_m1` — opaque, underscored, and matching nothing in the grammar above.
-Tracked in [#12](https://github.com/exocognito/angel-cloud/issues/12), which
+Tracked in [#12](https://github.com/exocognito/angelmcp/issues/12), which
 must land first.
 
 ## What runs instead today
@@ -93,7 +93,7 @@ The suffix vocabulary was left open here and settled on 2026-07-28 by
 unaffected — it edits one alternation in one pattern.
 
 The "Blocked on" gap above cleared on 2026-07-28 when
-[#12](https://github.com/exocognito/angel-cloud/issues/12) landed Account
+[#12](https://github.com/exocognito/angelmcp/issues/12) landed Account
 handles ([PD 0004](0004-account-handles.md)). The route in "What runs instead
 today" still runs, but its account segment now also accepts a handle,
 retired handles included.

@@ -65,7 +65,7 @@ the split as it stood on 2026-07-21. Current ownership:
 | --- | --- |
 | `exocognito/angelmcp` | Canonical product source: `packages/core`, examples, hosted control plane, Workers runtime, www, docs, and release proofs |
 | `exocognito/angels` | Public starter people fork to write their own Angels. External consumer only; no compiler or runtime source |
-| `exocognito/angel-core` | Archived literal core history and old `v0.2.0` tag; no active source ownership |
+| `exocognito/angel-core-history` | Archived literal core history and old `v0.2.0` tag; no active source ownership |
 | `exocognito/angels-comparison` | Archived executor, lite, and relay variants plus comparison research |
 | `exocognito/angels-private` | Private scratch: exploration, design notes, images |
 

@@ -5,7 +5,7 @@
 - Implemented: Yes — the platform and core 0.3.0 call the environment
   `preview`; bare `angel publish` deploys straight to production and
   `--preview` opts into the second environment
-- Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
+- Tracked: [#3](https://github.com/exocognito/angelmcp/issues/3)
 
 > **Point 3 was reversed the same day it was agreed.** Preview binds its own
 > Connections; it does not inherit production's. See
