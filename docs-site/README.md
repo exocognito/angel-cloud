@@ -12,7 +12,7 @@ is no forked content to drift.
 | `/#/user-manual`, `/#/faq`, `/#/operator-journey`, `/#/domain-architecture`, `/#/skill` | Human-readable rendered docs with linkable heading anchors |
 | `/user-manual.md`, `/faq.md`, `/operator-journey.md`, `/domain-architecture.md` | The raw markdown (agent-consumable) |
 | `/google-read-proof-manual-journey.md` | The operator journey under its source name, so raw cross-links from the other docs resolve |
-| `/product-decisions/*.md`, `/adrs/*.md` | The decision records the docs link to, so no served link dangles |
+| `/product-decisions/*.md`, `/adrs/*.md`, `/core/*.md` | Decision and format records the docs link to, so no served link dangles |
 | `/manual-images/*` | The screenshots the user manual embeds |
 | `/styles.css`, `/viewer.js` | The SPA's own assets |
 | `/llms.txt` | LLM site map ([llmstxt.org](https://llmstxt.org) convention) |
