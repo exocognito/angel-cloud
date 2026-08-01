@@ -32,8 +32,9 @@ Control, www, and docs remain separate deployables. Existing Cloudflare
 accounts, Worker names, routes, service bindings, Durable Object bindings,
 environment values, and secrets stay separate.
 
-**No runtime, auth, OAuth, policy, route, provider, UX, binding, or secret change
-belongs to this migration.**
+**No runtime, auth, OAuth, policy, route, provider, product-flow, binding, or secret
+change belongs to this migration.** WS1 corrects one displayed command by adding
+the missing `--preview` flag; the command now matches existing opt-in behavior.
 
 This record supersedes ADR 0004 repository ownership. ADR 0004's artifact,
 compatibility, package-export, and deploy-boundary decisions remain current.
@@ -47,7 +48,8 @@ boundaries still provide the real compatibility and security controls.
 
 ## Release integrity
 
-`pnpm run check:ws1` must hard-fail unless all of these remain true:
+`pnpm run check:ws1` needs registry network access and the pinned toolchain. It
+must hard-fail unless all of these remain true:
 
 1. package file list and modes match the registry 0.3.0 baseline;
 2. all package runtime bytes match that baseline;

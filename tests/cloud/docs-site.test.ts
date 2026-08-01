@@ -210,7 +210,7 @@ describe("docs-site build output", () => {
       expect(
         read(canonicalDist, file),
         `${file} links repo files via github.com; use relative links`,
-      ).not.toMatch(/github\.com\/exocognito\/angel-cloud\/(blob|tree|raw)\//);
+      ).not.toMatch(/github\.com\/exocognito\/angel(?:-cloud|mcp)\/(blob|tree|raw)\//);
     }
   });
 

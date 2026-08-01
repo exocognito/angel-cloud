@@ -8,5 +8,8 @@
   "artifactDigest": "11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4",
   "artifactFileSha256": "a122ce265d3daf51aec681866cc962ba8ec890073f44707ab62e85d18cb61411",
   "boundary": "Fresh public starter clone; candidate packed tarball; no monorepo workspace link or seeded build output.",
-  "verified": "2026-08-01 · Pi on Air"
+  "verified": "2026-08-01 \u00b7 Pi on Air",
+  "starterBranch": "main",
+  "companionDocsPR": "https://github.com/exocognito/angels/pull/1",
+  "mergeOrder": "Merge the companion docs PR before exocognito/angelmcp#44."
 }

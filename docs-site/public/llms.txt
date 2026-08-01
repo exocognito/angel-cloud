@@ -8,7 +8,7 @@
 
 You are an agent helping someone create, publish, and operate an Angel. Do this
 over the management API and the published `@smcllns/angel-core` CLI. **Do not
-clone the `exocognito/angel-cloud` repository** — the CLI is an installable npm
+clone the `exocognito/angelmcp` repository** — the CLI is an installable npm
 package and every deployment step is an HTTP call. The source tree is the
 operator's, not the user's.
 

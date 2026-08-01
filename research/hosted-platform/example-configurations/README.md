@@ -2,15 +2,15 @@
 
 Status: design examples for the accepted PR4 contract. The `.hosted.yaml`
 suffixes are retained only so existing links keep working; the YAML itself is
-not hosted-specific. A source can be built unchanged for Angel Cloud or a
-self-hosted compatible control plane.
+not hosted-specific. A source is target-neutral by design. Angel Cloud is the supported target; a
+supported self-hosting path has not passed its clean-room proof.
 
-The checked-in runnable comparison fixtures live under `angels/`:
+The checked-in runnable comparison fixtures live under `examples/angels/`:
 
-- `angels/gmail-inbox-zero/ANGEL.yaml` — direct, single-provider policy;
-- `angels/gmail-read-and-draft/ANGEL.yaml` and `angels/gdocs-read/ANGEL.yaml` —
+- `examples/angels/gmail-inbox-zero/ANGEL.yaml` — direct, single-provider policy;
+- `examples/angels/gmail-read-and-draft/ANGEL.yaml` and `examples/angels/gdocs-read/ANGEL.yaml` —
   reusable child policies;
-- `angels/golden-assistant/ANGEL.yaml` — local composition of those
+- `examples/angels/golden-assistant/ANGEL.yaml` — local composition of those
   children.
 
 This folder explains the same source/deployment boundary and preserves one

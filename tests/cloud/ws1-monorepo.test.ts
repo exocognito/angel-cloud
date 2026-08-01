@@ -27,6 +27,14 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(existsSync(join(root, "examples/angels"))).toBe(true);
     expect(existsSync(join(root, "angels"))).toBe(false);
     expect(existsSync(join(root, "docs/core/format-v2.md"))).toBe(true);
+    expect(read(".gitignore")).toContain("examples/angels/*/angel.json");
+    expect(read(".gitignore")).not.toContain("\nangels/*/angel.json");
+
+    const workspace = read("pnpm-workspace.yaml");
+    for (const packageName of ["esbuild", "sharp", "workerd"]) {
+      expect(workspace).toContain(`${packageName}: true`);
+    }
+    expect(workspace).not.toContain("set this to true or false");
   });
 
   test("keeps the published 0.3.0 package contract intact at packages/core", () => {
@@ -107,6 +115,7 @@ describe("WS1 behavior-neutral monorepo", () => {
       expect(workflow).not.toContain("bun install");
     }
     expect(ci).toContain("node-version: 26.0.0");
+    expect(ci).toContain("fetch-depth: 0");
     expect(ci).toContain("pnpm run check");
   });
 
@@ -114,7 +123,13 @@ describe("WS1 behavior-neutral monorepo", () => {
     const scripts = rootPackage.scripts as Record<string, string>;
     expect(scripts["check:ws1"]).toBe("bun run scripts/ws1-release-integrity.ts");
     expect(scripts.check).toContain("pnpm run check:ws1");
-    expect(existsSync(join(root, "scripts/ws1-release-integrity.ts"))).toBe(true);
+    const proof = read("scripts/ws1-release-integrity.ts");
+    expect(proof).toContain("pnpm\", \"view");
+    expect(proof).toContain("sha512");
+    expect(proof).toContain("git\", \"grep");
+    expect(proof).toContain("rewrittenCommitCount");
+    expect(proof).not.toContain("DOTFILES_REAL_");
+    expect(proof).not.toContain("Library/pnpm/pnpm");
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {
@@ -122,8 +137,25 @@ describe("WS1 behavior-neutral monorepo", () => {
       "supersedes ADR 0004 repository ownership",
     );
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
-      "No runtime, auth, OAuth, policy, route, provider, UX, binding, or secret change",
+      "No runtime, auth, OAuth, policy, route, provider, product-flow, binding, or secret", 
+    );
+    expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
+      "missing `--preview` flag",
     );
     expect(read("docs/product-ledger.html")).toContain('data-index-key="WS1" data-index-plan="COMPLETE"');
+
+    const canonicalDocs = [
+      "README.md",
+      "packages/core/README.md",
+      "NEXT.md",
+      "docs-site/public/SKILL.md",
+      "docs-site/public/llms.txt",
+      "examples/angels/FIXTURES.md",
+      "docs/core/format-v2.md",
+      "research/hosted-platform/example-configurations/README.md",
+    ].map(read).join("\n");
+    expect(canonicalDocs).not.toMatch(/exocognito\/angel-cloud(?!-history)/);
+    expect(canonicalDocs).not.toContain("packages/angel-core");
+    expect(canonicalDocs).not.toMatch(/(?<!examples\/)angels\/(gmail-inbox-zero|gdocs-read|golden-assistant)/);
   });
 });

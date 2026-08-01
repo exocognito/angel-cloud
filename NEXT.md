@@ -58,7 +58,7 @@ after seven days.
 
 ### Verified live deployment and lifecycle
 
-- The hosted repository is `exocognito/angel-cloud`, public from 2026-07-27.
+- The canonical hosted and core repository is `exocognito/angelmcp`, public from 2026-07-27 and renamed in place during WS1.
   Its history before that date is kept privately in
   `exocognito/angel-cloud-history`.
 - The dedicated Cloudflare account and its scoped operator token are configured;
@@ -101,7 +101,7 @@ after seven days.
 - Publish the portable `@smcllns/angel-core` through public npm.
 - Deploy Angel Cloud to a different Cloudflare account from `smcllns`.
 - Use a dedicated durable Google test user.
-- Name the hosted repository and product `angel-cloud` / Angel Cloud, singular.
+- Keep the product name Angel Cloud. WS1 superseded the repository-name half of this decision by renaming the canonical repository to `angelmcp`.
 - Use External Testing for the initial proof; defer durable scheduled
   acceptance until Production because Testing refresh tokens expire after
   seven days.

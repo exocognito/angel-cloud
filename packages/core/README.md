@@ -45,7 +45,7 @@ part of the compatibility surface.
 
 ## Local development
 
-From the `angels` repository:
+From the `exocognito/angelmcp` repository:
 
 ```text
 pnpm install
@@ -85,10 +85,9 @@ export ANGEL_ACCESS_TOKEN=$(op read "op://<vault>/<item>/credential" | jq -c . |
 
 ## Distribution
 
-The source repository remains private for Milestone 0. The package is published
-publicly as exact versions, so compatible hosted and self-hosted control planes
-can install the versioned interface without a repository credential. npm's
-latest is `@smcllns/angel-core@0.2.0`, which still speaks the legacy staging
-dialect; this tree is `0.3.0`, the preview dialect, and must not be published
-before the server side (angel-cloud#20) is deployed. The exact tarball boundary
-and a public-publish dry run are covered by the package tests.
+Source lives publicly in `exocognito/angelmcp/packages/core`. The package is
+published as exact versions so compatible control planes can install the
+versioned interface without a repository checkout. The current public release
+is `@smcllns/angel-core@0.3.0`. `pnpm run check:ws1` downloads that registry
+tarball, verifies its SRI, and compares its file, manifest, and runtime contract
+with this tree. O1 owns any later public package identity or package split.

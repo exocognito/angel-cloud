@@ -22,8 +22,8 @@
    one broad one). Broad or functionally restricted scopes are excluded
    from the ranking and are never selected automatically.
 
-Reviewed adapter sources live in `packages/angel-core/adapters/<provider>/`
-(`adapter.yaml` + `openapi.angel.yaml`); `pnpm --dir packages/angel-core run generate:adapters`
+Reviewed adapter sources live in `packages/core/adapters/<provider>/`
+(`adapter.yaml` + `openapi.angel.yaml`); `pnpm --dir packages/core run generate:adapters`
 regenerates the Worker-safe registry (`src/adapters.generated.ts`), and a
 staleness test enforces agreement. `validateArtifactAdapters` gives every
 control plane the publish-time check: templates, pins, and scopes must equal

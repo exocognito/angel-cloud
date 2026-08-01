@@ -16,6 +16,7 @@
     "patterns": "private-key markers and common AWS, Google, GitHub, OpenAI, OAuth-client-secret, and Cloudflare-token forms",
     "matches": 0,
     "trackedCredentialFiles": 0,
-    "verified": "2026-08-01 · Pi on Air"
+    "verified": "2026-08-01 \u00b7 Pi on Air",
+    "verification": "Re-run by scripts/ws1-release-integrity.ts against every rewritten commit"
   }
 }

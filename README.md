@@ -45,8 +45,9 @@ sequence and status.
 - The Control root redirects an unauthenticated request to Access (`302`) and
   returns the app to a valid Access service token (`200`).
 - Live reset and state reads pass through the deployed Control surface.
-- Public `@smcllns/angel-core@0.3.0` is published. The repository pins it with
-  a matching lockfile.
+- Public `@smcllns/angel-core@0.3.0` is published. Canonical source now lives
+  at `packages/core`; the workspace lockfile links that exact version, and
+  `pnpm run check:ws1` compares its packed runtime bytes with the registry tarball.
 - Provider App `google-primary` is stored in Broker custody. Reads return only
   its safe summary; the client secret is not returned.
 
