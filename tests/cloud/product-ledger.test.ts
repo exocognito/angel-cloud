@@ -116,18 +116,19 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "ID-09", "PD-06", "PD-07", "ID-10",
     ]);
     expect(new Set(ids).size).toBe(ids.length);
-    expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
-    expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
-    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual([
-      "NEXT", "NEXT", "NEXT", "NEXT",
-    ]);
     for (const id of ["ID-01", "ID-02", "ID-03", "ID-04"]) {
-      expect(ledger).toMatch(
-        new RegExp(`data-deliverable-key="${id}"[^>]+data-deliverable-plan="NEXT"[^>]+data-deliverable-approval="APPROVED"`),
-      );
+      expect(ledger).toMatch(new RegExp(
+        `data-deliverable-key="${id}" data-deliverable-truth="LIVE" data-deliverable-plan="COMPLETE"`,
+      ));
     }
     expect(ledger).toMatch(
-      /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="BLOCKED"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
+      /data-deliverable-key="ID-05" data-deliverable-truth="NOT BUILT" data-deliverable-plan="NEXT"/,
+    );
+    expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
+    expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
+    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
+    expect(ledger).toMatch(
+      /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="NEXT"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
     );
     expect(ledger).toContain("7. Public review bundle and self-hosting claim boundary — O7 and O9");
     expect(count('data-deliverable-approval="')).toBe(ids.length);
