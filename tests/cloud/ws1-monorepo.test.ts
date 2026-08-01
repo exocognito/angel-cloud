@@ -73,6 +73,7 @@ describe("WS1 behavior-neutral monorepo", () => {
       sourceRepository: string;
       sourceTip: string;
       archivedRepository: string;
+      archiveVisibility: string;
       sourcePrefix: string;
       targetPrefix: string;
       splitTip: string;
@@ -84,6 +85,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(history.sourceRepository).toBe("https://github.com/exocognito/angel-core");
     expect(history.sourceTip).toBe("8d08c42ff1fd47420f969d268d03ab0e0d7a3de9");
     expect(history.archivedRepository).toBe("https://github.com/exocognito/angel-core-history");
+    expect(history.archiveVisibility).toBe("private, owner-only");
     expect(history.sourcePrefix).toBe("packages/angel-core");
     expect(history.targetPrefix).toBe("packages/core");
     expect(history.splitTip).toMatch(/^[0-9a-f]{40}$/);
@@ -211,6 +213,8 @@ describe("WS1 behavior-neutral monorepo", () => {
     const brokerLine = Number(brokerCitation?.[1]);
     expect(read("src/workers/broker.ts").split("\n")[brokerLine - 1]).toContain("activeProvider.prepare(");
     expect(adrIndex).toContain("updated by WS1");
+    expect(adrIndex).toContain("Private, owner-only archive");
+    expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain("private, owner-only");
     expect(adrIndex).not.toContain("branch, unchanged");
     const researchExamples = read("research/hosted-platform/example-configurations/README.md");
     expect(researchExamples).toContain("../../../docs/faq.md#can-i-self-host-a-compatible-control-plane");
