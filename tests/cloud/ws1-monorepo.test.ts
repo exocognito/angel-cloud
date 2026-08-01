@@ -57,8 +57,12 @@ describe("WS1 behavior-neutral monorepo", () => {
     });
     expect(corePackage.dependencies).toEqual({ yaml: "^2.4.5" });
     expect(corePackage.private).not.toBe(true);
-    expect(read("packages/core/README.md")).toContain("`angel.version.v2` artifacts");
-    expect(read("packages/core/README.md")).not.toContain("`angel.version.v1` artifacts");
+    const coreReadme = read("packages/core/README.md");
+    expect(coreReadme).toContain("`angel.version.v2` artifacts");
+    expect(coreReadme).not.toContain("`angel.version.v1` artifacts");
+    expect(coreReadme).toContain("pnpm run angel -- build <angel>");
+    expect(coreReadme).not.toContain("pnpm --dir packages/core run angel");
+    expect(coreReadme).toContain("../../docs/core/format-v2.md");
   });
 
   test("records rewritten core history without pretending commit ids stayed literal", () => {
@@ -135,6 +139,16 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(result.exitCode).toBe(1);
     expect(output).toContain(join(root, "examples/angels/ws1-path-check/ANGEL.yaml"));
     expect(output).not.toContain(join(root, "angels/ws1-path-check/ANGEL.yaml"));
+
+    const documented = Bun.spawnSync({
+      cmd: ["pnpm", "run", "angel", "--", "build", "ws1-doc-path-check"],
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const documentedOutput = `${documented.stdout.toString()}${documented.stderr.toString()}`;
+    expect(documented.exitCode).toBe(1);
+    expect(documentedOutput).toContain(join(root, "examples/angels/ws1-doc-path-check/ANGEL.yaml"));
   });
 
   test("ships a release-integrity proof in the canonical check", () => {

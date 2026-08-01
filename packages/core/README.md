@@ -3,7 +3,8 @@
 This package owns the portable Angel standard:
 
 - `ANGEL.yaml` source parsing and local composition;
-- canonical, secret-free `angel.version.v2` artifacts and SHA-256 digests;
+- canonical, secret-free `angel.version.v2` artifacts and SHA-256 digests (see the
+  [format contract](../../docs/core/format-v2.md));
 - portable argument-guard semantics;
 - `angel.json` validation; and
 - the target-neutral `angel build`, `angel publish`, `angel deploy --prod`,
@@ -50,7 +51,7 @@ From the `exocognito/angelmcp` repository:
 ```text
 pnpm install
 pnpm --dir packages/core run check
-pnpm --dir packages/core run angel -- build <angel>
+pnpm run angel -- build <angel>
 ```
 
 The checked-in `ANGEL.yaml` files are the primary policy artifacts. Deployment
