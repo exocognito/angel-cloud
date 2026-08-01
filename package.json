@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "pnpm@11.7.0",
   "scripts": {
-    "angel": "pnpm exec angel",
+    "angel": "cd examples && pnpm exec angel",
     "test": "bun test tests/cloud",
     "test:golden": "bun run scripts/golden.ts",
     "test:google-read-proof": "bun run scripts/google-read-proof.ts",

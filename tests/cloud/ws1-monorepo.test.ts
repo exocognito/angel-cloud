@@ -119,6 +119,22 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(ci).toContain("pnpm run check");
   });
 
+  test("runs repository Angel commands from the canonical examples tree", () => {
+    const scripts = rootPackage.scripts as Record<string, string>;
+    expect(scripts.angel).toBe("cd examples && pnpm exec angel");
+
+    const result = Bun.spawnSync({
+      cmd: ["bun", "run", "angel", "build", "ws1-path-check"],
+      cwd: root,
+      stdout: "pipe",
+      stderr: "pipe",
+    });
+    const output = `${result.stdout.toString()}${result.stderr.toString()}`;
+    expect(result.exitCode).toBe(1);
+    expect(output).toContain(join(root, "examples/angels/ws1-path-check/ANGEL.yaml"));
+    expect(output).not.toContain(join(root, "angels/ws1-path-check/ANGEL.yaml"));
+  });
+
   test("ships a release-integrity proof in the canonical check", () => {
     const scripts = rootPackage.scripts as Record<string, string>;
     expect(scripts["check:ws1"]).toBe("bun run scripts/ws1-release-integrity.ts");
