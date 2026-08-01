@@ -63,6 +63,9 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(coreReadme).toContain("pnpm run angel -- build <angel>");
     expect(coreReadme).not.toContain("pnpm --dir packages/core run angel");
     expect(coreReadme).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md");
+    expect(coreReadme).toContain("Source lives publicly in `exocognito/angelmcp/packages/core`");
+    expect(coreReadme).toContain("O1 owns any later public package identity or package split");
+    expect(coreReadme).not.toContain("The source repository remains private for Milestone 0");
   });
 
   test("records rewritten core history without pretending commit ids stayed literal", () => {
@@ -201,7 +204,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(researchExamples).not.toContain("has not passed its clean-room proof");
 
     expect(json<{ allowedPackedDifferences: Record<string, string> }>("docs/evidence/ws1-release-baseline.json")
-      .allowedPackedDifferences["README.md"]).toContain("format correction");
+      .allowedPackedDifferences["README.md"]).toContain("format correction and Distribution section rewrite");
 
     const canonicalDocs = [
       "README.md",
