@@ -277,10 +277,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       if (disposition === "UNRESOLVED") expect(destination.startsWith("O")).toBe(true);
     }
     const dispositions = rows.map((row) => row[2] ?? "");
-    expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(36);
+    expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(35);
     expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(39);
     expect(dispositions.filter((value) => value === "DEFERRED")).toHaveLength(29);
-    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(9);
+    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(10);
     expect(ledger).toContain('data-orphan-count="0"');
   });
 

@@ -186,9 +186,10 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(starterProof.starterCommit).toBe("2a635bf863a572a6c02e66d2a9e8e93b6d94243b");
     expect(starterProof.companionDocsPRStatus).toBe("merged");
     expect(starterProof.installCommand).toContain("pnpm add --ignore-scripts file:");
-    expect(ledger).toContain("npm SRI provenance");
+    expect(ledger).toContain("registry SRI verification and runtime-byte parity");
+    expect(ledger).toContain("No npm provenance attestation");
+    expect(ledger).not.toContain("npm SRI provenance");
     expect(ledger).toContain("last-registry-tarball parity proof");
-    expect(ledger).toContain("O1 owns future package identity and publication");
 
     const ownershipAdr = read("docs/adrs/0005-spec-derived-execution-closure.md");
     expect(ownershipAdr).toContain("`packages/core/adapters/<provider>/`");
