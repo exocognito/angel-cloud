@@ -488,8 +488,8 @@ target-neutral CLI, and management contract, and publishes unchanged as
 `@smcllns/angel-core`. The stable boundary remains the versioned artifact plus
 the strict management contract: the core CLI treats `target` as an opaque HTTPS
 origin and knows nothing of Cloudflare or Angel Cloud. The move preserves the
-standalone source history through a documented rewrite map and the archived
-literal repository. [ADR 0007](adrs/0007-monorepo-source-and-release-integrity.md)
+standalone source history through a documented rewrite map and a private,
+owner-only literal archive. [ADR 0007](adrs/0007-monorepo-source-and-release-integrity.md)
 records the ownership and release-integrity contract.
 
 ### Can I self-host a compatible control plane?

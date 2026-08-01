@@ -215,6 +215,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(adrIndex).toContain("updated by WS1");
     expect(adrIndex).toContain("Private, owner-only archive");
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain("private, owner-only");
+    expect(read("docs/faq.md")).toMatch(/private,\s+owner-only literal archive/);
     expect(adrIndex).not.toContain("branch, unchanged");
     const researchExamples = read("research/hosted-platform/example-configurations/README.md");
     expect(researchExamples).toContain("../../../docs/faq.md#can-i-self-host-a-compatible-control-plane");
