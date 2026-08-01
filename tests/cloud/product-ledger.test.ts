@@ -280,6 +280,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(39);
     expect(dispositions.filter((value) => value === "DEFERRED")).toHaveLength(29);
     expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(10);
+    for (const disposition of validDispositions) {
+      const count = dispositions.filter((value) => value === disposition).length;
+      expect(ledger).toContain(`<span class="metric"><b>${count}</b>${disposition.toLowerCase()}</span>`);
+    }
     expect(ledger).toContain('data-orphan-count="0"');
   });
 

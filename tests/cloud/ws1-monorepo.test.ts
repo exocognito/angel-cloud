@@ -29,6 +29,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(existsSync(join(root, "docs/core/format-v2.md"))).toBe(true);
     expect(read(".gitignore")).toContain("examples/angels/*/angel.json");
     expect(read(".gitignore")).not.toContain("\nangels/*/angel.json");
+    expect(read(".gitattributes")).toContain("packages/core/adapters/** text eol=lf");
 
     const workspace = read("pnpm-workspace.yaml");
     for (const packageName of ["esbuild", "sharp", "workerd"]) {
