@@ -4,7 +4,7 @@ This package owns the portable Angel standard:
 
 - `ANGEL.yaml` source parsing and local composition;
 - canonical, secret-free `angel.version.v2` artifacts and SHA-256 digests (see the
-  [format contract](../../docs/core/format-v2.md));
+  [format contract](https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md));
 - portable argument-guard semantics;
 - `angel.json` validation; and
 - the target-neutral `angel build`, `angel publish`, `angel deploy --prod`,

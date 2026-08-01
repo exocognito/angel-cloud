@@ -144,6 +144,11 @@ for (const path of expectedPaths) {
   assert(sha256(candidate) === sha256(published), `${path} bytes changed`);
 }
 
+const packedReadme = readFileSync(join(candidateDirectory, "package/README.md"), "utf8");
+assert(
+  packedReadme.includes("https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md"),
+  "packed README must link the canonical format contract",
+);
 const manifest = JSON.parse(readFileSync(join(candidateDirectory, "package/package.json"), "utf8")) as Record<string, unknown>;
 const publishedManifest = JSON.parse(readFileSync(join(registryDirectory, "package/package.json"), "utf8")) as Record<string, unknown>;
 const normalizedManifest = structuredClone(manifest);

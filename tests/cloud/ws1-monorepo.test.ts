@@ -62,7 +62,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(coreReadme).not.toContain("`angel.version.v1` artifacts");
     expect(coreReadme).toContain("pnpm run angel -- build <angel>");
     expect(coreReadme).not.toContain("pnpm --dir packages/core run angel");
-    expect(coreReadme).toContain("../../docs/core/format-v2.md");
+    expect(coreReadme).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md");
   });
 
   test("records rewritten core history without pretending commit ids stayed literal", () => {
@@ -162,6 +162,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof).toContain("rewrittenCommitCount");
     expect(proof).not.toContain("DOTFILES_REAL_");
     expect(proof).not.toContain("Library/pnpm/pnpm");
+    expect(proof).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md");
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {
