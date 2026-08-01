@@ -204,7 +204,10 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(ownershipAdr).not.toContain("Three pieces are outstanding");
     const adrIndex = read("docs/adrs/README.md");
     expect(adrIndex).toContain("../core/format-v2.md");
-    expect(adrIndex).toContain("src/workers/broker.ts:206");
+    const brokerCitation = adrIndex.match(/src\/workers\/broker\.ts:(\d+)/);
+    expect(brokerCitation).not.toBeNull();
+    const brokerLine = Number(brokerCitation?.[1]);
+    expect(read("src/workers/broker.ts").split("\n")[brokerLine - 1]).toContain("activeProvider.prepare(");
     expect(adrIndex).toContain("updated by WS1");
     expect(adrIndex).not.toContain("branch, unchanged");
     const researchExamples = read("research/hosted-platform/example-configurations/README.md");
