@@ -160,9 +160,11 @@ describe("docs-site build output", () => {
       ...SERVED_FILES.filter((f) => f.endsWith(".md")),
       ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
       ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
+      ...readdirSync(join(canonicalDist, "core")).map((f) => `core/${f}`),
     ];
     expect(servedMarkdown.some((f) => f.startsWith("product-decisions/"))).toBe(true);
     expect(servedMarkdown.some((f) => f.startsWith("adrs/"))).toBe(true);
+    expect(servedMarkdown.some((f) => f.startsWith("core/"))).toBe(true);
 
     const slugCache = new Map<string, Set<string>>();
     const slugsOf = (path: string) => {
@@ -205,6 +207,7 @@ describe("docs-site build output", () => {
       ...SERVED_FILES.filter((f) => f.endsWith(".md")),
       ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
       ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
+      ...readdirSync(join(canonicalDist, "core")).map((f) => `core/${f}`),
     ];
     for (const file of servedMarkdown) {
       expect(
