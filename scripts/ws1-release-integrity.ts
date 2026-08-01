@@ -8,7 +8,7 @@ const core = join(root, "packages/core");
 const baseline = JSON.parse(readFileSync(join(root, "docs/evidence/ws1-release-baseline.json"), "utf8")) as {
   corePackage: string;
   registryIntegrity: string;
-  toolchain: Record<string, string>;
+  toolchain: { pnpm: string; bun: string; node: string; wrangler: string };
   packedFiles: Record<string, { sha256: string; size: number; mode: string }>;
   allowedPackedDifferences: Record<string, string>;
   workerNormalizedJsSha256: Record<string, string>;
