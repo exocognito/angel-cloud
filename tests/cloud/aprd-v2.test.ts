@@ -264,7 +264,8 @@ describe("APRD v2", () => {
   });
 
   test("checks current publish behavior against the package pin and public docs", async () => {
-    expect(packageManifest.dependencies["@smcllns/angel-core"]).toBe("0.3.0");
+    expect(packageManifest.dependencies["@smcllns/angel-core"]).toBe("workspace:0.3.0");
+    expect(JSON.parse(readFileSync(new URL("../../packages/core/package.json", import.meta.url), "utf8")).version).toBe("0.3.0");
     expect(corePackageManifest.version).toBe("0.3.0");
     expect(roadmap).not.toContain("waits on `@smcllns/angel-core`");
     expect(rootReadme).toContain("to production by default");

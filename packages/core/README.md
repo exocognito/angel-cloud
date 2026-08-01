@@ -49,8 +49,8 @@ From the `angels` repository:
 
 ```text
 pnpm install
-pnpm --dir packages/angel-core run check
-pnpm --dir packages/angel-core run angel -- build <angel>
+pnpm --dir packages/core run check
+pnpm --dir packages/core run angel -- build <angel>
 ```
 
 The checked-in `ANGEL.yaml` files are the primary policy artifacts. Deployment

@@ -98,11 +98,11 @@ describe("WS1 behavior-neutral monorepo", () => {
 
   test("supersedes split-repository ownership without changing product behavior", () => {
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
-      "Supersedes ADR 0004 repository ownership",
+      "supersedes ADR 0004 repository ownership",
     );
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
       "No runtime, auth, OAuth, policy, route, provider, UX, binding, or secret change",
     );
-    expect(read("docs/product-ledger.html")).toContain('data-index-key="WS1" data-index-plan="ACTIVE"');
+    expect(read("docs/product-ledger.html")).toContain('data-index-key="WS1" data-index-plan="COMPLETE"');
   });
 });

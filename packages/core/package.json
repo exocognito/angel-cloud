@@ -29,8 +29,8 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/exocognito/angels.git",
-    "directory": "packages/angel-core"
+    "url": "https://github.com/exocognito/angelmcp.git",
+    "directory": "packages/core"
   },
   "scripts": {
     "angel": "bun run src/scripts/angel.ts",

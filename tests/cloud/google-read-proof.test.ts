@@ -15,20 +15,20 @@ const key = "angel-production-key";
 const query = "from:proof@example.com subject:\"M1\"";
 const documentId = "doc_ABC_-123";
 const expectedPolicyDigest = readFileSync(
-  join(repoRoot, "angels/google-read-proof/build/angel.version.sha256"),
+  join(repoRoot, "examples/angels/google-read-proof/build/angel.version.sha256"),
   "utf8",
 ).trim();
 
 describe("google-read-proof fixture", () => {
   test("matches the portable source and keeps both requirements on one nickname", async () => {
-    const source = readFileSync(join(repoRoot, "angels/google-read-proof/ANGEL.yaml"), "utf8");
+    const source = readFileSync(join(repoRoot, "examples/angels/google-read-proof/ANGEL.yaml"), "utf8");
     const artifact = await compileHostedAngel(source);
     const tracked = JSON.parse(readFileSync(
-      join(repoRoot, "angels/google-read-proof/build/angel.version.json"),
+      join(repoRoot, "examples/angels/google-read-proof/build/angel.version.json"),
       "utf8",
     )) as { name: string; tools: Array<{ name: string }> };
     const example = JSON.parse(readFileSync(
-      join(repoRoot, "angels/google-read-proof/angel.example.json"),
+      join(repoRoot, "examples/angels/google-read-proof/angel.example.json"),
       "utf8",
     )) as { bindings: { preview: Record<string, string>; production: Record<string, string> } };
 

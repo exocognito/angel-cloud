@@ -1,22 +1,22 @@
 {
-  "name": "@exocognito/angel-cloud",
+  "name": "@exocognito/angelmcp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "bin": {
-    "angel": "node_modules/@smcllns/angel-core/src/scripts/angel.ts"
-  },
+  "packageManager": "pnpm@11.7.0",
   "scripts": {
     "angel": "pnpm exec angel",
-    "test": "bun test",
+    "test": "bun test tests/cloud",
     "test:golden": "bun run scripts/golden.ts",
     "test:google-read-proof": "bun run scripts/google-read-proof.ts",
     "typecheck": "tsc --noEmit",
     "typecheck:workers": "bun run tsc -p tsconfig.broker.json --noEmit && bun run tsc -p tsconfig.gateway.json --noEmit && bun run tsc -p tsconfig.control.json --noEmit",
-    "check": "bun run typecheck && bun run typecheck:workers && bun test && bun run scripts/check-fixture-staleness.ts && bun run scripts/build-demo-fixture.ts .demo-fixture.check.json && rm -f .demo-fixture.check.json"
+    "check:core": "pnpm --dir packages/core run check",
+    "check:ws1": "bun run scripts/ws1-release-integrity.ts",
+    "check": "bun run typecheck && bun run typecheck:workers && bun test tests/cloud && pnpm run check:core && bun run scripts/check-fixture-staleness.ts && bun run scripts/build-demo-fixture.ts .demo-fixture.check.json && rm -f .demo-fixture.check.json && pnpm run check:ws1"
   },
   "dependencies": {
-    "@smcllns/angel-core": "0.3.0",
+    "@smcllns/angel-core": "workspace:0.3.0",
     "yaml": "^2.4.5"
   },
   "devDependencies": {

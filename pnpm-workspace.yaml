@@ -1,10 +1,5 @@
+packages:
+  - packages/*
 allowBuilds:
-  esbuild: true
-  sharp: true
-  workerd: true
-minimumReleaseAgeExclude:
-  # First-party package: versions are adopted deliberately by exact pin the
-  # moment they are published, so the cooling-off period only blocks our own
-  # releases. pnpm matches this list by bare package name (a name@version
-  # entry matches nothing).
-  - "@smcllns/angel-core"
+  esbuild: set this to true or false
+  workerd: set this to true or false

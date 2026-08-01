@@ -1107,7 +1107,7 @@ function newAngelGuideSteps() {
       where: "shell",
       title: "Copy the deployment config",
       detail: "Copy the safe example and edit only local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. The real angel.json is git-ignored; ANGEL.yaml stays portable.",
-      commands: ["cp angels/google-read-proof/angel.example.json angels/google-read-proof/angel.json"],
+      commands: ["cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json"],
     },
     {
       where: "shell",
@@ -1131,7 +1131,7 @@ function newAngelGuideSteps() {
 }
 
 // The code side of the code ↔ render example: a REAL shipped policy, copied
-// verbatim from angels/gmail-read-and-draft/ANGEL.yaml. It lists a guarded read,
+// verbatim from examples/angels/gmail-read-and-draft/ANGEL.yaml. It lists a guarded read,
 // a plain read, and one Use-group draft create — enough to show both group kinds.
 function angelYamlExampleSource() {
   return [

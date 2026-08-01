@@ -1,0 +1,123 @@
+{
+  "schema": "angelmcp.ws1.release-baseline.v1",
+  "hostedCommit": "19add04a02337c4efe0786ac48345cd7ecc03a1e",
+  "coreCommit": "8d08c42ff1fd47420f969d268d03ab0e0d7a3de9",
+  "corePackage": "@smcllns/angel-core@0.3.0",
+  "toolchain": {
+    "pnpm": "11.7.0",
+    "bun": "1.3.11",
+    "node": "v26.0.0",
+    "wrangler": "4.110.0"
+  },
+  "packedFiles": {
+    "LICENSE": {
+      "sha256": "6d8a71d99f33afa66fa5e22c3759549b82c477045ef88ab0e61ab3958f9871e9",
+      "size": 1068,
+      "mode": "0o644"
+    },
+    "package.json": {
+      "sha256": "21ee1e7427005ff665c9a6a4eea4d7554f5a97a6c128f8c692b7b8bab42d3545",
+      "size": 1162,
+      "mode": "0o644"
+    },
+    "README.md": {
+      "sha256": "daf4c724761af803446f1a3db8ae1d60211f740af8ec90ac5c2d97bfe878dc78",
+      "size": 3725,
+      "mode": "0o644"
+    },
+    "src/adapter-derive.ts": {
+      "sha256": "a83e5e8ba2bf5f8996d3400f065ed69b7969ee33e7a96a34ff8642b1b52bc634",
+      "size": 11057,
+      "mode": "0o644"
+    },
+    "src/adapters.generated.ts": {
+      "sha256": "cbc9319052dec5909edf6853810783fd908856d107b6949892d865be93f443b9",
+      "size": 16597,
+      "mode": "0o644"
+    },
+    "src/scripts/angel.ts": {
+      "sha256": "e43d72bba7393c4314173bc83d17b924ce2c68e4748cae15f68097b26c7c1759",
+      "size": 170,
+      "mode": "0o755"
+    },
+    "src/artifact-validate.ts": {
+      "sha256": "de11cf83e51693df627e1aced023a4b92d5c890b503e6dd014f60986a90446f0",
+      "size": 7059,
+      "mode": "0o644"
+    },
+    "src/build.ts": {
+      "sha256": "e2c87f0cfe2f20927966460a0075a204499c101f6e29145fae79805f46a9a0c4",
+      "size": 1701,
+      "mode": "0o644"
+    },
+    "src/canonical-json.ts": {
+      "sha256": "980714cab3f19301c85544e008ef3d75317ff2ffa8b5284d969413d8fbd9bf55",
+      "size": 832,
+      "mode": "0o644"
+    },
+    "src/cli/client.ts": {
+      "sha256": "77aedf0688047ab1b6026eb2e7265923b0f091d8d955611b6a2af32a5c37421c",
+      "size": 16659,
+      "mode": "0o644"
+    },
+    "src/cli/commands.ts": {
+      "sha256": "418ecb3f6a1fe2ffbe9b55b30b15028ca280c92e2f6fb797b44bc6e39be1e937",
+      "size": 11093,
+      "mode": "0o644"
+    },
+    "src/cli/config.ts": {
+      "sha256": "ffbb9b5b1332368cf1c6fe729bc52a0afdcdbc753bcf90cd868092d87da15a43",
+      "size": 4024,
+      "mode": "0o644"
+    },
+    "src/crypto.ts": {
+      "sha256": "d51c0dd5d80c045f0ba5989848d8f4503064deb3ae854a1a618de314f41fe471",
+      "size": 912,
+      "mode": "0o644"
+    },
+    "src/decision.ts": {
+      "sha256": "36609699aca19fe834d981e9754eb5fa4cd51c848e66c8c38190145d11e8f406",
+      "size": 5850,
+      "mode": "0o644"
+    },
+    "src/domain.ts": {
+      "sha256": "946e5171894f8d6e2100bc54bf68c227d5df2f34b9cfd8290b054ef97e1204a6",
+      "size": 11665,
+      "mode": "0o644"
+    },
+    "src/scripts/generate-adapters.ts": {
+      "sha256": "91c02215365abc934e27d76c93931a583fe6d8948552e960f921122fc4eeefdb",
+      "size": 1592,
+      "mode": "0o644"
+    },
+    "src/cli/index.ts": {
+      "sha256": "ac2423eff57cd277c44daa1c2ffd1586df2dfeca3f453fc22bfdfd4ff87a7345",
+      "size": 80,
+      "mode": "0o644"
+    },
+    "src/index.ts": {
+      "sha256": "20c79637161782c66b67ac37faf8f69e4a988bb7293919458a2024033cd85418",
+      "size": 317,
+      "mode": "0o644"
+    },
+    "src/management-contract.ts": {
+      "sha256": "e7a0f7cd906ef6e24ac04b1ec1446f83720cc282da1ae0ac1e5ee924e87a9e64",
+      "size": 2898,
+      "mode": "0o644"
+    },
+    "src/types.ts": {
+      "sha256": "26910b8d4a3b95adf3a17a8d853a47db9d750d7306a5a9b33e97a242ff200d7f",
+      "size": 299,
+      "mode": "0o644"
+    }
+  },
+  "allowedPackedDifferences": {
+    "package.json": "canonical repository metadata and JSON formatting",
+    "README.md": "canonical monorepo command paths"
+  },
+  "workerNormalizedJsSha256": {
+    "broker": "78f989e9b778e45718dbb13244594eca5892bbb7eb921d2120723b08de6fb62e",
+    "gateway": "26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7",
+    "control": "4a4e8155eeef199260c303c48c2c79f7fc364f93b4da0baa80f352732c4af395"
+  }
+}

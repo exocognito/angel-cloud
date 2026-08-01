@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { compileHostedAngel } from "../src/domain";
 
 const repoRoot = join(import.meta.dir, "../../..");
-const angelDir = join(repoRoot, "angels/google-read-proof");
+const angelDir = join(repoRoot, "examples/angels/google-read-proof");
 
 describe("google-read-proof portable policy", () => {
   test("defines exactly the real two-operation multi-provider proof", async () => {

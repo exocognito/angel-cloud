@@ -10,7 +10,7 @@ async function checkAngelBuildArtifacts(): Promise<string[]> {
 
   for (const angelId of angels) {
     try {
-      const angelDir = join(repoRoot, `angels/${angelId}`);
+      const angelDir = join(repoRoot, `examples/angels/${angelId}`);
       const buildDir = join(angelDir, "build");
       const buildArtifactPath = join(buildDir, "angel.version.json");
       const buildHashPath = join(buildDir, "angel.version.sha256");
@@ -32,7 +32,7 @@ async function checkAngelBuildArtifacts(): Promise<string[]> {
 
       const recompiled = await compileHostedAngel(source, {
         loadAngel: (name) => {
-          const childPath = join(repoRoot, `angels/${name}/ANGEL.yaml`);
+          const childPath = join(repoRoot, `examples/angels/${name}/ANGEL.yaml`);
           if (!existsSync(childPath)) {
             throw new Error(`Missing child angel policy: ${name}`);
           }

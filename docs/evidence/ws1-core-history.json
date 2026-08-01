@@ -1,0 +1,9 @@
+{
+  "schema": "angelmcp.ws1.core-history.v1",
+  "sourceRepository": "https://github.com/exocognito/angel-core",
+  "sourceTip": "8d08c42ff1fd47420f969d268d03ab0e0d7a3de9",
+  "splitPrefix": "packages/angel-core",
+  "splitTip": "4caa10a98a7d2ed21370e63e2ca8a98753b9fb30",
+  "method": "git subtree split, then unsquashed subtree add",
+  "literalSourceHistory": "Original commit IDs and the v0.2.0 tag remain in the archived source repository; rewritten IDs preserve package-path history in this monorepo."
+}

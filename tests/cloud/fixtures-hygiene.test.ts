@@ -10,7 +10,7 @@ describe("publication hygiene", () => {
     const environmentSpecificTarget = "https://angelmcp-control-demo.sam-633.workers.dev";
 
     for (const angelId of examples) {
-      const examplePath = join(repoRoot, `angels/${angelId}/angel.example.json`);
+      const examplePath = join(repoRoot, `examples/angels/${angelId}/angel.example.json`);
       const example = JSON.parse(readFileSync(examplePath, "utf8"));
 
       expect(example.target).not.toBe(environmentSpecificTarget);
