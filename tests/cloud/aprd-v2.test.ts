@@ -274,7 +274,7 @@ describe("APRD v2", () => {
     expect(userManual).toContain("pnpm exec angel delete  <angel> [--confirm <slug>]");
     expect(userManual).toContain('"preview":');
     expect(userManual).not.toContain('"staging":');
-    expect(userManual).toContain("The hosted repository runs this against public");
+    expect(userManual).toContain("The canonical repository runs this against workspace-linked");
     expect(previewDecision).toContain("- Implemented: Yes");
     expect(previewBindingsDecision).toContain("- Implemented: Yes");
     expect(productDecisionIndex).toContain("| [0003](0003-preview-is-opt-in.md)");
@@ -336,7 +336,7 @@ describe("APRD v2", () => {
       expect(currentDoc).toMatch(
         /Public\s+`@smcllns\/angel-core@0\.3\.0` is\s+published/,
       );
-      expect(currentDoc).toContain("matching lockfile");
+      expect(currentDoc).toContain("workspace lockfile");
       expect(currentDoc).not.toContain("remote CI is green");
     }
 

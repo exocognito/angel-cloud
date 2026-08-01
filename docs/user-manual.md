@@ -52,7 +52,8 @@ this project explores for the same idea; to weigh it against the others, see
 Milestone 1 runs a single pre-provisioned Account, `acct_m1`, behind Cloudflare
 Access. As of 2026-07-22 the Broker, Gateway, and Control Workers are deployed
 in the dedicated Cloudflare account. Public `@smcllns/angel-core@0.3.0` is
-published, and the repository pins it with a matching lockfile. Provider App
+published. Canonical source is workspace-linked at `packages/core` under one
+workspace lockfile, and the WS1 check compares its packed runtime with npm. Provider App
 `google-primary` is stored write-only in Broker custody, and its safe summary
 reads without returning the client secret.
 
@@ -862,8 +863,9 @@ The ordinary golden journey injects a deterministic provider at the Broker
 boundary. It needs no Google or Cloudflare credentials, yet exercises the real
 CLI, artifact digests, the Account API, both gates, MCP auth, Connection
 selection, availability, exact promotion, key stability, and Account isolation.
-The hosted repository runs this against public `@smcllns/angel-core@0.3.0` with
-its matching lockfile.
+The canonical repository runs this against workspace-linked
+`@smcllns/angel-core@0.3.0` under one workspace lockfile; the release check
+compares its packed runtime with npm.
 
 ### Full deployed comparison journey
 
