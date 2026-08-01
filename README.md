@@ -96,15 +96,24 @@ deployment; it does not build or publish. The pinned
 Access-protected: CLI publish and deploy require both
 `ANGEL_MANAGEMENT_TOKEN` and `ANGEL_ACCESS_TOKEN`.
 
-## Deterministic CI (golden proof)
+## Canonical CI and deterministic golden proof
 
 ```text
 bun run check
 ```
 
-Ordinary CI runs the deterministic journey against in-memory Worker and
-Durable Object adapters and injects a deterministic provider at Broker, without
-Google credentials (482 tests / 2,982 assertions). The journey publishes both
+The canonical check runs:
+
+- 593 hosted tests / 6,508 assertions; and
+- 95 core tests / 284 assertions.
+
+The hosted suite and golden journey use in-memory Worker and
+Durable Object adapters plus a deterministic Broker provider, without Google
+credentials. The final release-integrity step needs registry network access and
+the pinned toolchain; [ADR 0007](docs/adrs/0007-monorepo-source-and-release-integrity.md#release-integrity)
+owns that contract.
+
+Within the check, the golden journey publishes both
 checked-in comparison Angels, promotes exact previewed deployments, discovers one
 canonical Gmail tool with two opaque Connection choices, proves omission never
 fans out, calls each Connection separately, pauses one tuple without pausing
