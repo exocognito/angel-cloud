@@ -1,0 +1,211 @@
+import { describe, expect, test } from "bun:test";
+import { compileHostedAngel, type HostedVersionContent } from "../src/domain";
+import { validateArtifactAdapters } from "../src/artifact-validate";
+
+async function compiled(): Promise<HostedVersionContent> {
+  const { canonicalSource, digest, ...content } = await compileHostedAngel(`
+name: proof
+charter: Read mail and one doc.
+tools:
+  - tool: gmail.users.messages.list
+  - tool: docs.documents.get
+`);
+  return structuredClone(content);
+}
+
+describe("publish-time adapter validation", () => {
+  test("accepts a faithfully compiled artifact", async () => {
+    const content = await compiled();
+    expect(() => validateArtifactAdapters(content)).not.toThrow();
+  });
+
+  test("rejects a tampered request template", async () => {
+    const content = await compiled();
+    const gmailTool = content.tools.find((tool) => tool.provider === "gmail")!;
+    gmailTool.request = { ...gmailTool.request, method: "DELETE" };
+    expect(() => validateArtifactAdapters(content)).toThrow(/request .* reviewed spec/);
+  });
+
+  test("rejects an unapproved provider origin", async () => {
+    const content = await compiled();
+    content.providers.gmail!.origin = "https://evil.example";
+    expect(() => validateArtifactAdapters(content)).toThrow(/origin/);
+  });
+
+  test("rejects an unsupported adapter version", async () => {
+    const content = await compiled();
+    content.providers.gmail!.adapter = "google-discovery@999";
+    expect(() => validateArtifactAdapters(content)).toThrow(/adapter/);
+  });
+
+  test("rejects a stale source digest", async () => {
+    const content = await compiled();
+    content.providers.docs!.sourceDigest = `sha256:${"0".repeat(64)}`;
+    expect(() => validateArtifactAdapters(content)).toThrow(/sourceDigest/);
+  });
+
+  test("rejects an operation the reviewed spec does not contain", async () => {
+    const content = await compiled();
+    const gmailTool = content.tools.find((tool) => tool.provider === "gmail")!;
+    gmailTool.operation = "gmail.users.messages.delete";
+    gmailTool.name = "gmail.users.messages.delete";
+    expect(() => validateArtifactAdapters(content)).toThrow(/gmail.users.messages.delete/);
+  });
+
+  test("rejects a scope set that disagrees with the spec-derived consent", async () => {
+    const content = await compiled();
+    content.bindingRequirements.find((r) => r.provider === "gmail")!.requiredScopes = [
+      "https://mail.google.com/",
+    ];
+    expect(() => validateArtifactAdapters(content)).toThrow(/scope/i);
+  });
+
+  test("rejects a provider entry no tool uses", async () => {
+    const content = await compiled();
+    content.tools = content.tools.filter((tool) => tool.provider !== "docs");
+    content.bindingRequirements = content.bindingRequirements.filter((r) => r.provider !== "docs");
+    expect(() => validateArtifactAdapters(content)).toThrow(/docs/);
+  });
+
+  test("rejects a requirement listing a tool the artifact does not contain", async () => {
+    // Padding the requirement's tool list escalates requiredScopes past what
+    // the artifact's actual tools justify — the consent-escalation tamper.
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    gmailReq.tools = [...gmailReq.tools, "gmail.users.drafts.create"].sort();
+    gmailReq.requiredScopes = ["https://www.googleapis.com/auth/gmail.modify"];
+    expect(() => validateArtifactAdapters(content)).toThrow(/tool/);
+  });
+
+  test("rejects an artifact whose tools have no binding requirement", async () => {
+    const content = await compiled();
+    content.bindingRequirements = [];
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement/);
+  });
+
+  test("rejects a tool claimed by two requirements", async () => {
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    content.bindingRequirements.push({ ...gmailReq, id: `${gmailReq.id}-dup` });
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement/);
+  });
+
+  test("rejects a double-claimed tool even when the first requirement id is empty", async () => {
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    content.bindingRequirements = [
+      { ...gmailReq, id: "" },
+      gmailReq,
+      ...content.bindingRequirements.filter((r) => r.provider !== "gmail"),
+    ];
+    expect(() => validateArtifactAdapters(content)).toThrow(/requirement id/);
+  });
+
+  test("rejects a double-claimed tool under a falsy non-string requirement id", async () => {
+    // id 0 dodges the empty-string check, so this exercises the claim map
+    // itself — the only branch the has() fix protects.
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    content.bindingRequirements = [
+      { ...gmailReq, id: 0 as unknown as string },
+      gmailReq,
+      ...content.bindingRequirements.filter((r) => r.provider !== "gmail"),
+    ];
+    expect(() => validateArtifactAdapters(content)).toThrow(/claimed by requirements/);
+  });
+
+  test("cleanly rejects artifacts missing top-level collections", async () => {
+    for (const key of ["providers", "tools", "bindingRequirements"] as const) {
+      const content = await compiled();
+      delete (content as unknown as Record<string, unknown>)[key];
+      expect(() => validateArtifactAdapters(content)).toThrow(new RegExp(key));
+    }
+  });
+
+  test("rejects any format other than angel.version.v2", async () => {
+    const content = await compiled();
+    (content as unknown as Record<string, unknown>).format = "angel.version.v1";
+    expect(() => validateArtifactAdapters(content)).toThrow(/format/);
+  });
+
+  test("accepts a request whose keys arrive in a different order", async () => {
+    // Any normalizing hop (jsonb, a proxy) may reorder keys; equality must be
+    // structural, not serialization-order.
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    tool.request = JSON.parse(
+      JSON.stringify(Object.fromEntries(Object.entries(tool.request).reverse())),
+    );
+    expect(() => validateArtifactAdapters(content)).not.toThrow();
+  });
+
+  test("cleanly rejects tools with non-string fields or a missing request", async () => {
+    const numericName = await compiled();
+    const tool = numericName.tools.find((t) => t.provider === "gmail")!;
+    (tool as unknown as Record<string, unknown>).name = 5;
+    (tool as unknown as Record<string, unknown>).operation = 5;
+    expect(() => validateArtifactAdapters(numericName)).toThrow(/tool/);
+
+    const noRequest = await compiled();
+    delete (noRequest.tools[0] as unknown as Record<string, unknown>).request;
+    expect(() => validateArtifactAdapters(noRequest)).toThrow(/request/);
+  });
+
+  test("rejects an operation not namespaced under its tool's provider", async () => {
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    tool.provider = "docs";
+    content.providers = { docs: content.providers.docs! };
+    content.bindingRequirements = [];
+    expect(() => validateArtifactAdapters(content)).toThrow(/namespac/);
+  });
+
+  test("cleanly rejects malformed elements inside the collections", async () => {
+    const nullProvider = await compiled();
+    (nullProvider.providers as unknown as Record<string, unknown>).gmail = null;
+    expect(() => validateArtifactAdapters(nullProvider)).toThrow(/providers entry/);
+
+    const nullTool = await compiled();
+    (nullTool.tools as unknown[]).push(null);
+    expect(() => validateArtifactAdapters(nullTool)).toThrow(/tool/);
+
+    const badRequirement = await compiled();
+    delete (badRequirement.bindingRequirements[0] as unknown as Record<string, unknown>).tools;
+    expect(() => validateArtifactAdapters(badRequirement)).toThrow(/requirement/);
+  });
+
+  test("rejects duplicate requirement ids", async () => {
+    const content = await compiled();
+    const gmailReq = content.bindingRequirements.find((r) => r.provider === "gmail")!;
+    const docsReq = content.bindingRequirements.find((r) => r.provider === "docs")!;
+    docsReq.id = gmailReq.id;
+    expect(() => validateArtifactAdapters(content)).toThrow(/duplicate requirement id/);
+  });
+
+  test("rejects a tool whose name differs from its operation", async () => {
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    tool.name = "gmail.users.messages.list-alias";
+    expect(() => validateArtifactAdapters(content)).toThrow(/name/);
+  });
+
+  test("rejects case-folded duplicate tool names", async () => {
+    const content = await compiled();
+    const tool = content.tools.find((t) => t.provider === "gmail")!;
+    const folded = tool.name.replace(/list$/, "LIST");
+    content.tools.push({ ...tool, name: folded, operation: folded });
+    expect(() => validateArtifactAdapters(content)).toThrow(/duplicate|collision/i);
+  });
+
+  test("cleanly rejects prototype-chain provider names from untrusted JSON", async () => {
+    const content = await compiled();
+    content.tools.push({
+      name: "constructor.x",
+      provider: "constructor",
+      operation: "constructor.x",
+      argGuards: [],
+      request: content.tools[0]!.request,
+    });
+    expect(() => validateArtifactAdapters(content)).toThrow(/unknown provider/);
+  });
+});
