@@ -102,12 +102,8 @@ Access-protected: CLI publish and deploy require both
 bun run check
 ```
 
-The canonical check runs:
-
-- 594 hosted tests / 6,522 assertions; and
-- 95 core tests / 284 assertions.
-
-The hosted suite and golden journey use in-memory Worker and
+The canonical check runs the hosted and core test suites, fixture checks, and
+WS1 release-integrity proof. The hosted suite and golden journey use in-memory Worker and
 Durable Object adapters plus a deterministic Broker provider, without Google
 credentials. The final release-integrity step needs registry network access and
 the pinned toolchain; [ADR 0007](docs/adrs/0007-monorepo-source-and-release-integrity.md#release-integrity)
