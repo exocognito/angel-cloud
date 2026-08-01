@@ -2,8 +2,9 @@
 
 Status: design examples for the accepted PR4 contract. The `.hosted.yaml`
 suffixes are retained only so existing links keep working; the YAML itself is
-not hosted-specific. A source is target-neutral by design. Angel Cloud is the supported target; a
-supported self-hosting path has not passed its clean-room proof.
+not hosted-specific. A source is target-neutral by design. Angel Cloud is the
+implemented target; the current compatibility and self-hosting boundary lives in
+the [FAQ](../../../docs/faq.md#can-i-self-host-a-compatible-control-plane).
 
 The checked-in runnable comparison fixtures live under `examples/angels/`:
 

@@ -181,6 +181,15 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(ledger).toContain("npm SRI provenance");
     expect(ledger).toContain("last-registry-tarball parity proof");
 
+    const ownershipAdr = read("docs/adrs/0005-spec-derived-execution-closure.md");
+    expect(ownershipAdr).toContain("`packages/core/adapters/<provider>/`");
+    expect(ownershipAdr).toContain("`docs/core/format-v2.md`");
+    expect(ownershipAdr).not.toContain("`packages/angel-core/adapters/<provider>/`");
+    expect(read("docs/adrs/README.md")).toContain("../core/format-v2.md");
+    const researchExamples = read("research/hosted-platform/example-configurations/README.md");
+    expect(researchExamples).toContain("../../../docs/faq.md#can-i-self-host-a-compatible-control-plane");
+    expect(researchExamples).not.toContain("has not passed its clean-room proof");
+
     const canonicalDocs = [
       "README.md",
       "packages/core/README.md",

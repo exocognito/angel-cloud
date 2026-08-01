@@ -53,8 +53,8 @@ record changes the old API-first scope cut, not ADR 0003's core: every surface
 still compiles the same canonical artifact and publishes immutable,
 digest-pinned Versions through the same binding and promotion rules.
 
-**The artifact format is `angel.version.v2`.** ADRs 0001 and 0004 name
-`angel.version.v1`. The compiler emits v2 and validation rejects anything else.
+**The [artifact format](../core/format-v2.md) is `angel.version.v2`.** ADRs
+0001 and 0004 name `angel.version.v1`. The compiler emits v2 and validation rejects anything else.
 The shape of the decision holds: a canonical, secret-free byte string plus a
 SHA-256 digest, re-validated by every control plane before a Version is stored.
 

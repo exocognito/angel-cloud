@@ -29,14 +29,14 @@ adapters interpret sealed request data, they do not enumerate operations.**
 
 Concretely:
 
-- The reviewed adapter registry in `exocognito/angels` at
-  `packages/angel-core/adapters/<provider>/` (curated contract plus narrowed
-  spec, generated into a Worker-safe registry; the layout lands with
-  exocognito/angels#3) is the single capability truth. The
-  `angel.version.v2` schema itself is owned by `exocognito/angels`, which
-  ADR 0004 makes the home of every artifact-format decision; the v1 → v2
-  format decision is recorded there in `docs/format-v2.md`, also landing
-  with #3. This ADR records only the invariant that motivates it. The
+- The reviewed adapter registry in `exocognito/angelmcp` at
+  `packages/core/adapters/<provider>/` (curated contract plus narrowed spec,
+  generated into a Worker-safe registry; the layout first landed with
+  exocognito/angels#3 and its history is preserved here) is the single
+  capability truth. The `angel.version.v2` schema is owned by
+  `exocognito/angelmcp`; the v1 → v2 format decision is recorded in
+  `docs/core/format-v2.md`. ADR 0007 supersedes ADR 0004's old repository
+  ownership. This ADR records only the invariant that motivates it. The
   compiler seals the registry's request templates into `angel.version.v2`
   artifacts, and every control plane must validate received artifacts
   against the same registry (`validateArtifactAdapters`, landing with #3).
