@@ -95,6 +95,21 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(read("wrangler.control.jsonc")).toContain("angelmcp-broker-demo");
   });
 
+  test("runs both workflows from the pinned pnpm workspace", () => {
+    const ci = read(".github/workflows/ci.yml");
+    const acceptance = read(".github/workflows/google-read-proof.yml");
+    for (const workflow of [ci, acceptance]) {
+      expect(workflow).toContain("pnpm/action-setup@v4");
+      expect(workflow).toContain("version: 11.7.0");
+      expect(workflow).toContain("oven-sh/setup-bun@v2");
+      expect(workflow).toContain("bun-version: 1.3.11");
+      expect(workflow).toContain("pnpm install --frozen-lockfile --ignore-scripts");
+      expect(workflow).not.toContain("bun install");
+    }
+    expect(ci).toContain("node-version: 26.0.0");
+    expect(ci).toContain("pnpm run check");
+  });
+
   test("ships a release-integrity proof in the canonical check", () => {
     const scripts = rootPackage.scripts as Record<string, string>;
     expect(scripts["check:ws1"]).toBe("bun run scripts/ws1-release-integrity.ts");
