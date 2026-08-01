@@ -1113,7 +1113,7 @@ function newAngelGuideSteps() {
       where: "shell",
       title: "Publish to preview",
       detail: "With the operator's management bearer and the mandatory Cloudflare Access service token for the Access-protected M1 Control endpoint, build the checked-in policy, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
-      commands: [`ANGEL_MANAGEMENT_TOKEN=... ${accessToken} bun run angel publish google-read-proof`],
+      commands: [`ANGEL_MANAGEMENT_TOKEN=... ${accessToken} bun run angel publish google-read-proof --preview`],
     },
     {
       where: "shell",

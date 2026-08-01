@@ -55,7 +55,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(aprd).toContain("Do not build from this draft.");
     expect(ledger).toContain('data-contract-version="approved-v0.1"');
     expect(ledger).toContain('data-ledger-approval="APPROVED"');
-    expect(ledger).toContain('data-current-workstream="WS1"');
+    expect(ledger).toContain('data-current-workstream="WS-E"');
     expect(ledger).toContain('data-current-workstream-status="NEXT"');
     expect(ledger).toContain('data-product-work-approval="WS1"');
     expect(ledger).toContain('data-evidence-work-approval="WS-E"');
@@ -64,8 +64,8 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-mobile-qa-scroll-width="390"');
     expect(ledger).toContain('data-next-milestone-status="unapproved"');
     expect(ledger).toContain("Approved 2026-08-01");
-    expect(ledger).toContain("https://github.com/exocognito/angel-cloud/pull/43#issuecomment-5152622328");
-    expect(ledger).toContain("Product/repository approval: WS1. Evidence-only approval: WS-E.");
+    expect(ledger).toContain("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328");
+    expect(ledger).toContain("Product/repository approval: WS1, now complete. Evidence-only approval: WS-E, now next.");
     expect(ledger).toContain("WS2 and M-DF2 remain proposed and blocked by O10");
     expect(ledger).not.toContain("No Angel product build is approved");
   });
@@ -78,10 +78,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
     expect(ledger).toMatch(
-      /data-index-key="WS1" data-index-plan="NEXT" data-index-approval="APPROVED"/,
+      /data-index-key="WS1" data-index-plan="COMPLETE" data-index-approval="APPROVED"/,
     );
     expect(ledger).toMatch(
-      /data-index-key="WS-E" data-index-plan="BLOCKED" data-index-approval="APPROVED"/,
+      /data-index-key="WS-E" data-index-plan="NEXT" data-index-approval="APPROVED"/,
     );
     expect(ledger).toContain("Evidence only — no product implementation");
     expect(count('<details id="index-')).toBe(keys.length);
@@ -276,10 +276,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       if (disposition === "UNRESOLVED") expect(destination.startsWith("O")).toBe(true);
     }
     const dispositions = rows.map((row) => row[2] ?? "");
-    expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(29);
-    expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(47);
+    expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(36);
+    expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(39);
     expect(dispositions.filter((value) => value === "DEFERRED")).toHaveLength(29);
-    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(8);
+    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(9);
     expect(ledger).toContain('data-orphan-count="0"');
   });
 

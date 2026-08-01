@@ -15,11 +15,12 @@
 - package, clean-consumer, history, and Worker-bundle release proofs.
 
 Core package history is rewritten from exact source commit
-`8d08c42ff1fd47420f969d268d03ab0e0d7a3de9` into `packages/core` with
-`git subtree split`, then added without squashing. The original-to-split tip
-mapping lives in `docs/evidence/ws1-core-history.json`. Literal source commit
-IDs and the `v0.2.0` tag remain in the archived `exocognito/angel-core`
-repository.
+`8d08c42ff1fd47420f969d268d03ab0e0d7a3de9` with `git subtree split`, then
+path-prefixed into `packages/core` and merged without squashing. The source,
+package-split, path-prefixed, and merge mappings live in
+`docs/evidence/ws1-core-history.json`. That record also stores the inherited
+history secret-audit scope and zero-match result. Literal source commit IDs and
+the `v0.2.0` tag remain in the archived `exocognito/angel-core` repository.
 
 The public package keeps its name, version, exports, bin, dependencies, and
 runtime bytes. O1 and later approved work own any public package rename or CLI

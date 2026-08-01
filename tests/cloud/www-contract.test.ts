@@ -1232,7 +1232,7 @@ describe("Angel Cloud deployable demo UI contract", () => {
       // Doc step 4 — copy the safe example config.
       "cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json",
       // Doc step 5 — publish to preview with management + Access tokens.
-      `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel publish google-read-proof`,
+      `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel publish google-read-proof --preview`,
       // Doc step 6 — promote the exact staged deploy to production.
       `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel deploy google-read-proof --prod`,
     ];

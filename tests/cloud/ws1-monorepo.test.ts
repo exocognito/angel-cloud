@@ -55,18 +55,22 @@ describe("WS1 behavior-neutral monorepo", () => {
     const history = json<{
       sourceRepository: string;
       sourceTip: string;
-      splitPrefix: string;
+      sourcePrefix: string;
+      targetPrefix: string;
       splitTip: string;
       method: string;
       literalSourceHistory: string;
+      secretAudit: { matches: number; trackedCredentialFiles: number };
     }>("docs/evidence/ws1-core-history.json");
 
     expect(history.sourceRepository).toBe("https://github.com/exocognito/angel-core");
     expect(history.sourceTip).toBe("8d08c42ff1fd47420f969d268d03ab0e0d7a3de9");
-    expect(history.splitPrefix).toBe("packages/angel-core");
+    expect(history.sourcePrefix).toBe("packages/angel-core");
+    expect(history.targetPrefix).toBe("packages/core");
     expect(history.splitTip).toMatch(/^[0-9a-f]{40}$/);
-    expect(history.method).toBe("git subtree split, then unsquashed subtree add");
+    expect(history.method).toBe("git subtree split, path-prefix rewrite, then unsquashed merge");
     expect(history.literalSourceHistory).toContain("archived source repository");
+    expect(history.secretAudit).toMatchObject({ matches: 0, trackedCredentialFiles: 0 });
   });
 
   test("keeps hosted imports on supported core exports and deployables separate", () => {

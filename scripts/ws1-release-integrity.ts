@@ -152,6 +152,10 @@ assert(workspaceUsage.includes("usage: angel build <angel>"), "workspace CLI did
 const history = JSON.parse(readFileSync(join(root, "docs/evidence/ws1-core-history.json"), "utf8")) as { splitTip: string };
 run(["git", "cat-file", "-e", `${history.splitTip}^{commit}`]);
 assert(run(["git", "merge-base", "--is-ancestor", history.splitTip, "HEAD"]).trim() === "", "split history is not an ancestor");
+const pathHistory = run([
+  "git", "log", "--full-history", "--format=%H", "--", "packages/core/src/index.ts",
+]).trim().split("\n");
+assert(pathHistory.length >= 4, "packages/core path history was flattened at the merge commit");
 
 for (const worker of ["broker", "gateway", "control"]) {
   const outDirectory = join(temp, `worker-${worker}`);
