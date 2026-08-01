@@ -113,7 +113,7 @@
   },
   "allowedPackedDifferences": {
     "package.json": "canonical repository metadata and JSON formatting",
-    "README.md": "canonical monorepo command paths"
+    "README.md": "canonical monorepo command paths and angel.version.v2 format correction"
   },
   "workerNormalizedJsSha256": {
     "broker": "78f989e9b778e45718dbb13244594eca5892bbb7eb921d2120723b08de6fb62e",

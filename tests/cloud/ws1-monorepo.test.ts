@@ -190,6 +190,9 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(researchExamples).toContain("../../../docs/faq.md#can-i-self-host-a-compatible-control-plane");
     expect(researchExamples).not.toContain("has not passed its clean-room proof");
 
+    expect(json<{ allowedPackedDifferences: Record<string, string> }>("docs/evidence/ws1-release-baseline.json")
+      .allowedPackedDifferences["README.md"]).toContain("format correction");
+
     const canonicalDocs = [
       "README.md",
       "packages/core/README.md",

@@ -60,8 +60,9 @@ must hard-fail unless all of these remain true:
    normalizing only the package source-path comments, and contain no Node
    filesystem or CLI code.
 
-`package.json` repository metadata and README command paths are the only
-allowed packed-file differences.
+`package.json` repository metadata plus README command paths and the
+`angel.version.v2` format correction are the only allowed packed-file
+differences.
 
 ## Consequences
 
