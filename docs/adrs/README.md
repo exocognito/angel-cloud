@@ -3,9 +3,9 @@
 The first five records were written in `exocognito/angels-comparison` between
 2026-07-16 and 2026-07-24. That repository is now archived, so they live here.
 
-They are kept verbatim. An ADR states what was decided and why, on a date — it
-is not a description of the system today. Where the world has since moved, the
-change is recorded below rather than edited into the record.
+Their decision rationale is preserved. An ADR states what was decided and why,
+on a date; current implementation and repository annotations may be updated when
+verified evidence lands. Material changes are also recorded below.
 
 These records cover how the system is built. Decisions about what the product
 does — URL grammar, defaults, what a stranger sees — live in
@@ -21,15 +21,16 @@ exactly what used to go missing.
 | 0002 | Authenticated multi-connection selection | Yes | Yes | — |
 | 0003 | Immutable version promotion | Partly — see below | Yes | — |
 | 0004 | Repository ownership at the artifact boundary | Partly — ownership superseded by 0007; compatibility boundaries remain | Yes | — |
-| 0005 | Derive execution from the same reviewed spec as policy | Yes | Yes — the Broker executes only the sealed template (`src/workers/broker.ts:185`); the compiler side ships in `@smcllns/angel-core` | — |
+| 0005 | Derive execution from the same reviewed spec as policy | Yes | Yes — the Broker executes only the sealed template (`src/workers/broker.ts:206`); the compiler side ships in `@smcllns/angel-core` | — |
 | 0006 | Store www source in Control and compile it in the browser | Yes | No | — |
 | 0007 | One source history with separate package and deploy boundaries | Yes | Yes | WS1 |
 
 ADR 0005 is the design of record for the sealed-request-template work. It
-never merged in the comparison repo; it is recovered here from that repo's
-`docs/adr-0005-spec-derived-execution` branch, unchanged. It was nearly lost
-with that archive — the first of three near-misses that produced the
-product-decisions convention.
+never merged in the comparison repo; it was recovered here from that repo's
+`docs/adr-0005-spec-derived-execution` branch. Its invariant is unchanged; its
+repository paths and landed implementation status were updated by WS1. The
+record was nearly lost with that archive — the first of three near-misses that
+produced the product-decisions convention.
 
 ## What has changed since
 

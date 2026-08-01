@@ -202,7 +202,11 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(ownershipAdr).toContain("`src/management.ts` calls `validateArtifactAdapters`");
     expect(ownershipAdr).toMatch(/`src\/workers\/broker\.ts` executes through the\s+generic sealed-request interpreter/);
     expect(ownershipAdr).not.toContain("Three pieces are outstanding");
-    expect(read("docs/adrs/README.md")).toContain("../core/format-v2.md");
+    const adrIndex = read("docs/adrs/README.md");
+    expect(adrIndex).toContain("../core/format-v2.md");
+    expect(adrIndex).toContain("src/workers/broker.ts:206");
+    expect(adrIndex).toContain("updated by WS1");
+    expect(adrIndex).not.toContain("branch, unchanged");
     const researchExamples = read("research/hosted-platform/example-configurations/README.md");
     expect(researchExamples).toContain("../../../docs/faq.md#can-i-self-host-a-compatible-control-plane");
     expect(researchExamples).not.toContain("has not passed its clean-room proof");
