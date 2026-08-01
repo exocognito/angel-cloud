@@ -31,26 +31,19 @@ Concretely:
 
 - The reviewed adapter registry in `exocognito/angelmcp` at
   `packages/core/adapters/<provider>/` (curated contract plus narrowed spec,
-  generated into a Worker-safe registry; the layout first landed with
-  exocognito/angels#3 and its history is preserved here) is the single
-  capability truth. The `angel.version.v2` schema is owned by
-  `exocognito/angelmcp`; the v1 → v2 format decision is recorded in
-  `docs/core/format-v2.md`. ADR 0007 supersedes ADR 0004's old repository
-  ownership. This ADR records only the invariant that motivates it. The
-  compiler seals the registry's request templates into `angel.version.v2`
-  artifacts, and every control plane must validate received artifacts
-  against the same registry (`validateArtifactAdapters`, landing with #3).
-  That validation checks the artifact half of the closure — an operation
-  without a reviewed template cannot publish. The full closure, nothing
-  publishable that the runtime cannot execute, holds only once the pieces
-  below all land.
-- Three pieces are outstanding, tracked as one open debt anchor in
-  `NEXT.md`: the `angel.version.v2` compiler and `validateArtifactAdapters`
-  (exocognito/angels#3, still open); Angel Cloud Control calling that
-  validator on every received artifact (the validator alone has no
-  production call site — `angels` ships the CLI client, not the publisher);
-  and the Broker rebuilt as a generic interpreter of sealed request data
-  instead of enumerating operations by hand.
+  generated into a Worker-safe registry; its original landing history is
+  preserved in the imported package commits) is the single capability truth.
+  The `angel.version.v2` schema is owned by `exocognito/angelmcp`; the v1 → v2
+  format decision is recorded in `docs/core/format-v2.md`. ADR 0007 supersedes
+  ADR 0004's old repository ownership. This ADR records only the invariant that
+  motivates it. The compiler seals the registry's request templates into
+  `angel.version.v2` artifacts, and every control plane validates received
+  artifacts against the same registry with `validateArtifactAdapters`.
+- All three closure pieces are landed. `packages/core` emits v2 artifacts and
+  exports the validator; `src/management.ts` calls `validateArtifactAdapters`
+  before storing a Version; and `src/workers/broker.ts` executes through the
+  generic sealed-request interpreter in `src/google-provider.ts`. Nothing can
+  publish unless the registered runtime can interpret its sealed request.
 - Test and fixture providers in the hosted stack must interpret sealed
   requests from the same registry as production adapters — every
   registry-derived operation, not a hand-picked subset, since the M1 failure
