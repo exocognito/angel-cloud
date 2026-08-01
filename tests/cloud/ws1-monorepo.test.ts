@@ -160,7 +160,12 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
       "missing `--preview` flag",
     );
-    expect(read("docs/product-ledger.html")).toContain('data-index-key="WS1" data-index-plan="COMPLETE"');
+    const ledger = read("docs/product-ledger.html");
+    expect(ledger).toContain('data-index-key="WS1" data-index-plan="COMPLETE"');
+    expect(ledger).toContain("exocognito/angels#1 must merge before this PR");
+    expect(ledger).toContain("one-time external attestation");
+    expect(ledger).toContain("npm SRI provenance");
+    expect(ledger).toContain("last-registry-tarball parity proof");
 
     const canonicalDocs = [
       "README.md",
