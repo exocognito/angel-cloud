@@ -176,8 +176,15 @@ describe("WS1 behavior-neutral monorepo", () => {
     );
     const ledger = read("docs/product-ledger.html");
     expect(ledger).toContain('data-index-key="WS1" data-index-plan="COMPLETE"');
-    expect(ledger).toContain("exocognito/angels#1 must merge before this PR");
-    expect(ledger).toContain("one-time external attestation");
+    expect(ledger).toContain("exocognito/angels#1 merged as 2a635bf");
+    expect(ledger).toContain("fresh merged-main external attestation");
+    expect(ledger).not.toContain("must merge before this PR");
+    const starterProof = json<{ starterCommit: string; companionDocsPRStatus: string; installCommand: string }>(
+      "docs/evidence/ws1-starter-proof.json",
+    );
+    expect(starterProof.starterCommit).toBe("2a635bf863a572a6c02e66d2a9e8e93b6d94243b");
+    expect(starterProof.companionDocsPRStatus).toBe("merged");
+    expect(starterProof.installCommand).toContain("pnpm add --ignore-scripts file:");
     expect(ledger).toContain("npm SRI provenance");
     expect(ledger).toContain("last-registry-tarball parity proof");
     expect(ledger).toContain("O1 owns future package identity and publication");
