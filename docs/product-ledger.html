@@ -1,589 +1,660 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Angel Product Ledger — zero-orphan review</title>
+<title>Angel Product Ledger — Dogfood Round 2 control view</title>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs"; mermaid.initialize({startOnLoad:true,theme:"neutral",securityLevel:"loose"});</script>
 <style>
 :root{--ink:#1f2937;--muted:#64748b;--paper:#fafaf9;--line:#e2e8f0;--accent:#e5007a;--green:#176b45;--amber:#9a6700;--red:#a83a32;--violet:#5b4bc4}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.58 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1080px;margin:auto;padding:52px 24px 100px}h1,h2,h3{font-family:Georgia,serif;color:#172033}h1{font-size:clamp(36px,7vw,62px);line-height:1.02;margin:12px 0 18px;max-width:850px}h2{font-size:31px;line-height:1.15;margin:0 0 14px}h3{font-size:18px;line-height:1.25;margin:8px 0}p{margin:0}a{color:#4338ca}section{margin-top:72px}.eyebrow,.label{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:700}.throughline{font:22px/1.45 Georgia,serif;color:#334155;max-width:850px}.rule{margin-top:24px;padding:18px 20px;background:#fff;box-shadow:inset 5px 0 0 var(--accent);border-radius:0 10px 10px 0}.rule strong{color:#111827}.summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:28px}.summary.five{grid-template-columns:repeat(5,minmax(0,1fr))}.stat{background:white;border:1px solid var(--line);padding:14px}.stat b{display:block;font:30px/1 Georgia,serif;margin-bottom:6px}.stat span{color:var(--muted);font-size:12px}.review{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}.review article,.guarantee,.milestone{background:#fff;border:1px solid var(--line);padding:17px}.review .n{font:25px Georgia,serif;color:var(--accent)}.review p,.guarantee p,.milestone p{color:#475569}.roadmap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.milestone{border-radius:0 12px 12px 0;box-shadow:inset 4px 0 0 #cbd5e1}.milestone#L0{box-shadow:inset 4px 0 0 var(--green)}.milestone#P0{box-shadow:inset 4px 0 0 var(--accent)}.m-top{display:flex;justify-content:space-between;gap:10px}.m-id,.g-id,.id{font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#475569;white-space:nowrap}.exit,.proof{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);color:#64748b;font-size:12px}.guarantees{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.guarantee{border-radius:0 10px 10px 0;box-shadow:inset 3px 0 0 var(--violet)}.next{background:#171717;color:#e7e5e4;padding:24px;border-radius:10px}.next h2,.next h3{color:#fff}.next .grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.next ul{padding-left:18px;margin:8px 0}.next code{color:#f9a8d4}.callout{padding:15px 18px;background:#fff;border:1px solid var(--line);border-radius:8px}.table-wrap{overflow-x:auto;border:1px solid var(--line);background:#fff}table{width:100%;border-collapse:collapse;min-width:880px;font-size:12.5px}th{text-align:left;background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:10px;position:sticky;top:0}td{vertical-align:top;padding:10px;border-top:1px solid #edf0f4}td:nth-child(2){min-width:280px}td:last-child{min-width:340px}.meta,.dest{color:#94a3b8;font-size:11px;margin-top:4px}.pill{display:inline-block;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:4px}.s-in{background:#eaf6ef;color:var(--green)}.s-proposed{background:#fce7f3;color:#9d174d}.s-later{background:#eef2ff;color:#4338ca}.s-no{background:#f1f5f9;color:#64748b}.s-open{background:#fff3d6;color:#805600}.p-block{background:#feeceb;color:#9f2f29}.p-major{background:#fff3d6;color:#805600}.p-minor{background:#eef2ff;color:#4338ca}.p-idea{background:#f1f5f9;color:#64748b}details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:#334155;padding:14px 0}.delta{display:grid;grid-template-columns:1fr 1fr;gap:12px}.delta article{padding:18px;background:#fff;border:1px solid var(--line)}.source-list{columns:2;column-gap:28px}.source-list li{break-inside:avoid;margin-bottom:8px}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.91em}@media(max-width:760px){main{padding:32px 16px 70px}section{margin-top:52px}.summary,.summary.five{grid-template-columns:1fr 1fr}.review,.roadmap,.guarantees,.delta,.next .grid{grid-template-columns:1fr}h2{font-size:27px}.source-list{columns:1}.table-wrap{overflow:visible;border:0;background:transparent}table{min-width:0}thead{display:none}tbody,tr,td{display:block}tr{background:#fff;border:1px solid var(--line);margin:0 0 10px;padding:11px}td,td:nth-child(2),td:last-child{min-width:0;border:0;padding:4px}td.id{padding-bottom:7px}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.58 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:1120px;margin:auto;padding:52px 24px 100px}h1,h2,h3{font-family:Georgia,serif;color:#172033}h1{font-size:clamp(38px,7vw,64px);line-height:1.02;margin:12px 0 18px;max-width:900px}h2{font-size:31px;line-height:1.15;margin:0 0 14px}h3{font-size:18px;line-height:1.25;margin:8px 0}p{margin:0}a{color:#4338ca}section{margin-top:72px}.eyebrow,.label{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:700}.throughline{font:22px/1.45 Georgia,serif;color:#334155;max-width:900px}.rule{margin-top:24px;padding:18px 20px;background:#fff;box-shadow:inset 5px 0 0 var(--accent);border-radius:0 10px 10px 0}.rule strong{color:#111827}.summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:28px}.stat{background:white;border:1px solid var(--line);padding:14px}.stat b{display:block;font:29px/1 Georgia,serif;margin-bottom:6px}.stat span{color:var(--muted);font-size:12px}.progress-path{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:22px}.progress-node{background:#fff;border:1px solid var(--line);padding:13px 11px;min-height:95px}.progress-node.done{box-shadow:inset 0 4px 0 var(--green)}.progress-node.active{box-shadow:inset 0 4px 0 var(--accent)}.progress-node.wait{box-shadow:inset 0 4px 0 #d6a300}.progress-node.later{box-shadow:inset 0 4px 0 #cbd5e1}.progress-node b{font:16px Georgia,serif;display:block;margin-top:5px}.progress-node small{color:var(--muted)}.roadmap,.guarantees,.scenarios,.ownership{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.milestone,.guarantee,.scenario,.ownership article{background:#fff;border:1px solid var(--line);padding:17px;border-radius:0 11px 11px 0;box-shadow:inset 4px 0 0 #cbd5e1}.milestone.ws1{box-shadow:inset 4px 0 0 var(--accent)}.milestone.ws2,.milestone.m2{box-shadow:inset 4px 0 0 #d6a300}.m-top{display:flex;justify-content:space-between;gap:10px}.m-id,.g-id,.id{font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;color:#475569;white-space:nowrap}.exit,.proof,.boundary,.scenario-proof{margin-top:11px;padding-top:9px;border-top:1px dashed var(--line);color:#64748b;font-size:12px}.scenario{box-shadow:inset 4px 0 0 var(--accent)}.scenario .owner{font:18px/1.5 Georgia,serif;color:#263348}.scenario-proof span{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.guarantee{box-shadow:inset 3px 0 0 var(--violet)}.guarantee .law{color:#475569}.owner-meaning{margin-top:12px;padding:11px;background:#fafafa;color:#273449}.current{margin-top:10px;padding:9px 11px;background:#f8fafc;color:#475569;font-size:13px}.callout{padding:15px 18px;background:#fff;border:1px solid var(--line)}.table-wrap{overflow-x:auto;border:1px solid var(--line);background:#fff}table{width:100%;border-collapse:collapse;min-width:900px;font-size:12.5px}th{text-align:left;background:#f8fafc;color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:10px;position:sticky;top:0}td{vertical-align:top;padding:10px;border-top:1px solid #edf0f4}td:nth-child(2){min-width:250px}td:last-child{min-width:240px}.meta,.dest{color:#94a3b8;font-size:11px;margin-top:4px}.pill{display:inline-block;font:700 10px ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:4px}.s-in{background:#eaf6ef;color:var(--green)}.s-proposed{background:#fce7f3;color:#9d174d}.s-later{background:#eef2ff;color:#4338ca}.s-no{background:#f1f5f9;color:#64748b}.s-open{background:#fff3d6;color:#805600}.p-block{background:#feeceb;color:#9f2f29}.p-major{background:#fff3d6;color:#805600}.p-minor{background:#eef2ff;color:#4338ca}.p-idea{background:#f1f5f9;color:#64748b}details{margin-top:14px}summary{cursor:pointer;font-weight:700;color:#334155;padding:14px 0}.source-list{columns:2;column-gap:28px}.source-list li{break-inside:avoid;margin-bottom:8px}code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.91em}
+@media(max-width:760px){main{padding:32px 16px 70px}section{margin-top:52px}.summary{grid-template-columns:1fr 1fr}.progress-path,.roadmap,.guarantees,.scenarios,.ownership{grid-template-columns:1fr}h2{font-size:27px}.source-list{columns:1}.table-wrap{overflow:visible;border:0;background:transparent}table{min-width:0}thead{display:none}tbody,tr,td{display:block}tr{background:#fff;border:1px solid var(--line);margin:0 0 10px;padding:11px}td,td:nth-child(2),td:last-child{min-width:0;border:0;padding:4px}td.id{padding-bottom:7px}}
 </style></head>
-<body><main data-orphan-count="0" data-learning-count="96" data-next-status="proposed-not-approved">
-<header><div class="eyebrow">Angel · Product Ledger · 2026-07-31 · review draft</div><h1>Scope may move. Learning may not disappear.</h1>
-<p class="throughline">Angel’s enforcement core is strong. The next build should only consolidate its delivery system; local and managed product proofs follow as separate clean-room milestones.</p>
-<div class="rule"><strong>Approval rule:</strong> the next milestone is <strong>proposed, not approved</strong>. Sam and Pi must accept this reconciliation together. Orphaned learnings must remain zero, and every next-blocking decision and contradiction must close before build starts.</div>
-<div class="summary"><div class="stat"><b>0</b><span>orphaned learnings</span></div><div class="stat"><b>96</b><span>reconciled learnings</span></div><div class="stat"><b>7</b><span>open contradictions</span></div><div class="stat"><b>8</b><span>named decisions</span></div></div>
-<div class="review"><article><div class="n">1</div><h3>Read the goal and roadmap</h3><p>Are we still aiming at the right product, in the right order?</p></article><article><div class="n">2</div><h3>Read the next proposal</h3><p>Is P0 the smallest useful and safe build step?</p></article><article><div class="n">3</div><h3>Read the reconciliation delta</h3><p>Did every lesson land now, later, rejected, or open?</p></article></div></header>
+<body><main data-orphan-count="0" data-learning-count="108" data-next-milestone-status="unapproved">
+<header><div class="eyebrow">Angel · Product Ledger v2 · owner review draft · 2026-07-31</div><h1>Give any agent a small, inspectable toolbox—without giving it the keys to everything.</h1>
+<p class="throughline">This is the promise. Owner scenarios show the product in real life. Guarantees state the laws. Workstreams and milestones show how we prove it.</p>
+<div class="rule"><strong>Approval rule:</strong> Dogfood Round 2 and its build workstream are <strong>not approved</strong>. Sam and Pi must agree on this Ledger; every learning must keep a destination; every decision that affects a deliverable must close before that deliverable starts.</div>
+</header>
 
-<section id="goal"><div class="label">1 · Final goal</div><h2>Give any agent a small, inspectable toolbox—without giving it the keys to everything.</h2>
-<p class="throughline">Any person can define a readable Angel over connected Apps, run the same immutable policy locally or on managed or self-hosted infrastructure, and check how each call was bounded—while provider credentials stay outside the agent.</p>
-<div class="guarantees"><article data-guarantee-id="G01" class="guarantee"><div class="g-id">G01</div><h3>Angel is a toolbox, never an actor</h3><p>Only the user’s agent initiates an MCP call; Angel has no loop, intent, scheduler, or mailbox.</p></article>
-<article data-guarantee-id="G02" class="guarantee"><div class="g-id">G02</div><h3>Policy stays portable and readable</h3><p>ANGEL.yaml contains charter and policy, never target, Account, Connection, or credential identity.</p></article>
-<article data-guarantee-id="G03" class="guarantee"><div class="g-id">G03</div><h3>Builds are deterministic and secret-free</h3><p>The client compiles canonical immutable bytes; no server builds user source.</p></article>
-<article data-guarantee-id="G04" class="guarantee"><div class="g-id">G04</div><h3>Authority is explicit</h3><p>Absent tools do not exist; guards bind arguments; anything unexecutable cannot publish.</p></article>
-<article data-guarantee-id="G05" class="guarantee"><div class="g-id">G05</div><h3>Two gates fail closed</h3><p>Gateway and Broker decide independently; disagreement or partial install produces no provider call and no fallback.</p></article>
-<article data-guarantee-id="G06" class="guarantee"><div class="g-id">G06</div><h3>Credentials go in and never come out</h3><p>Only the unaddressable Broker can lease provider credentials; APIs return safe summaries only.</p></article>
-<article data-guarantee-id="G07" class="guarantee"><div class="g-id">G07</div><h3>Other tenants do not exist</h3><p>Cross-Account resources are indistinguishable from absent ones; selectors choose one Connection and omission never fans out.</p></article>
-<article data-guarantee-id="G08" class="guarantee"><div class="g-id">G08</div><h3>The same trust object runs locally and remotely</h3><p>Bundle digest and engine pin travel through publish, verify, receipts, and replay; the product states where proof ends.</p></article>
-<article data-guarantee-id="G09" class="guarantee"><div class="g-id">G09</div><h3>Release defaults stay simple and safe</h3><p>Bare publish means production; preview is explicit, isolated, and exact-byte promotion never rebuilds.</p></article>
-<article data-guarantee-id="G10" class="guarantee"><div class="g-id">G10</div><h3>Owners control the full lifecycle</h3><p>Keys are shown once and recoverable by safe rotation; pause only removes; deletion is deliberate, total, and self-service.</p></article>
-<article data-guarantee-id="G11" class="guarantee"><div class="g-id">G11</div><h3>Trust evidence is public without private identity</h3><p>Every live Angel exposes a secret-free trust page and review bundle, never credentials or Connection identity.</p></article>
-<article data-guarantee-id="G12" class="guarantee"><div class="g-id">G12</div><h3>One product spans CLI, browser, and agent</h3><p>The surfaces share one policy, compiler, artifact, and job model; public docs suffice and human auth/consent remain human.</p></article>
-<article data-guarantee-id="G13" class="guarantee"><div class="g-id">G13</div><h3>Local use is independent; hosting is optional</h3><p>Local create/build/connect/serve needs no Angel Cloud account; managed and self-hosted custody stay separate.</p></article>
-<article data-guarantee-id="G14" class="guarantee"><div class="g-id">G14</div><h3>Source and deploy topology stay bounded</h3><p>One repo may hold many packages/apps, but core/CLI packages, deployables, Cloudflare accounts, bindings, and secrets remain separate.</p></article></div></section>
+<section id="dashboard"><div class="label">0 · Progress dashboard</div><h2>Where Angel is on the path to the final goal</h2>
+<div class="summary"><div class="stat"><b>Not yet</b><span>final goal demonstrated</span></div><div class="stat"><b>WS1</b><span>active: Get organized</span></div><div class="stat"><b>M2</b><span>next: Dogfood Round 2</span></div><div class="stat"><b>0 / 2</b><span>deploy paths proved: local + managed</span></div><div class="stat"><b>0</b><span>orphaned learnings</span></div></div>
+<div class="progress-path"><div class="progress-node done"><small>Demonstrated</small><b>Core foundation</b></div><div class="progress-node done"><small>Complete</small><b>Dogfood Round 1 learning</b></div><div class="progress-node active"><small>In progress</small><b>Get organized</b></div><div class="progress-node wait"><small>Proposed</small><b>Build Round 2</b></div><div class="progress-node wait"><small>Waiting</small><b>Dogfood Round 2</b></div><div class="progress-node later"><small>Evidence-led backlog</small><b>Round 3 and beyond</b></div></div>
+<div class="rule"><strong>Current approval gates:</strong> O8 blocks approval of this path. O1 blocks the package-release part of INT-04 and the WS2 package/docs work. O2–O7 and O9 block their named WS2 deliverables. No product build is approved.</div>
+<h3 style="margin-top:28px">Workstreams and milestones</h3><div class="roadmap"><article id="FOUNDATION" data-workstream-id="FOUNDATION" data-workstream-status="Demonstrated" class="milestone foundation">
+<div class="m-top"><span class="m-id">FOUNDATION</span><span class="pill s-in">Demonstrated</span></div>
+<h3>Observed foundation</h3><p>Policy compiler, sealed execution, two gates, Google custody, immutable Versions, production-default coordinates, and owner lifecycle controls exist.</p><div class="exit"><strong>Exit proof</strong><br>Existing full CI and live Google read proof. This does not prove fresh onboarding, full provenance, or public usability.</div></article>
+<article id="WS0" data-workstream-id="WS0" data-workstream-status="Complete" class="milestone ws0">
+<div class="m-top"><span class="m-id">WS0</span><span class="pill s-in">Complete</span></div>
+<h3>Learn from Dogfood Round 1</h3><p>The first owner run exposed product, docs, process, and topology failures; 68 raw findings and later trust findings were reconciled.</p><div class="exit"><strong>Exit proof</strong><br>Raw notes, synthesis, APRD review, and zero-orphan source catalog exist.</div></article>
+<article id="WS1" data-workstream-id="WS1" data-workstream-status="In progress" class="milestone ws1">
+<div class="m-top"><span class="m-id">WS1</span><span class="pill s-proposed">In progress</span></div>
+<h3>Get organized</h3><p>Make product intent reviewable, consolidate source/release topology, and establish one product-control and issue-promotion loop.</p><div class="exit"><strong>Exit proof</strong><br>Ledger v2 approved; monorepo and housekeeping pass behavior-neutral checks; GitHub issue promotion rule is enforced.</div></article>
+<article id="WS2" data-workstream-id="WS2" data-workstream-status="Proposed — not approved" class="milestone ws2">
+<div class="m-top"><span class="m-id">WS2</span><span class="pill s-proposed">Proposed — not approved</span></div>
+<h3>Build for Dogfood Round 2</h3><p>Work backward from public docs/API and build separately passing local, managed, max-agent, and read-only-www journeys.</p><div class="exit"><strong>Exit proof</strong><br>Every increment passes its clean-room command; no repo, fixture, old credential, hidden endpoint, or admin side door.</div></article>
+<article id="M2" data-workstream-id="M2" data-workstream-status="Waiting on WS1/WS2" class="milestone m2">
+<div class="m-top"><span class="m-id">M2</span><span class="pill s-open">Waiting on WS1/WS2</span></div>
+<h3>Dogfood Round 2</h3><p>A fresh Sam creates and deploys a first production Angel, understands and verifies its limits, and can delete/reset without help; two friends repeat only after Sam passes.</p><div class="exit"><strong>Exit proof</strong><br>Fresh-agent preflight, Sam run, conditional two-friend runs, saved evidence, then same-day zero-orphan reconciliation.</div></article>
+<article id="WS3" data-workstream-id="WS3" data-workstream-status="Backlog — shaped by M2" class="milestone ws3">
+<div class="m-top"><span class="m-id">WS3</span><span class="pill s-later">Backlog — shaped by M2</span></div>
+<h3>Build for Dogfood Round 3</h3><p>Choose the next smallest product outcome from Round-2 evidence rather than precommitting the sequence. Likely candidates: provider breadth, personal daily Angels, browser/mobile writes, hosted OAuth, billing, easier self-hosting.</p><div class="exit"><strong>Exit proof</strong><br>A new approved workstream and dogfood milestone derived from M2 findings.</div></article>
+<article id="LATER" data-workstream-id="LATER" data-workstream-status="Visible backlog" class="milestone later">
+<div class="m-top"><span class="m-id">LATER</span><span class="pill s-later">Visible backlog</span></div>
+<h3>Long-term product path</h3><p>Public beta and first-100 evidence, ecosystem/catalog, supported self-hosting, and multiplayer remain visible without claiming current priority.</p><div class="exit"><strong>Exit proof</strong><br>Each gets its own owner scenario, workstream, and clean-room proof before build.</div></article></div>
+<h3 style="margin-top:28px">Deliverable status</h3><div class="table-wrap"><table data-deliverables><thead><tr><th>ID</th><th>Deliverable</th><th>Status</th><th>Outcome</th><th>Durable work</th></tr></thead><tbody><tr data-deliverable-id="INT-01" data-workstream="WS1" data-deliverable-status="In review"><td class="id">INT-01</td><td><strong>Product Ledger v2</strong><div class="meta">WS1</div></td><td><span class="pill s-proposed">In review</span></td><td>Promise, owner scenarios, guarantees, dashboard, workstreams, progress, decisions, and zero-orphan learning coverage.</td><td>PR #43</td></tr>
+<tr data-deliverable-id="INT-02" data-workstream="WS1" data-deliverable-status="Decided"><td class="id">INT-02</td><td><strong>Product control and issue-promotion rules</strong><div class="meta">WS1</div></td><td><span class="pill s-in">Decided</span></td><td>Ledger owns product truth; GitHub Issues own execution state; repo docs own executable contracts.</td><td>This Ledger §7</td></tr>
+<tr data-deliverable-id="INT-03" data-workstream="WS1" data-deliverable-status="Planned"><td class="id">INT-03</td><td><strong>Monorepo migration</strong><div class="meta">WS1</div></td><td><span class="pill s-proposed">Planned</span></td><td>Rename to angelmcp, audit/import core history, preserve package/deploy/account/secret boundaries, change no runtime behavior.</td><td>Issue after Ledger approval</td></tr>
+<tr data-deliverable-id="INT-04" data-workstream="WS1" data-deliverable-status="Needs O1 for package release"><td class="id">INT-04</td><td><strong>Canonical-source and release housekeeping</strong><div class="meta">WS1</div></td><td><span class="pill s-open">Needs O1 for package release</span></td><td>One lockfile/docs/examples source and stale-surface sweep can proceed; public package name, npm provenance, and external registry-tarball proof wait on O1.</td><td>Issues #36, #39, #42 + new umbrella</td></tr>
+<tr data-deliverable-id="INT-05" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">INT-05</td><td><strong>Seven evidence briefs</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Package/install, Linux OAuth/storage, local/cloud syntax, auth expiry, replay shape, deletion inventory, review bundle.</td><td>O1–O7</td></tr>
+<tr data-deliverable-id="INT-06" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">INT-06</td><td><strong>Ideal public docs and API contract</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Getting started, complete CLI reference, max-agent guide, exact outputs/failures/handoffs, tested examples.</td><td>New issue after approval</td></tr>
+<tr data-deliverable-id="PD-01" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">PD-01</td><td><strong>Fresh Account lifecycle</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Signup, empty dashboard, login/logout, recovery, full self-service delete/reset.</td><td>Issues #38 plus new issue</td></tr>
+<tr data-deliverable-id="PD-02" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">PD-02</td><td><strong>Local First Angel</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Public install → create → build → local consent → serve → real restricted call; no Angel Cloud account.</td><td>New issue after approval</td></tr>
+<tr data-deliverable-id="PD-03" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">PD-03</td><td><strong>Managed Angel</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Separate cloud consent → publish → verify → call → receipts/replay → delete/reset.</td><td>Issues #6, #37 plus new issue</td></tr>
+<tr data-deliverable-id="PD-04" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">PD-04</td><td><strong>Max-agent journey</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Fresh agent does everything public interfaces allow; human only authenticates, consents, and inspects.</td><td>Issue #39 plus new issue</td></tr>
+<tr data-deliverable-id="PD-05" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">PD-05</td><td><strong>Read-only www</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Owner sees Angel state, endpoint, policy, proof, activity, health, and recovery; no source writes in Round 2.</td><td>Existing www issues + new scope issue</td></tr>
+<tr data-deliverable-id="INT-07" data-workstream="WS2" data-deliverable-status="Needs O9"><td class="id">INT-07</td><td><strong>Self-hosting status note</strong><div class="meta">WS2</div></td><td><span class="pill s-open">Needs O9</span></td><td>State what is portable, what is unproved, and what is unsupported; no setup instructions without clean-room proof.</td><td>O9</td></tr>
+<tr data-deliverable-id="INT-08" data-workstream="WS2" data-deliverable-status="Planned"><td class="id">INT-08</td><td><strong>Dogfood guide and evidence package</strong><div class="meta">WS2</div></td><td><span class="pill s-proposed">Planned</span></td><td>Exact starting state, no-side-door preflight, generated cases, cleanup, evidence capture, and expectation checks.</td><td>New issue after approval</td></tr>
+<tr data-deliverable-id="M2-01" data-workstream="M2" data-deliverable-status="Waiting"><td class="id">M2-01</td><td><strong>Fresh-agent preflight</strong><div class="meta">M2</div></td><td><span class="pill s-open">Waiting</span></td><td>A clean agent runs the published guide before Sam.</td><td>Blocked by WS2</td></tr>
+<tr data-deliverable-id="M2-02" data-workstream="M2" data-deliverable-status="Waiting"><td class="id">M2-02</td><td><strong>Sam fresh-user dogfood</strong><div class="meta">M2</div></td><td><span class="pill s-open">Waiting</span></td><td>Sam starts from a blank identity/machine and records the experience.</td><td>Blocked by M2-01</td></tr>
+<tr data-deliverable-id="M2-03" data-workstream="M2" data-deliverable-status="Conditional"><td class="id">M2-03</td><td><strong>Two close-friend dogfoods</strong><div class="meta">M2</div></td><td><span class="pill s-open">Conditional</span></td><td>Run only if Sam judges the experience ready.</td><td>Blocked by M2-02 approval</td></tr>
+<tr data-deliverable-id="M2-04" data-workstream="M2" data-deliverable-status="Waiting"><td class="id">M2-04</td><td><strong>Round-2 reconciliation</strong><div class="meta">M2</div></td><td><span class="pill s-open">Waiting</span></td><td>Every new finding gets a Ledger disposition and GitHub issue/rejection before Round-3 planning.</td><td>Blocked by dogfood runs</td></tr></tbody></table></div></section>
 
-<section id="roadmap"><div class="label">2 · Roadmap</div><h2>One sequence from working core to useful product</h2><p class="throughline" style="margin-bottom:20px">The old roadmap mixed historical milestones, provider breadth, and missing front-door work. This sequence starts from the user proofs the dogfood could not complete.</p><div class="roadmap"><article id="FOUNDATION" data-milestone-id="FOUNDATION" class="milestone">
-<div class="m-top"><span class="m-id">FOUNDATION</span><span class="pill s-in">Delivered</span></div>
-<h3>Observed foundation</h3><p>Portable policy/compiler, sealed execution, two gates, Google custody, immutable Versions, production-default coordinates, a basic public policy page (not the full provenance bundle), and owner lifecycle controls exist today.</p><div class="exit"><strong>Exit proof</strong><br>`bun run check` plus the existing live Google read proof at the pinned release; this is a baseline observation, not a claim that onboarding or trust proof is complete.</div></article>
-<article id="L0" data-milestone-id="L0" class="milestone">
-<div class="m-top"><span class="m-id">L0</span><span class="pill s-in">Current</span></div>
-<h3>Product Ledger gate</h3><p>One accepted source links the final goal, roadmap, surface map, next proposal, all learnings, contradictions, and decisions; no product code changes.</p><div class="exit"><strong>Exit proof</strong><br>`bun test tests/cloud/product-ledger.test.ts tests/cloud/aprd-v2.test.ts &amp;&amp; bun run check`, desktop/mobile QA, and cross-family semantic review; orphan count 0 and next status unapproved until owner sign-off.</div></article>
-<article id="P0" data-milestone-id="P0" class="milestone">
-<div class="m-top"><span class="m-id">P0</span><span class="pill s-open">Proposed next</span></div>
-<h3>Monorepo and release integrity</h3><p>Rename to angelmcp, import core history, separate core/CLI packages and app deployables, unify docs and lockfile, add provenance publishing after O1 closes, and prove external package compatibility with no runtime behavior change.</p><div class="exit"><strong>Exit proof</strong><br>Target `pnpm run verify:phase0` from a fresh clone: history/secret audit, full tests, package tarballs, last published tarball consumer, tested docs examples and links, shipped-decision surface sweep, and Worker dry-runs all pass.</div></article>
-<article id="P1" data-milestone-id="P1" class="milestone">
-<div class="m-top"><span class="m-id">P1</span><span class="pill s-later">Later</span></div>
-<h3>Local First Angel</h3><p>From public docs and a published product package, the owner first uses a fresh erasable exe.dev Linux machine and then an untouched Neo Mac to create, build, connect an own-client Google grant locally, serve a real MCP Angel, and create one Gmail draft while send is absent—without an Angel Cloud account.</p><div class="exit"><strong>Exit proof</strong><br>Target `angel-e2e local --clean`: exe.dev first, then untouched Neo Mac; no repo/fixtures/old credentials or repo fallback anywhere in docs/examples; generated Angel, real draft, no send, human final inspection, plain-language doc sweep, full cleanup, and saved evidence.</div></article>
-<article id="P2" data-milestone-id="P2" class="milestone">
-<div class="m-top"><span class="m-id">P2</span><span class="pill s-later">Later</span></div>
-<h3>Managed First Angel</h3><p>A fresh person signs up through canonical angelmcp.ai hosts, connects a separate cloud grant, publishes the same policy, verifies its bundle/engine/provenance, calls it, audits receipts, deletes the Account, and repeats under a second identity without operator help.</p><div class="exit"><strong>Exit proof</strong><br>Target `angel-e2e cloud --clean`: oscodev@ then oscollins@, real auth/consent, no repo fallback anywhere, production draft-without-send, verify, receipt/replay, public bundle, plain-language doc sweep, human final inspection, and full self-service deletion.</div></article>
-<article id="P3" data-milestone-id="P3" class="milestone">
-<div class="m-top"><span class="m-id">P3</span><span class="pill s-later">Later</span></div>
-<h3>Browser and mobile parity</h3><p>A non-technical person can complete the same core jobs in a four-page browser/mobile product without terminal handoffs; a product designer validates the information design.</p><div class="exit"><strong>Exit proof</strong><br>Fresh-account browser and phone E2E: create/edit/publish/connect/recover/delete with parity digests and no hidden CLI step.</div></article>
-<article id="P4" data-milestone-id="P4" class="milestone">
-<div class="m-top"><span class="m-id">P4</span><span class="pill s-later">Later</span></div>
-<h3>Provider breadth and first 100</h3><p>Entry requires a scoped security audit. Hosted verified OAuth, selected new provider shapes, quotas/billing needed for use, and a manual beta then show whether people use and will pay for Angel.</p><div class="exit"><strong>Exit proof</strong><br>The scoped audit closes before beta; each provider has deterministic + live acceptance; ≤100-person beta reports activation, repeated use, and pay-now evidence.</div></article>
-<article id="P5" data-milestone-id="P5" class="milestone">
-<div class="m-top"><span class="m-id">P5</span><span class="pill s-later">Later</span></div>
-<h3>Ecosystem and self-hosting</h3><p>A supported self-hosted Cloudflare path and a shareable catalog let outside developers verify, fork, and contribute Angels without creating a second source of truth.</p><div class="exit"><strong>Exit proof</strong><br>Clean self-host deploy and external contribution/fork journey pass from public docs; catalog/source sync has one canonical owner.</div></article>
-<article id="P6" data-milestone-id="P6" class="milestone">
-<div class="m-top"><span class="m-id">P6</span><span class="pill s-later">Later</span></div>
-<h3>Multiplayer</h3><p>Personal and Family Accounts support multiple members while every tenant and credential boundary remains intact.</p><div class="exit"><strong>Exit proof</strong><br>Two isolated Accounts and one multi-member Family Account pass cross-tenant, membership, key, and custody tests.</div></article></div>
-<h3 style="margin-top:28px">One job map across four surfaces</h3><p style="color:#64748b;margin-bottom:14px">This closes the dogfood’s missing-map blocker without creating four competing documents. “Mobile” means the responsive web product in P3; a native app remains uncommitted until use proves a need.</p>
-<div class="table-wrap"><table data-surface-map><thead><tr><th>Job</th><th>CLI</th><th>Agent</th><th>www</th><th>Mobile</th></tr></thead><tbody>
-<tr data-surface-job="learn"><td><strong>Learn and decide</strong></td><td>P1 public docs</td><td>P1 reads llms.txt and explains trust</td><td>Foundation demo; P2 full trust bundle</td><td>P3 responsive trust/onboarding</td></tr>
-<tr data-surface-job="create"><td><strong>Create policy</strong></td><td>P1 create/build</td><td>P1 guides source; owner reviews</td><td>P3 create/edit/build parity</td><td>P3 same source flow, one job per view</td></tr>
-<tr data-surface-job="connect"><td><strong>Connect an App</strong></td><td>P1 local; P2 cloud</td><td>Opens flow; human consents</td><td>P2 own-client custody; P4 hosted OAuth</td><td>P3 responsive consent handoff</td></tr>
-<tr data-surface-job="run-local"><td><strong>Run locally</strong></td><td>P1 serve</td><td>P1 calls localhost MCP</td><td>Not this surface</td><td>Not this surface</td></tr>
-<tr data-surface-job="publish-verify"><td><strong>Publish and verify</strong></td><td>P2 publish/verify</td><td>P2 guides and quotes match</td><td>P3 full publish parity</td><td>P3 responsive publish parity</td></tr>
-<tr data-surface-job="call-audit"><td><strong>Call and audit</strong></td><td>P2 receipt pull/replay</td><td>P1 local and P2 managed calls</td><td>P2 activity; P3 parity polish</td><td>P3 activity and proof</td></tr>
-<tr data-surface-job="manage"><td><strong>Edit, pause, recover, delete</strong></td><td>P2 cloud lifecycle</td><td>P3 proposes full source diff</td><td>P2 Account cleanup; P3 policy/key parity</td><td>P3 responsive lifecycle</td></tr>
+<section id="scenarios"><div class="label">1 · Owner expectations</div><h2>Specific products the laws must compose into</h2><p class="throughline" style="margin-bottom:18px">These are proposed in Sam’s voice for Sam to edit. The boundary text keeps each example honest. A scenario is not achieved until its named dogfood proof passes.</p><div class="scenarios"><article data-scenario-id="S1" data-proof-milestone="WS2 → M2" class="scenario"><div class="g-id">S1 · proposed owner wording</div><h3>The fresh first Angel</h3><p class="owner">“From a blank machine and new identity, I can use public docs—or ask a fresh agent—to create an Angel, run it locally, publish it to Angel Cloud, inspect it in www, use it in production, verify what it can and cannot do, then delete everything and restart without admin help.”</p><p class="boundary"><strong>Boundary</strong><br>Round 2 supports CLI and max-agent setup plus read-only www. Human authentication, consent, and final inspection stay human. “Delete everything” means the O6 cloud cascade once approved; independent local files and tokens remain separate. Self-hosting is not implied.</p><p class="scenario-proof"><strong>Destination</strong> WS2 → M2</p><p class="scenario-proof"><strong>Proof</strong> Fresh-agent preflight and Sam dogfood both complete local and managed paths, prove cleanup, and save evidence.</p><p class="scenario-proof"><strong>Guarantees</strong> <span>G02 G03 G08 G10 G11 G12 G13</span></p></article>
+<article data-scenario-id="S2" data-proof-milestone="WS2 → M2" class="scenario"><div class="g-id">S2 · proposed owner wording</div><h3>Draft, never send</h3><p class="owner">“I can give my agent a Gmail Angel that creates a draft for me while send and delete are not capabilities it can discover. I can see proof that both gates agreed before Google was called.”</p><p class="boundary"><strong>Boundary</strong><br>This proves fidelity to the reviewed policy, not that the policy is wise or that hosted execution is mathematically attested. Provider credentials remain outside the agent.</p><p class="scenario-proof"><strong>Destination</strong> WS2 → M2</p><p class="scenario-proof"><strong>Proof</strong> A real generated Gmail draft exists; send/delete are absent; both receipts agree; local and managed checks pass.</p><p class="scenario-proof"><strong>Guarantees</strong> <span>G04 G05 G06 G08</span></p></article>
+<article data-scenario-id="S3" data-proof-milestone="WS3 and later" class="scenario"><div class="g-id">S3 · proposed owner wording</div><h3>A useful multi-App assistant</h3><p class="owner">“I can eventually ask my existing agent to prepare a real task across selected Apps—for example read a calendar, look up a route, draft an email, and update a planning document—while each Angel exposes only the actions and accounts I chose.”</p><p class="boundary"><strong>Boundary</strong><br>Provider breadth, browser/mobile writes, hosted OAuth, billing, and easy self-hosting are later outcomes. No milestone may claim this whole scenario until each provider shape and composed policy passes live proof.</p><p class="scenario-proof"><strong>Destination</strong> WS3 and later</p><p class="scenario-proof"><strong>Proof</strong> A later dogfood milestone completes the generated multi-provider task with per-provider live acceptance and no unlisted action.</p><p class="scenario-proof"><strong>Guarantees</strong> <span>G01 G04 G07 G12 G13</span></p></article></div></section>
+
+<section id="guarantees"><div class="label">2 · Final product guarantees</div><h2>The target laws, their human meaning, current evidence, and limits</h2><p class="throughline" style="margin-bottom:18px">These are the target product constitution, not a claim that every capability exists today. Each card separates the law we intend to preserve from the evidence we have now.</p><div class="guarantees"><article data-guarantee-id="G01" data-current-evidence="Demonstrated" class="guarantee"><div class="g-id">target law</div><h3>G01 · Angel is a toolbox, never an actor</h3><p class="law">Only the user’s agent initiates an MCP call; Angel has no loop, intent, scheduler, or mailbox.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>Nothing happens until my own agent asks for a specific tool call.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated</p><p class="boundary"><strong>Boundary</strong><br>Angel does not supply the agent or decide what task to attempt.</p></article>
+<article data-guarantee-id="G02" data-current-evidence="Demonstrated" class="guarantee"><div class="g-id">target law</div><h3>G02 · Policy stays portable and readable</h3><p class="law">ANGEL.yaml contains charter and policy, never target, Account, Connection, or credential identity.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>I can read the file I am approving and reuse it with a different deployment.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated</p><p class="boundary"><strong>Boundary</strong><br>Private deployment choices stay in separate config and custody state.</p></article>
+<article data-guarantee-id="G03" data-current-evidence="Demonstrated" class="guarantee"><div class="g-id">target law</div><h3>G03 · Builds are deterministic and secret-free</h3><p class="law">The client compiles canonical immutable bytes; no server builds user source.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>The same approved source and engine produce the same reviewable bundle without my secrets inside it.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated</p><p class="boundary"><strong>Boundary</strong><br>A browser compiler may run on my device; Control may store owner-only drafts but never compiles them.</p></article>
+<article data-guarantee-id="G04" data-current-evidence="Demonstrated for current adapters" class="guarantee"><div class="g-id">target law</div><h3>G04 · Authority is explicit</h3><p class="law">Absent tools do not exist; guards bind arguments; anything unexecutable cannot publish.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>If send is not in my Angel, my agent cannot discover a send tool. If I cap an argument, the cap applies before the provider call.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated for current adapters</p><p class="boundary"><strong>Boundary</strong><br>The platform proves fidelity to policy; it does not judge whether I chose a wise policy.</p></article>
+<article data-guarantee-id="G05" data-current-evidence="Demonstrated" class="guarantee"><div class="g-id">target law</div><h3>G05 · Two gates fail closed</h3><p class="law">Gateway and Broker decide independently; disagreement or partial install produces no provider call and no fallback.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>If the two checks disagree, nothing happens.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated</p><p class="boundary"><strong>Boundary</strong><br>Availability may fail during disagreement; the system never recovers by using older authority.</p></article>
+<article data-guarantee-id="G06" data-current-evidence="Demonstrated for managed Google custody" class="guarantee"><div class="g-id">target law</div><h3>G06 · Credentials go in and never come out</h3><p class="law">Only the unaddressable Broker can lease provider credentials; APIs return safe summaries only.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>My agent can use an allowed action without receiving my Google token or OAuth client secret.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated for managed Google custody</p><p class="boundary"><strong>Boundary</strong><br>Provider identity labels may be shown where I or my agent must choose an account; credentials never are.</p></article>
+<article data-guarantee-id="G07" data-current-evidence="Deterministic tests pass; second real identity waits for M2" class="guarantee"><div class="g-id">target law</div><h3>G07 · Other tenants do not exist</h3><p class="law">Cross-Account resources are indistinguishable from absent ones; selectors choose one Connection and omission never fans out.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>Another customer cannot discover my Angels or accounts, and one call never silently acts on every linked account.</p><p class="current"><strong>Current evidence</strong><br>Deterministic tests pass; second real identity waits for M2</p><p class="boundary"><strong>Boundary</strong><br>Multi-account choice requires an explicit opaque selector; multiplayer comes later.</p></article>
+<article data-guarantee-id="G08" data-current-evidence="Partial: digest exists; local serve, verify, engine pin, and replay are WS2 work" class="guarantee"><div class="g-id">target law</div><h3>G08 · The same trust object runs locally and remotely</h3><p class="law">Bundle digest and engine pin travel through publish, verify, receipts, and replay; the product states where proof ends.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>I can compare my local bundle with production and spot-check cloud decisions against my local engine.</p><p class="current"><strong>Current evidence</strong><br>Partial: digest exists; local serve, verify, engine pin, and replay are WS2 work</p><p class="boundary"><strong>Boundary</strong><br>Artifact identity is client-checkable. Remote execution remains trusted and bounded by receipts/replay, not fully proved.</p></article>
+<article data-guarantee-id="G09" data-current-evidence="Demonstrated; stale surfaced copy remains housekeeping" class="guarantee"><div class="g-id">target law</div><h3>G09 · Release defaults stay simple and safe</h3><p class="law">Bare publish means production; preview is explicit, isolated, and exact-byte promotion never rebuilds.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>My first publish can go live in one clear step; if I ask for preview, it does not silently use real production accounts.</p><p class="current"><strong>Current evidence</strong><br>Demonstrated; stale surfaced copy remains housekeeping</p><p class="boundary"><strong>Boundary</strong><br>Preview remains an advanced option with separate bindings or an explicit credential-share choice.</p></article>
+<article data-guarantee-id="G10" data-current-evidence="Partial: Angel keys/pause/delete work; Account deletion is O6 + WS2" class="guarantee"><div class="g-id">target law</div><h3>G10 · Owners control the full lifecycle</h3><p class="law">Keys are shown once and recoverable by safe rotation; pause only removes; deletion is deliberate, total, and self-service.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>I can recover a lost Angel key, turn authority off, delete my cloud Account, and start fresh without an operator.</p><p class="current"><strong>Current evidence</strong><br>Partial: Angel keys/pause/delete work; Account deletion is O6 + WS2</p><p class="boundary"><strong>Boundary</strong><br>Exact Account-deletion scope is still O6; local files/tokens stay independent from cloud deletion.</p></article>
+<article data-guarantee-id="G11" data-current-evidence="Partial: basic trust page works; full review bundle is O7 + WS2" class="guarantee"><div class="g-id">target law</div><h3>G11 · Trust evidence is public without private identity</h3><p class="law">Every live Angel exposes a secret-free trust page and review bundle, never credentials or Connection identity.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>Before connecting, I—or another agent—can inspect what the Angel exposes and what artifact it runs.</p><p class="current"><strong>Current evidence</strong><br>Partial: basic trust page works; full review bundle is O7 + WS2</p><p class="boundary"><strong>Boundary</strong><br>The minimum public bundle and exclusion list are still O7; private account identity never becomes public proof.</p></article>
+<article data-guarantee-id="G12" data-current-evidence="Partial: shared contracts exist; public-doc whole journey failed Round 1" class="guarantee"><div class="g-id">target law</div><h3>G12 · One product spans CLI, browser, and agent</h3><p class="law">The surfaces share one policy, compiler, artifact, and job model; public docs suffice and human auth/consent remain human.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>Whether I type commands, ask an agent, or inspect www, I am working with the same Angel and evidence.</p><p class="current"><strong>Current evidence</strong><br>Partial: shared contracts exist; public-doc whole journey failed Round 1</p><p class="boundary"><strong>Boundary</strong><br>Round 2 intentionally keeps www read-only; full browser/mobile authoring is later.</p></article>
+<article data-guarantee-id="G13" data-current-evidence="Target: local serve is WS2; managed exists behind side doors; supported self-hosting is unproved" class="guarantee"><div class="g-id">target law</div><h3>G13 · Local use is independent; hosting is optional</h3><p class="law">Local create/build/connect/serve needs no Angel Cloud account; managed and self-hosted custody stay separate.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>I can use an Angel locally without signing up for Angel Cloud, then choose managed hosting with separate consent.</p><p class="current"><strong>Current evidence</strong><br>Target: local serve is WS2; managed exists behind side doors; supported self-hosting is unproved</p><p class="boundary"><strong>Boundary</strong><br>Supported self-hosting is not shipped; O9 decides whether Round 2 shows status only or adds a proof.</p></article>
+<article data-guarantee-id="G14" data-current-evidence="Decided, not built: monorepo is INT-03" class="guarantee"><div class="g-id">target law</div><h3>G14 · Source and deploy topology stay bounded</h3><p class="law">One repo may hold many packages/apps, but core/CLI packages, deployables, Cloudflare accounts, bindings, and secrets remain separate.</p><p class="owner-meaning"><strong>What this means to Sam</strong><br>Agents can change the product coherently in one repo without merging security or deployment boundaries.</p><p class="current"><strong>Current evidence</strong><br>Decided, not built: monorepo is INT-03</p><p class="boundary"><strong>Boundary</strong><br>Monorepo means one source history, not one package, Worker, Cloudflare account, or secret store.</p></article></div></section>
+
+<section id="surface-map"><div class="label">3 · Round-2 surface map</div><h2>One narrow product, four ways to meet it</h2><p style="color:#64748b;margin-bottom:14px">Round 2 tests CLI, max-agent, and read-only www. Mobile means readable responsive www; native mobile and browser authoring stay after Round 2.</p><div class="table-wrap"><table data-surface-map><thead><tr><th>Job</th><th>CLI user</th><th>Max-agent user</th><th>www</th><th>Human-only step</th></tr></thead><tbody>
+<tr data-surface-job="start"><td><strong>Start fresh</strong></td><td>Install public CLI</td><td>Read public llms.txt</td><td>Create Account, empty state</td><td>Authenticate</td></tr>
+<tr data-surface-job="create"><td><strong>Create policy</strong></td><td>Create/build source</td><td>Draft source and explain it</td><td>View source/policy only</td><td>Approve complete source</td></tr>
+<tr data-surface-job="connect"><td><strong>Connect an App</strong></td><td>Explicit local or cloud command</td><td>Prepare/open consent flow</td><td>View App/Connection health</td><td>Create OAuth client; consent</td></tr>
+<tr data-surface-job="local"><td><strong>Run locally</strong></td><td>Serve and call localhost</td><td>Configure/call localhost MCP</td><td>Not this surface</td><td>Inspect real side effect</td></tr>
+<tr data-surface-job="managed"><td><strong>Publish managed</strong></td><td>Publish and verify</td><td>Run commands and quote proof</td><td>View endpoint, policy, digest, activity</td><td>Inspect one-time keys/result</td></tr>
+<tr data-surface-job="recover"><td><strong>Recover and reset</strong></td><td>Rotate keys; delete Account</td><td>Guide explicit cleanup</td><td>View/recover keys; delete/reset</td><td>Confirm destructive action</td></tr>
 </tbody></table></div></section>
 
-<section id="next"><div class="next" data-next-milestone="P0"><div class="label" style="color:#a8a29e">3 · Proposed next goal · not approved</div><h2>P0 — Monorepo and release integrity</h2><p style="font-size:18px;color:#d6d3d1">One reviewed change can update core, CLI, hosted apps, docs, and tests without weakening package, deploy, account, binding, or secret boundaries.</p><div class="grid"><div><h3>Deliverables</h3><ul><li>Rename <code>angel-cloud</code> to <code>angelmcp</code> in place.</li><li>Audit then import <code>angel-core</code> history under <code>packages/core</code>.</li><li>Keep separate core and CLI packages; separate Control, Gateway, Broker, www, and docs apps.</li><li>Use pnpm, one lockfile, and <code>workspace:*</code> internally.</li><li>Make the monorepo the only source for examples and docs.</li><li>After O1 closes, publish the public CLI with npm provenance; test the last registry tarball outside the workspace.</li><li>Keep the forkable starter only as a generated/external consumer; archive private scratch.</li></ul></div><div><h3>Must not change</h3><ul><li>No auth, OAuth, policy, runtime authorization, route, provider, or UX redesign.</li><li>Correct stale docs or displayed commands only when they contradict shipped behavior; add a regression test for each correction.</li><li>No Cloudflare production mutation or secret movement. Public deployed-link proof starts in P1.</li><li>No collapse of deployables, Cloudflare accounts, bindings, or custody.</li><li>No v2.1 feature work hidden inside migration.</li></ul><h3>Exit proof</h3><p><code>pnpm run verify:phase0</code> from a fresh clone: history/secret audit, full checks, package tarballs, external registry consumer, tested docs examples and links, shipped-decision sweep, and all Worker dry-runs pass. A before/after runtime behavior matrix has zero differences.</p></div></div><div class="rule" style="background:#292524;margin-top:16px"><strong style="color:white">Blocking:</strong> O1 (public package/install identity) and explicit owner approval of P0 after ledger review.</div></div></section>
-
-<section id="reconciliation"><div class="label">4 · Zero-orphan reconciliation</div><h2>Every captured lesson has one destination</h2><p class="throughline">Delivered/current means evidence exists now or this ledger gate owns the work. Proposed next means P0 owns it only if Sam approves P0. Named later means a specific milestone owns it. Rejected means the fixed solution is dropped with a reason. Needs decision means it is visible and has a decision horizon.</p>
-<div class="summary five"><div class="stat"><b>15</b><span>delivered / current gate</span></div><div class="stat"><b>8</b><span>proposed in P0</span></div><div class="stat"><b>60</b><span>named later</span></div><div class="stat"><b>6</b><span>fixed solutions rejected</span></div><div class="stat"><b>7</b><span>need decisions</span></div></div>
-<details open><summary>DF-001–DF-068 · raw dogfood catalog</summary><div class="table-wrap"><table><thead><tr><th>ID</th><th>Finding</th><th>Priority</th><th>Disposition</th><th>Treatment and proof</th></tr></thead><tbody><tr data-learning-id="DF-001" data-disposition="deferred" data-destination="P2">
+<section id="reconciliation"><div class="label">4 · Learning coverage</div><h2>Backlog is in Issues; evidence never disappears</h2><p class="throughline">The Ledger keeps source learning IDs and their product destination. GitHub Issues hold actionable status and priority after approval. We cluster many learnings into one outcome issue instead of copying each row into the backlog.</p>
+<div class="summary"><div class="stat"><b>108</b><span>reconciled learnings</span></div><div class="stat"><b>24</b><span>delivered / current</span></div><div class="stat"><b>47</b><span>proposed Round 2</span></div><div class="stat"><b>29</b><span>later workstream</span></div><div class="stat"><b>8</b><span>need decisions</span></div></div>
+<details><summary>DF-001–DF-068 · raw dogfood catalog</summary><div class="table-wrap"><table><thead><tr><th>ID</th><th>Finding</th><th>Priority</th><th>Disposition</th><th>Treatment and proof</th></tr></thead><tbody><tr data-learning-id="DF-001" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-001</td><td><strong>Adding personal Gmail as an account 500&#x27;d</strong><div class="meta">bug · source 126</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Diagnose the real cause, preserve the server error, and give the owner one next action.<div class="proof">Issue #38; P2 cloud clean-room failure test.</div></td></tr>
-<tr data-learning-id="DF-002" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Diagnose the real cause, preserve the server error, and give the owner one next action.<div class="proof">Issue #38; WS2 managed cloud clean-room failure test.</div></td></tr>
+<tr data-learning-id="DF-002" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-002</td><td><strong>Need a personal account to dogfood with — not Cloudflare Access</strong><div class="meta">auth · source 273</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Replace Cloudflare Access with real signup, login, logout, an empty Account, and self-service deletion.<div class="proof">P2 clean-room runs with oscodev@ and oscollins@.</div></td></tr>
-<tr data-learning-id="DF-003" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Replace Cloudflare Access with real signup, login, logout, an empty Account, and self-service deletion.<div class="proof">WS2 managed clean-room runs with oscodev@ and oscollins@.</div></td></tr>
+<tr data-learning-id="DF-003" data-disposition="included" data-destination="WS1">
 <td class="id">DF-003</td><td><strong>No agreed maps of CLI / mobile / www</strong><div class="meta">strategy · source 275</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
-<td>The ledger holds one goals/guarantees map; CLI and agent land in P1/P2, browser and mobile in P3.<div class="proof">This ledger §§1–2; each milestone names its surface.</div></td></tr>
-<tr data-learning-id="DF-004" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>The ledger holds one goals/guarantees map; CLI and agent land in WS2 local/managed, browser and mobile in WS3.<div class="proof">This ledger §§1–2; each milestone names its surface.</div></td></tr>
+<tr data-learning-id="DF-004" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-004</td><td><strong>Non-technical users need near 1-click angel creation in browser</strong><div class="meta">strategy · source 104</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Build the near-one-click browser path after the CLI and cloud contracts pass clean-room proof.<div class="proof">P3 browser-parity eval from a new Account.</div></td></tr>
-<tr data-learning-id="DF-005" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Build the near-one-click browser path after the CLI and cloud contracts pass clean-room proof.<div class="proof">WS3 browser-parity eval from a new Account.</div></td></tr>
+<tr data-learning-id="DF-005" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-005</td><td><strong>Add/remove tools feels like &quot;a weird cryptic puzzle&quot;</strong><div class="meta">ux-web · source 13</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Make tool discovery and policy editing one clear browser job; do not freeze the current component idea.<div class="proof">P3 usability acceptance.</div></td></tr>
-<tr data-learning-id="DF-006" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Make tool discovery and policy editing one clear browser job; do not freeze the current component idea.<div class="proof">WS3 usability acceptance.</div></td></tr>
+<tr data-learning-id="DF-006" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-006</td><td><strong>Agent Keys behind a tab; MCP address IS the angel, belongs up front</strong><div class="meta">ia · source 15</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Put the MCP address and key recovery in the Angel primary surface; test layout variants with a designer.<div class="proof">P3 Angel Detail acceptance.</div></td></tr>
-<tr data-learning-id="DF-007" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Put the MCP address and key recovery in the Angel primary surface; test layout variants with a designer.<div class="proof">WS3 Angel Detail acceptance.</div></td></tr>
+<tr data-learning-id="DF-007" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-007</td><td><strong>Account hierarchy unclear (account vs angel level)</strong><div class="meta">naming · source 16</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Teach Account, App, Angel, and Tool before exposing internal Connection terms.<div class="proof">P2 public-doc vocabulary and fresh-agent comprehension check.</div></td></tr>
-<tr data-learning-id="DF-008" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Teach Account, App, Angel, and Tool before exposing internal Connection terms.<div class="proof">WS2 managed public-doc vocabulary and fresh-agent comprehension check.</div></td></tr>
+<tr data-learning-id="DF-008" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-008</td><td><strong>Preview/production toggle + LIVE badge too loud, basically never change</strong><div class="meta">ia · source 17</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Reduce environment display to quiet context; preview stays explicit but never dominates routine use.<div class="proof">P3 browser design acceptance.</div></td></tr>
-<tr data-learning-id="DF-009" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Reduce environment display to quiet context; preview stays explicit but never dominates routine use.<div class="proof">WS3 browser design acceptance.</div></td></tr>
+<tr data-learning-id="DF-009" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-009</td><td><strong>Provider vs Connection should merge into &quot;Account&quot;/&quot;App&quot; in user&#x27;s mind</strong><div class="meta">naming · source 18</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>User-facing docs say App; Connection remains a technical custody term only where precision requires it.<div class="proof">P1 CLI copy sweep; APRD terminology.</div></td></tr>
-<tr data-learning-id="DF-010" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>User-facing docs say App; Connection remains a technical custody term only where precision requires it.<div class="proof">WS2 local CLI copy sweep; APRD terminology.</div></td></tr>
+<tr data-learning-id="DF-010" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-010</td><td><strong>Want regular login/logout, plus account page, billing, subscription mgmt (research buy-not-build)</strong><div class="meta">auth · source 25</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Ship login/logout and Account lifecycle in P2; defer billing and subscriptions to P4.<div class="proof">P2 Account lifecycle eval; P4 beta gate.</div></td></tr>
-<tr data-learning-id="DF-011" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Ship login/logout and Account lifecycle in WS2 managed; defer billing and subscriptions to WS3 beta.<div class="proof">WS2 managed Account lifecycle eval; WS3 beta beta gate.</div></td></tr>
+<tr data-learning-id="DF-011" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-011</td><td><strong>Settings section should collapse to a toggle in the angel heading</strong><div class="meta">ux-web · source 30</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Treat one Angel-wide off control as a design candidate, not a fixed layout.<div class="proof">P3 designer-reviewed variants.</div></td></tr>
-<tr data-learning-id="DF-012" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Treat one Angel-wide off control as a design candidate, not a fixed layout.<div class="proof">WS3 designer-reviewed variants.</div></td></tr>
+<tr data-learning-id="DF-012" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-012</td><td><strong>Missing create-new-angel button (&quot;screaming for it&quot;)</strong><div class="meta">ux-web · source 63</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Create Angel becomes a primary browser action when browser authoring ships.<div class="proof">P3 browser create eval.</div></td></tr>
-<tr data-learning-id="DF-013" data-disposition="proposed" data-destination="P0">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Create Angel becomes a primary browser action when browser authoring ships.<div class="proof">WS3 browser create eval.</div></td></tr>
+<tr data-learning-id="DF-013" data-disposition="proposed" data-destination="WS1">
 <td class="id">DF-013</td><td><strong>Why is angel-core a separate repo from angel-cloud? Strong monorepo preference</strong><div class="meta">repo · source 77</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
-<td>Rename angel-cloud to angelmcp and import core history under packages/core.<div class="proof">Owner decision A; P0 history and parity proof.</div></td></tr>
-<tr data-learning-id="DF-014" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
+<td>Rename angel-cloud to angelmcp and import core history under packages/core.<div class="proof">Owner decision A; WS1 history and parity proof.</div></td></tr>
+<tr data-learning-id="DF-014" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-014</td><td><strong>&quot;$EDITOR hosts.env&quot; — no idea what this is; felt sketchy, wanted to read source</strong><div class="meta">docs · source 95</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Public docs and commands must require no owner session sheet, repo file, or hidden environment export.<div class="proof">P1 no-side-door clean-room preflight.</div></td></tr>
-<tr data-learning-id="DF-015" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Public docs and commands must require no owner session sheet, repo file, or hidden environment export.<div class="proof">WS2 local no-side-door clean-room preflight.</div></td></tr>
+<tr data-learning-id="DF-015" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-015</td><td><strong>CLI flow is way too much overhead for the typical user</strong><div class="meta">strategy · source 104</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>The CLI remains the developer path; the low-technical path moves to browser parity rather than bloating CLI menus.<div class="proof">P3 browser journey.</div></td></tr>
-<tr data-learning-id="DF-016" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>The CLI remains the developer path; the low-technical path moves to browser parity rather than bloating CLI menus.<div class="proof">WS3 browser journey.</div></td></tr>
+<tr data-learning-id="DF-016" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-016</td><td><strong>Google Cloud Console API-key setup is a nightmare; needs checklist with links</strong><div class="meta">onboarding · source 118</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Define the exact own-client setup, secret input, callback, storage, and checklist with direct links.<div class="proof">P1 Linux and Mac OAuth clean rooms.</div></td></tr>
-<tr data-learning-id="DF-017" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Define the exact own-client setup, secret input, callback, storage, and checklist with direct links.<div class="proof">WS2 local Linux and Mac OAuth clean rooms.</div></td></tr>
+<tr data-learning-id="DF-017" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-017</td><td><strong>Changing tools requires cracking open a CLI after web onboarding</strong><div class="meta">ux-web · source 142</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Browser policy editing gets full artifact parity; no terminal handoff for a browser-started journey.<div class="proof">PD 0006; P3 parity eval.</div></td></tr>
-<tr data-learning-id="DF-018" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Browser policy editing gets full artifact parity; no terminal handoff for a browser-started journey.<div class="proof">PD 0006; WS3 parity eval.</div></td></tr>
+<tr data-learning-id="DF-018" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-018</td><td><strong>Connected account attached &quot;to nothing&quot; first; angel linkage unclear</strong><div class="meta">ux-web · source 144</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Connecting from an Angel must either bind there or say clearly that it creates an Account App first, then offer binding.<div class="proof">Issue #37; P2 journey transcript.</div></td></tr>
-<tr data-learning-id="DF-019" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Connecting from an Angel must either bind there or say clearly that it creates an Account App first, then offer binding.<div class="proof">Issue #37; WS2 managed journey transcript.</div></td></tr>
+<tr data-learning-id="DF-019" data-disposition="included" data-destination="WS1">
 <td class="id">DF-019</td><td><strong>Wall of text, impenetrable jargon, too many loaded words</strong><div class="meta">docs · source 158</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
-<td>All review and user docs use short sentences, defined terms, and scan-first structure; every later milestone must include the same copy sweep.<div class="proof">Ledger prose rule; P1 public-doc grader and future milestone exit proofs.</div></td></tr>
-<tr data-learning-id="DF-020" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>All review and user docs use short sentences, defined terms, and scan-first structure; every later milestone must include the same copy sweep.<div class="proof">Ledger prose rule; WS2 local public-doc grader and future milestone exit proofs.</div></td></tr>
+<tr data-learning-id="DF-020" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-020</td><td><strong>Intro &quot;three secrets&quot; table reads as prerequisites but is a summary</strong><div class="meta">docs · source 203</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Start with the task. Put custody and secret explanations at the step where each matters.<div class="proof">P1 docs-only run comprehension evidence.</div></td></tr>
-<tr data-learning-id="DF-021" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Start with the task. Put custody and secret explanations at the step where each matters.<div class="proof">WS2 local docs-only run comprehension evidence.</div></td></tr>
+<tr data-learning-id="DF-021" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-021</td><td><strong>$DOCS/llms.txt placeholders not clickable; both guessed URLs 404&#x27;d</strong><div class="meta">bug · source 209</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>P0 moves docs into one tree; P1 must deploy them and prove every full public URL from outside the repo.<div class="proof">Issues #39/#36; P1 deployed-link clean-room check.</div></td></tr>
-<tr data-learning-id="DF-022" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>WS1 moves docs into one tree; WS2 local must deploy them and prove every full public URL from outside the repo.<div class="proof">Issues #39/#36; WS2 local deployed-link clean-room check.</div></td></tr>
+<tr data-learning-id="DF-022" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-022</td><td><strong>Getting-started link fails on copy/paste like a real user would do</strong><div class="meta">docs · source 219</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>A copy-pasted public getting-started URL must work from the fresh exe.dev machine, with no repo fallback.<div class="proof">Issue #39; P1 public-link smoke test.</div></td></tr>
-<tr data-learning-id="DF-023" data-disposition="proposed" data-destination="P0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>A copy-pasted public getting-started URL must work from the fresh exe.dev machine, with no repo fallback.<div class="proof">Issue #39; WS2 local public-link smoke test.</div></td></tr>
+<tr data-learning-id="DF-023" data-disposition="proposed" data-destination="WS1">
 <td class="id">DF-023</td><td><strong>No idea which branch/worktree to work in</strong><div class="meta">onboarding · source 231</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
-<td>One monorepo and one docs tree remove repo/worktree selection from the user journey.<div class="proof">P0 fresh-clone and external-package tests.</div></td></tr>
-<tr data-learning-id="DF-024" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
+<td>One monorepo and one docs tree remove repo/worktree selection from the user journey.<div class="proof">WS1 fresh-clone and external-package tests.</div></td></tr>
+<tr data-learning-id="DF-024" data-disposition="included" data-destination="WS1">
 <td class="id">DF-024</td><td><strong>Dogfood flow doesn&#x27;t match what a real user would naturally do</strong><div class="meta">onboarding · source 244</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Milestones now follow real user journeys and end in clean-room tracer tests, not component completion.<div class="proof">Ledger standing gate.</div></td></tr>
-<tr data-learning-id="DF-025" data-disposition="proposed" data-destination="P0">
+<tr data-learning-id="DF-025" data-disposition="proposed" data-destination="WS1">
 <td class="id">DF-025</td><td><strong>Preview/production semantics don&#x27;t match user mental model; default-production preference</strong><div class="meta">ux-web · source 267</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
-<td>Preserve the shipped production-default rule and correct every stale doc or displayed command that teaches preview-first; runtime behavior must not change.<div class="proof">PD 0003/0005; issue #41; P0 decision-sweep regression test.</div></td></tr>
-<tr data-learning-id="DF-026" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
+<td>Preserve the shipped production-default rule and correct every stale doc or displayed command that teaches preview-first; runtime behavior must not change.<div class="proof">PD 0003/0005; issue #41; WS1 decision-sweep regression test.</div></td></tr>
+<tr data-learning-id="DF-026" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-026</td><td><strong>Account deletion + fresh restart needed</strong><div class="meta">auth · source 273</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Delete Account must revoke sessions, keys and grants, remove owned state, and permit a fresh signup without admin help.<div class="proof">P2 cleanup and second-identity run.</div></td></tr>
-<tr data-learning-id="DF-027" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Delete Account must revoke sessions, keys and grants, remove owned state, and permit a fresh signup without admin help.<div class="proof">WS2 managed cleanup and second-identity run.</div></td></tr>
+<tr data-learning-id="DF-027" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-027</td><td><strong>UI needs a hired product designer; note issues, don&#x27;t stop to redesign</strong><div class="meta">strategy · source 182</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Freeze broad UI redesign until P3; use a product designer for the browser/mobile surface.<div class="proof">P3 entry condition; no P0–P2 UI redesign.</div></td></tr>
-<tr data-learning-id="DF-028" data-disposition="rejected" data-destination="NONE">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Freeze broad UI redesign until WS3; use a product designer for the browser/mobile surface.<div class="proof">WS3 entry condition; no WS1–WS2 managed UI redesign.</div></td></tr>
+<tr data-learning-id="DF-028" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-028</td><td><strong>Tool grid should be &quot;awesome looking tool icons&quot; you click to enable</strong><div class="meta">strategy · source 288</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-no">rejected</span><div class="dest">NONE</div></td>
-<td>Do not make one icon-grid treatment a requirement. Keep the outcome: available, enabled, and blocked tools must be clear.<div class="proof">P3 variant review decides the treatment.</div></td></tr>
-<tr data-learning-id="DF-029" data-disposition="proposed" data-destination="P0">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Retain the outcome that available, enabled, and blocked tools are clear; reject only the fixed icon-grid treatment.<div class="proof">WS3 variant review decides the treatment.</div></td></tr>
+<tr data-learning-id="DF-029" data-disposition="proposed" data-destination="WS1">
 <td class="id">DF-029</td><td><strong>pnpm struggled to install the recent package update</strong><div class="meta">bug · source 399</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
-<td>After O1 closes, publish one product CLI with provenance and test a registry tarball outside the workspace.<div class="proof">Issue #42; P0 package-consumer gate.</div></td></tr>
-<tr data-learning-id="DF-030" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
+<td>After O1 closes, publish one product CLI with provenance and test a registry tarball outside the workspace.<div class="proof">Issue #42; WS1 package-consumer gate.</div></td></tr>
+<tr data-learning-id="DF-030" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-030</td><td><strong>&quot;21 Gmail operations&quot; output looks suspiciously hardcoded</strong><div class="meta">bug · source 414</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>No acceptance may rest on known strings or fixtures; generated cases and semantic graders are mandatory.<div class="proof">P1 generative eval contract and clean-room proof.</div></td></tr>
-<tr data-learning-id="DF-031" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>No acceptance may rest on known strings or fixtures; generated cases and semantic graders are mandatory.<div class="proof">WS2 local generative eval contract and clean-room proof.</div></td></tr>
+<tr data-learning-id="DF-031" data-disposition="included" data-destination="WS1">
 <td class="id">DF-031</td><td><strong>&quot;Terrible tracer bullets through the slices&quot; — spec-to-execution discipline missing</strong><div class="meta">process · source 424</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Each milestone is a vertical user result with an executable exit command.<div class="proof">Ledger standing gate.</div></td></tr>
-<tr data-learning-id="DF-032" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="DF-032" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-032</td><td><strong>Need golden e2e tests with randomized subjects to expose hardcoding</strong><div class="meta">process · source 441</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Generated names, policies, arguments, and outcomes vary every run; evidence is saved.<div class="proof">P1 first implements the generator/grader split; P2 extends it to managed cloud.</div></td></tr>
-<tr data-learning-id="DF-033" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Generated names, policies, arguments, and outcomes vary every run; evidence is saved.<div class="proof">WS2 local first implements the generator/grader split; WS2 managed extends it to managed cloud.</div></td></tr>
+<tr data-learning-id="DF-033" data-disposition="included" data-destination="WS1">
 <td class="id">DF-033</td><td><strong>Dogfooding standards need alignment; sessions should be tagged as dogfooding</strong><div class="meta">process · source 215</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Every dogfood session starts tagged, records starting state, and closes with ledger reconciliation.<div class="proof">Ledger operating rule.</div></td></tr>
-<tr data-learning-id="DF-034" data-disposition="deferred" data-destination="P5">
+<tr data-learning-id="DF-034" data-disposition="deferred" data-destination="LATER">
 <td class="id">DF-034</td><td><strong>Sharing angels (catalog, PR-able configs, community) not yet fundamental</strong><div class="meta">strategy · source 451</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P5</div></td>
-<td>Sharing and catalog work gets its own ecosystem milestone after real use proves the model.<div class="proof">P5 catalog/sharing proof.</div></td></tr>
-<tr data-learning-id="DF-035" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-later">later workstream</span><div class="dest">LATER</div></td>
+<td>Sharing and catalog work gets its own ecosystem milestone after real use proves the model.<div class="proof">later ecosystem catalog/sharing proof.</div></td></tr>
+<tr data-learning-id="DF-035" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-035</td><td><strong>No visible proof that cloud published exactly what was provided</strong><div class="meta">bug · source 458</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Publish prints the digest; verify compares fetched bytes and engine pin; the public page offers the review bundle.<div class="proof">P2 verify/provenance acceptance.</div></td></tr>
-<tr data-learning-id="DF-036" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Publish prints the digest; verify compares fetched bytes and engine pin; the public page offers the review bundle.<div class="proof">WS2 managed verify/provenance acceptance.</div></td></tr>
+<tr data-learning-id="DF-036" data-disposition="included" data-destination="WS1">
 <td class="id">DF-036</td><td><strong>Specification from Sam is patchy/disorganized (self-diagnosis)</strong><div class="meta">process · source 461</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Patchy discovery is expected input; the ledger, not memory, must reconcile it before planning.<div class="proof">Product Ledger gate.</div></td></tr>
-<tr data-learning-id="DF-037" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="DF-037" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-037</td><td><strong>Dogfood guide missing at session start</strong><div class="meta">onboarding · source 5</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Every run begins with a public, versioned guide that states scope, handoffs, and cleanup.<div class="proof">P1 docs-only clean-room run.</div></td></tr>
-<tr data-learning-id="DF-038" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Every run begins with a public, versioned guide that states scope, handoffs, and cleanup.<div class="proof">WS2 local docs-only clean-room run.</div></td></tr>
+<tr data-learning-id="DF-038" data-disposition="included" data-destination="WS1">
 <td class="id">DF-038</td><td><strong>M1 vs M2 scope naming confusion</strong><div class="meta">naming · source 3</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Replace reused M labels with a roadmap that names delivered foundation and future proofs once.<div class="proof">This ledger roadmap.</div></td></tr>
-<tr data-learning-id="DF-039" data-disposition="deferred" data-destination="P3">
+<tr data-learning-id="DF-039" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-039</td><td><strong>Want to &quot;visit&quot; angels from the list</strong><div class="meta">ux-web · source 12</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Angel list rows open the Angel detail page.<div class="proof">P3 browser navigation eval.</div></td></tr>
-<tr data-learning-id="DF-040" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Angel list rows open the Angel detail page.<div class="proof">WS3 browser navigation eval.</div></td></tr>
+<tr data-learning-id="DF-040" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-040</td><td><strong>&quot;Arg guards&quot; undefined at first contact</strong><div class="meta">naming · source 14</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Define guard in plain words at first use; keep the technical term only after explanation.<div class="proof">P1 docs copy grader.</div></td></tr>
-<tr data-learning-id="DF-041" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Define guard in plain words at first use; keep the technical term only after explanation.<div class="proof">WS2 local docs copy grader.</div></td></tr>
+<tr data-learning-id="DF-041" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-041</td><td><strong>Accounts display tiny and hard to see</strong><div class="meta">ux-web · source 16</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Account/App identity must be legible; exact size and layout remain design work.<div class="proof">P3 accessibility/visual QA.</div></td></tr>
-<tr data-learning-id="DF-042" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Account/App identity must be legible; exact size and layout remain design work.<div class="proof">WS3 accessibility/visual QA.</div></td></tr>
+<tr data-learning-id="DF-042" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-042</td><td><strong>Version history belongs at top of Activity</strong><div class="meta">ia · source 34</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Version history belongs with activity unless user testing shows otherwise.<div class="proof">P3 design variant; not frozen as architecture.</div></td></tr>
-<tr data-learning-id="DF-043" data-disposition="rejected" data-destination="NONE">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Version history belongs with activity unless user testing shows otherwise.<div class="proof">WS3 design variant; not frozen as architecture.</div></td></tr>
+<tr data-learning-id="DF-043" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-043</td><td><strong>Production badge in Activity can replace toggle + LIVE indicator</strong><div class="meta">ia · source 37</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-no">rejected</span><div class="dest">NONE</div></td>
-<td>Do not freeze the production-badge solution. Keep the requirement that environment context is clear and quiet.<div class="proof">P3 designer review.</div></td></tr>
-<tr data-learning-id="DF-044" data-disposition="rejected" data-destination="NONE">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Retain clear, quiet environment context; reject only the fixed production-badge solution.<div class="proof">WS3 designer review.</div></td></tr>
+<tr data-learning-id="DF-044" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-044</td><td><strong>Agent Keys panel takes too much space; fold into Allowed Tools</strong><div class="meta">ux-web · source 45</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-no">rejected</span><div class="dest">NONE</div></td>
-<td>Do not freeze the keys-panel merge. Keep MCP address, key creation, recovery, and revocation easy to find.<div class="proof">P3 Angel Detail acceptance.</div></td></tr>
-<tr data-learning-id="DF-045" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Retain easy-to-find MCP address, key creation, recovery, and revocation; reject only the fixed panel merge.<div class="proof">WS3 Angel Detail acceptance.</div></td></tr>
+<tr data-learning-id="DF-045" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-045</td><td><strong>Angel Detail hero: MCP address + keys + getting-started tabs; canonical health bar</strong><div class="meta">ia · source 51</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Use this hero/health layout as one carousel candidate, not the contract.<div class="proof">P3 design variants.</div></td></tr>
-<tr data-learning-id="DF-046" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Use this hero/health layout as one carousel candidate, not the contract.<div class="proof">WS3 design variants.</div></td></tr>
+<tr data-learning-id="DF-046" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-046</td><td><strong>Add-tool should be primary CTA with one consistent UI</strong><div class="meta">ux-web · source 60</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Adding a Tool is the main policy-edit action and uses one consistent interaction.<div class="proof">P3 policy-edit acceptance.</div></td></tr>
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Adding a Tool is the main policy-edit action and uses one consistent interaction.<div class="proof">WS3 policy-edit acceptance.</div></td></tr>
 <tr data-learning-id="DF-047" data-disposition="unresolved" data-destination="O1">
 <td class="id">DF-047</td><td><strong>Package naming: angel-core vs angel; @smcllns vs future exo scope</strong><div class="meta">naming · source 76</div></td>
 <td><span class="pill p-minor">minor</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O1</div></td>
-<td>Choose the exact public package name and install command before P0 can publish a baseline.<div class="proof">Registry check: @angelmcp/cli and angelmcp were unclaimed on 2026-07-31; scope ownership unverified.</div></td></tr>
+<td>Choose the exact public package name and install command before WS1 can publish a baseline.<div class="proof">Registry check: @angelmcp/cli and angelmcp were unclaimed on 2026-07-31; scope ownership unverified.</div></td></tr>
 <tr data-learning-id="DF-048" data-disposition="unresolved" data-destination="O1">
 <td class="id">DF-048</td><td><strong>curl angelmcp.ai/install.sh install path desired</strong><div class="meta">strategy · source 81</div></td>
 <td><span class="pill p-idea">idea</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O1</div></td>
-<td>Decide whether v1 ships a curl installer or documents a package-manager prerequisite.<div class="proof">Recommendation: publish @angelmcp/cli first; add a verified installer in P1 if it reduces clean-room failure.</div></td></tr>
+<td>Decide whether v1 ships a curl installer or documents a package-manager prerequisite.<div class="proof">Recommendation: publish @angelmcp/cli first; add a verified installer in WS2 local if it reduces clean-room failure.</div></td></tr>
 <tr data-learning-id="DF-049" data-disposition="unresolved" data-destination="O4">
 <td class="id">DF-049</td><td><strong>Minimal auth spec: email/SMS magic link + optional passkey, never zero recovery</strong><div class="meta">auth · source 111</div></td>
 <td><span class="pill p-idea">idea</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O4</div></td>
 <td>Retain magic-link + optional passkey + at least one recovery channel, but resolve link expiry and SMS timing.<div class="proof">Raw notes say minutes; APRD says days.</div></td></tr>
-<tr data-learning-id="DF-050" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="DF-050" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-050</td><td><strong>Two-fork provider setup: own OAuth client (checklist) vs hosted &quot;coming soon&quot;</strong><div class="meta">onboarding · source 114</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>P1 ships own-client local consent; P2 ships own-client cloud custody; hosted Angel OAuth waits for P4 verification.<div class="proof">P1/P2/P4 exit proofs.</div></td></tr>
-<tr data-learning-id="DF-051" data-disposition="rejected" data-destination="NONE">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>WS2 local ships own-client local consent; WS2 managed ships own-client cloud custody; hosted Angel OAuth waits for WS3 beta verification.<div class="proof">WS2 local/managed and later hosted OAuth exit proofs.</div></td></tr>
+<tr data-learning-id="DF-051" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-051</td><td><strong>Unlocked Google product icons as the reward moment after OAuth</strong><div class="meta">ux-web · source 123</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-no">rejected</span><div class="dest">NONE</div></td>
-<td>Do not make a reward animation or icon treatment a requirement. Preserve it as P3 design input.<div class="proof">P3 variant review.</div></td></tr>
-<tr data-learning-id="DF-052" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Retain a clear reward moment after OAuth; reject only a fixed animation or icon treatment.<div class="proof">WS3 variant review.</div></td></tr>
+<tr data-learning-id="DF-052" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-052</td><td><strong>OAuth consent surprise: email-level perms only, then second screen</strong><div class="meta">ux-web · source 128</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Explain each consent screen and why scopes may arrive in stages before opening Google.<div class="proof">P1 OAuth guide and observed transcript.</div></td></tr>
-<tr data-learning-id="DF-053" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Explain each consent screen and why scopes may arrive in stages before opening Google.<div class="proof">WS2 local OAuth guide and observed transcript.</div></td></tr>
+<tr data-learning-id="DF-053" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-053</td><td><strong>Broader scope selection → bigger perms wall should be user-selectable</strong><div class="meta">ux-web · source 136</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Let policy/tool choice drive the requested scope set; browser presentation waits for P3.<div class="proof">P3 scope-selection comprehension test.</div></td></tr>
-<tr data-learning-id="DF-054" data-disposition="rejected" data-destination="NONE">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Let policy/tool choice drive the requested scope set; browser presentation waits for WS3.<div class="proof">WS3 scope-selection comprehension test.</div></td></tr>
+<tr data-learning-id="DF-054" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-054</td><td><strong>Docs intro should be tabs: summary sheet / dogfood guide / getting started</strong><div class="meta">ia · source 207</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-no">rejected</span><div class="dest">NONE</div></td>
-<td>Do not require tabs. Require separate, scannable summary, run guide, and getting-started jobs at stable URLs.<div class="proof">P1 public-doc information architecture.</div></td></tr>
-<tr data-learning-id="DF-055" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Retain separate, scannable summary, run guide, and getting-started jobs at stable URLs; reject only mandatory tabs.<div class="proof">WS2 local public-doc information architecture.</div></td></tr>
+<tr data-learning-id="DF-055" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-055</td><td><strong>Four-page IA: Home, Angels List, Angel Detail, Account</strong><div class="meta">ia · source 173</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Use Home, Angels, Angel Detail, and Account as the baseline browser IA, then test it.<div class="proof">P3 browser journey.</div></td></tr>
-<tr data-learning-id="DF-056" data-disposition="deferred" data-destination="P3">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Use Home, Angels, Angel Detail, and Account as the baseline browser IA, then test it.<div class="proof">WS3 browser journey.</div></td></tr>
+<tr data-learning-id="DF-056" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-056</td><td><strong>Pause/unpause framing wrong — it&#x27;s &quot;allowed/disallowed&quot;, codesign CLI+web</strong><div class="meta">naming · source 180</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Clarify policy allowed/disallowed versus runtime paused/resumed; do not collapse distinct authority concepts.<div class="proof">P3 vocabulary test; pause-only guarantee stays.</div></td></tr>
-<tr data-learning-id="DF-057" data-disposition="included" data-destination="L0">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Clarify policy allowed/disallowed versus runtime paused/resumed; do not collapse distinct authority concepts.<div class="proof">WS3 vocabulary test; pause-only guarantee stays.</div></td></tr>
+<tr data-learning-id="DF-057" data-disposition="included" data-destination="WS1">
 <td class="id">DF-057</td><td><strong>Three-journey skeleton: CLI (menus+args), mobile (tabs), desktop (dashboard)</strong><div class="meta">strategy · source 248</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>One shared job model spans CLI, browser, mobile, and agent; each surface lands in its named milestone.<div class="proof">Ledger roadmap and APRD-derived contracts.</div></td></tr>
-<tr data-learning-id="DF-058" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="DF-058" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-058</td><td><strong>Interface/types for Angel, Tool, Provider, Connection as developer education</strong><div class="meta">docs · source 24</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Public developer docs explain Angel, Tool, App, Connection, Account, bundle, and receipt with small examples.<div class="proof">P1 docs comprehension grader.</div></td></tr>
-<tr data-learning-id="DF-059" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Public developer docs explain Angel, Tool, App, Connection, Account, bundle, and receipt with small examples.<div class="proof">WS2 local docs comprehension grader.</div></td></tr>
+<tr data-learning-id="DF-059" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-059</td><td><strong>Stuff wasn&#x27;t live on angelmcp.ai — had to fall back to src files</strong><div class="meta">bug · source 256</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>P1 owns one stable deployed public URL and forbids repo fallback. The custom-domain move remains separate issue #6.<div class="proof">P1 public-link smoke from exe.dev.</div></td></tr>
-<tr data-learning-id="DF-060" data-disposition="deferred" data-destination="P4">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>WS2 local owns one stable deployed public URL and forbids repo fallback. The custom-domain move remains separate issue #6.<div class="proof">WS2 local public-link smoke from exe.dev.</div></td></tr>
+<tr data-learning-id="DF-060" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-060</td><td><strong>Data room: 100 most popular tools/apps + SVG icons + provider→apps unlock map</strong><div class="meta">strategy · source 336</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P4</div></td>
-<td>Research the provider/app map only when provider breadth and beta onboarding need it.<div class="proof">P4 provider-priority artifact.</div></td></tr>
-<tr data-learning-id="DF-061" data-disposition="deferred" data-destination="P4">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Research the provider/app map only when provider breadth and beta onboarding need it.<div class="proof">WS3 beta provider-priority artifact.</div></td></tr>
+<tr data-learning-id="DF-061" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-061</td><td><strong>Beyond Google: maps, twitter, instagram, reddit, elevenlabs providers</strong><div class="meta">strategy · source 290</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P4</div></td>
-<td>Add providers one shape at a time after Gmail proves the reusable primitive.<div class="proof">P4 live acceptance per provider.</div></td></tr>
-<tr data-learning-id="DF-062" data-disposition="deferred" data-destination="P5">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Add providers one shape at a time after Gmail proves the reusable primitive.<div class="proof">WS3 beta live acceptance per provider.</div></td></tr>
+<tr data-learning-id="DF-062" data-disposition="deferred" data-destination="LATER">
 <td class="id">DF-062</td><td><strong>Angel catalog as instantdb-backed store + git mirror, PR-able community configs</strong><div class="meta">strategy · source 455</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P5</div></td>
-<td>Catalog storage and contribution model wait for the ecosystem milestone; no InstantDB choice now.<div class="proof">P5 design/eval.</div></td></tr>
-<tr data-learning-id="DF-063" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-later">later workstream</span><div class="dest">LATER</div></td>
+<td>Catalog storage and contribution model wait for the ecosystem milestone; no InstantDB choice now.<div class="proof">later ecosystem design/eval.</div></td></tr>
+<tr data-learning-id="DF-063" data-disposition="proposed" data-destination="WS2">
 <td class="id">DF-063</td><td><strong>Local dev server pokeable without live credentials — must that always be true?</strong><div class="meta">ux-cli · source 457</div></td>
 <td><span class="pill p-minor">minor</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Local serve uses real local credentials and never silently falls back to fixtures; no cloud account is required.<div class="proof">P1 real Gmail draft-without-send clean room.</div></td></tr>
-<tr data-learning-id="DF-064" data-disposition="included" data-destination="L0">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Local serve uses real local credentials and never silently falls back to fixtures; no cloud account is required.<div class="proof">WS2 local real Gmail draft-without-send clean room.</div></td></tr>
+<tr data-learning-id="DF-064" data-disposition="included" data-destination="WS1">
 <td class="id">DF-064</td><td><strong>Compare build methodologies: superpowers / wayfinder / compound / fable</strong><div class="meta">process · source 426</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Use interview → goal → eval plus fresh tracer tests and the Product Ledger; do not add another parallel methodology artifact.<div class="proof">Ledger operating rule.</div></td></tr>
-<tr data-learning-id="DF-065" data-disposition="deferred" data-destination="P4">
+<tr data-learning-id="DF-065" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-065</td><td><strong>First-100-users plan: manual beta list, measure % who would pay today</strong><div class="meta">strategy · source 450</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P4</div></td>
-<td>Run a manual ≤100-person beta and measure who will pay before building broad billing or growth systems.<div class="proof">P4 beta evidence.</div></td></tr>
-<tr data-learning-id="DF-066" data-disposition="rejected" data-destination="NONE">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Run a manual ≤100-person beta and measure who will pay before building broad billing or growth systems.<div class="proof">WS3 beta beta evidence.</div></td></tr>
+<tr data-learning-id="DF-066" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-066</td><td><strong>Hiring reflection: designer now; security engineering for credential custody at scale</strong><div class="meta">strategy · source 448</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-no">rejected</span><div class="dest">NONE</div></td>
-<td>Hiring is not a product requirement: engage a product designer before P3, reject hiring a security engineer by default now, and require a scoped audit before P4.<div class="proof">Reason: preserve the needed expertise and audit gates without fixing employment as the solution.</div></td></tr>
-<tr data-learning-id="DF-067" data-disposition="included" data-destination="L0">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Retain design expertise before browser/mobile work and a scoped security audit before beta; reject only hiring as the fixed solution now.<div class="proof">Preserve expertise and audit gates without fixing employment as the implementation.</div></td></tr>
+<tr data-learning-id="DF-067" data-disposition="included" data-destination="WS1">
 <td class="id">DF-067</td><td><strong>ELI10 first, then Orwell-standard prose in all docs</strong><div class="meta">docs · source 201</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Short, plain, scan-first prose is a standing acceptance rule for every user-facing document in every milestone.<div class="proof">Prose review plus fresh-user comprehension in each milestone exit proof.</div></td></tr>
-<tr data-learning-id="DF-068" data-disposition="deferred" data-destination="P3">
+<tr data-learning-id="DF-068" data-disposition="deferred" data-destination="WS3">
 <td class="id">DF-068</td><td><strong>Charter should be verbatim from YAML on angel profile, link/tag to ANGEL.yaml</strong><div class="meta">ia · source 55</div></td>
 <td><span class="pill p-idea">idea</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P3</div></td>
-<td>Show the charter on Angel Detail and public trust surfaces; source linking must respect owner-only source and public provenance boundaries.<div class="proof">P3 trust-page/browser acceptance.</div></td></tr></tbody></table></div></details>
-<details><summary>LR-001–LR-028 · trust, process, and post-report learnings</summary><div class="table-wrap"><table><thead><tr><th>ID</th><th>Finding</th><th>Priority</th><th>Disposition</th><th>Treatment and proof</th></tr></thead><tbody><tr data-learning-id="LR-001" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-later">later workstream</span><div class="dest">WS3</div></td>
+<td>Show the charter on Angel Detail and public trust surfaces; source linking must respect owner-only source and public provenance boundaries.<div class="proof">WS3 trust-page/browser acceptance.</div></td></tr></tbody></table></div></details>
+<details><summary>LR-001–LR-028 · trust, process, and post-report learnings</summary><div class="table-wrap"><table><thead><tr><th>ID</th><th>Finding</th><th>Priority</th><th>Disposition</th><th>Treatment and proof</th></tr></thead><tbody><tr data-learning-id="LR-001" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-001</td><td><strong>Provider provenance stops at a checked-in adapter; no exact upstream OpenAPI revision is declared.</strong><div class="meta">trust · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Require provider source URL, revision/hash, and review date in the bundle.<div class="proof">Dogfood scorecard: OpenAPI provenance 4/10.</div></td></tr>
-<tr data-learning-id="LR-002" data-disposition="deferred" data-destination="P2">
+<tr data-learning-id="LR-002" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-002</td><td><strong>The public trust page omits the canonical artifact, request templates, scopes, and origin evidence.</strong><div class="meta">trust · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Publish a downloadable secret-free review bundle while excluding Connection identity.<div class="proof">Dogfood scorecard and report shortest path.</div></td></tr>
-<tr data-learning-id="LR-003" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="LR-003" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-003</td><td><strong>Charter/policy agreement is a human or agent preflight, not a deterministic engine verdict.</strong><div class="meta">trust · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Run a contradiction review before build; keep policy as sole authority; never claim the compiler understands prose.<div class="proof">APRD §4.2; fixes CLI-guide contradiction.</div></td></tr>
-<tr data-learning-id="LR-004" data-disposition="deferred" data-destination="P5">
+<tr data-learning-id="LR-004" data-disposition="deferred" data-destination="LATER">
 <td class="id">LR-004</td><td><strong>Self-hosted Cloudflare is described as portable but has no supported deployment path.</strong><div class="meta">scope · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P5</div></td>
+<td><span class="pill s-later">later workstream</span><div class="dest">LATER</div></td>
 <td>Stop claiming shipped self-hosting until the supported path passes its own clean room.<div class="proof">Dogfood scorecard: self-hosting 2/10.</div></td></tr>
-<tr data-learning-id="LR-005" data-disposition="deferred" data-destination="P2">
+<tr data-learning-id="LR-005" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-005</td><td><strong>Digest equality does not prove the same evaluator ran; engine identity must travel with policy and receipts.</strong><div class="meta">trust · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Pin engine per Angel, verify it, stamp receipts, and fail on mismatch.<div class="proof">APRD commitments; trust review.</div></td></tr>
-<tr data-learning-id="LR-006" data-disposition="proposed" data-destination="P0">
+<tr data-learning-id="LR-006" data-disposition="proposed" data-destination="WS1">
 <td class="id">LR-006</td><td><strong>The monorepo migration needs a history/secrets audit, preserved core history, one lockfile, workspace links, npm provenance, and last-registry-tarball CI.</strong><div class="meta">repo · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
-<td>Make all six items P0 exit criteria, not migration notes.<div class="proof">Dogfood monorepo audit; owner Option A.</div></td></tr>
-<tr data-learning-id="LR-007" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
+<td>Make all six items WS1 exit criteria, not migration notes.<div class="proof">Dogfood monorepo audit; owner Option A.</div></td></tr>
+<tr data-learning-id="LR-007" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-007</td><td><strong>Local and cloud provider custody require separate consent and token state.</strong><div class="meta">custody · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>P1 proves local custody; P2 proves separate cloud custody. Never copy tokens between them.<div class="proof">Post-report owner decision.</div></td></tr>
-<tr data-learning-id="LR-008" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>WS2 local proves local custody; WS2 managed proves separate cloud custody. Never copy tokens between them.<div class="proof">Post-report owner decision.</div></td></tr>
+<tr data-learning-id="LR-008" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-008</td><td><strong>Fresh-machine evals must ban repo access, workspace links, fixtures, seed state, hidden endpoints, old credentials, and direct storage writes.</strong><div class="meta">eval · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Add explicit preflight assertions and hard failures before P1/P2; human authentication, consent, and final inspection remain allowed handoffs.<div class="proof">Post-report owner decision.</div></td></tr>
-<tr data-learning-id="LR-009" data-disposition="deferred" data-destination="P1">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Add explicit preflight assertions and hard failures before WS2 local/managed; human authentication, consent, and final inspection remain allowed handoffs.<div class="proof">Post-report owner decision.</div></td></tr>
+<tr data-learning-id="LR-009" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-009</td><td><strong>Headless Linux OAuth callback and durable credential retrieval are assumed, not proven.</strong><div class="meta">oauth · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
-<td>Run a real exe.dev spike before freezing P1 command docs.<div class="proof">Current build-readiness audit.</div></td></tr>
-<tr data-learning-id="LR-010" data-disposition="deferred" data-destination="P2">
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Run a real exe.dev spike before freezing WS2 local command docs.<div class="proof">Current build-readiness audit.</div></td></tr>
+<tr data-learning-id="LR-010" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-010</td><td><strong>A cloud clean room needs self-service full Account deletion and a second independent identity run.</strong><div class="meta">lifecycle · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Prove cleanup with oscodev@, then repeat with oscollins@ without admin help.<div class="proof">Post-report owner decision.</div></td></tr>
 <tr data-learning-id="LR-011" data-disposition="unresolved" data-destination="O4">
 <td class="id">LR-011</td><td><strong>The auth requirement conflicts: raw dogfood says links expire in minutes; APRD says days.</strong><div class="meta">auth · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O4</div></td>
-<td>Choose one single-use expiry before P2 contract approval.<div class="proof">Raw notes line 111 vs APRD §4.1.</div></td></tr>
+<td>Choose one single-use expiry before WS2 managed contract approval.<div class="proof">Raw notes line 111 vs APRD §4.1.</div></td></tr>
 <tr data-learning-id="LR-012" data-disposition="unresolved" data-destination="O1">
 <td class="id">LR-012</td><td><strong>The CLI guide still installs @smcllns/angel-core, contradicting the public product-package decision.</strong><div class="meta">package · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O1</div></td>
-<td>Choose the registry identity, then update every install surface in P0.<div class="proof">CLI guide line 14; post-report owner decision.</div></td></tr>
+<td>Choose the registry identity, then update every install surface in WS1.<div class="proof">CLI guide line 14; post-report owner decision.</div></td></tr>
 <tr data-learning-id="LR-013" data-disposition="unresolved" data-destination="O3">
 <td class="id">LR-013</td><td><strong>The CLI has no explicit local/cloud connect split and currently assumes cloud custody.</strong><div class="meta">cli · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O3</div></td>
 <td>Choose explicit --local/--cloud syntax and separate profiles; never infer custody.<div class="proof">CLI guide §angel apps connect.</div></td></tr>
-<tr data-learning-id="LR-014" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="LR-014" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-014</td><td><strong>The own-client Google path presupposes a Provider App but defines no command to register client credentials.</strong><div class="meta">oauth · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Define secret input, validation, storage, callback, update, and deletion commands.<div class="proof">CLI guide uses --app owner-google without creation path.</div></td></tr>
-<tr data-learning-id="LR-015" data-disposition="deferred" data-destination="P2">
+<tr data-learning-id="LR-015" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-015</td><td><strong>One-time Angel key loss has a browser recovery story but no CLI recovery contract.</strong><div class="meta">keys · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Ship overlapping key create/list/revoke or a guided browser handoff before managed clean-room approval.<div class="proof">APRD §4.10; CLI guide excludes key commands.</div></td></tr>
-<tr data-learning-id="LR-016" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="LR-016" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-016</td><td><strong>The generative eval lets its generator inspect repository state, violating the no-repo clean-room rule.</strong><div class="meta">eval · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Separate an outside candidate agent from an internal grader; candidate sees public surfaces only.<div class="proof">Generative eval line 100.</div></td></tr>
-<tr data-learning-id="LR-017" data-disposition="deferred" data-destination="P1">
+<tr data-learning-id="LR-017" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-017</td><td><strong>The current golden path logs into Angel Cloud before create/build/serve, contradicting local independence.</strong><div class="meta">journey · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Make install → create → build → connect local → serve the first complete journey.<div class="proof">APRD §8.1 and CLI guide order.</div></td></tr>
 <tr data-learning-id="LR-018" data-disposition="unresolved" data-destination="O5">
 <td class="id">LR-018</td><td><strong>APRD uses angel serve --replay while the CLI guide defines a separate angel replay command.</strong><div class="meta">cli · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
 <td><span class="pill s-open">needs decision</span><div class="dest">O5</div></td>
-<td>Choose one command shape before P1 docs freeze.<div class="proof">APRD §4.4 vs CLI guide §angel replay.</div></td></tr>
-<tr data-learning-id="LR-019" data-disposition="deferred" data-destination="P1">
+<td>Choose one command shape before WS2 local docs freeze.<div class="proof">APRD §4.4 vs CLI guide §angel replay.</div></td></tr>
+<tr data-learning-id="LR-019" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-019</td><td><strong>Error contracts list causes but often do not state the exact next safe action.</strong><div class="meta">errors · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P1</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
 <td>Every recoverable failure prints the next command or human handoff; failures without safe recovery hard-stop.<div class="proof">Issues #25, #27, #38; dogfood guide question.</div></td></tr>
-<tr data-learning-id="LR-020" data-disposition="proposed" data-destination="P0">
+<tr data-learning-id="LR-020" data-disposition="proposed" data-destination="WS1">
 <td class="id">LR-020</td><td><strong>The docs are hand-written beside evals; saved golden transcripts do not yet generate or test examples.</strong><div class="meta">docs · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
 <td>Test public command examples and link them to the same clean-room scripts.<div class="proof">Dogfood anti-drift recommendation.</div></td></tr>
-<tr data-learning-id="LR-021" data-disposition="included" data-destination="L0">
+<tr data-learning-id="LR-021" data-disposition="included" data-destination="WS1">
 <td class="id">LR-021</td><td><strong>The existing ROADMAP marks public agent docs done even though the first real user could not open the URL.</strong><div class="meta">governance · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>A roadmap item is done only when its clean-environment command passes.<div class="proof">ROADMAP vs issue #39 and dogfood run.</div></td></tr>
-<tr data-learning-id="LR-022" data-disposition="included" data-destination="L0">
+<tr data-learning-id="LR-022" data-disposition="included" data-destination="WS1">
 <td class="id">LR-022</td><td><strong>The APRD targets all 29 commitments in one v2.1 release, mixing local, cloud, auth, trust, and cleanup into one oversized milestone.</strong><div class="meta">scope · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Split local proof from managed proof while retaining every commitment in the roadmap.<div class="proof">APRD §8.2; owner permits scope reduction.</div></td></tr>
-<tr data-learning-id="LR-023" data-disposition="included" data-destination="L0">
+<tr data-learning-id="LR-023" data-disposition="included" data-destination="WS1">
 <td class="id">LR-023</td><td><strong>Decisions were recorded but not swept through CLI, docs, www, tests, and deployed surfaces.</strong><div class="meta">process · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>A decision is complete only after a surface sweep or named deferral for each surface.<div class="proof">Dogfood root-cause report.</div></td></tr>
-<tr data-learning-id="LR-024" data-disposition="proposed" data-destination="P0">
+<tr data-learning-id="LR-024" data-disposition="proposed" data-destination="WS1">
 <td class="id">LR-024</td><td><strong>Repo topology, deploy topology, and secret custody are separate boundaries.</strong><div class="meta">architecture · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
 <td>Merge source into one repo while retaining separate packages, deployables, accounts, bindings, and secrets.<div class="proof">Owner Option A and monorepo audit.</div></td></tr>
-<tr data-learning-id="LR-025" data-disposition="proposed" data-destination="P0">
+<tr data-learning-id="LR-025" data-disposition="proposed" data-destination="WS1">
 <td class="id">LR-025</td><td><strong>The forkable starter may stay separate only as a generated or external-consumer surface, never a second source of truth.</strong><div class="meta">repo · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-proposed">proposed next</span><div class="dest">P0</div></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS1</div></td>
 <td>Make the monorepo canonical and test the starter against the published package.<div class="proof">Dogfood monorepo audit.</div></td></tr>
-<tr data-learning-id="LR-026" data-disposition="included" data-destination="L0">
+<tr data-learning-id="LR-026" data-disposition="included" data-destination="WS1">
 <td class="id">LR-026</td><td><strong>Scope cuts became silent architecture because debt had no named destination.</strong><div class="meta">governance · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Every removed item names a milestone or rejection reason; orphan count must stay zero.<div class="proof">ADR 0005 and Product Ledger decision.</div></td></tr>
-<tr data-learning-id="LR-027" data-disposition="included" data-destination="L0">
+<tr data-learning-id="LR-027" data-disposition="included" data-destination="WS1">
 <td class="id">LR-027</td><td><strong>Sam and Pi agreed that no next build milestone is approved before a shared zero-orphan reconciliation.</strong><div class="meta">governance · source post-report</div></td>
 <td><span class="pill p-block">blocker</span></td>
-<td><span class="pill s-in">delivered / current gate</span><div class="dest">L0</div></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
 <td>Keep next status proposed until explicit owner approval after this ledger review.<div class="proof">Owner decision, 2026-07-31.</div></td></tr>
-<tr data-learning-id="LR-028" data-disposition="deferred" data-destination="P2">
+<tr data-learning-id="LR-028" data-disposition="proposed" data-destination="WS2">
 <td class="id">LR-028</td><td><strong>The canonical angelmcp.ai docs, auth, control, MCP, and public-page hosts are not all wired to the dedicated Cloudflare account.</strong><div class="meta">delivery · source post-report</div></td>
 <td><span class="pill p-major">major</span></td>
-<td><span class="pill s-later">named later</span><div class="dest">P2</div></td>
-<td>Complete issue #6 before the managed clean-room proof; P1 may use one explicit stable interim docs URL.<div class="proof">ROADMAP issue #6 and dogfood URL failure.</div></td></tr></tbody></table></div></details></section>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Complete issue #6 before the managed clean-room proof; WS2 local may use one explicit stable interim docs URL.<div class="proof">ROADMAP issue #6 and dogfood URL failure.</div></td></tr></tbody></table></div></details>
+<details><summary>FB-001–FB-012 · owner feedback on the initial Ledger</summary><div class="table-wrap"><table><thead><tr><th>ID</th><th>Finding</th><th>Priority</th><th>Disposition</th><th>Treatment and proof</th></tr></thead><tbody><tr data-learning-id="FB-001" data-disposition="included" data-destination="WS1">
+<td class="id">FB-001</td><td><strong>The promise, thesis, and numbered guarantees do different jobs, but the first ledger did not explain the distinction.</strong><div class="meta">product · source post-report</div></td>
+<td><span class="pill p-major">major</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Define Promise → Owner scenarios → Guarantees as three explicit layers.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-002" data-disposition="included" data-destination="WS1">
+<td class="id">FB-002</td><td><strong>Laws alone do not prove that the emergent product can perform vivid real-life composite jobs.</strong><div class="meta">product · source post-report</div></td>
+<td><span class="pill p-block">blocker</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Add complete owner scenarios mapped to guarantees, workstreams, and proof milestones.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-003" data-disposition="included" data-destination="WS1">
+<td class="id">FB-003</td><td><strong>Each guarantee needs owner-editable human meaning plus precise correction or fine print.</strong><div class="meta">product · source post-report</div></td>
+<td><span class="pill p-major">major</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Give every guarantee an Owner meaning and Boundary field; flag overclaims rather than silently rewriting them.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-004" data-disposition="included" data-destination="WS1">
+<td class="id">FB-004</td><td><strong>L0/P0/P1 labels are engineering-centric and make roadmap review harder.</strong><div class="meta">roadmap · source post-report</div></td>
+<td><span class="pill p-major">major</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Use Workstream, Internal/Product deliverable, and Dogfood milestone labels.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-005" data-disposition="included" data-destination="WS1">
+<td class="id">FB-005</td><td><strong>The roadmap should center Get organized, Build for Dogfood Round 2, Dogfood Round 2, then evidence-led Round 3 planning.</strong><div class="meta">roadmap · source post-report</div></td>
+<td><span class="pill p-block">blocker</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Replace the fixed P sequence with the owner workstream hierarchy and keep post-round priorities conditional.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-006" data-disposition="proposed" data-destination="WS2">
+<td class="id">FB-006</td><td><strong>Dogfood Round 2 needs fresh Account setup, ideal docs/APIs, narrow CLI and max-agent paths, read-only www, local and managed deployment.</strong><div class="meta">scope · source post-report</div></td>
+<td><span class="pill p-block">blocker</span></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">WS2</div></td>
+<td>Make these separately passing deliverables under one build workstream.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-007" data-disposition="proposed" data-destination="M2">
+<td class="id">FB-007</td><td><strong>Dogfood Round 2 itself must run fresh-agent preflight, Sam dogfood, immediate reconciliation, then two friends if it passes.</strong><div class="meta">milestone · source post-report</div></td>
+<td><span class="pill p-block">blocker</span></td>
+<td><span class="pill s-proposed">proposed before / for Round 2</span><div class="dest">M2</div></td>
+<td>Make the observed user experience—not code completion—the milestone.<div class="proof">Owner feedback, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-008" data-disposition="included" data-destination="WS1">
+<td class="id">FB-008</td><td><strong>Many agents need one cloud execution backlog, but adding Linear is unnecessary if the Ledger dashboard and GitHub Issues are enough.</strong><div class="meta">governance · source post-report</div></td>
+<td><span class="pill p-major">major</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Use Product Ledger for product control and GitHub Issues for durable execution state.<div class="proof">Owner decision, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-009" data-disposition="included" data-destination="WS1">
+<td class="id">FB-009</td><td><strong>The Product Ledger needs a dashboard overview of progress toward the final goal before owner review.</strong><div class="meta">governance · source post-report</div></td>
+<td><span class="pill p-block">blocker</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Show final-goal status, active workstream, next milestone, proof progress, blockers, and orphan count at the top.<div class="proof">Owner decision, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-010" data-disposition="included" data-destination="WS1">
+<td class="id">FB-010</td><td><strong>Product Ledger, GitHub Issues, repo docs, and local notes need one explicit ownership model.</strong><div class="meta">governance · source post-report</div></td>
+<td><span class="pill p-major">major</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Define one owner per information class and prohibit copied status narratives.<div class="proof">Owner decision, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-011" data-disposition="included" data-destination="WS1">
+<td class="id">FB-011</td><td><strong>An issue-level finding must update the Ledger when it changes product-grade truth.</strong><div class="meta">governance · source post-report</div></td>
+<td><span class="pill p-block">blocker</span></td>
+<td><span class="pill s-in">delivered / current</span><div class="dest">WS1</div></td>
+<td>Promote changes to goals, scenarios, guarantees, workstreams, milestones, decisions, or learning dispositions in the same PR.<div class="proof">Owner decision, 2026-07-31.</div></td></tr>
+<tr data-learning-id="FB-012" data-disposition="unresolved" data-destination="O9">
+<td class="id">FB-012</td><td><strong>Round 2 should mention self-hosting honestly without presenting an unproved path as supported.</strong><div class="meta">scope · source post-report</div></td>
+<td><span class="pill p-major">major</span></td>
+<td><span class="pill s-open">needs decision</span><div class="dest">O9</div></td>
+<td>Choose between an unsupported-status note or adding a separate self-host clean-room deliverable.<div class="proof">Owner feedback and Pi qualification, 2026-07-31.</div></td></tr></tbody></table></div></details></section>
 
-<section id="decisions"><div class="label">5 · Decisions and contradictions</div><h2>Open is allowed. Hidden is not.</h2><div class="callout">Future decisions may stay open when they name their horizon. A build milestone cannot start with an open decision or contradiction that affects that milestone.</div>
-<h3 style="margin-top:24px">Owner decisions</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Question and recommendation</th><th>Horizon</th><th>Status</th></tr></thead><tbody><tr data-decision-id="O1" data-horizon="P0 blocker"><td class="id">O1</td><td><strong>What exact public package and install path does P0 publish?</strong><div class="proof">Recommend `@angelmcp/cli` exposing `angel`; registry name was unclaimed on 2026-07-31. Treat curl installer as P1 unless clean-room proof shows it is required.</div></td><td>P0 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O2" data-horizon="P1 blocker"><td class="id">O2</td><td><strong>How does headless Linux store and retrieve local OAuth credentials?</strong><div class="proof">Run the exe.dev spike before choosing. Compare a 0600 XDG file with a required Secret Service. Until the spike passes, no implementation plan or target doc may present Linux storage as known.</div></td><td>P1 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O3" data-horizon="P1 blocker"><td class="id">O3</td><td><strong>What exact syntax separates local and cloud consent/custody?</strong><div class="proof">Recommend `angel apps connect google --local` and `--cloud`. Inferred custody is rejected; P1 cannot freeze commands until the explicit syntax is chosen.</div></td><td>P1 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O4" data-horizon="P2 blocker"><td class="id">O4</td><td><strong>How long does a magic link live, and is SMS in P2?</strong><div class="proof">Recommend single-use email links expiring in 15 minutes; defer SMS until browser/public beta unless evidence requires it. No auth milestone may be planned while the days-versus-minutes conflict remains open.</div></td><td>P2 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O5" data-horizon="P1 blocker"><td class="id">O5</td><td><strong>Is replay `angel replay` or `angel serve --replay`?</strong><div class="proof">Recommend separate `angel replay`; serve owns a process, replay owns an audit. No P1 command guide may freeze until one spelling is canonical.</div></td><td>P1 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O6" data-horizon="P2 blocker"><td class="id">O6</td><td><strong>What exactly does Account deletion remove?</strong><div class="proof">Recommend full cloud cascade: sessions and management tokens, Angel keys, cloud grants, Provider Apps, Connections, source drafts, Angels, Versions, deployments, receipts, and Account records. It must not remove independent local tokens/files. Preserve only records required by an explicit abuse/security retention policy.</div></td><td>P2 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O7" data-horizon="P2 blocker"><td class="id">O7</td><td><strong>What does the public review bundle contain?</strong><div class="proof">Minimum proposed schema: canonical artifact and digest, compiler/engine pin, upstream source URL+revision, sealed request templates, required scopes, and charter/policy projection. Explicitly exclude credentials, tokens, client secrets, Account ids, Connection ids, nicknames, and provider identity labels.</div></td><td>P2 blocker</td><td><span class="pill s-open">Open</span></td></tr>
-<tr data-decision-id="O8" data-horizon="Approval gate"><td class="id">O8</td><td><strong>Is P0 the next build milestone?</strong><div class="proof">Recommendation: yes, after this ledger is accepted and O1 is closed. P0 is not done unless every deliverable passes from a fresh clone and the last registry tarball, with no workspace link or hidden repo state.</div></td><td>Approval gate</td><td><span class="pill s-open">Awaiting ledger review</span></td></tr></tbody></table></div>
-<h3 style="margin-top:28px">Conflicts found during reconciliation</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Conflict</th><th>Status</th><th>Destination</th><th>Resolution</th></tr></thead><tbody><tr data-contradiction-id="C1" data-state="Resolved by ledger"><td class="id">C1</td><td>ROADMAP says split repos is a completed canonical milestone; owner chose one monorepo.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P0</td><td>ROADMAP becomes a pointer; P0 implements Option A.</td></tr>
-<tr data-contradiction-id="C2" data-state="Resolved by ledger"><td class="id">C2</td><td>ROADMAP sends the project next into provider breadth, while dogfood blocks on front door and real journeys.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P1/P2</td><td>Provider breadth moves to P4.</td></tr>
-<tr data-contradiction-id="C3" data-state="Resolved by ledger"><td class="id">C3</td><td>ROADMAP marks public agent docs done; the first public-doc run failed at its URL.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P0/P1</td><td>Reopen proof until public-link and no-clone clean rooms pass.</td></tr>
-<tr data-contradiction-id="C4" data-state="Open"><td class="id">C4</td><td>APRD says magic links last days; raw owner requirement says minutes.</td><td><span class="pill s-open">Open</span></td><td>O4</td><td>P2 cannot be approved until chosen.</td></tr>
-<tr data-contradiction-id="C5" data-state="Resolved by ledger"><td class="id">C5</td><td>APRD/CLI log into cloud before local serve; owner requires cloud-independent local use.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P1</td><td>Local journey comes first.</td></tr>
-<tr data-contradiction-id="C6" data-state="Open"><td class="id">C6</td><td>CLI connect creates cloud custody only; owner requires separate local and cloud consent.</td><td><span class="pill s-open">Open</span></td><td>O3</td><td>P1 command contract must choose syntax.</td></tr>
-<tr data-contradiction-id="C7" data-state="Open"><td class="id">C7</td><td>CLI guide installs the core package; owner requires one public product package with separate internal core.</td><td><span class="pill s-open">Open</span></td><td>O1</td><td>P0 cannot publish until named.</td></tr>
-<tr data-contradiction-id="C8" data-state="Resolved by ledger"><td class="id">C8</td><td>APRD calls both own-client and hosted Google first-class v2; owner deferred hosted Google verification.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P1/P2/P4</td><td>Own-client first; hosted tier P4.</td></tr>
-<tr data-contradiction-id="C9" data-state="Open"><td class="id">C9</td><td>Public trust page intentionally omits provenance that the dogfood report treats as core trust evidence.</td><td><span class="pill s-open">Open</span></td><td>O7</td><td>P2 must widen with a secret-free bundle.</td></tr>
-<tr data-contradiction-id="C10" data-state="Resolved by ledger"><td class="id">C10</td><td>Generative eval lets the generator see repo state; clean-room candidate is forbidden repo access.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>L0</td><td>Separate candidate and grader roles before implementation.</td></tr>
-<tr data-contradiction-id="C11" data-state="Open"><td class="id">C11</td><td>Account deletion is placed in v2.2/open detail; repeatable managed dogfood requires it in P2.</td><td><span class="pill s-open">Open</span></td><td>O6</td><td>P2 contract needs exact cascade.</td></tr>
-<tr data-contradiction-id="C12" data-state="Resolved by ledger"><td class="id">C12</td><td>APRD says charter agreement is an agent preflight; CLI guide says the compiler fails semantic source-policy mismatch.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P1</td><td>Policy remains authoritative; preflight may flag prose conflicts but compiler does not claim semantic judgment.</td></tr>
-<tr data-contradiction-id="C13" data-state="Open"><td class="id">C13</td><td>APRD defines `serve --replay`; CLI guide defines `replay`.</td><td><span class="pill s-open">Open</span></td><td>O5</td><td>P1 docs must choose one.</td></tr>
-<tr data-contradiction-id="C14" data-state="Resolved by ledger"><td class="id">C14</td><td>APRD requires all 29 commitments in one v2.1 release; the approved planning rule permits a smaller next milestone without dropping the rest.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>P1/P2</td><td>P1 and P2 own separate vertical proofs; all commitments retain destinations.</td></tr>
-<tr data-contradiction-id="C15" data-state="Open"><td class="id">C15</td><td>APRD assumes an OS keychain on exe.dev Linux; no keychain or callback path has been proven there.</td><td><span class="pill s-open">Open</span></td><td>O2</td><td>Real spike precedes P1 freeze.</td></tr></tbody></table></div></section>
+<section id="decisions"><div class="label">5 · Decisions and contradictions</div><h2>Get evidence before asking Sam to choose</h2><div class="callout">O1–O7 are evidence briefs, not questions Sam must answer from intuition. O8 approves or changes this plan. O9 settles the honest Round-2 treatment of self-hosting.</div><h3 style="margin-top:24px">Open decisions</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Question and next evidence</th><th>Horizon</th><th>Status</th></tr></thead><tbody><tr data-decision-id="O1" data-horizon="WS2 evidence brief"><td class="id">O1</td><td><strong>What exact public package and install path does Round 2 use?</strong><div class="proof">Compare `@angelmcp/cli`, `angelmcp`, package-manager prerequisites, and a curl installer. Registry names were unclaimed on 2026-07-31. This no longer blocks the monorepo import; it blocks Round-2 package publication and docs.</div></td><td>WS2 evidence brief</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O2" data-horizon="WS2 evidence brief"><td class="id">O2</td><td><strong>How does headless Linux store and retrieve local OAuth credentials?</strong><div class="proof">Run the real exe.dev spike before choosing. Until it passes, no implementation plan or target doc may present Linux storage as known.</div></td><td>WS2 evidence brief</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O3" data-horizon="WS2 docs/API"><td class="id">O3</td><td><strong>What exact syntax separates local and cloud consent/custody?</strong><div class="proof">Recommend explicit `--local` and `--cloud`; inferred custody is rejected. Freeze only after reviewing the two complete user journeys.</div></td><td>WS2 docs/API</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O4" data-horizon="WS2 Account lifecycle"><td class="id">O4</td><td><strong>How long does a magic link live, and is SMS in Round 2?</strong><div class="proof">Research secure defaults, then recommend one single-use email expiry. The days-versus-minutes contradiction blocks Account implementation.</div></td><td>WS2 Account lifecycle</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O5" data-horizon="WS2 docs/API"><td class="id">O5</td><td><strong>Is replay `angel replay` or `angel serve --replay`?</strong><div class="proof">Prototype the full command tree and compare discoverability. Recommend separate `angel replay` unless the complete journey disproves it.</div></td><td>WS2 docs/API</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O6" data-horizon="WS2 Account lifecycle"><td class="id">O6</td><td><strong>What exactly does Account deletion remove?</strong><div class="proof">Inventory every stored state first. The final contract must remove all cloud-owned state, preserve independent local state, and name any legally retained record.</div></td><td>WS2 Account lifecycle</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O7" data-horizon="WS2 trust proof"><td class="id">O7</td><td><strong>What does the public review bundle contain?</strong><div class="proof">Threat/privacy review must lock the minimum public schema and exclusion list before managed publish is built.</div></td><td>WS2 trust proof</td><td><span class="pill s-open">Open</span></td></tr>
+<tr data-decision-id="O8" data-horizon="Approval gate"><td class="id">O8</td><td><strong>Does this Ledger define the right path to Dogfood Round 2?</strong><div class="proof">Approve or amend WS1, WS2, M2, owner scenarios, and learning dispositions. Approval authorizes planning and evidence work, not product implementation.</div></td><td>Approval gate</td><td><span class="pill s-open">Awaiting owner review</span></td></tr>
+<tr data-decision-id="O9" data-horizon="WS2 scope"><td class="id">O9</td><td><strong>How should Round 2 treat self-hosting?</strong><div class="proof">Recommend a one-page honest status: portable design, intended future path, currently unsupported and unproved. Publish setup instructions only after a separate clean-room proof.</div></td><td>WS2 scope</td><td><span class="pill s-open">Open</span></td></tr></tbody></table></div><h3 style="margin-top:28px">Conflicts found during reconciliation</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Conflict</th><th>Status</th><th>Destination</th><th>Resolution</th></tr></thead><tbody><tr data-contradiction-id="C1" data-state="Resolved by ledger"><td class="id">C1</td><td>The old roadmap calls split repos a completed canonical milestone; the owner chose one monorepo.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS1</td><td>Monorepo and canonical-source housekeeping are separate INT deliverables.</td></tr>
+<tr data-contradiction-id="C2" data-state="Resolved by ledger"><td class="id">C2</td><td>The old roadmap prioritizes provider breadth before fixing fresh-user journeys.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS2/WS3</td><td>Round 2 proves the narrow journey; breadth waits for Round-2 evidence.</td></tr>
+<tr data-contradiction-id="C3" data-state="Resolved by ledger"><td class="id">C3</td><td>Public agent docs were marked done even though the first public-doc run failed at its URL.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS2</td><td>Reopen proof until public-link and no-repo clean rooms pass.</td></tr>
+<tr data-contradiction-id="C4" data-state="Open"><td class="id">C4</td><td>APRD says magic links last days; raw owner requirement says minutes.</td><td><span class="pill s-open">Open</span></td><td>O4</td><td>WS2 Account lifecycle cannot freeze until evidence resolves it.</td></tr>
+<tr data-contradiction-id="C5" data-state="Resolved by ledger"><td class="id">C5</td><td>APRD/CLI log into cloud before local serve; owner requires cloud-independent local use.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS2</td><td>Local and managed are separate passing increments.</td></tr>
+<tr data-contradiction-id="C6" data-state="Open"><td class="id">C6</td><td>CLI connect creates cloud custody only; owner requires separate local and cloud consent.</td><td><span class="pill s-open">Open</span></td><td>O3</td><td>Round-2 docs/API must choose explicit syntax.</td></tr>
+<tr data-contradiction-id="C7" data-state="Open"><td class="id">C7</td><td>CLI guide installs the core package; owner requires one public product package with separate internal core.</td><td><span class="pill s-open">Open</span></td><td>O1</td><td>Blocks package publication and docs, not WS1 monorepo import.</td></tr>
+<tr data-contradiction-id="C8" data-state="Resolved by ledger"><td class="id">C8</td><td>APRD treats hosted Google OAuth as near-term; owner deferred it until verification/public beta.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS3</td><td>Round 2 uses own-client consent; hosted OAuth stays later.</td></tr>
+<tr data-contradiction-id="C9" data-state="Open"><td class="id">C9</td><td>Public trust page omits provenance that the dogfood report treats as core evidence.</td><td><span class="pill s-open">Open</span></td><td>O7</td><td>Managed Round-2 proof needs a secret-free review bundle contract.</td></tr>
+<tr data-contradiction-id="C10" data-state="Resolved by ledger"><td class="id">C10</td><td>Generative eval lets the candidate see repo state; clean-room candidate is forbidden repo access.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS2</td><td>Separate outside candidate and internal grader roles.</td></tr>
+<tr data-contradiction-id="C11" data-state="Open"><td class="id">C11</td><td>Account deletion was deferred, but repeatable managed dogfood requires it.</td><td><span class="pill s-open">Open</span></td><td>O6</td><td>Exact cascade is part of WS2 Account lifecycle.</td></tr>
+<tr data-contradiction-id="C12" data-state="Resolved by ledger"><td class="id">C12</td><td>APRD says charter agreement is an agent preflight; CLI guide says the compiler understands semantic mismatch.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS2</td><td>Policy remains authoritative; an agent may flag prose conflicts without claiming deterministic judgment.</td></tr>
+<tr data-contradiction-id="C13" data-state="Open"><td class="id">C13</td><td>APRD defines `serve --replay`; CLI guide defines `replay`.</td><td><span class="pill s-open">Open</span></td><td>O5</td><td>Round-2 command tree chooses one.</td></tr>
+<tr data-contradiction-id="C14" data-state="Resolved by ledger"><td class="id">C14</td><td>APRD bundled all commitments into one v2.1 release; owner wants smaller separately passing increments.</td><td><span class="pill s-in">Resolved by ledger</span></td><td>WS2</td><td>Local, managed, max-agent, and read-only-www increments retain separate proof.</td></tr>
+<tr data-contradiction-id="C15" data-state="Open"><td class="id">C15</td><td>APRD assumes an OS keychain on exe.dev Linux; no storage/callback path is proved.</td><td><span class="pill s-open">Open</span></td><td>O2</td><td>Real spike precedes target docs.</td></tr></tbody></table></div></section>
 
-<section id="delta"><div class="label">6 · Changes since the APRD review</div><h2>What moved, without being lost</h2><div class="delta"><article><h3>Changed now</h3><ul><li>Product Ledger replaces ROADMAP as the plan of record.</li><li>Option A monorepo migration is explicit P0.</li><li>Definitions of done become commands from clean environments.</li><li>Every decision requires a CLI/docs/www/test sweep.</li><li>Every dogfood closes with ledger reconciliation.</li></ul></article><article><h3>Scope reduced</h3><ul><li>The old all-in-one v2.1 is split into P1 local and P2 managed proofs.</li><li>Browser/mobile authoring stays visible in P3.</li><li>Provider breadth and hosted verified OAuth move to P4.</li><li>Catalog/sharing/self-hosting move to P5.</li><li>Multiplayer remains P6.</li></ul></article><article><h3>Newly surfaced</h3><ul><li>Package identity and installer are still open.</li><li>Headless Linux OAuth/storage needs a real spike.</li><li>Local/cloud consent syntax is unresolved.</li><li>Magic-link expiry contradicts the raw requirement.</li><li>Public provenance and Account deletion need exact contracts.</li></ul></article><article><h3>Explicitly not next</h3><ul><li>No product feature work inside P0.</li><li>No broad UI redesign without a designer.</li><li>No billing before beta evidence.</li><li>No self-hosting claim before a supported clean room.</li><li>No second source of truth in a starter or catalog.</li></ul></article></div></section>
+<section id="governance"><div class="label">6 · One source of truth</div><h2>Product truth rolls down; execution findings roll up</h2><div class="ownership"><article><h3>Product Ledger</h3><p>Promise, owner scenarios, guarantees, workstreams, deliverables, milestones, progress, decisions, and learning disposition. Update before owner review.</p></article><article><h3>GitHub Issues</h3><p>Durable backlog, bugs, investigations, priority, assignee, and cross-session execution state. Cluster issues around outcomes and link source learning IDs.</p></article><article><h3>Repo docs</h3><p>ADRs, exact API/CLI specs, evals, plans, handoffs, and evidence used to build. They derive scope from the Ledger.</p></article><article><h3>Local notes</h3><p>Temporary working state only. Persist a finding as an Issue; promote it to the Ledger when it changes product-grade truth.</p></article></div>
+<div class="rule"><strong>Promotion rule:</strong> update the Ledger in the same PR when an Issue changes a promise, owner scenario, guarantee, workstream, deliverable, milestone scope/status/order, owner decision, proof gate, or learning disposition. An Issue may be product-significant; it is not allowed to become a second roadmap.</div>
+<div class="rule"><strong>Review rule:</strong> before Sam reviews, refresh this dashboard from merged evidence and open Issues. Before any workstream or milestone starts, orphan count must be zero and every decision affecting that scope must be closed.</div></section>
 
-<section id="governance"><div class="label">7 · Standing operating rule</div><h2>The ledger is the plan of record</h2><div class="roadmap"><article class="guarantee"><h3>Before a milestone</h3><p>Interview → update goal, roadmap, and four-surface job map → reconcile learnings → close next-blocking decisions → approve one outcome and its proof command.</p></article><article class="guarantee"><h3>During a milestone</h3><p>Every deliverable links to a guarantee and proof. A scope cut changes the ledger in the same PR. No silent debt.</p></article><article class="guarantee"><h3>After a spike or dogfood</h3><p>Tag the run, save evidence, add findings, assign every disposition, and show the delta before planning more work.</p></article><article class="guarantee"><h3>At release</h3><p>Run the clean-environment command. Sweep CLI, docs, www, tests, and deployed links. Only then mark the milestone done.</p></article></div>
-<h3 style="margin-top:28px">Source register</h3><ol class="source-list"><li>Raw M2 dogfood notes, 2026-07-29.</li><li>M2 dogfood synthesis and 68-item catalog.</li><li>ROADMAP.md at docs/aprd-v2.</li><li>ADRs 0001–0006 and index.</li><li>Product decisions 0001–0006 and index.</li><li>APRD v2 current draft and 29 commitments.</li><li>v2.1 CLI guide current draft.</li><li>v2.1 generative eval current draft.</li><li>Open GitHub issues #5–#42 fetched 2026-07-31.</li><li>Post-report owner decisions through 2026-07-31.</li></ol>
-<div class="rule"><strong>Supersession:</strong> this ledger owns final goal, roadmap, milestone status, learning disposition, and build approval. ADRs own architecture decisions. Product decisions own product choices. The APRD owns the approved next milestone’s build contract and must be derived from this ledger. Issues and implementation plans sit below it.</div></section>
-
-<footer style="margin-top:72px;padding-top:20px;border-top:1px solid var(--line);color:#94a3b8;font-size:12px">Review draft · orphan count computed from 96 unique learning rows · next milestone deliberately unapproved.</footer>
+<section id="sources"><div class="label">7 · Source register</div><h2>What this review reconciles</h2><ol class="source-list"><li>Raw M2 dogfood notes and 68-item synthesis.</li><li>ADRs 0001–0006 and product decisions 0001–0006.</li><li>APRD v2, CLI guide, eval draft, and 29 commitments.</li><li>Open GitHub issues #5–#42 fetched 2026-07-31.</li><li>Post-report owner decisions through 2026-07-31.</li><li>Obsidian: Feedback on the initial product ledger.md.</li></ol></section>
+<footer style="margin-top:72px;padding-top:20px;border-top:1px solid var(--line);color:#94a3b8;font-size:12px">Owner review draft · 108 unique learning rows · 0 orphans · Dogfood Round 2 unapproved.</footer>
 </main></body></html>
