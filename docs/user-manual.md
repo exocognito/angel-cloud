@@ -51,10 +51,10 @@ this project explores for the same idea; to weigh it against the others, see
 
 Milestone 1 runs a single pre-provisioned Account, `acct_m1`, behind Cloudflare
 Access. As of 2026-07-22 the Broker, Gateway, and Control Workers are deployed
-in the dedicated Cloudflare account, and remote CI is green against the public
-`@smcllns/angel-core@0.2.0` pin. Provider App `google-primary` is stored
-write-only in Broker custody, and its safe summary reads without returning the
-client secret.
+in the dedicated Cloudflare account. Public `@smcllns/angel-core@0.3.0` is
+published, and the repository pins it with a matching lockfile. Provider App
+`google-primary` is stored write-only in Broker custody, and its safe summary
+reads without returning the client secret.
 
 **Live and proven end to end:**
 
@@ -126,8 +126,7 @@ flowchart TD
 - **Environment** — `preview` or `production`, nothing else. Each has its own
   deployment, bindings, availability state, and Angel key. A preview key cannot
   call production. `preview` was named `staging` until 2026-07-28 (PD 0003);
-  the pinned CLI and its `angel.json` still use the old spelling, and the
-  server accepts it as a legacy dialect.
+  the server accepts the old spelling only as a legacy management-API dialect.
 - **Deployment** — one Version installed into one environment, with explicit
   **bindings** that map each of the artifact's requirements to Connections.
 - **Angel key** — the bearer an agent presents. Each environment gets a default
@@ -290,7 +289,7 @@ Exactly four keys:
   "account": "acct_m1",
   "angel": "google-read-proof",
   "bindings": {
-    "staging":    { "gmail": "proof-google", "docs": "proof-google" },
+    "preview":    { "gmail": "proof-google", "docs": "proof-google" },
     "production": { "gmail": "proof-google", "docs": "proof-google" }
   }
 }
@@ -300,8 +299,7 @@ Exactly four keys:
   credentials.
 - `account` — your Account ID.
 - `angel` — the Angel slug; must equal the artifact's `name`.
-- `bindings` — a `staging` map (the pinned CLI's spelling of the preview
-  environment) and a `production` map, each keyed by the
+- `bindings` — a `preview` map and a `production` map, each keyed by the
   artifact's binding-requirement IDs. For a direct Angel the ID is the provider
   name (`gmail`); for a composed Angel it is the child name
   (`gmail-read-and-draft`), or `<child>:<provider>` when one child uses two
@@ -309,6 +307,10 @@ Exactly four keys:
   the agent a choice. Production never inherits preview's bindings, and
   preview never inherits production's (PD 0005)
   ([why](faq.md#why-cant-production-reuse-my-staging-bindings-automatically)).
+
+Core 0.3.0 renamed the local config key from `staging` to `preview`. Rename that
+key in any `angel.json` created for core 0.2.0. The server still accepts
+`staging` only as a legacy management-API environment spelling.
 
 ## Add Google custody
 
@@ -438,8 +440,9 @@ flowchart LR
     ART --> PUB["angel publish"]
     J["angel.json\n(target, Account,\nbindings)"] --> PUB
     PUB --> V["immutable Version"]
-    V --> S["preview deployment"]
-    S -->|"angel deploy --prod\nor dashboard promote"| PR["production deployment"]
+    V -->|"publish (default)"| PR["production deployment"]
+    V -->|"publish --preview"| S["preview deployment"]
+    S -->|"angel deploy --prod\nor dashboard promote"| PR
 ```
 
 ### Install the CLI
@@ -452,12 +455,13 @@ clone of this repository — install it and invoke it with `pnpm exec angel`:
 pnpm add @smcllns/angel-core
 ```
 
-It has exactly three subcommands:
+It has four subcommands:
 
 ```text
 pnpm exec angel build   <angel>
-pnpm exec angel publish <angel>
+pnpm exec angel publish <angel> [--preview [--share-production-credentials]]
 pnpm exec angel deploy  <angel> --prod
+pnpm exec angel delete  <angel> [--confirm <slug>]
 ```
 
 Publish and deploy read two environment variables:
@@ -480,7 +484,7 @@ children) and writes `build/angel.version.json` (the canonical, secret-free
 artifact) and `build/angel.version.sha256` (its digest). You never need to run
 `build` by hand — `publish` runs it — but it is a cheap, offline preview.
 
-### Publish to preview
+### Publish to production
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -497,19 +501,23 @@ One command does four things:
    read the plaintext back**
    ([can I rotate?](faq.md#can-i-rotate-an-angel-key-is-it-shown-more-than-once)).
 3. Publishes the Version. The same digest returns the same Version.
-4. Deploys it to the preview environment, resolving your `staging` binding
-   nicknames (the CLI's legacy spelling of preview) against the Account's live
-   Connections. Each nickname must exist, be `healthy`, and cover its
-   requirement's provider. A preview deploy with no bindings for a Version
-   that requires them fails and names the two ways forward (PD 0005). The
-   server can also take a published Version straight to production in one step
-   (`POST /v1/angels/{id}/environments/production/deployments`); the CLI
-   default moves there with the next `@smcllns/angel-core` release (PD 0003).
+4. Deploys it to production, resolving the `production` binding nicknames in
+   `angel.json` against the Account's live Connections. Each nickname must
+   exist, be `healthy`, and cover its requirement's provider.
+
+Production is the default in `@smcllns/angel-core` 0.3.0 (PD 0003). To inspect a
+Version in preview first, add `--preview`; that uses the separate `preview`
+bindings. A preview deploy with no bindings for a Version that requires them
+fails and names the two ways forward (PD 0005). To make preview reuse
+production's bindings, add the explicit
+`--preview --share-production-credentials` flags.
 
 Every mutation carries an idempotency key: resend the same key to retry a call
 safely, and never reuse a key for different input.
 
 ### Promote the exact previewed deployment
+
+This path is optional because bare `publish` now deploys straight to production.
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -529,16 +537,19 @@ dashboard's promote button does the same thing, with a drift check on top
 
 ### Delete an Angel
 
-There is no CLI command yet; call the management API directly with the same
-authentication as every mutation (Access identity, management bearer, and an
-`Idempotency-Key`):
+Use the same authentication variables as publish and deploy:
 
 ```sh
-curl -X DELETE "$CONTROL_BASE_URL/v1/accounts/<account>/angels/<slug>" \
-  -H "CF-Access-Client-Id: <service-token-id>" \
-  -H "CF-Access-Client-Secret: <service-token-secret>" \
-  -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
-  -H "Idempotency-Key: $(uuidgen)"
+ANGEL_MANAGEMENT_TOKEN=... \
+ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
+pnpm exec angel delete google-read-proof
+```
+
+If production has a live or pending deployment, the server refuses the first
+call and the CLI prints the exact confirmation command:
+
+```sh
+pnpm exec angel delete google-read-proof --confirm google-read-proof
 ```
 
 Deletion is hard and complete: every agent key is revoked first (nothing
@@ -551,14 +562,14 @@ gets renamed. Account handles are different — they are
 
 When production has a deployment — active, or pending repair after a failed
 convergence — the request must repeat the slug in the body —
-`{"confirm": "<slug>"}` — or it fails with `409`. An Angel whose production is
+`{"confirm": "<slug>"}` — or it fails with `409`. The CLI's `--confirm` flag
+sends that field. An Angel whose production is
 empty deletes without a body; a live preview deployment does not require
 confirmation. Replaying the same `Idempotency-Key` returns the original
-response; a fresh delete of an already-deleted slug returns `404`. Mint a fresh
-key per delete (as the `uuidgen` above does) — a key derived from
-method+path+body would collide across delete → recreate → delete and replay the
-first response instead of deleting again. If a gate call fails mid-teardown the
-Angel stays visible with its keys revoked — call delete again to finish.
+response; a fresh delete of an already-deleted slug returns `404`. The CLI mints
+a fresh idempotency key for each delete so delete → recreate → delete cannot
+replay the first response. If a gate call fails mid-teardown the Angel stays
+visible with its keys revoked — call delete again to finish.
 
 ## Connect an agent
 
@@ -716,9 +727,11 @@ Angel detail has four panes:
 
 ![Settings Version history: each immutable Version with its tool count, full sha256 digest, and Staged or Live status](manual-images/settings-version-history.png)
 
-The endpoint comes from the management read model; the page never constructs one.
-The web UI does not author, build, or publish policy — those actions stay in
-reviewable source and the CLI
+The endpoint comes from the management read model; the page never constructs
+one. Today the web UI does not author, build, or publish policy, so those
+actions still use reviewable source and the CLI. That is an unbuilt product
+path, not the end-state boundary: [PD 0006](product-decisions/0006-www-is-a-full-write-surface.md)
+sets www parity under the same source, compiler, and immutable publish contract
 ([why](faq.md#can-i-author-or-publish-an-angel-from-the-web-ui)).
 
 ## Pause and resume
@@ -849,8 +862,8 @@ The ordinary golden journey injects a deterministic provider at the Broker
 boundary. It needs no Google or Cloudflare credentials, yet exercises the real
 CLI, artifact digests, the Account API, both gates, MCP auth, Connection
 selection, availability, exact promotion, key stability, and Account isolation.
-The hosted repo runs this against the public `@smcllns/angel-core@0.2.0` pin, and
-remote CI is green.
+The hosted repository runs this against public `@smcllns/angel-core@0.3.0` with
+its matching lockfile.
 
 ### Full deployed comparison journey
 

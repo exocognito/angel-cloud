@@ -30,8 +30,7 @@ stop — you have taken the wrong path. Work in the user's own empty directory.
 - **Environment** — `preview` and `production`, each a mutable pointer to one
   Version plus its bindings, keys, and availability. Production is the default:
   the bare coordinate addresses it, and only `@preview` names an environment.
-  The pinned CLI and its `angel.json` still spell `preview` as `staging`; the
-  server accepts both spellings.
+  The server accepts `staging` only as a legacy management-API spelling.
 - **Connection** — a custodied provider credential (e.g. a Google OAuth grant).
   Bindings map an Angel's requirements to Connections by nickname.
 - **Angel key** — the opaque bearer an agent presents to the MCP endpoint. It
@@ -48,7 +47,7 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | 3. Add a Google Connection | Browser (Cloudflare Access + Google consent) | Interactive login — no headless path |
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
-| 6. Publish to preview (the CLI still says staging) | `angel publish` / API | Management bearer + Access token |
+| 6. Publish to preview (opt in) | `angel publish --preview` / API | Management bearer + Access token |
 | 7. Promote to production | `angel deploy --prod` / API | Management bearer + Access token |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
@@ -67,8 +66,8 @@ has a `#!/usr/bin/env bun` shebang). Install Bun if it is missing
 pnpm add @smcllns/angel-core
 ```
 
-Invoke it with `pnpm exec angel <command>`. The CLI accepts exactly three
-subcommands — `build`, `publish`, and `deploy … --prod` — and prints a `usage:`
+Invoke it with `pnpm exec angel <command>`. The CLI accepts four subcommands —
+`build`, `publish`, `deploy … --prod`, and `delete` — and prints a `usage:`
 line for anything else, so your first real use is the build in step 5.
 
 If you cannot or prefer not to run the CLI, every publish/promote step has a
@@ -136,13 +135,12 @@ requirement in each environment. Keep the real `angel.json` untracked.
   "account": "acct_...",
   "angel": "google-read-proof",
   "bindings": {
-    "staging":    { "gmail": "<connection-nickname>", "docs": "<connection-nickname>" },
+    "preview":    { "gmail": "<connection-nickname>", "docs": "<connection-nickname>" },
     "production": { "gmail": "<connection-nickname>", "docs": "<connection-nickname>" }
   }
 }
 ```
 
-The `staging` key is the pinned CLI's spelling of the preview environment.
 Production bindings are explicit and never inherit from preview. Details:
 [Write an Angel](https://docs.angelmcp.ai/user-manual.md#write-an-angel).
 
@@ -161,19 +159,19 @@ request.
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
 ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
-pnpm exec angel publish google-read-proof
+pnpm exec angel publish google-read-proof --preview
 ```
 
 Publish rebuilds, lists healthy Connections, resolves the preview bindings,
 ensures the Angel, publishes the immutable Version, and installs it in the
-preview environment (the pinned CLI prints and sends `staging` for it).
+preview environment. Without `--preview`, core 0.3.0 publishes to production.
 
 **On the first ensure, the response prints the shown-once preview and
 production Angel keys.** Capture them immediately into a secret store — later reads expose
-only fingerprints. Then verify the staged tool list is exactly what you expect
+only fingerprints. Then verify the preview tool list is exactly what you expect
 (here: `gmail.users.messages.list` and `docs.documents.get`).
 
-## Step 7 — Promote the exact staged deployment
+## Step 7 — Promote the exact previewed deployment
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
@@ -181,8 +179,8 @@ ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."
 pnpm exec angel deploy google-read-proof --prod
 ```
 
-`deploy --prod` reads the active staged deployment, resolves production
-bindings, and promotes that exact staged Version and digest under them. It does
+`deploy --prod` reads the active preview deployment, resolves production
+bindings, and promotes that exact previewed Version and digest under them. It does
 not build, publish, or pick a newer Version — the policy is exact by
 construction, though production keeps its own bindings.
 Reference: [Promote the exact previewed deployment](https://docs.angelmcp.ai/user-manual.md#promote-the-exact-previewed-deployment).

@@ -1,6 +1,6 @@
 # Architecture decision records
 
-These five records were written in `exocognito/angels-comparison` between
+The first five records were written in `exocognito/angels-comparison` between
 2026-07-16 and 2026-07-24. That repository is now archived, so they live here.
 
 They are kept verbatim. An ADR states what was decided and why, on a date — it
@@ -22,6 +22,7 @@ exactly what used to go missing.
 | 0003 | Immutable version promotion | Partly — see below | Yes | — |
 | 0004 | Repository ownership at the artifact boundary | Partly — see below | Yes | — |
 | 0005 | Derive execution from the same reviewed spec as policy | Yes | Yes — the Broker executes only the sealed template (`src/workers/broker.ts:185`); the compiler side ships in `@smcllns/angel-core` | — |
+| 0006 | Store www source in Control and compile it in the browser | Yes | No | — |
 
 ADR 0005 is the design of record for the sealed-request-template work. It
 never merged in the comparison repo; it is recovered here from that repo's
@@ -43,6 +44,13 @@ close to the "copy staging bindings automatically" that 0003 rejected — and
 withdrew it the same day. **ADR 0003's binding-isolation stance stands as
 written.** Preview binds its own Connections; sharing production's is
 available and must be asked for.
+
+**ADR 0003's browser-surface exclusion is superseded.**
+[PD 0006](../product-decisions/0006-www-is-a-full-write-surface.md),
+2026-07-30, makes www a full-parity authoring and publishing surface. The
+record changes the old API-first scope cut, not ADR 0003's core: every surface
+still compiles the same canonical artifact and publishes immutable,
+digest-pinned Versions through the same binding and promotion rules.
 
 **The artifact format is `angel.version.v2`.** ADRs 0001 and 0004 name
 `angel.version.v1`. The compiler emits v2 and validation rejects anything else.

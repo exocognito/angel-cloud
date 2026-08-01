@@ -44,20 +44,23 @@ writing a new record that supersedes the old one, never editing the old one.
 | --- | --- | --- | --- | --- |
 | [0001](0001-angel-coordinate-scheme.md) | Address every Angel as `@account/angel[@suffix]`; bare means production | 2026-07-23 | Yes | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
 | [0002](0002-public-angel-page.md) | Every Angel has a public page anyone can read without a key | 2026-07-23 | Yes | [#11](https://github.com/exocognito/angel-cloud/issues/11) |
-| [0003](0003-preview-is-opt-in.md) | Publishing goes live; `preview` is opt-in and shares credentials | 2026-07-28 | Partly | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
+| [0003](0003-preview-is-opt-in.md) | Publishing goes live; `preview` is opt-in and shares credentials | 2026-07-28 | Yes | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
 | [0004](0004-account-handles.md) | Account handles are permanent, renameable once, and never released | 2026-07-28 | Partly | [#12](https://github.com/exocognito/angel-cloud/issues/12) |
-| [0005](0005-preview-binds-its-own-connections.md) | Preview binds its own Connections; sharing production's must be asked for | 2026-07-28 | Partly | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
+| [0005](0005-preview-binds-its-own-connections.md) | Preview binds its own Connections; sharing production's must be asked for | 2026-07-28 | Yes | [#3](https://github.com/exocognito/angel-cloud/issues/3) |
+| [0006](0006-www-is-a-full-write-surface.md) | www can create, edit, build, and publish through the same artifact contract | 2026-07-30 | Partly | none yet |
 
 0005 supersedes point 3 of 0003 — same day, before either shipped. The reversal
 is a record rather than an edit because the convention has to hold at one day
 old to hold at one year.
 
-No whole live-facing gap remains. The Gateway answers the
+For decisions 0001–0005, no whole live-facing gap remains. The Gateway answers the
 `/@handle/angel[@preview]` coordinate with bare meaning production (0001),
 renders 0002's trust page at the bare production coordinate, the
 second environment is named `preview` and binds only its own explicit
 Connections (0003/0005), and the server deploys a published Version straight
-to production in one step. What remains CLI-side — `angel publish` defaulting
-to production, `--preview`, and the typed share flag — waits on
-`@smcllns/angel-core`, whose pinned release still speaks the legacy `staging`
-dialect that the `/v1` surface keeps serving through the cutover.
+to production in one step.
+
+PD 0006 adds a deliberate product gap. The dashboard already promotes,
+changes availability, and manages keys, but it cannot author, build, or publish
+source. Those www controls are agreed and unbuilt. CLI spellings that remain
+unfinished are tracked separately in the APRD.

@@ -2,10 +2,9 @@
 
 - Status: Partly superseded by [0005](0005-preview-binds-its-own-connections.md)
 - Date: 2026-07-28
-- Implemented: Partly — the platform renamed the environment to `preview` and
-  deploys a published Version straight to production in one step; the CLI
-  default flip (`angel publish` → production, `--preview`) waits on
-  `@smcllns/angel-core`
+- Implemented: Yes — the platform and core 0.3.0 call the environment
+  `preview`; bare `angel publish` deploys straight to production and
+  `--preview` opts into the second environment
 - Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
 
 > **Point 3 was reversed the same day it was agreed.** Preview binds its own

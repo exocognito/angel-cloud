@@ -3,7 +3,7 @@
   "account": "acct_example",
   "angel": "golden-research-assistant",
   "bindings": {
-    "staging": {
+    "preview": {
       "gmail": ["google-primary", "google-work"],
       "docs": "google-primary"
     },
@@ -13,4 +13,3 @@
     }
   }
 }
-

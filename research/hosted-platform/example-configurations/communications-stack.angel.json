@@ -3,7 +3,7 @@
   "account": "acct_example",
   "angel": "communications-stack",
   "bindings": {
-    "staging": {
+    "preview": {
       "gmail": ["google-primary", "google-family"],
       "docs": "google-family-docs",
       "twitter": ["x-primary", "x-project"],

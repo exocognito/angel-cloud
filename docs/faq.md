@@ -77,10 +77,14 @@ waiting to be uncovered.
 
 ### Does Angel Cloud run my code?
 
-No. There is no code-execution engine — a settled design decision. The platform
-accepts a canonical, secret-free artifact; it never accepts source YAML and
-never runs your build. "Compiled" here means canonical declarative data the
-runtime interprets but cannot edit.
+No server runs your code or your build — that is a settled design decision.
+Today the publish boundary accepts only a canonical, secret-free artifact.
+When www authoring lands, Control will store `ANGEL.yaml` as owner-only data
+and the browser will compile it; the publish and runtime boundaries will still
+receive only the artifact
+([ADR 0006](adrs/0006-browser-source-and-client-compilation.md)).
+"Compiled" here means canonical declarative data the runtime interprets but
+cannot edit.
 
 ## Design choices
 
@@ -108,7 +112,7 @@ agents can see the policy moved without losing their credentials
 ### Can I rotate an Angel key? Is it shown more than once?
 
 A key's plaintext is shown exactly once, on the first ensure and again each time
-you mint or rotate one ([publish](user-manual.md#publish-to-preview)). Later
+you mint or rotate one ([publish](user-manual.md#publish-to-production)). Later
 reads show only fingerprints. Rotation and revocation are explicit actions on
 the dashboard's Agent Keys pane, never a side effect of a deploy
 ([the dashboard](user-manual.md#use-the-dashboard)). Keys are hashed at rest, so
@@ -334,10 +338,16 @@ source again yourself.
 
 ### Can I author or publish an Angel from the web UI?
 
-No, and that is deliberate. The dashboard can promote an already-staged Version,
-manage keys, and pause or resume tools — nothing more
-([the dashboard](user-manual.md#use-the-dashboard)). Policy always enters
-through reviewed source and the CLI ([ship it](user-manual.md#ship-it)).
+Not today. The dashboard can promote an already-staged Version, manage keys,
+and pause or resume tools, but it cannot yet author, build, or publish source
+([the dashboard](user-manual.md#use-the-dashboard)).
+
+That is now an implementation gap, not a permanent boundary.
+[PD 0006](product-decisions/0006-www-is-a-full-write-surface.md) makes www a
+full-parity write surface. Its future editor will write the same `ANGEL.yaml`
+shape, use the same compiler, and publish the same immutable artifact as the
+CLI. Until that work lands, policy still enters through reviewed source and
+the CLI ([ship it](user-manual.md#ship-it)).
 
 ### What's the difference between pause/resume and disabling an Angel?
 
@@ -426,8 +436,9 @@ credentials ([comparison journey](user-manual.md#full-deployed-comparison-journe
 Yes. It merged to main on 2026-07-23 (PR #1), and Broker, Gateway, and Control
 are deployed and live in the dedicated Cloudflare account: an unauthenticated
 Control root request redirects to Access (`302`), a valid service token reaches
-the app (`200`), live reset and state reads pass, and the public
-`@smcllns/angel-core@0.2.0` pin and remote CI are green
+the app (`200`), and live reset and state reads pass. Public
+`@smcllns/angel-core@0.3.0` is published, and the repository pins it with a
+matching lockfile
 ([status](user-manual.md#milestone-1-what-is-live)). Cloudflare account login,
 Google consent, publish/deploy, seeded Gmail and Docs reads, loud revoke
 failure, row-level reauthorization on the same Connection, and the final pass

@@ -54,8 +54,8 @@ monitoring yet.
    ```
 
    Set the real control target, Account, Angel slug, and the same healthy
-   Connection nickname under both `docs` and `gmail` in the `staging` map (the
-   pinned CLI's spelling of the preview environment) and the `production` map.
+   Connection nickname under both `docs` and `gmail` in the `preview` and
+   `production` maps.
    The real `angel.json` is ignored. `ANGEL.yaml` remains portable and
    target-neutral.
 5. **Local operator shell — publish preview.** With the operator's management
@@ -63,7 +63,7 @@ monitoring yet.
    Control endpoint, run:
 
    ```sh
-   ANGEL_MANAGEMENT_TOKEN=... ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' bun run angel publish google-read-proof
+   ANGEL_MANAGEMENT_TOKEN=... ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' bun run angel publish google-read-proof --preview
    ```
 
    This builds the checked-in policy, publishes its immutable artifact, and
@@ -71,7 +71,7 @@ monitoring yet.
    list contains only
    `gmail.users.messages.list` and `docs.documents.get`.
 6. **Local operator shell — deploy production.** With both the management
-   bearer and mandatory `ANGEL_ACCESS_TOKEN`, promote the exact staged
+   bearer and mandatory `ANGEL_ACCESS_TOKEN`, promote the exact preview
    deployment:
 
    ```sh
