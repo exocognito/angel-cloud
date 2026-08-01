@@ -166,6 +166,8 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof).not.toContain("DOTFILES_REAL_");
     expect(proof).not.toContain("Library/pnpm/pnpm");
     expect(proof).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md");
+    expect(proof.match(/"tar", "-xzpf"/g)).toHaveLength(2);
+    expect(proof).not.toContain('"tar", "-xzf"');
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {

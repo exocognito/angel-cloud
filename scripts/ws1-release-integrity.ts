@@ -112,7 +112,7 @@ const pack = JSON.parse(run(["pnpm", "pack", "--json", "--pack-destination", pac
 };
 const expectedPaths = Object.keys(baseline.packedFiles).sort();
 sameJson(pack.files.map(({ path }) => path).sort(), expectedPaths, "packed file list");
-run(["tar", "-xzf", pack.filename, "-C", candidateDirectory]);
+run(["tar", "-xzpf", pack.filename, "-C", candidateDirectory]);
 
 const registryMetadata = JSON.parse(run([
   "pnpm", "view", baseline.corePackage, "dist.tarball", "dist.integrity", "--json",
@@ -124,7 +124,7 @@ const registryBytes = new Uint8Array(await registryResponse.arrayBuffer());
 assert(`sha512-${digest("sha512", registryBytes)}` === baseline.registryIntegrity, "registry tarball failed SRI verification");
 const registryTarball = join(temp, "registry.tgz");
 writeFileSync(registryTarball, registryBytes);
-run(["tar", "-xzf", registryTarball, "-C", registryDirectory]);
+run(["tar", "-xzpf", registryTarball, "-C", registryDirectory]);
 const registryPaths = run(["tar", "-tzf", registryTarball]).trim().split("\n")
   .filter((path) => path.startsWith("package/") && !path.endsWith("/"))
   .map((path) => path.slice("package/".length))
