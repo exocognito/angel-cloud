@@ -198,7 +198,7 @@ A local `bun -e` probe compiled this placeholder source and passed it through
 | Angel name/slug | Human navigation | User-authored and can encode identity/private project names; route already supplies it | **Exclude from payload** |
 | Account ID or handle | None once route is known | Tenant/person identification and enumeration | **Exclude** |
 | Charter | Helpful intent notes, not authority | Arbitrary user text; verified identity leak | **Exclude** |
-| Guard field names | Helps understand the exact restriction | Current schema accepts arbitrary user strings | **Exclude from hard-private public bundle** |
+| Guard field names | Helps understand the exact restriction | Current schema accepts arbitrary user strings | **Exclude from the capability summary** |
 | Guard pin/forbidden values | Needed for exact policy review | Can be email, label, document ID, path, or other private target; verified leak | **Exclude** |
 | Children and requirement `source`/IDs | Explains composition | User-chosen source names and private topology | **Exclude** |
 | Provider adapter, origin, source digest | Explains execution derivation | Public registry data, but not needed for minimum; PD 0002 intentionally withholds it | **Exclude** |

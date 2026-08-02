@@ -109,6 +109,8 @@ describe("WS-E evidence-only decision closure", () => {
       const contradiction = ledger.match(new RegExp(`<details class="contradiction" data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
       expect(contradiction).toContain("WS2 execution gate");
     }
+    const c6 = ledger.match(/data-contradiction-key="C6"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c6).toContain("reconcile the target guide's <code>--control</code> host with settled <code>api.angelmcp.ai</code>");
     for (const contradiction of ledger.matchAll(/<details class="contradiction"[^>]+data-record-state="OPEN"[\s\S]*?<\/details>/g)) {
       expect(contradiction[0]).not.toContain("resolved this contradiction");
     }
@@ -258,7 +260,12 @@ describe("WS-E evidence-only decision closure", () => {
     expect(lr002).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
     expect(lr002).toContain("Any owner-opted-in public-source disclosure is separate from the summary");
     expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
+    expect(publicBrief).not.toContain("hard-private public bundle");
+    expect(publicBrief).toContain("Exclude from the capability summary");
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
+    expect(replayBrief).toContain("#### O5 full record: Verification commands");
+    expect(replayBrief).not.toContain("05-replay-syntax full record");
+    expect(replayBrief).not.toContain(".agents/parallel-agents/");
     expect(replayBrief).toContain("Product Ledger command C11");
     expect(replayBrief).toContain("Product Ledger contradiction C13/LR-018");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");

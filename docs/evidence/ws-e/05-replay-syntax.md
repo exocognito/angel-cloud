@@ -301,7 +301,7 @@ decision.
 
 ---
 
-### 05-replay-syntax full record
+#### O5 full record: Verification commands
 
 Commands run after the investigation:
 
@@ -316,5 +316,4 @@ bun test tests/cloud/aprd-v2.test.ts tests/cloud/product-ledger.test.ts
 These passing tests prove the current parser and the saved target-document
 contradiction. They do not prove the recommended commands exist.
 
-Repository files were not changed. Only this requested evidence result and the
-completion marker were written under `.agents/parallel-agents/wse-o3-o5/`.
+Repository files were not changed.
