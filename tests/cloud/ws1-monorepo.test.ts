@@ -176,9 +176,10 @@ describe("WS1 behavior-neutral monorepo", () => {
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {
-    expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
-      "supersedes ADR 0004 repository ownership",
-    );
+    const monorepoAdr = read("docs/adrs/0007-monorepo-source-and-release-integrity.md");
+    expect(monorepoAdr).toContain("supersedes ADR 0004 repository ownership");
+    expect(monorepoAdr).toContain("PR #44 must merge with a merge commit");
+    expect(monorepoAdr).toMatch(/Squash and rebase merges discard the\s+imported ancestry/);
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
       "No runtime, auth, OAuth, policy, route, provider, product-flow, binding, or secret", 
     );

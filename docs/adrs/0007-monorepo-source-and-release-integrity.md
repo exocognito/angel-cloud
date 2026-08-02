@@ -61,6 +61,9 @@ must hard-fail unless all of these remain true:
    normalizing only the package source-path comments, and contain no Node
    filesystem or CLI code.
 
+PR #44 must merge with a merge commit. Squash and rebase merges discard the
+imported ancestry and make gate 5 fail on `main`.
+
 `package.json` repository metadata plus README command paths, the
 `angel.version.v2` format correction, and the Distribution section's current
 source and release guidance are the only allowed packed-file differences.
