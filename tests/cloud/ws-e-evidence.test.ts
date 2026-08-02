@@ -83,6 +83,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
     expect(ledger).toContain("The callback half of the original contradiction is carried by C16");
+    expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>O2 · WS-E · WS2 · PD-02<\/dd>/);
+    expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>O2 · WS2 · PD-02<\/dd>/);
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
@@ -106,6 +108,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(syntaxBrief).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(syntaxBrief).toContain("bun add --global @angelmcp/cli@0.1.0 # pending O1");
     expect(syntaxBrief).toContain("`apps connect google --local\\|--cloud`");
+    expect(syntaxBrief).toContain("Angel-owned encrypted vault");
+    expect(syntaxBrief).not.toContain("machine credential store");
+    expect(syntaxBrief).not.toContain("O2 must prove the supported Linux path");
     const packageBrief = readFileSync(join(root, "docs/evidence/ws-e/01-package-install-identity.md"), "utf8");
     expect(packageBrief).toContain("Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
@@ -118,6 +123,11 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger.replace(o7, "")).not.toMatch(/review bundle/i);
     expect(ledger).not.toMatch(/public bundle/i);
     expect(ledger).toContain("Publish only the O7 capability summary");
+    expect(ledger).toContain("hiding artifact commitment");
+    const publicBrief = readFileSync(join(root, "docs/evidence/ws-e/07-public-review-and-self-hosting.md"), "utf8");
+    expect(publicBrief).toContain('"commitment": "<64 lowercase hexadecimal SHA-256 characters>"');
+    expect(publicBrief).toContain("32-byte owner-held random nonce");
+    expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");
     expect(replayBrief).toContain("Product Ledger contradiction C13/LR-018");
@@ -132,8 +142,16 @@ describe("WS-E evidence-only decision closure", () => {
     expect(lr006).toContain('href="evidence/ws1-release-baseline.json"');
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/guard field\s+names and literal values as public/);
+    expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
+    expect(ledger).toMatch(/data-index-key="WS1"[^>]+data-index-last-verified="2026-08-01 · Pi release proof"/);
+    const c10 = ledger.match(/<details class="command" data-command-key="C10"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c10).toContain("owner-only mode-0600 NDJSON");
+    expect(c10).toContain('href="evidence/ws-e/05-replay-syntax.md"');
+    expect(ledger).toContain("WS-E decision evidence briefs 1–7");
+    expect(ledger).not.toMatch(/proposed (?:Product Ledger )?contract v0\.1/i);
+    expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
     const restamped = {
-      index: ["WS1", "WS2", "M-DF2"],
+      index: ["WS2", "M-DF2"],
       experience: ["EW1", "EW2", "EW3", "EW4", "EW5", "EW6"],
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13", "G14"],

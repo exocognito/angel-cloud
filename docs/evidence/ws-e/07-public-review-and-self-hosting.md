@@ -18,7 +18,7 @@ Ran a field-by-field threat/privacy review over artifact, source, public page, d
 ## Verified results
 
 - The exact v2 artifact and current demo/public projection can carry charter, guard literals, source/composition names, scopes, provider and operational details, identity labels, or deployment metadata.
-- A capability-only projection can disclose canonical operation names, whether guards exist, and the artifact commitment without revealing exact guards or identity.
+- A capability-only projection can disclose canonical operation names, whether guards exist, and a hiding artifact commitment without revealing exact guards or identity.
 - `@smcllns/angel-core@0.3.0` is public and MIT licensed; `ANGEL.yaml`, v2 artifacts, and the management client are target-neutral by design.
 - The hosted repository is publicly readable but has no repository-wide detected license. Its real Worker implementation builds, but manifests and operator notes are tied to the current demo.
 - No fresh-account setup, conformance suite, upgrade/recovery/teardown proof, independent implementation, or support promise exists.
@@ -33,12 +33,12 @@ O7 becomes a **public review summary**, not a full independently verifiable bund
 {
   "schema": "angel.public-review.v1",
   "disclosure": "capability-summary-only",
-  "artifact": {"format": "angel.version.v2", "digest": "<sha256>"},
+  "artifact": {"format": "angel.version.v2", "commitment": "<sha256>"},
   "tools": [{"operation": "<canonical operation>", "hasArgumentGuards": true}]
 }
 ```
 
-Unknown keys fail. The copy must say the summary cannot recompute the digest or inspect exact guards. Exact source, guards, artifact, scopes, and bindings remain owner-only.
+Unknown keys fail. The commitment is SHA-256 over a domain separator, a fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings remain owner-only. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
 
 O9 ships one honest status note: portable design and current Worker source exist; supported, licensed, reproducible self-hosting does not. Round 2 tests local and managed journeys only. Local use is not self-hosting.
 
@@ -48,7 +48,7 @@ G11 narrows from “full public review bundle” to public capability summary. T
 
 ## Execution gates
 
-- Implement an exact-key validator and adversarial leak corpus for the public summary; prove anonymous live output contains none of the explicit exclusions.
+- Implement an exact-key validator and adversarial leak corpus for the public summary; prove anonymous live output contains none of the explicit exclusions. Prove fresh nonce generation, owner-only nonce custody, and resistance to offline guesses of low-entropy charter and guard values.
 - Decide whether the current charter/guard page is narrowed, owner-opt-in, or explicitly documented as public source.
 - Do not claim digest recomputability, exact-policy review, open source, turnkey setup, cross-implementation compatibility, support, upgrades, recovery, SLA, or security maintenance.
 - A future self-host claim requires a repository-wide license, parameterized manifests, public least-privilege setup, clean-room deployment, full lifecycle/recovery proof, versioned conformance tests, and a support boundary.
@@ -191,7 +191,7 @@ A local `bun -e` probe compiled this placeholder source and passed it through
 |---|---|---|---|
 | Fixed review schema ID | Lets clients reject another shape | No user or runtime data | **Include** |
 | Artifact format | States which portable contract applies | Public protocol fact | **Include** |
-| Artifact digest | Correlates the summary with publish/receipts | Commitment can confirm a guessed full artifact, but does not directly reveal hidden fields | **Include; state that it is not independently recomputable here** |
+| Hiding artifact commitment | Lets the owner correlate the summary with publish evidence after revealing the nonce | A fresh 32-byte owner-held random nonce prevents offline confirmation of guessed low-entropy fields | **Include; keep the nonce and raw digest owner-only** |
 | Canonical operation name | Shows the capability the agent can discover | Registry-controlled; reveals intended capability, which is the purpose of a public trust surface | **Include** |
 | `hasArgumentGuards` boolean | Warns that the operation is more constrained | Reveals no field or literal | **Include** |
 | Angel name/slug | Human navigation | User-authored and can encode identity/private project names; route already supplies it | **Exclude from payload** |
@@ -228,7 +228,7 @@ a **public review summary**, not a verifiable artifact bundle.
   "disclosure": "capability-summary-only",
   "artifact": {
     "format": "angel.version.v2",
-    "digest": "<64 lowercase hexadecimal SHA-256 characters>"
+    "commitment": "<64 lowercase hexadecimal SHA-256 characters>"
   },
   "tools": [
     {
@@ -249,9 +249,12 @@ Contract details:
   values are not copied.
 - The payload has no Angel or Account identity. The public route is the only
   coordinate disclosure.
-- The digest is the deployed artifact commitment. Copy must say: **“This
-  summary does not contain enough fields to recompute the artifact digest or
-  inspect exact argument guards.”**
+- `artifact.commitment` is SHA-256 of the UTF-8 domain separator
+  `angel.public-review.v1\0`, a fresh 32-byte owner-held random nonce, and the
+  exact canonical artifact bytes, in that order. The nonce and raw artifact
+  digest stay owner-only. Copy must say: **“This summary contains a hiding
+  commitment, not enough data to verify the artifact or inspect exact argument
+  guards.”**
 - No optional extension bag is allowed. A later field requires a schema version
   and another threat review.
 
@@ -263,7 +266,7 @@ adapter details; scopes or credential kinds; raw or canonical artifact bytes;
 bindings; Connection IDs/refs, identity labels, nicknames, or health; Provider
 App/client data; keys, fingerprints, credentials, or secrets; environment,
 endpoint, deployment, Version count, availability, gate state, timestamps,
-logs, receipts, request/argument digests, or chain metadata.
+logs, receipts, raw artifact or request/argument digests, the commitment nonce, or chain metadata.
 
 A full owner review remains authenticated/local: reviewed source plus exact
 artifact, digest, adapter pins, scopes, request templates, and deployment
@@ -273,7 +276,7 @@ bindings. Public and owner review are separate claims.
 
 - G11 cannot honestly say “full public review bundle” or “a stranger can verify
   the artifact.” The safe claim is: **“A public capability summary lists the
-  canonical operations and an artifact commitment without private deployment
+  canonical operations and a hiding artifact commitment without private deployment
   or identity data. Exact source, guards, and artifact verification remain
   owner-only.”**
 - The current public page needs a separate privacy decision because it exposes

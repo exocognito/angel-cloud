@@ -297,7 +297,7 @@ blank directory
 → secret-free bundle and digest written
 → human enters own OAuth client in localhost browser handoff
 → human completes Google consent
-→ local App + grant stored atomically in the machine credential store
+→ local App + grant stored atomically in the Angel-owned encrypted vault
 → localhost MCP server listens with that local grant
 → agent lists tools and creates a uniquely marked draft
 → owner confirms draft and no sent message
@@ -399,8 +399,8 @@ consent, source review, and final draft inspection.
 
 ### Durable side effects
 
-- `--local`: one machine-local App profile and provider grant, stored through the
-  supported credential-store API. No cloud or project-policy mutation.
+- `--local`: one machine-local App profile and provider grant, stored in the O2
+  Angel-owned encrypted vault with TTY/FD unlock. No cloud or project-policy mutation.
 - `--cloud`: one Account-owned Provider App/Connection in Broker custody plus a
   safe Control summary. No local provider credential or policy mutation.
 - Neither mode edits `ANGEL.yaml`.
@@ -421,7 +421,7 @@ consent, source review, and final draft inspection.
 |---|---|
 | Neither or both custody flags | Exit 2 from parsing, before browser, network, or storage. Show both exact forms. |
 | `--cloud` without Account login | Exit nonzero before OAuth. Print `next: angel account login`. |
-| `--local` with no usable local credential store | Fail before consent is committed. No cloud fallback. O2 must prove the supported Linux path. |
+| `--local` with no usable Angel vault (see O2) | Fail before consent is committed. No cloud fallback. |
 | Missing App profile | Open or name the mode-specific human App setup handoff. Never search the other mode. |
 | Declined or partial consent | Store no healthy grant; name missing scopes and retry command. |
 | Nickname/identity/App collision | Preserve the old record; require a new nickname or explicit reauthorization. |
