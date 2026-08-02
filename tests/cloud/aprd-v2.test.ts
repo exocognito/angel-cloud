@@ -416,6 +416,8 @@ describe("APRD v2", () => {
     expect(section).toContain("The installed binary is the bare <code>angel</code> command.");
     expect(section).toContain("human-only handoffs: magic-link browser sign-in, Google Cloud OAuth-client setup, provider consent, and final Gmail draft review");
     expect(section).toContain("source/policy approval boundary: owner approves ANGEL.yaml before build, serve, publish, verify, receipt pull, or replay");
+    expect(section).toContain("Local-only independence proof");
+    expect(section).toContain("Angel Cloud is unavailable and no Account login exists");
     expect(section).toContain("local MCP proof: <code>angel serve gmail-draft-assistant --port 7423</code>");
     expect(section).toContain("http://localhost:7423/mcp");
     expect(section).toContain("production-default publish: <code>angel publish gmail-draft-assistant</code>");
@@ -428,6 +430,8 @@ describe("APRD v2", () => {
     expect(section).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
     expect(section).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json");
     expect(section).not.toContain("--fail-on-tamper");
+    expect(section).not.toMatch(/angel serve[^<\n]*--replay/);
+    expect(html).not.toMatch(/angel serve[^<\n]*--replay/);
     expect(section).toContain("failure boundaries: every unsafe step fails before provider work");
     expect(section).toContain("done: Gmail contains a draft and no sent message");
     expect(section).toContain("href=\"v2.1-cli-user-guide.md\"");
@@ -495,6 +499,14 @@ describe("APRD v2", () => {
     expect(cliUserGuide).not.toContain("OS keychain");
     expect(cliUserGuide).toContain("https://api.angelmcp.ai");
     expect(cliUserGuide).not.toContain("https://control.angelmcp.ai");
+    expect(cliUserGuide).toContain("## Fresh local independence journey");
+    const localJourney = cliUserGuide.slice(
+      cliUserGuide.indexOf("## Fresh local independence journey"),
+      cliUserGuide.indexOf("## angel account login"),
+    );
+    expect(localJourney.replace(/\s+/g, " ")).toContain("Angel Cloud is unavailable");
+    expect(localJourney).not.toContain("angel account login");
+    expect(localJourney).not.toContain("--cloud");
     expect(cliUserGuide).toContain("exactly 600 seconds after server-side commit");
     expect(cliUserGuide).not.toMatch(/export the (receipt )?lines/i);
   });
