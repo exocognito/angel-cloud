@@ -451,6 +451,8 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("Target-state contract, not shipped current behavior");
     expect(cliUserGuide).toContain("Install contract — blocked by O1");
     expect(cliUserGuide).toContain("No install command is normative while O1 is open");
+    expect(cliUserGuide).toContain("O1 must prove namespace control and fix the final package identity");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("built candidate passes the WS2 install acceptance");
     expect(cliUserGuide).toContain("<O1-BLOCKED-FINAL-INSTALL-COMMAND>");
     expect(cliUserGuide).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(cliUserGuide).toContain("must install the bare `angel` binary");
@@ -523,6 +525,9 @@ describe("APRD v2", () => {
     expect(localJourney).not.toContain("--cloud");
     expect(cliUserGuide).toContain("exactly 600 seconds after server-side commit");
     expect(cliUserGuide).not.toMatch(/export the (receipt )?lines/i);
+    expect(cliUserGuide).toContain("Durable side effects: none. Replay writes no report file");
+    expect(cliUserGuide).not.toContain("explicit report output flag");
+    expect(html).toContain("Replay starts no server, opens no port, reads no credential store, writes no report file, and makes no network or provider call");
   });
 
   test("specifies high-leverage generative eval families and bans hard-coded passes", () => {
@@ -597,6 +602,8 @@ describe("APRD v2", () => {
     expect(html).not.toContain("cascade details open");
     expect(html).not.toContain('Delete-account cascade details beyond "cascades angels · keys · apps"');
     expect(html).toContain("<code>angel.public-review.v1</code>");
+    expect(html).toContain("sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14)");
+    expect(html).toContain("Route logic at <code>src/workers/gateway.ts:299</code>.");
     expect(html).toContain("one owner-only nonce per published Version");
     expect(html).toContain("remove or gate the raw <code>policyDigest</code> on every public surface for that Version");
     expect(html).toContain("capability-summary-only");

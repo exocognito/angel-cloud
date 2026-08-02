@@ -92,6 +92,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(c16).not.toContain("O2 callback execution gate");
     const ws2 = ledger.match(/data-index-key="WS2"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(ws2).toContain("Blocked by O1 and O10");
+    const o7 = ledger.match(/data-decision-key="O7"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(o7).toContain('data-decision-linked="WS0 · PD-00B · WS2 · PD-03 · PD-05"');
+    expect(o7).toContain("<dt>Linked Project Index rows</dt><dd>WS0 · PD-00B · WS2 · PD-03 · PD-05</dd>");
     const c7 = ledger.match(/data-contradiction-key="C7"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c7).toContain("O1 blocks package identity; the target guide cannot freeze an install path until namespace control is proved.");
     const c06 = ledger.match(/data-command-key="C06"[\s\S]*?<\/details>/)?.[0] ?? "";
