@@ -84,6 +84,14 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Seven decisions closed across six briefs");
     expect(ledger).toContain("Bun-global install proved against the current registry tarball");
     expect(ledger).toContain("O10 blocks WS2 product work; O9 is closed.");
+    for (const [attribute, key] of [
+      ...["MW1", "MW3", "MW4", "MW5", "MW7", "MW9"].map((key) => ["data-machinery-key", key]),
+      ["data-interface-key", "SI2"],
+    ]) {
+      const record = ledger.match(new RegExp(`${attribute}="${key}"[\\s\\S]*?<\\/article>`))?.[0] ?? "";
+      expect(record).toContain("O10 blocks WS2 product work; linked execution proof remains incomplete.");
+      expect(record).not.toContain("N/A — WS-E closed the decision");
+    }
     expect(ledger).toContain("O10 blocks WS2 product work; O6 is closed.");
     for (const key of ["C4", "C6", "C13"]) {
       const contradiction = ledger.match(new RegExp(`<details class="contradiction" data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
@@ -140,8 +148,8 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
-    expect(ledger).toContain("It corrected two shipped documents, `docs/faq.md` and `docs/user-manual.md`");
-    expect(roadmap).toMatch(/They corrected two shipped documents:\s+`docs\/faq\.md` and `docs\/user-manual\.md`/);
+    expect(ledger).toContain("It corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`");
+    expect(roadmap).toMatch(/It corrected `docs\/faq\.md`, which understated the current public charter and guard\s+exposure, and added an authoring cross-reference in `docs\/user-manual\.md`/);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS-E → O10 → WS2");
     expect(ledger).not.toContain("WS-E must finish before O10");
@@ -228,10 +236,21 @@ describe("WS-E evidence-only decision closure", () => {
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
+    for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
+    const pd00b = ledger.match(/data-deliverable-key="PD-00B"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(pd00b).toContain("product-decisions/0002-public-angel-page.md");
+    const g13 = ledger.match(/data-guarantee-key="G13"[\s\S]*?<\/article>/)?.[0] ?? "";
+    expect(g13).toContain("adrs/0001-portable-angel-source-and-deployment-separation.md");
+    const c04 = ledger.match(/data-command-key="C04"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c04).toContain("v2.1-cli-user-guide.md#angel-apps-connect");
+    expect(c04).toContain("user-manual.md#add-google-custody");
+    const c11Command = ledger.match(/data-command-key="C11"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c11Command).toContain("v2.1-cli-user-guide.md#angel-replay");
+    expect(c11Command).toContain('href="#decision-O5"');
     expect(ledger).toMatch(/data-index-key="WS1"[^>]+data-index-last-verified="2026-08-01 · Pi release proof"/);
     const c10 = ledger.match(/<details class="command" data-command-key="C10"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c10).toContain("owner-only mode-0600 NDJSON");
