@@ -54,13 +54,16 @@ Design settled with Sam on 2026-07-29, recorded on
    default, JSON for `Accept: application/json`, with `Vary: Accept`. One
    renderer input, two serializers, so the two cannot diverge.
 
-Invariants regardless, each pinned by a test: read-only; never touches the
-Broker, custody, or keys. The current renderer takes the compiled artifact and
-Version number only, never the installation. The reduced-summary renderer also
-uses the owner-held per-Version nonce only to derive the commitment; it never
-renders the Version number, nonce, installation, `identityLabel`, or Connection
-ids. Every page-route 404 is byte-identical; no cookies exist on the public
-surface.
+Shipped invariants, each pinned by a current test: the page is read-only and
+never touches the Broker, custody, or keys; the current renderer takes the
+compiled artifact and Version number only, never the installation, so
+`identityLabel` and Connection ids cannot leak; every page-route 404 is
+byte-identical; no cookies exist on the public surface.
+
+The unbuilt reduced-summary renderer may use the owner-held per-Version nonce
+only to derive the commitment. Before release, E16 must pin that it never renders
+the Version number, nonce, installation, `identityLabel`, or Connection ids. This
+target must be pinned by E16 before the summary ships.
 
 ## What is not decided
 

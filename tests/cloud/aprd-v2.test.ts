@@ -432,7 +432,7 @@ describe("APRD v2", () => {
     expect(section).toContain('<code class="break-all">POST https://mcp.angelmcp.ai/');
     expect(section).toContain("two receipts: Gateway and Broker");
     expect(section).toContain("anchored tail: sequence, previousHash, hash");
-    expect(section).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
+    expect(section).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --anchor 127:&lt;remembered-hash&gt; --out receipts/production-128-151.ndjson");
     expect(section).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json");
     expect(section).not.toContain("--fail-on-tamper");
     expect(section).not.toMatch(/angel serve[^<\n]*--replay/);
@@ -497,7 +497,10 @@ describe("APRD v2", () => {
   });
 
   test("defines exact receipt pull and replay syntax in the target command guide", () => {
-    expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from <sequence> --to <sequence> --out <path>");
+    expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from <sequence> --to <sequence> --anchor <sequence>:<hash> --out <path>");
+    expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from 1 --to <sequence> --bootstrap --out <path>");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("Exactly one of `--anchor` or `--bootstrap` is required");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("first exported `previousHash` must equal the supplied trusted hash");
     expect(cliUserGuide).toContain("angel.replay-receipt.v1");
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("top-level `schema`, `request`, `gateway`, and `broker`");
     expect(cliUserGuide).toContain("complete GateReceipt identity");
@@ -508,14 +511,16 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("mode `0600`");
     expect(cliUserGuide).toContain("missing original arguments");
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("recomputes `argumentsDigest` from each record's canonical original arguments");
-    expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
+    expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --anchor 127:<remembered-hash> --out receipts/production-128-151.ndjson");
     expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> --bundle <path>");
     expect(cliUserGuide).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json");
     expect(cliUserGuide).not.toContain("--fail-on-tamper");
     expect(cliUserGuide).toContain("angel apps connect google --local");
     expect(cliUserGuide).toContain("angel apps connect google --cloud");
     expect(cliUserGuide).toContain("grant nickname");
-    expect(cliUserGuide).toContain("angel serve <angel> [--bundle <path>] [--port <port>] [--grant <nickname>]");
+    expect(cliUserGuide).toContain("angel serve <angel> [--bundle <path>] [--port <port>] --grant <nickname>");
+    expect(cliUserGuide).toContain("`--grant` is required when the bundle declares any provider-backed tool");
+    expect(cliUserGuide).toContain("angel serve gmail-draft-assistant --port 7423 --grant local-gmail");
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("local grant nickname");
     expect(cliUserGuide).not.toMatch(/angel serve[^\n]*--connection/);
     expect(cliUserGuide).not.toContain("local provider Connection nickname");
@@ -547,6 +552,9 @@ describe("APRD v2", () => {
     expect(generativeEvals).toContain("The generated E2E test file itself must be saved as evidence");
 
     expect(generativeEvals).toContain("## public review summary privacy, stability, and HTML/JSON parity");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("outside candidate sees public surfaces and generated inputs only");
+    expect(generativeEvals).not.toContain("after the evaluator sees the current repository state");
+    expect(generativeEvals).not.toContain("after the evaluator sees repository fixtures");
     expect(generativeEvals).toContain("missing original arguments");
     expect(generativeEvals).toContain("edit original arguments");
     const families = [

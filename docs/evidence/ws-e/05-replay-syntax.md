@@ -270,11 +270,11 @@ boundaries visible before execution.
 Replay belongs in the managed journey after the agent's production call:
 
 ```sh
-angel receipts pull <angel> --production --from <n> --to <n> --out <path>
+angel receipts pull <angel> --production --from <n> --to <n> --anchor <sequence>:<hash> --out <path>
 angel replay <angel> --receipts <path> --bundle <path>
 ```
 
-It executes locally but is not part of local provider custody. A pure local
+The pull must extend a caller-supplied trusted `--anchor`; a first-history bootstrap is explicit, starts at sequence 1, and verifies the genesis previous hash. A missing, conflicting, or mismatched anchor fails without a partial file. Replay executes locally but is not part of local provider custody. A pure local
 journey has no cloud receipt range to pull. This placement keeps “where the
 command runs” separate from “where the evidence came from.”
 

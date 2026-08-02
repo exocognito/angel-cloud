@@ -319,6 +319,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicPageDecision).toContain("raw policy digest");
     expect(publicPageDecision).toMatch(/Before the\s+`angel\.public-review\.v1` summary is served for a Version/);
     expect(publicPageDecision).toContain("[privacy requirement](#what-is-not-decided)");
+    expect(publicPageDecision).toContain("Shipped invariants, each pinned by a current test");
+    expect(publicPageDecision).toContain("must be pinned by E16 before the summary ships");
+    expect(publicPageDecision).not.toContain("Invariants regardless, each pinned by a test");
     expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
     expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
     expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
@@ -341,7 +344,7 @@ describe("WS-E evidence-only decision closure", () => {
       ["LR-011", "APRD and target CLI auth text now state the 600-second single-use rule"],
       ["LR-012", "Target CLI guide now has an O1-blocked install placeholder"],
       ["LR-013", "target CLI guide now requires exactly one of <code>--local</code> or <code>--cloud</code>"],
-      ["LR-016", "Generative eval replay family’s Unseen requirement still lets the evaluator inspect repository state"],
+      ["LR-016", "Target generative evals now separate an internal fixture-aware grader from a no-repo outside candidate"],
       ["LR-017", "APRD §8.1 and the target CLI guide now put the fresh local-independence journey before managed login"],
       ["LR-018", "APRD, target CLI, and eval replay text now agree on top-level <code>angel replay</code>"],
     ] as const) {
@@ -349,7 +352,7 @@ describe("WS-E evidence-only decision closure", () => {
       expect(row).toContain(evidence);
       expect(row).not.toMatch(/CLI guide line 14|Generative eval line 100|Raw notes line 111 vs APRD|APRD §4\.4 vs CLI guide/);
     }
-    for (const file of ["03-local-cloud-syntax.md", "04-auth-expiry.md", "05-replay-syntax.md"]) {
+    for (const file of ["02-linux-oauth-storage.md", "03-local-cloud-syntax.md", "04-auth-expiry.md", "05-replay-syntax.md"]) {
       expect(readFileSync(join(root, "docs/evidence/ws-e", file), "utf8"))
         .toContain("At `6cc2ed5`, before the WS-E reconciliation");
     }
@@ -358,6 +361,12 @@ describe("WS-E evidence-only decision closure", () => {
     expect(custodyBrief.match(/angel serve[^\n]*--connection/g)).toHaveLength(1);
     expect(custodyBrief).toContain("WS-E reconciliation renamed that local selector to `--grant`");
     expect(custodyBrief).toContain("angel serve draft-check-7k2m --port 7423 --grant local-gmail-7k2m");
+    expect(readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8"))
+      .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target APRD and CLI guide said local tokens and Account management tokens lived in the OS keychain");
+    expect(readFileSync(join(root, "docs/evidence/ws-e/04-auth-expiry.md"), "utf8"))
+      .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token");
+    expect(readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8"))
+      .toContain("--anchor <sequence>:<hash>");
     expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);

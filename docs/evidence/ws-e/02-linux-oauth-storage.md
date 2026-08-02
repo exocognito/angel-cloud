@@ -242,8 +242,8 @@ Repository sources listed in Method are the product truth for this investigation
 
 ##### O2 full record: Repository/current-product facts
 
-1. The approved Ledger keeps O2 open and requires a real exe.dev spike before Linux storage is named as known. C15 and LR-009 say the APRD's OS-keychain and headless callback/retrieval assumptions are unproved.
-2. The APRD and v2.1 CLI guide are target-state, unapproved documents. They currently say local tokens and Account management tokens live in the “OS keychain.”
+1. At `6cc2ed5`, before the WS-E reconciliation, the approved Ledger kept O2 open and required a real exe.dev spike before Linux storage could be named as known. C15 and LR-009 said the APRD's OS-keychain and headless callback/retrieval assumptions were unproved.
+2. At `6cc2ed5`, before the WS-E reconciliation, the target APRD and CLI guide said local tokens and Account management tokens lived in the OS keychain. WS-E replaced local provider custody with the encrypted-vault contract and left management-token storage as a separate WS2 gate.
 3. The shipped core CLI implements build, publish, production deploy, and delete. It contains no local OAuth, Secret Service, keyring, encrypted local vault, or `angel serve` implementation.
 4. Current local publish/deploy auth comes from `ANGEL_MANAGEMENT_TOKEN` and optional `ANGEL_ACCESS_TOKEN` environment variables.
 5. Current managed Google custody is not a local precedent for key bootstrapping: Broker holds a separately configured 32-byte KEK, wraps a per-Account DEK, encrypts client secrets and refresh tokens with AES-GCM and record-bound AAD, and exposes only safe summaries outside internal leases.
@@ -345,9 +345,9 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 
 #### O2 full record: Product implication
 
-1. The target APRD/CLI wording “tokens live in the OS keychain” is false for headless exe.dev and must change before WS2 approval. No shipped manual should change now.
+1. At `6cc2ed5`, before the WS-E reconciliation, the target APRD/CLI wording “tokens live in the OS keychain” was false for headless exe.dev. WS-E replaced that local-provider wording; no shipped manual changed.
 2. O3 chose explicit `--local`/`--cloud` consent syntax. Implementation must never infer custody from keyring availability or machine type.
-3. `angel apps connect` and `angel serve` need one coherent local grant lifecycle. The current target guide is internally split: `apps connect` describes Broker custody while `serve` says it stores a local grant.
+3. At `6cc2ed5`, before the WS-E reconciliation, the target guide was internally split: `apps connect` described Broker custody while `serve` said it stored a local grant. The reconciled target guide now defines one explicit local grant lifecycle; runtime proof remains unbuilt.
 4. “Credentials go in, never out” needs a local boundary statement. In local mode, the `angel` process necessarily decrypts credentials; they remain unavailable to the user's agent/MCP responses, not unavailable to the machine owner or same-UID process.
 5. Headless unattended operation requires an operator-owned secret source. Angel should support FD injection, not pretend encryption can bootstrap its own key.
 6. Current environment-based management auth is separate shipped behavior and should not be cited as evidence that local OAuth-in-env is safe.
