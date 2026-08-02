@@ -418,8 +418,9 @@ describe("APRD v2", () => {
     expect(section).toContain("source/policy approval boundary: owner approves ANGEL.yaml before build, serve, publish, verify, receipt pull, or replay");
     expect(section).toContain("Local-only independence proof");
     expect(section).toContain("Angel Cloud is unavailable and no Account login exists");
-    expect(section).toContain("local MCP proof: <code>angel serve gmail-draft-assistant --port 7423</code>");
+    expect(section).toContain("local MCP proof: <code>angel serve local-draft-proof --port 7423 --connection local-gmail</code>");
     expect(section).toContain("http://localhost:7423/mcp");
+    expect(section).toContain("Apply the printed production binding edit to <code>angels/gmail-draft-assistant/angel.json</code>");
     expect(section).toContain("production-default publish: <code>angel publish gmail-draft-assistant</code>");
     expect(section).toContain("no-op replay: the unchanged publish returns the same Version and digest and prints no new keys");
     expect(section).toContain("verify: <code>angel verify gmail-draft-assistant --production</code>");
@@ -495,6 +496,9 @@ describe("APRD v2", () => {
     expect(cliUserGuide).not.toContain("--fail-on-tamper");
     expect(cliUserGuide).toContain("angel apps connect google --local");
     expect(cliUserGuide).toContain("angel apps connect google --cloud");
+    expect(cliUserGuide).toContain("grant nickname");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("local grant nickname");
+    expect(cliUserGuide).not.toContain("local provider Connection nickname");
     expect(cliUserGuide).toContain("Angel-owned encrypted vault");
     expect(cliUserGuide).not.toContain("OS keychain");
     expect(cliUserGuide).toContain("https://api.angelmcp.ai");

@@ -90,6 +90,13 @@ describe("WS-E evidence-only decision closure", () => {
     const c16 = ledger.match(/data-contradiction-key="C16"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c16).toContain("C16 / WS2 callback execution gate");
     expect(c16).not.toContain("O2 callback execution gate");
+    const ws2 = ledger.match(/data-index-key="WS2"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(ws2).toContain("Blocked by O1 and O10");
+    const c7 = ledger.match(/data-contradiction-key="C7"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c7).toContain("O1 blocks package identity; the target guide cannot freeze an install path until namespace control is proved.");
+    const c06 = ledger.match(/data-command-key="C06"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c06).toContain("Consent already occurred through <code>angel apps connect --local</code>");
+    expect(c06).toContain("Human unlocks the vault and inspects the final provider side effect");
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
