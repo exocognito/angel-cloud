@@ -170,12 +170,12 @@ describe("APRD v2", () => {
 
   test("grades commitments against the pinned branch commit", () => {
     expect(html).toContain("main@faf4beb");
-    expect(html).toContain("● 20 green");
-    expect(html).toContain("● 1 yellow");
+    expect(html).toContain("● 19 green");
+    expect(html).toContain("● 2 yellow");
     expect(html).toContain("● 6 orange");
     expect(html).toContain("● 2 red");
-    expect(count(/class="card g"/g)).toBe(20);
-    expect(count(/class="card y"/g)).toBe(1);
+    expect(count(/class="card g"/g)).toBe(19);
+    expect(count(/class="card y"/g)).toBe(2);
     expect(count(/class="card o"/g)).toBe(6);
     expect(count(/class="card r"/g)).toBe(2);
   });
@@ -499,6 +499,11 @@ describe("APRD v2", () => {
   test("defines exact receipt pull and replay syntax in the target command guide", () => {
     expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from <sequence> --to <sequence> --out <path>");
     expect(cliUserGuide).toContain("angel.replay-receipt.v1");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("top-level `schema`, `request`, `gateway`, and `broker`");
+    expect(cliUserGuide).toContain("complete GateReceipt identity");
+    for (const field of ["accountId", "angelId", "environment", "requestId", "tool", "provider", "operation", "connectionId", "connectionRef", "connectionIdentityLabel"]) {
+      expect(cliUserGuide).toContain(`\`${field}\``);
+    }
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("canonical original `arguments`");
     expect(cliUserGuide).toContain("mode `0600`");
     expect(cliUserGuide).toContain("missing original arguments");
@@ -614,7 +619,11 @@ describe("APRD v2", () => {
     expect(html).toContain("<code>angel.public-review.v1</code>");
     expect(html).toContain("Evidence contracts · E1–E16");
     expect(html).toContain('id="e16"');
-    expect(html).toMatch(/data-commitment-target="Every Angel has a public trust page"[^>]+data-evidence="e16"/);
+    expect(html).toContain("semantically identical HTML and JSON projections of one strict <code>angel.public-review.v1</code> object");
+    expect(html).toMatch(/data-commitment-target="Every Angel has a public trust page" data-current="yellow"[^>]+data-evidence="e16"/);
+    const publicPageCard = html.slice(html.indexOf("Every Angel has a public trust page") - 120, html.indexOf("Every Angel has a public trust page") + 300);
+    expect(publicPageCard).toContain('class="card y"');
+    expect(publicPageCard).toContain('<span class="chip">Yellow</span>');
     expect(html).toContain("sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14)");
     expect(html).toContain("Route logic at <code>src/workers/gateway.ts:299</code>.");
     expect(html).toContain("one owner-only nonce per published Version");

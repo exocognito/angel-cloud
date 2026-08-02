@@ -308,6 +308,7 @@ describe("WS-E evidence-only decision closure", () => {
     const publicPageDecision = readFileSync(join(root, "docs/product-decisions/0002-public-angel-page.md"), "utf8");
     expect(publicPageDecision).toContain("raw policy digest");
     expect(publicPageDecision).toMatch(/Before the\s+`angel\.public-review\.v1` summary is served for a Version/);
+    expect(publicPageDecision).toContain("[privacy requirement](#what-is-not-decided)");
     expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
     expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (Product Ledger O10");
     expect(faq).toContain("docs/product-ledger.html");

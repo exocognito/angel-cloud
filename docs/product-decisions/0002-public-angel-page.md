@@ -38,7 +38,9 @@ Design settled with Sam on 2026-07-29, recorded on
    DNS cutover. Post-cutover, `mcp.` GET redirects to the apex.
 2. **Content — the trust page.** Charter, tools (provider app + operation),
    argument guards, Version number, policy digest, and the line that the
-   artifact is immutable and compiled from ANGEL.yaml. Not shown: OAuth
+   artifact is immutable and compiled from ANGEL.yaml. The raw digest is current
+   output only and must follow the [privacy requirement](#what-is-not-decided)
+   before the reduced summary ships. Not shown: OAuth
    scopes, provider adapters, children (this record may widen that later).
 3. **Visibility.** Public by default. No opt-out toggle yet — one account
    exists; the field arrives with the second account. A non-public Angel,
