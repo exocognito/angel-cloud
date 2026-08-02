@@ -58,12 +58,14 @@ cookies on the public surface.
 
 ## What is not decided
 
-- **Privacy beyond O7's reduced summary.** The O7 reduced summary is decided but not built.
-  Before the `angel.public-review.v1` summary is served for a Version, every public surface
-  for that Version must remove or gate the raw policy digest. Broader privacy treatment for
-  user-authored charter and guard literals remains for O10. See
+- **Privacy beyond the reduced summary.** The reduced public-summary decision
+  (Product Ledger O7) is settled but not built. Before the
+  `angel.public-review.v1` summary is served for a Version, every public surface
+  for that Version must remove or gate the raw policy digest. Broader privacy
+  treatment for user-authored charter and guard literals remains for the WS2
+  approval gate (O10). See
   [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
-  and Product Ledger O7/SI5.
+  and the canonical `docs/product-ledger.html` records O7, SI5, and O10.
 - **Widening the content.** Whether the page ever shows OAuth scopes,
   provider adapters, or child Angels stays open; today they are excluded.
 - **The retired-handle 301.** PD 0004 wants human-facing pages to redirect a

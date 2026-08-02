@@ -236,10 +236,12 @@ to read; only `tools` and `argGuards` are enforced
 ([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to
 be public-safe. The public Angel page currently renders the free-text `charter`,
 `argGuards` field names and literal values, and the raw policy digest. Put no
-secrets or private content in them. The O7 reduced-summary boundary is decided
-but not built: the raw policy digest must be removed or gated on every public
-surface for the same Version before its summary can be served. Broader privacy
-treatment for charter and guard literals remains for O10.
+secrets or private content in them. The public-summary decision (Product Ledger O7 in
+`docs/product-ledger.html`) is settled but not built: the raw policy digest must
+be removed or gated on every public surface for the same Version before its
+summary can be served. Broader privacy treatment for charter and guard literals
+remains for the WS2 approval gate (Product Ledger O10 in
+`docs/product-ledger.html`).
 
 ## Google custody
 

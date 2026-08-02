@@ -138,6 +138,11 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="ACTIVE"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
     );
     expect(ledger).toContain("Brief 7 · public/self-hosting");
+    const id09 = recordBlocks("details", "data-deliverable-key")
+      .find((block) => block.includes('data-deliverable-key="ID-09"')) ?? "";
+    expect(id09).toContain("No approved or published Round-2 guide and no runnable candidate exist");
+    expect(id09).toContain('href="aprd/v2.1-cli-user-guide.md"');
+    expect(id09).not.toContain("No Round-2 candidate or guide exists");
     expect(count('data-deliverable-approval="')).toBe(ids.length);
     expect(count('data-deliverable-parent="')).toBe(ids.length);
     expect(count('data-deliverable-last-verified="')).toBe(ids.length);
@@ -183,6 +188,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(count('data-guarantee-last-verified="')).toBe(14);
     expect(ledger).toContain("G01 · Angel is a toolbox, never an actor");
     expect(ledger).toContain("G14 · Source and deploy topology stay bounded");
+    const g07 = recordBlocks("article", "data-guarantee-key")
+      .find((block) => block.includes('data-guarantee-key="G07"')) ?? "";
+    expect(g07).toContain("second real identity waits for M-DF2");
+    expect(g07).not.toContain("waits for M2");
   });
 
   test("adds the Experience Window with embedded current product evidence", () => {
@@ -269,6 +278,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(count('data-learning-last-verified="')).toBe(113);
     expect(count('data-learning-blocker="')).toBe(113);
     expect(count('data-learning-source="')).toBe(113);
+    const fb014 = ledger.match(/<tr data-learning-id="FB-014"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    const indexCount = values(/data-index-key="([^"]+)"/g).length;
+    expect(fb014).toContain(`${indexCount} expandable index rows in this Ledger.`);
+    expect(fb014).not.toContain("Nine expandable index rows");
   });
 
   test("keeps zero orphans with valid dispositions and destinations", () => {
@@ -334,6 +347,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(2);
     expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(14);
     expect(count('data-contradiction-last-verified="')).toBe(16);
+    const c1 = recordBlocks("details", "data-contradiction-key")
+      .find((block) => block.includes('data-contradiction-key="C1"')) ?? "";
+    expect(c1).toContain("ID-03 and ID-04 deliverables");
+    expect(c1).not.toContain("INT deliverables");
     expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="CLOSED"/);
     expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
   });

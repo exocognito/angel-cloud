@@ -172,8 +172,8 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
     expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
@@ -301,13 +301,16 @@ describe("WS-E evidence-only decision closure", () => {
     expect(manual).not.toContain("renders charter text");
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
-    expect(faq).toMatch(/The O7 reduced-summary boundary is decided\s+but not built/);
-    expect(faq).toMatch(/Broader privacy\s+treatment for charter and guard literals remains for O10/);
-    expect(faq).toMatch(/raw policy digest must be removed or gated/);
+    expect(faq).toMatch(/raw policy digest must\s+be removed or gated/);
     const publicPageDecision = readFileSync(join(root, "docs/product-decisions/0002-public-angel-page.md"), "utf8");
-    expect(publicPageDecision).toMatch(/The O7 reduced summary is decided but not built/);
     expect(publicPageDecision).toContain("raw policy digest");
-    expect(publicPageDecision).toMatch(/Before the `angel\.public-review\.v1` summary is served for a Version/);
+    expect(publicPageDecision).toMatch(/Before the\s+`angel\.public-review\.v1` summary is served for a Version/);
+    expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
+    expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (Product Ledger O10");
+    expect(faq).toContain("docs/product-ledger.html");
+    expect(faq).not.toMatch(/github\.com\/exocognito\/angelmcp\/(?:blob|tree|raw)\//);
+    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("reduced public-summary decision (Product Ledger O7)");
+    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10)");
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
     expect(faq).toContain("canonical `docs/product-ledger.html`");
@@ -318,6 +321,18 @@ describe("WS-E evidence-only decision closure", () => {
     const df049 = ledger.match(/<tr data-learning-id="DF-049"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df049).toContain("APRD and target CLI auth text now state the 600-second single-use rule");
     expect(df049).not.toContain("APRD says days");
+    for (const [key, evidence] of [
+      ["LR-011", "APRD and target CLI auth text now state the 600-second single-use rule"],
+      ["LR-012", "Target CLI guide now has an O1-blocked install placeholder"],
+      ["LR-013", "target CLI guide now requires exactly one of <code>--local</code> or <code>--cloud</code>"],
+      ["LR-016", "Generative eval replay family’s Unseen requirement still lets the evaluator inspect repository state"],
+      ["LR-017", "APRD §8.1 and the target CLI guide now put the fresh local-independence journey before managed login"],
+      ["LR-018", "APRD, target CLI, and eval replay text now agree on top-level <code>angel replay</code>"],
+    ] as const) {
+      const row = ledger.match(new RegExp(`<tr data-learning-id="${key}"[\\s\\S]*?<\\/tr>`))?.[0] ?? "";
+      expect(row).toContain(evidence);
+      expect(row).not.toMatch(/CLI guide line 14|Generative eval line 100|Raw notes line 111 vs APRD|APRD §4\.4 vs CLI guide/);
+    }
     for (const file of ["03-local-cloud-syntax.md", "04-auth-expiry.md", "05-replay-syntax.md"]) {
       expect(readFileSync(join(root, "docs/evidence/ws-e", file), "utf8"))
         .toContain("At `6cc2ed5`, before the WS-E reconciliation");

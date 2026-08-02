@@ -507,9 +507,12 @@ describe("APRD v2", () => {
     expect(cliUserGuide).not.toMatch(/angel serve[^\n]*--connection/);
     expect(cliUserGuide).not.toContain("local provider Connection nickname");
     expect(cliUserGuide).toContain("Angel-owned encrypted vault");
-    expect(cliUserGuide).not.toContain("OS keychain");
+    expect(cliUserGuide).toContain("never in an ambient OS keychain");
     expect(cliUserGuide).toContain("https://api.angelmcp.ai");
     expect(cliUserGuide).not.toContain("https://control.angelmcp.ai");
+    expect(cliUserGuide).toContain("Exact management-token storage, encryption, and unlock are a WS2 contract gate");
+    expect(cliUserGuide).not.toContain("Account-scoped management token in an\nAngel-owned encrypted local profile");
+    expect(html).toContain("Exact management-token storage, encryption, and unlock remain a WS2 contract gate");
     expect(cliUserGuide).toContain("## Fresh local independence journey");
     const localJourney = cliUserGuide.slice(
       cliUserGuide.indexOf("## Fresh local independence journey"),
