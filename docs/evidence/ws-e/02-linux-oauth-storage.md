@@ -59,7 +59,7 @@ The real exe.dev spike supports this choice. Secret Service can be made to work,
 
 1. Read the repository contract and evidence:
    - `AGENTS.md`
-   - `docs/product-ledger.html`, especially O2, C15, LR-009, G02, G03, and G06
+   - `docs/product-ledger.html`, especially decision O2, contradiction C15, learning LR-009, and guarantees G02, G03, and G06
    - `docs/aprd/README.md`, `docs/aprd/angel-cloud-aprd.html` terminology and local-run sections, and `docs/aprd/v2.1-cli-user-guide.md`
    - current CLI: `packages/core/src/cli/{index,commands,config,client}.ts` and `packages/core/README.md`
    - current managed OAuth/custody: `src/{custody,google-oauth,oauth-state}.ts`, `src/workers/{control,broker,credential-vault}.ts`

@@ -70,7 +70,7 @@ What exact syntax separates local and cloud consent/custody?
 
 Primary sources:
 
-- Product Ledger: `docs/product-ledger.html`, O3, C6, LR-007, LR-013, LR-017.
+- Product Ledger: `docs/product-ledger.html`, decision O3, contradiction C6, command C06, and learnings LR-007, LR-013, LR-017.
 - Shipped mechanics: `docs/user-manual.md` sections **Add Google custody**,
   **Install the CLI**, **Build locally**, and **Publish to production**.
 - Shipped limits and custody rationale: `docs/faq.md` sections **Google custody**,
@@ -258,8 +258,9 @@ angel
 ├── deploy <angel> --prod
 ├── verify <angel> --production [--bundle <path>]
 ├── receipts
-│   └── pull <angel> --production --from <n> --to <n> --out <path>
-├── replay <angel> --receipts <path> --bundle <path>
+│   └── pull <angel> --production --gate <gateway|broker>
+│       --from <n> --to <n> --anchor <sequence>:<hash> --out <path>
+├── replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>
 └── delete <angel> [--confirm <slug>]
 ```
 
@@ -343,11 +344,14 @@ angel publish draft-cloud-9p4r
 angel verify draft-cloud-9p4r --production
 
 # The owner's agent then calls the printed production MCP endpoint.
-angel receipts pull draft-cloud-9p4r --production \
-  --from <first-sequence> --to <last-sequence> \
-  --out receipts/production.ndjson
+angel receipts pull draft-cloud-9p4r --production --gate gateway \
+  --from <gateway-first> --to <gateway-last> --anchor <gateway-sequence>:<gateway-hash> \
+  --out receipts/gateway.ndjson
+angel receipts pull draft-cloud-9p4r --production --gate broker \
+  --from <broker-first> --to <broker-last> --anchor <broker-sequence>:<broker-hash> \
+  --out receipts/broker.ndjson
 angel replay draft-cloud-9p4r \
-  --receipts receipts/production.ndjson \
+  --receipts receipts/gateway.ndjson --receipts receipts/broker.ndjson \
   --bundle angels/draft-cloud-9p4r/build/angel.version.json
 angel delete draft-cloud-9p4r
 ```

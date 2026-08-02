@@ -163,18 +163,24 @@ Required inputs:
 - private replay NDJSON path;
 - canonical bundle path.
 
-Each NDJSON record must contain enough owner-only data to recompute the decision:
+Each gate is exported separately because Gateway and Broker sequences and hashes
+advance independently. Every NDJSON line contains one request and one complete
+gate receipt:
 
 ```json
 {
+  "schema": "angel.replay-receipt.v1",
+  "gate": "gateway",
+  "anchor": {"sequence": 127, "hash": "<trusted-hash>"},
   "request": {"tool": "<canonical operation>", "arguments": {}},
-  "gateway": {"sequence": 128, "argumentsDigest": "<sha256>", "hash": "<hash>"},
-  "broker": {"sequence": 128, "argumentsDigest": "<sha256>", "hash": "<hash>"}
+  "receipt": {"requestId": "<id>", "sequence": 128, "previousHash": "<hash>", "argumentsDigest": "<sha256>", "decision": "deny", "hash": "<hash>"}
 }
 ```
 
-The real schema must also carry the complete receipt identity, previous hashes,
-decision, detail, bundle digest, and engine pin. Raw arguments are private
+The real schema also carries the complete receipt identity, decision detail,
+bundle digest, and engine pin. A Gateway-only denial has no Broker partner.
+Allowed pairs correlate by `requestId`; their gate sequence numbers need not
+match. Raw arguments are private
 Account evidence: `receipts pull` writes the file with owner-only permissions
 and never prints them. They do not enter a public trust page or agent-safe
 receipt. If the export contains only a digest, replay fails instead of guessing.
@@ -270,11 +276,11 @@ boundaries visible before execution.
 Replay belongs in the managed journey after the agent's production call:
 
 ```sh
-angel receipts pull <angel> --production --from <n> --to <n> --anchor <sequence>:<hash> --out <path>
-angel replay <angel> --receipts <path> --bundle <path>
+angel receipts pull <angel> --production --gate <gateway|broker> --from <n> --to <n> --anchor <sequence>:<hash> --out <path>
+angel replay <angel> --receipts <gateway-path> --receipts <broker-path> --bundle <path>
 ```
 
-The pull must extend a caller-supplied trusted `--anchor`; a first-history bootstrap is explicit, starts at sequence 1, and verifies the genesis previous hash. A missing, conflicting, or mismatched anchor fails without a partial file. Replay executes locally but is not part of local provider custody. A pure local
+Each gate pull must extend that gate's caller-supplied trusted `--anchor`; a first-history bootstrap is explicit, starts at sequence 1, and verifies that gate's genesis previous hash. A missing, conflicting, or mismatched anchor fails without a partial file. Replay executes locally but is not part of local provider custody. A pure local
 journey has no cloud receipt range to pull. This placement keeps “where the
 command runs” separate from “where the evidence came from.”
 

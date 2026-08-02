@@ -365,8 +365,21 @@ describe("WS-E evidence-only decision closure", () => {
       .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target APRD and CLI guide said local tokens and Account management tokens lived in the OS keychain");
     expect(readFileSync(join(root, "docs/evidence/ws-e/04-auth-expiry.md"), "utf8"))
       .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token");
-    expect(readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8"))
-      .toContain("--anchor <sequence>:<hash>");
+    const replayEvidenceBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
+    expect(replayEvidenceBrief).toContain("--gate <gateway|broker>");
+    expect(replayEvidenceBrief).toContain("--anchor <sequence>:<hash>");
+    expect(replayEvidenceBrief).toContain("Gateway-only denial");
+    expect(replayEvidenceBrief.replace(/\s+/g, " ")).toContain("Allowed pairs correlate by `requestId`");
+    expect(custodyBrief).toContain("--gate <gateway|broker>");
+    for (const [file, terms] of [
+      ["01-package-install-identity.md", ["decision O1", "contradiction C7"]],
+      ["02-linux-oauth-storage.md", ["decision O2", "contradiction C15"]],
+      ["03-local-cloud-syntax.md", ["decision O3", "contradiction C6", "command C06"]],
+      ["04-auth-expiry.md", ["decision O4", "contradiction C4", "command C02"]],
+    ] as const) {
+      const source = readFileSync(join(root, "docs/evidence/ws-e", file), "utf8");
+      for (const term of terms) expect(source).toContain(term);
+    }
     expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);

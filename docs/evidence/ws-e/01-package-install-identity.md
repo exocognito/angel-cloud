@@ -57,7 +57,7 @@ What exact public package and install path should Angel Round 2 use, given the c
 
 #### O1 full record: Method
 
-1. Read the canonical Product Ledger O1/C7/DF-029/DF-047/DF-048/LR-012 entries and the current and target install contracts.
+1. Read the canonical Product Ledger decision O1, contradiction C7, and learning DF-029/DF-047/DF-048/LR-012 entries and the current and target install contracts.
 2. Inspected the root workspace, current package manifest, executable, exports, runtime imports, release proof, and public starter.
 3. Queried npm's real registry for all three names and inspected the published 0.3.0 metadata and tarball.
 4. Installed the 0.3.0 registry tarball into clean local and isolated global consumers; ran its binary with and without Bun and imported all public entry points with Bun and Node.
@@ -89,7 +89,7 @@ curl -I https://angelmcp-docs-demo.sam-633.workers.dev/install.sh
 
 Repository sources:
 
-- Product decision and unresolved evidence: [`docs/product-ledger.html`](../../../docs/product-ledger.html), entries O1, C7, DF-029, DF-047, DF-048, and LR-012.
+- Product decision and unresolved evidence: [`docs/product-ledger.html`](../../../docs/product-ledger.html), decision O1, contradiction C7, and learnings DF-029, DF-047, DF-048, and LR-012.
 - Root toolchain/workspace contract: [`package.json:2-20`](../../../package.json).
 - Current package contract: [`packages/core/package.json:2-44`](../../../packages/core/package.json).
 - Bun executable contract: [`packages/core/src/scripts/angel.ts:1-8`](../../../packages/core/src/scripts/angel.ts).

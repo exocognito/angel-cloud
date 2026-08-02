@@ -57,7 +57,7 @@ How long should one single-use email magic link remain valid, and does SMS belon
 
 ##### O4 full record: Repository sources
 
-- `docs/product-ledger.html`: O4, C4, DF-049, LR-011, PD-01, C02, and G10.
+- `docs/product-ledger.html`: decision O4, contradiction C4, learning DF-049/LR-011, deliverable PD-01, command C02, and guarantee G10.
 - `docs/aprd/angel-cloud-aprd.html`, §4.1: target Better Auth + D1, “days-long” links, optional passkey, and recovery-contact intent. This is an unapproved draft and conflicts with the Ledger.
 - At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token, email link, browser hop, login nonce, and no management mutation before successful login. WS-E removed the keychain assumption; exact management-token storage remains a WS2 gate.
 - `docs/faq.md`: current reality is Cloudflare Access and one pre-provisioned Account; no signup exists.
