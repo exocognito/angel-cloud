@@ -85,7 +85,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("disposable real Google callback/client-type journey");
     expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
-    expect(ledger).toContain("The callback half of the original contradiction is carried by C16");
+    expect(ledger).toContain("C16 carries the callback half");
     expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS-E · WS2 · PD-02<\/dd>/);
     expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS2 · PD-02<\/dd>/);
     const c16 = ledger.match(/data-contradiction-key="C16"[\s\S]*?<\/details>/)?.[0] ?? "";
@@ -105,9 +105,12 @@ describe("WS-E evidence-only decision closure", () => {
       expect(record).not.toContain("N/A — WS-E closed the decision");
     }
     expect(ledger).toContain("O10 blocks WS2 product work; O6 is closed.");
-    for (const key of ["C4", "C6", "C13"]) {
+    for (const key of ["C4", "C6", "C13", "C15"]) {
       const contradiction = ledger.match(new RegExp(`<details class="contradiction" data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
       expect(contradiction).toContain("WS2 execution gate");
+    }
+    for (const contradiction of ledger.matchAll(/<details class="contradiction"[^>]+data-record-state="OPEN"[\s\S]*?<\/details>/g)) {
+      expect(contradiction[0]).not.toContain("resolved this contradiction");
     }
     expect(ledger).toContain("WS-E is now active.");
   });

@@ -473,6 +473,11 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       const machine = block.match(/data-[\w-]+-last-verified="([^"]+)"/)?.[1];
       const rendered = block.match(/(?:<dt>Last verified<\/dt><dd>|<strong>Last verified<\/strong><div>)(.*?)(?:<\/dd>|<\/div>)/)?.[1];
       expect(rendered).toBe(machine);
+      const machineBlockers = block.match(/data-[\w-]+-blockers="([^"]+)"/)?.[1];
+      if (machineBlockers !== undefined) {
+        const renderedBlockers = block.match(/(?:<dt>Decisions or blockers<\/dt><dd>|<strong>Decisions or blockers<\/strong><div>)(.*?)(?:<\/dd>|<\/div>)/)?.[1];
+        expect(renderedBlockers).toBe(machineBlockers);
+      }
     }
     const learningRows = recordBlocks("tr", "data-learning-id");
     expectFields(learningRows, [
