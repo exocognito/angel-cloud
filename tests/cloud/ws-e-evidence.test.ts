@@ -19,7 +19,7 @@ const briefs = [
 
 describe("WS-E evidence-only decision closure", () => {
   test("ships exactly seven decision-grade evidence briefs", () => {
-    expect(headingSlugs("```sh\n# not-a-heading\n```\n## real-heading"))
+    expect(headingSlugs("```sh\n~~~\n# not-a-heading\n```\n## real-heading"))
       .toEqual(new Set(["real-heading"]));
     for (const [file, decisions] of briefs) {
       const path = join(root, "docs/evidence/ws-e", file);
@@ -77,8 +77,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
     expect(ledger).toContain("The callback half of the original contradiction is carried by C16");
-    expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>O2 · WS-E · WS2 · PD-02<\/dd>/);
-    expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>O2 · WS2 · PD-02<\/dd>/);
+    expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS-E · WS2 · PD-02<\/dd>/);
+    expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS2 · PD-02<\/dd>/);
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
@@ -105,6 +105,20 @@ describe("WS-E evidence-only decision closure", () => {
     expect(c9).toContain("Brief 7 excludes provenance, adapter origin, and the source digest");
     const c11 = ledger.match(/data-contradiction-key="C11"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c11).toContain("Account deletion is an asynchronous, retryable hard-delete");
+    const contradictionLinks: Record<string, string> = {
+      C4: "WS2 · PD-01",
+      C6: "WS2 · PD-02 · PD-03",
+      C9: "WS2 · PD-00B",
+      C11: "WS2 · PD-01",
+      C13: "WS2 · PD-03",
+      C15: "WS-E · WS2 · PD-02",
+      C16: "WS2 · PD-02",
+    };
+    for (const [key, linked] of Object.entries(contradictionLinks)) {
+      const record = ledger.match(new RegExp(`data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
+      expect(record).toContain(`<dt>Linked Project Index rows</dt><dd>${linked}</dd>`);
+      expect(record).not.toMatch(/<dt>Linked Project Index rows<\/dt><dd>[^<]*\bO\d+/);
+    }
     const df047 = ledger.match(/<tr data-learning-id="DF-047"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df047).toContain("Registry check 2026-08-01: @angelmcp/cli and angelmcp absent");
     expect(ledger).toContain("WS-E authorizes no product implementation");
@@ -143,6 +157,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(deletionBrief).toContain("local provider OAuth tokens in the Angel-owned encrypted vault");
     expect(deletionBrief).toContain("local files and the Angel-owned encrypted vault");
     expect(deletionBrief).not.toContain("local files/keychain entries");
+    expect(deletionBrief).toContain("public-review commitment nonces");
     expect(deletionBrief).toContain("project/user grant");
     expect(deletionBrief).toContain("all client IDs in the same Google Cloud project");
     expect(deletionBrief).toContain("Test sibling client IDs within one Google Cloud project");
@@ -161,6 +176,8 @@ describe("WS-E evidence-only decision closure", () => {
     const publicBrief = readFileSync(join(root, "docs/evidence/ws-e/07-public-review-and-self-hosting.md"), "utf8");
     expect(publicBrief).toContain('"commitment": "<64 lowercase hexadecimal SHA-256 characters>"');
     expect(publicBrief).toContain("32-byte owner-held random nonce");
+    expect(publicBrief).toContain("one nonce per published Version");
+    expect(publicBrief).toContain("reuse it for every public summary response for that Version");
     expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");

@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, normalize } from "node:path";
+import { headingSlugs as sharedHeadingSlugs } from "./markdown-slugs";
 
 /**
  * Contract for the public docs site (issue #4).
@@ -57,27 +58,7 @@ const read = (dist: string, file: string) => readFileSync(join(dist, file), "utf
 // repeated hyphens NOT collapsed, duplicates suffixed -1, -2, ...
 function headingSlugs(markdown: string): Set<string> {
   const body = markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
-  const seen = new Set<string>();
-  let inFence = false;
-  for (const line of body.split("\n")) {
-    if (/^\s*(```|~~~)/.test(line)) { inFence = !inFence; continue; }
-    if (inFence) continue;
-    const m = line.match(/^#{1,4}\s+(.*)$/);
-    if (!m || m[1] === undefined) continue;
-    // Headings are rendered as text: drop markdown link/code/emphasis markers
-    // the way the DOM's textContent would. Underscores survive inside code
-    // spans (`angel_connection`); only paired emphasis underscores are markup.
-    const text = m[1]
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-      .replace(/[`*]/g, "")
-      .replace(/\b_([^_]+)_\b/g, "$1");
-    let s = text.trim().toLowerCase().replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
-    const base = s;
-    let n = 0;
-    while (seen.has(s)) { n += 1; s = `${base}-${n}`; }
-    seen.add(s);
-  }
-  return seen;
+  return sharedHeadingSlugs(body, 4);
 }
 
 // Every canonical docs URL in a file, as { path, anchor } pairs.

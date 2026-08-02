@@ -38,7 +38,7 @@ O7 becomes a **public review summary**, not a full independently verifiable bund
 }
 ```
 
-Unknown keys fail. The commitment is SHA-256 over a domain separator, a fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings remain owner-only. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
+Unknown keys fail. Generate one nonce per published Version, store it owner-only alongside the Version evidence, and reuse it for every public summary response for that Version. The commitment is SHA-256 over a domain separator, that fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings remain owner-only. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
 
 O9 ships one honest status note: portable design and current Worker source exist; supported, licensed, reproducible self-hosting does not. Round 2 tests local and managed journeys only. Local use is not self-hosting.
 
@@ -249,9 +249,12 @@ Contract details:
   values are not copied.
 - The payload has no Angel or Account identity. The public route is the only
   coordinate disclosure.
+- Generate one nonce per published Version, store it owner-only alongside the
+  Version evidence, and reuse it for every public summary response for that
+  Version. Never generate a new nonce per request.
 - `artifact.commitment` is SHA-256 of the UTF-8 domain separator
-  `angel.public-review.v1\0`, a fresh 32-byte owner-held random nonce, and the
-  exact canonical artifact bytes, in that order. The nonce and raw artifact
+  `angel.public-review.v1\0`, that fresh 32-byte owner-held random nonce, and
+  the exact canonical artifact bytes, in that order. The nonce and raw artifact
   digest stay owner-only. Copy must say: **“This summary contains a hiding
   commitment, not enough data to verify the artifact or inspect exact argument
   guards.”**

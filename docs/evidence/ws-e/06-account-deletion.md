@@ -275,7 +275,7 @@ The only recommended product retention exception is a **minimal non-resolving re
 
 ### Control and auth removal
 
-11. Delete the Account-specific `management` and `providers` state in full: Account record; Angels; Versions/artifacts; deployments; keys; bindings; availability/repair state; safe Connection/Provider App summaries; pending/expired OAuth states and PKCE verifiers; all idempotency records including encrypted shown-once responses; timestamps; and any owner-only source drafts added later. Finish with `storage.deleteAll()` on the AccountRegistry DO.
+11. Delete the Account-specific `management` and `providers` state in full: Account record; Angels; Versions/artifacts; public-review commitment nonces; deployments; keys; bindings; availability/repair state; safe Connection/Provider App summaries; pending/expired OAuth states and PKCE verifiers; all idempotency records including encrypted shown-once responses; timestamps; and any owner-only source drafts added later. Finish with `storage.deleteAll()` on the AccountRegistry DO.
 12. Delete every target-auth row tied solely to the owner/Account: auth user, sessions, linked auth identities, magic-link/verification records, passkey public credentials, recovery addresses/contacts, account memberships, and server-side CLI-token records. The final table/key list must come from the generated Better Auth/D1 migration and Angel extensions; it cannot be frozen from this repository because they do not exist yet.
 13. If the auth identity owns no other Angel Account in the Round-2 one-owner model, delete that auth identity. A future multi-Account/member model must separate “delete this Account” from “delete my login”; do not guess that cascade now.
 

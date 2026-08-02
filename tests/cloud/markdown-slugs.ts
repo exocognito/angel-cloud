@@ -1,5 +1,6 @@
-export const headingSlugs = (markdown: string): Set<string> => {
+export const headingSlugs = (markdown: string, maxDepth = 6): Set<string> => {
   const slugs = new Set<string>();
+  const headingPattern = new RegExp(`^#{1,${maxDepth}}\\s+(.*)$`);
   let fence: "```" | "~~~" | undefined;
   for (const line of markdown.split("\n")) {
     const fenceMarker = line.match(/^\s*(```|~~~)/)?.[1] as "```" | "~~~" | undefined;
@@ -9,7 +10,7 @@ export const headingSlugs = (markdown: string): Set<string> => {
       continue;
     }
     if (fence) continue;
-    const heading = line.match(/^#{1,6}\s+(.*)$/)?.[1];
+    const heading = line.match(headingPattern)?.[1];
     if (!heading) continue;
     const text = heading
       .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")

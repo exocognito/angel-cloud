@@ -259,7 +259,7 @@ describe("APRD v2", () => {
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("remain proposed and unapproved");
     expect(roadmap).toContain("APRD v2");
-    expect(roadmap).toContain("remains unapproved for implementation");
+    expect(roadmap).toMatch(/remains\s+unapproved for implementation/);
     expect(roadmap).not.toContain("This file is the canonical plan of record");
   });
 
