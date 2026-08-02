@@ -1,10 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
-const ledger = readFileSync(
-  new URL("../../docs/product-ledger.html", import.meta.url),
-  "utf8",
-);
+const ledgerUrl = new URL("../../docs/product-ledger.html", import.meta.url);
+const ledger = readFileSync(ledgerUrl, "utf8");
 const roadmap = readFileSync(
   new URL("../../ROADMAP.md", import.meta.url),
   "utf8",
@@ -34,6 +33,30 @@ const recordBlocks = (tag: string, attribute: string): string[] =>
     "g",
   ))].map((match) => match[0]);
 
+const headingSlugs = (markdown: string): Set<string> => {
+  const slugs = new Set<string>();
+  let inFence = false;
+  for (const line of markdown.split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    const heading = line.match(/^#{1,4}\s+(.*)$/)?.[1];
+    if (!heading) continue;
+    const text = heading
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/[`*]/g, "")
+      .replace(/\b_([^_]+)_\b/g, "$1");
+    const base = text.trim().toLowerCase().replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
+    let slug = base;
+    let suffix = 0;
+    while (slugs.has(slug)) slug = `${base}-${++suffix}`;
+    slugs.add(slug);
+  }
+  return slugs;
+};
+
 const truthStates = new Set(["LIVE", "PARTIAL", "BROKEN", "NOT BUILT"]);
 const planStates = new Set(["COMPLETE", "ACTIVE", "NEXT", "BLOCKED", "LATER"]);
 
@@ -55,7 +78,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(aprd).toContain("Do not build from this draft.");
     expect(ledger).toContain('data-contract-version="approved-v0.1"');
     expect(ledger).toContain('data-ledger-approval="APPROVED"');
-    expect(ledger).toContain('data-current-workstream="WS1"');
+    expect(ledger).toContain('data-current-workstream="WS-E"');
     expect(ledger).toContain('data-current-workstream-status="NEXT"');
     expect(ledger).toContain('data-product-work-approval="WS1"');
     expect(ledger).toContain('data-evidence-work-approval="WS-E"');
@@ -64,8 +87,8 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-mobile-qa-scroll-width="390"');
     expect(ledger).toContain('data-next-milestone-status="unapproved"');
     expect(ledger).toContain("Approved 2026-08-01");
-    expect(ledger).toContain("https://github.com/exocognito/angel-cloud/pull/43#issuecomment-5152622328");
-    expect(ledger).toContain("Product/repository approval: WS1. Evidence-only approval: WS-E.");
+    expect(ledger).toContain("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328");
+    expect(ledger).toContain("Product/repository approval: WS1, now complete. Evidence-only approval: WS-E, now next.");
     expect(ledger).toContain("WS2 and M-DF2 remain proposed and blocked by O10");
     expect(ledger).not.toContain("No Angel product build is approved");
   });
@@ -78,10 +101,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
     expect(ledger).toMatch(
-      /data-index-key="WS1" data-index-plan="NEXT" data-index-approval="APPROVED"/,
+      /data-index-key="WS1" data-index-plan="COMPLETE" data-index-approval="APPROVED"/,
     );
     expect(ledger).toMatch(
-      /data-index-key="WS-E" data-index-plan="BLOCKED" data-index-approval="APPROVED"/,
+      /data-index-key="WS-E" data-index-plan="NEXT" data-index-approval="APPROVED"/,
     );
     expect(ledger).toContain("Evidence only — no product implementation");
     expect(count('<details id="index-')).toBe(keys.length);
@@ -116,18 +139,19 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "ID-09", "PD-06", "PD-07", "ID-10",
     ]);
     expect(new Set(ids).size).toBe(ids.length);
-    expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
-    expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
-    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual([
-      "NEXT", "NEXT", "NEXT", "NEXT",
-    ]);
     for (const id of ["ID-01", "ID-02", "ID-03", "ID-04"]) {
-      expect(ledger).toMatch(
-        new RegExp(`data-deliverable-key="${id}"[^>]+data-deliverable-plan="NEXT"[^>]+data-deliverable-approval="APPROVED"`),
-      );
+      expect(ledger).toMatch(new RegExp(
+        `data-deliverable-key="${id}" data-deliverable-truth="LIVE" data-deliverable-plan="COMPLETE"`,
+      ));
     }
     expect(ledger).toMatch(
-      /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="BLOCKED"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
+      /data-deliverable-key="ID-05" data-deliverable-truth="NOT BUILT" data-deliverable-plan="NEXT"/,
+    );
+    expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
+    expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
+    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
+    expect(ledger).toMatch(
+      /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="NEXT"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
     );
     expect(ledger).toContain("7. Public review bundle and self-hosting claim boundary — O7 and O9");
     expect(count('data-deliverable-approval="')).toBe(ids.length);
@@ -276,11 +300,19 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       if (disposition === "UNRESOLVED") expect(destination.startsWith("O")).toBe(true);
     }
     const dispositions = rows.map((row) => row[2] ?? "");
-    expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(29);
-    expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(47);
+    expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(35);
+    expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(39);
     expect(dispositions.filter((value) => value === "DEFERRED")).toHaveLength(29);
-    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(8);
-    expect(ledger).toContain('data-orphan-count="0"');
+    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(10);
+    expect(ledger).toContain(`data-learning-count="${rows.length}"`);
+    expect(ledger).toContain(`<span class="metric"><b>${rows.length}</b>reconciled</span>`);
+    for (const disposition of validDispositions) {
+      const count = dispositions.filter((value) => value === disposition).length;
+      expect(ledger).toContain(`<span class="metric"><b>${count}</b>${disposition.toLowerCase()}</span>`);
+    }
+    const orphanCount = ledger.match(/data-orphan-count="(\d+)"/)?.[1];
+    expect(orphanCount).toBe("0");
+    expect(ledger).toContain(`<span class="metric"><b>${orphanCount}</b>orphans</span>`);
   });
 
   test("keeps decisions and contradictions inspectable on the data spine", () => {
@@ -436,6 +468,25 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "Source artifacts", "Last verified",
     ]);
     expect(ledger).not.toMatch(/N\/A —\s*(?:<|&lt;)/);
+  });
+
+  test("resolves every repository-relative evidence link from the Ledger file", () => {
+    for (const href of values(/<a\s[^>]*href="([^"]+)"/g)) {
+      const githubDoc = href.match(/^https:\/\/github\.com\/exocognito\/angelmcp\/blob\/([^/]+)\/([^#]+)(?:#(.+))?$/);
+      if (githubDoc?.[2]) {
+        expect(githubDoc[1], `Ledger evidence must use the canonical main ref: ${href}`).toBe("main");
+        const target = new URL(`../../${githubDoc[2]}`, import.meta.url);
+        expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
+        if (githubDoc[3]) {
+          const markdown = readFileSync(target, "utf8");
+          expect(headingSlugs(markdown).has(decodeURIComponent(githubDoc[3])), `Ledger heading does not resolve: ${href}`).toBe(true);
+        }
+        continue;
+      }
+      if (/^(?:#|https?:|mailto:)/.test(href)) continue;
+      const target = new URL(href, ledgerUrl);
+      expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
+    }
   });
 
   test("is self-contained and uses visible status text", () => {

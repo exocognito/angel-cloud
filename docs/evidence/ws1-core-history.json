@@ -1,0 +1,23 @@
+{
+  "schema": "angelmcp.ws1.core-history.v1",
+  "sourceRepository": "https://github.com/exocognito/angel-core",
+  "archivedRepository": "https://github.com/exocognito/angel-core-history",
+  "archiveVisibility": "private, owner-only",
+  "sourceTip": "8d08c42ff1fd47420f969d268d03ab0e0d7a3de9",
+  "sourcePrefix": "packages/angel-core",
+  "packageSplitTip": "4caa10a98a7d2ed21370e63e2ca8a98753b9fb30",
+  "targetPrefix": "packages/core",
+  "splitTip": "7d9a179ba1b931e50c238dccdbc9a0b297dc5b9c",
+  "mergeCommit": "23e4eed8c1b17a7eb110d914c1249df970303c38",
+  "method": "git subtree split, path-prefix rewrite, then unsquashed merge",
+  "rewrittenCommitCount": 31,
+  "literalSourceHistory": "Original commit IDs and the v0.2.0 tag remain in the archived source repository; rewritten IDs preserve package history at packages/core in this monorepo.",
+  "secretAudit": {
+    "scope": "Every blob reachable from the rewritten packages/core history",
+    "patterns": "private-key markers and common AWS, Google, GitHub, OpenAI, OAuth-client-secret, and Cloudflare-token forms",
+    "matches": 0,
+    "trackedCredentialFiles": 0,
+    "verified": "2026-08-01 \u00b7 Pi on Air",
+    "verification": "Re-run by scripts/ws1-release-integrity.ts against every rewritten commit"
+  }
+}

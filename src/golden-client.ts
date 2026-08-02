@@ -122,13 +122,13 @@ export interface GoldenJourneyReport {
 export async function loadGoldenAngelInput(
   repoRoot: string,
   angelId: "gmail-inbox-zero" | "golden-assistant",
-  loadConfig: GoldenDeploymentConfigLoader = (root, id) => loadAngelDeploymentConfig({
-    repoRoot: root,
-    angelId: id,
-  }),
+  loadConfig?: GoldenDeploymentConfigLoader,
 ): Promise<GoldenAngelInput> {
-  const built = await buildPortableAngel({ repoRoot, angelId });
-  const config = loadConfig(repoRoot, angelId);
+  const sourceRoot = join(repoRoot, "examples");
+  const built = await buildPortableAngel({ repoRoot: sourceRoot, angelId });
+  const config = loadConfig === undefined
+    ? loadAngelDeploymentConfig({ repoRoot: sourceRoot, angelId })
+    : loadConfig(repoRoot, angelId);
   if (config.angel !== built.artifact.name) {
     throw new Error(`angel.json Angel ${config.angel} does not match ${built.artifact.name}`);
   }
@@ -140,7 +140,7 @@ export async function buildGoldenAssistantVersion(
   version: 1 | 2,
 ): Promise<HostedVersionArtifact> {
   const root = readFileSync(
-    join(repoRoot, "angels/golden-assistant/ANGEL.yaml"),
+    join(repoRoot, "examples/angels/golden-assistant/ANGEL.yaml"),
     "utf8",
   );
   return compileHostedAngel(root, {
@@ -159,12 +159,12 @@ export async function runGoldenJourney(
   const controlBaseUrl = origin(options.controlBaseUrl, "controlBaseUrl");
   const gatewayBaseUrl = origin(options.gatewayBaseUrl, "gatewayBaseUrl");
   const trace: string[] = [];
-  const loadConfig = options.loadDeploymentConfig ?? ((repoRoot, angelId) => loadAngelDeploymentConfig({
-    repoRoot,
-    angelId,
-  }));
-  const inboxConfig = loadConfig(options.repoRoot, "gmail-inbox-zero");
-  const assistantConfig = loadConfig(options.repoRoot, "golden-assistant");
+  const sourceRoot = join(options.repoRoot, "examples");
+  const loadConfig = (angelId: string) => options.loadDeploymentConfig === undefined
+    ? loadAngelDeploymentConfig({ repoRoot: sourceRoot, angelId })
+    : options.loadDeploymentConfig(options.repoRoot, angelId);
+  const inboxConfig = loadConfig("gmail-inbox-zero");
+  const assistantConfig = loadConfig("golden-assistant");
   for (const config of [inboxConfig, assistantConfig]) {
     if (origin(config.target, "angel.json target") !== controlBaseUrl) {
       throw new Error(`angel.json target ${config.target} does not match ${controlBaseUrl}`);
@@ -480,7 +480,7 @@ async function cliPublish(
   // Core 0.3.0's bare `publish` one-step deploys to production; the journey
   // exercises the publish -> preview -> promote path, so target preview.
   await runAngelCommand(["publish", angelId, "--preview"], {
-    repoRoot: options.repoRoot,
+    repoRoot: join(options.repoRoot, "examples"),
     fetch,
     build: async (input) => {
       const result = buildOverride === undefined
@@ -491,7 +491,7 @@ async function cliPublish(
     },
     loadDeploymentConfig: options.loadDeploymentConfig === undefined
       ? undefined
-      : ({ repoRoot, angelId: id }) => options.loadDeploymentConfig!(repoRoot, id),
+      : ({ angelId: id }) => options.loadDeploymentConfig!(options.repoRoot, id),
     output: (line) => output.push(line),
     env: {
       ANGEL_MANAGEMENT_TOKEN: options.managementToken,
@@ -513,11 +513,11 @@ async function cliDeployProduction(
   fetch: FetchLike,
 ): Promise<void> {
   await runAngelCommand(["deploy", angelId, "--prod"], {
-    repoRoot: options.repoRoot,
+    repoRoot: join(options.repoRoot, "examples"),
     fetch,
     loadDeploymentConfig: options.loadDeploymentConfig === undefined
       ? undefined
-      : ({ repoRoot, angelId: id }) => options.loadDeploymentConfig!(repoRoot, id),
+      : ({ angelId: id }) => options.loadDeploymentConfig!(options.repoRoot, id),
     output: () => {},
     env: {
       ANGEL_MANAGEMENT_TOKEN: options.managementToken,
@@ -851,7 +851,7 @@ function connectionChoice(
 
 function readLocalAngel(repoRoot: string, name: string, file: string): string | undefined {
   try {
-    return readFileSync(join(repoRoot, "angels", name, file), "utf8");
+    return readFileSync(join(repoRoot, "examples", "angels", name, file), "utf8");
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
     throw error;

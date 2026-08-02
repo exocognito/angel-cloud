@@ -264,16 +264,21 @@ describe("APRD v2", () => {
   });
 
   test("checks current publish behavior against the package pin and public docs", async () => {
-    expect(packageManifest.dependencies["@smcllns/angel-core"]).toBe("0.3.0");
+    expect(packageManifest.dependencies["@smcllns/angel-core"]).toBe("workspace:0.3.0");
+    expect(JSON.parse(readFileSync(new URL("../../packages/core/package.json", import.meta.url), "utf8")).version).toBe("0.3.0");
     expect(corePackageManifest.version).toBe("0.3.0");
     expect(roadmap).not.toContain("waits on `@smcllns/angel-core`");
     expect(rootReadme).toContain("to production by default");
     expect(rootReadme).toContain("bun run angel publish golden-assistant --preview");
+    expect(rootReadme).toContain("hosted and core test suites");
+    expect(rootReadme).not.toMatch(/\d+ hosted tests \/ [\d,]+ assertions/);
+    expect(rootReadme).toMatch(/registry network access and\s+the pinned toolchain/);
+    expect(rootReadme).not.toContain("482 tests / 2,982 assertions");
     expect(userManual).toContain("Production is the default in `@smcllns/angel-core` 0.3.0");
     expect(userManual).toContain("pnpm exec angel delete  <angel> [--confirm <slug>]");
     expect(userManual).toContain('"preview":');
     expect(userManual).not.toContain('"staging":');
-    expect(userManual).toContain("The hosted repository runs this against public");
+    expect(userManual).toContain("The canonical repository runs this against workspace-linked");
     expect(previewDecision).toContain("- Implemented: Yes");
     expect(previewBindingsDecision).toContain("- Implemented: Yes");
     expect(productDecisionIndex).toContain("| [0003](0003-preview-is-opt-in.md)");
@@ -335,7 +340,7 @@ describe("APRD v2", () => {
       expect(currentDoc).toMatch(
         /Public\s+`@smcllns\/angel-core@0\.3\.0` is\s+published/,
       );
-      expect(currentDoc).toContain("matching lockfile");
+      expect(currentDoc).toContain("workspace lockfile");
       expect(currentDoc).not.toContain("remote CI is green");
     }
 

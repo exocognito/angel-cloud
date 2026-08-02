@@ -5,7 +5,7 @@
 - Implemented: Yes — a preview deploy takes only its own explicit bindings,
   an unbound one fails naming both ways forward, and core 0.3.0 provides the
   typed `--preview --share-production-credentials` path
-- Tracked: [#3](https://github.com/exocognito/angel-cloud/issues/3)
+- Tracked: [#3](https://github.com/exocognito/angelmcp/issues/3)
 - Supersedes: point 3 of [PD 0003](0003-preview-is-opt-in.md)
 
 ## Decision

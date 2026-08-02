@@ -39,12 +39,13 @@ cp "$docs/google-read-proof-manual-journey.md" "$dist/google-read-proof-manual-j
 
 # 3. The decision records the served docs link to. The user manual and FAQ
 #    reference docs/product-decisions/*.md by relative path, and those records
-#    reference docs/adrs/*.md and ../domain-architecture.md; copying both
-#    directories under their repo-relative paths closes the link graph, so no
+#    reference docs/adrs/*.md, docs/core/*.md, and ../domain-architecture.md;
+#    copying those directories under their repo-relative paths closes the link graph, so no
 #    served markdown link dangles. (tests/cloud/docs-site.test.ts crawls the
 #    closure and fails the build contract if a link ever dangles again.)
 cp -R "$docs/product-decisions" "$dist/product-decisions"
 cp -R "$docs/adrs" "$dist/adrs"
+cp -R "$docs/core" "$dist/core"
 
 # 4. Images the served markdown references. Only the user manual's
 #    manual-images/ are used; docs/screenshots/ is referenced solely by the

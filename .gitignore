@@ -8,7 +8,7 @@ node_modules/
 docs/sam-feedback.md
 
 # actual deployment configuration, local only
-angels/*/angel.json
+examples/angels/*/angel.json
 
 # agent tooling session transcripts, local only
 .pi/

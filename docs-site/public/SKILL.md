@@ -8,14 +8,14 @@ description: >-
   management calls, author the Angel, add a Google Connection, build, publish to
   preview, promote the exact previewed deployment, mint a key, and connect over
   MCP. Everything runs through the management API and the published
-  @smcllns/angel-core CLI — do NOT clone the exocognito/angel-cloud repository.
+  @smcllns/angel-core CLI — do NOT clone the exocognito/angelmcp repository.
 ---
 
 # Create, publish, and operate an Angel
 
 ## The one rule that trips agents up
 
-**Do not clone `exocognito/angel-cloud`.** The tooling is a published npm
+**Do not clone `exocognito/angelmcp`.** The tooling is a published npm
 package (`@smcllns/angel-core`), and every deployment step is an HTTP call to
 the management API. The source tree is the operator's, not the user's. If you
 find yourself running `git clone` or `bun run angel` *inside the product repo*,

@@ -47,7 +47,7 @@ describe("canonical deterministic hosted golden journey", () => {
       }),
       fetch: harness.fetch,
       loadDeploymentConfig: (root, angelId) => parseAngelDeploymentConfig(readFileSync(
-        join(root, `angels/${angelId}/angel.example.json`),
+        join(root, `examples/angels/${angelId}/angel.example.json`),
         "utf8",
       )),
     });

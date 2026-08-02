@@ -45,8 +45,9 @@ sequence and status.
 - The Control root redirects an unauthenticated request to Access (`302`) and
   returns the app to a valid Access service token (`200`).
 - Live reset and state reads pass through the deployed Control surface.
-- Public `@smcllns/angel-core@0.3.0` is published. The repository pins it with
-  a matching lockfile.
+- Public `@smcllns/angel-core@0.3.0` is published. Canonical source now lives
+  at `packages/core`; the workspace lockfile links that exact version, and
+  `pnpm run check:ws1` compares its packed runtime bytes with the registry tarball.
 - Provider App `google-primary` is stored in Broker custody. Reads return only
   its safe summary; the client secret is not returned.
 
@@ -95,15 +96,20 @@ deployment; it does not build or publish. The pinned
 Access-protected: CLI publish and deploy require both
 `ANGEL_MANAGEMENT_TOKEN` and `ANGEL_ACCESS_TOKEN`.
 
-## Deterministic CI (golden proof)
+## Canonical CI and deterministic golden proof
 
 ```text
 bun run check
 ```
 
-Ordinary CI runs the deterministic journey against in-memory Worker and
-Durable Object adapters and injects a deterministic provider at Broker, without
-Google credentials (482 tests / 2,982 assertions). The journey publishes both
+The canonical check runs the hosted and core test suites, fixture checks, and
+WS1 release-integrity proof. The hosted suite and golden journey use in-memory Worker and
+Durable Object adapters plus a deterministic Broker provider, without Google
+credentials. The final release-integrity step needs registry network access and
+the pinned toolchain; [ADR 0007](docs/adrs/0007-monorepo-source-and-release-integrity.md#release-integrity)
+owns that contract.
+
+Within the check, the golden journey publishes both
 checked-in comparison Angels, promotes exact previewed deployments, discovers one
 canonical Gmail tool with two opaque Connection choices, proves omission never
 fans out, calls each Connection separately, pauses one tuple without pausing

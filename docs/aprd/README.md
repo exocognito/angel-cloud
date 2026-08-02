@@ -34,7 +34,7 @@ only after the next APRD is approved.
 The current APRD does not frame the demo. `/demo/` remains separate proof: the
 docs build serves the real `www/` shell over a generated read-only fixture, not
 a screenshot. The canonical `docs.angelmcp.ai` host still waits on the zone move
-([#6](https://github.com/exocognito/angel-cloud/issues/6)).
+([#6](https://github.com/exocognito/angelmcp/issues/6)).
 
 ## Hosting
 

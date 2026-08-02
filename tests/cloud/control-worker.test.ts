@@ -1153,11 +1153,11 @@ function registryMutation(idempotencyKey: string, body: unknown) {
 
 function checkedArtifact(slug: string) {
   const canonicalSource = readFileSync(
-    new URL(`../../angels/${slug}/build/angel.version.json`, import.meta.url),
+    new URL(`../../examples/angels/${slug}/build/angel.version.json`, import.meta.url),
     "utf8",
   ).trim();
   const digest = readFileSync(
-    new URL(`../../angels/${slug}/build/angel.version.sha256`, import.meta.url),
+    new URL(`../../examples/angels/${slug}/build/angel.version.sha256`, import.meta.url),
     "utf8",
   ).trim();
   return { ...JSON.parse(canonicalSource), canonicalSource, digest };

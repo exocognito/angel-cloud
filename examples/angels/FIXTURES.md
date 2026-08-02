@@ -1,10 +1,10 @@
 # Angel Fixtures
 
-This directory contains **golden copies** of portable Angel definitions and compiled artifacts. The canonical policy sources and @smcllns/angel-core are in the separate portable [exocognito/angel-core](https://github.com/exocognito/angel-core) repository. This hosted repo consumes the installed @smcllns/angel-core package and maintains checked-in copies of portable Angel configurations as public examples.
+This directory is the canonical checked-in source for portable Angel examples and compiled fixtures. The compiler and CLI live beside it at `packages/core`; the hosted Workers consume the same workspace package. The external `exocognito/angels` repository is a starter, not another compiler or fixture source.
 
 ## Layout
 
-- `{angelId}/ANGEL.yaml` — portable policy definition (copied from portable repo)
+- `{angelId}/ANGEL.yaml` — canonical portable example policy
 - `{angelId}/ANGEL.v2.yaml` — optional v2 variant (e.g., gmail-read-and-draft)
 - `{angelId}/angel.example.json` — safe example of deployment configuration
 - `{angelId}/build/` — compiled artifacts (golden fixtures, checked in for verification)
@@ -19,7 +19,7 @@ and ignored.
 The actual `angel.json` file is **local only** and ignored by git. To set up local execution:
 
 ```bash
-cp angels/{angelId}/angel.example.json angels/{angelId}/angel.json
+cp examples/angels/{angelId}/angel.example.json examples/angels/{angelId}/angel.json
 # Edit target, account, and bindings as needed for your deployment
 ```
 
@@ -30,7 +30,7 @@ Tests use deterministic fixture paths with no fallback magic. Checked-in artifac
 When portable Angel definitions change, recompile and update the checked-in artifacts:
 
 ```bash
-bun run angel build {angelId}
+cd examples && pnpm exec angel build {angelId}
 ```
 
 The `pnpm check` command verifies artifacts match their sources without modifying files.

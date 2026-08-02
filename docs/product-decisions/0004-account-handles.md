@@ -4,8 +4,8 @@
 - Date: 2026-07-28
 - Implemented: Partly — grammar, reservation, uniqueness, one-rename cap, and
   MCP resolution of retired handles are built; the 301 for human-facing pages
-  waits on the first account-addressed page ([#11](https://github.com/exocognito/angel-cloud/issues/11))
-- Tracked: [#12](https://github.com/exocognito/angel-cloud/issues/12)
+  waits on the first account-addressed page ([#11](https://github.com/exocognito/angelmcp/issues/11))
+- Tracked: [#12](https://github.com/exocognito/angelmcp/issues/12)
 
 ## Decision
 
@@ -77,7 +77,7 @@ Angel with its own environments and its own freshly minted keys, and leaves
 the original deployed, live, and still bound to its Connections.
 
 That is a sharper problem than a broken URL and it is not a naming-policy
-question. It is tracked in [#13](https://github.com/exocognito/angel-cloud/issues/13).
+question. It is tracked in [#13](https://github.com/exocognito/angelmcp/issues/13).
 
 ## Open
 
@@ -85,4 +85,4 @@ question. It is tracked in [#13](https://github.com/exocognito/angel-cloud/issue
   old handle, or the alias staying silent.
 - Confirmable lookalikes. `[a-z0-9-]` blocks unicode homoglyphs, but `rn`/`m`
   and `1`/`l` still permit near-duplicates. Not worth solving at one Account;
-  worth deciding before public signup ([#8](https://github.com/exocognito/angel-cloud/issues/8)).
+  worth deciding before public signup ([#8](https://github.com/exocognito/angelmcp/issues/8)).

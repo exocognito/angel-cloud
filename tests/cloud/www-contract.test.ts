@@ -1230,9 +1230,9 @@ describe("Angel Cloud deployable demo UI contract", () => {
       "ANGEL_ACCESS_TOKEN='{\"cf-access-client-id\":\"...\",\"cf-access-client-secret\":\"...\"}'";
     const DOC_COMMANDS = [
       // Doc step 4 — copy the safe example config.
-      "cp angels/google-read-proof/angel.example.json angels/google-read-proof/angel.json",
+      "cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json",
       // Doc step 5 — publish to preview with management + Access tokens.
-      `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel publish google-read-proof`,
+      `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel publish google-read-proof --preview`,
       // Doc step 6 — promote the exact staged deploy to production.
       `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel deploy google-read-proof --prod`,
     ];
@@ -1313,8 +1313,8 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(toolRow).toContain("renderConnectionToggle(tool, binding)");
 
     // The ANGEL.yaml shown is a REAL shipped policy, not invented: every example
-    // tool name appears in angels/gmail-read-and-draft/ANGEL.yaml.
-    const realYaml = readFileSync(join(www, "../angels/gmail-read-and-draft/ANGEL.yaml"), "utf8");
+    // tool name appears in examples/angels/gmail-read-and-draft/ANGEL.yaml.
+    const realYaml = readFileSync(join(www, "../examples/angels/gmail-read-and-draft/ANGEL.yaml"), "utf8");
     const { angelYamlExampleSource } = loadPure(js, ["angelYamlExampleSource"]) as {
       angelYamlExampleSource: () => string;
     };

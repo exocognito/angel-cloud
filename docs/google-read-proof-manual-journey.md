@@ -50,7 +50,7 @@ monitoring yet.
    deployment concerns:
 
    ```sh
-   cp angels/google-read-proof/angel.example.json angels/google-read-proof/angel.json
+   cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json
    ```
 
    Set the real control target, Account, Angel slug, and the same healthy

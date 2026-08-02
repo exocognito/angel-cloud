@@ -437,8 +437,9 @@ Yes. It merged to main on 2026-07-23 (PR #1), and Broker, Gateway, and Control
 are deployed and live in the dedicated Cloudflare account: an unauthenticated
 Control root request redirects to Access (`302`), a valid service token reaches
 the app (`200`), and live reset and state reads pass. Public
-`@smcllns/angel-core@0.3.0` is published, and the repository pins it with a
-matching lockfile
+`@smcllns/angel-core@0.3.0` is published. Canonical source is workspace-linked
+at `packages/core` under one workspace lockfile, and the release check compares
+its packed runtime with npm
 ([status](user-manual.md#milestone-1-what-is-live)). Cloudflare account login,
 Google consent, publish/deploy, seeded Gmail and Docs reads, loud revoke
 failure, row-level reauthorization on the same Connection, and the final pass
@@ -480,15 +481,16 @@ example in the research notes is illustrative — those adapters do not exist.
 
 ### Why did the repos split, and where does what live now?
 
-Three ownership areas. The comparison repository keeps the Executor, lite, and
-relay slices and the research. The `angels` core owns the source schema,
-compiler, artifact format, target-neutral CLI, and management contract — and
-publishes as `@smcllns/angel-core`. `angel-cloud` owns the hosted Workers,
-custody, www, and deployment, pinned to a core version. The stable interface is
-the versioned artifact plus the strict management contract; the core CLI treats
-`target` as an opaque HTTPS origin and knows nothing of Cloudflare or Angel
-Cloud. A shared source subtree was rejected because it would create drift under
-the appearance of reuse.
+One canonical repository now owns both product areas. `exocognito/angelmcp`
+keeps the hosted Workers, custody, www, deployment, and research at its root. Its
+`packages/core` workspace owns the source schema, compiler, artifact format,
+target-neutral CLI, and management contract, and publishes unchanged as
+`@smcllns/angel-core`. The stable boundary remains the versioned artifact plus
+the strict management contract: the core CLI treats `target` as an opaque HTTPS
+origin and knows nothing of Cloudflare or Angel Cloud. The move preserves the
+standalone source history through a documented rewrite map and a private,
+owner-only literal archive. [ADR 0007](adrs/0007-monorepo-source-and-release-integrity.md)
+records the ownership and release-integrity contract.
 
 ### Can I self-host a compatible control plane?
 

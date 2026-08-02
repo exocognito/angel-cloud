@@ -68,11 +68,11 @@ describe("golden checked-in inputs", () => {
 
   test("the default deployment loader fails on a clean copy without ignored angel.json", async () => {
     const cleanRoot = mkdtempSync(join(tmpdir(), "angel-cloud-clean-copy-"));
-    const angelDir = join(cleanRoot, "angels", "gmail-inbox-zero");
+    const angelDir = join(cleanRoot, "examples", "angels", "gmail-inbox-zero");
     mkdirSync(angelDir, { recursive: true });
     writeFileSync(
       join(angelDir, "ANGEL.yaml"),
-      readFileSync(join(repoRoot, "angels/gmail-inbox-zero/ANGEL.yaml"), "utf8"),
+      readFileSync(join(repoRoot, "examples/angels/gmail-inbox-zero/ANGEL.yaml"), "utf8"),
     );
 
     await expect(loadGoldenAngelInput(cleanRoot, "gmail-inbox-zero")).rejects.toThrow(/angel\.json/);
@@ -98,7 +98,7 @@ describe("golden checked-in inputs", () => {
     ]);
     expect(v2.children.find(({ name }) => name === "gmail-read-and-draft")?.digest)
       .not.toBe(v1.children.find(({ name }) => name === "gmail-read-and-draft")?.digest);
-    expect(readFileSync(join(repoRoot, "angels/gmail-read-and-draft/ANGEL.v2.yaml"), "utf8"))
+    expect(readFileSync(join(repoRoot, "examples/angels/gmail-read-and-draft/ANGEL.v2.yaml"), "utf8"))
       .toContain("gmail.users.labels.list");
   });
 });
@@ -108,7 +108,7 @@ function exampleDeploymentConfig(
   angelId: string,
 ) {
   return parseAngelDeploymentConfig(readFileSync(
-    join(root, `angels/${angelId}/angel.example.json`),
+    join(root, `examples/angels/${angelId}/angel.example.json`),
     "utf8",
   ));
 }
