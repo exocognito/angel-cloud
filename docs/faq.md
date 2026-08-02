@@ -233,10 +233,10 @@ secret into it.
 Both gates are compiled from your source at build time — no model and no runtime
 config sit in the enforcement path. The charter is prose for humans and agents
 to read; only `tools` and `argGuards` are enforced
-([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to be
-public-safe. Treat the free-text `charter` and all `argGuards` guard field
-names and literal values as public. Never put secrets or private content in
-them.
+([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to be public-safe. The public Angel page
+currently renders the free-text `charter`, `argGuards` field names, and literal
+values. Put no secrets or private content in them. The final privacy treatment
+remains undecided.
 
 ## Google custody
 
