@@ -40,7 +40,7 @@ Design settled with Sam on 2026-07-29, recorded on
    app + operation), argument guards, Version number, raw policy digest, and the
    line that the artifact is immutable and compiled from ANGEL.yaml. When the
    reduced summary ships, the Version number and raw policy digest leave the
-   public projection under the [privacy requirement](#what-is-not-decided).
+   public projection under the [privacy requirement](#privacy-requirement-before-the-reduced-summary).
    Fixed, non-Version-specific provenance and limitation copy may remain outside
    the strict payload. Not shown: OAuth scopes, provider adapters, or children
    (this record may widen those later).
@@ -60,20 +60,25 @@ compiled artifact and Version number only, never the installation, so
 `identityLabel` and Connection ids cannot leak; every page-route 404 is
 byte-identical; no cookies exist on the public surface.
 
-The unbuilt reduced-summary renderer may use the owner-held per-Version nonce
-only to derive the commitment. Before release, E16 must pin that it never renders
-the Version number, nonce, installation, `identityLabel`, or Connection ids.
+### Privacy requirement before the reduced summary
+
+The reduced public-summary decision (Product Ledger O7) is settled but not
+built. Before `angel.public-review.v1` is served for a Version, every public
+surface for that Version must remove or gate the raw policy digest. The Version
+number is operational metadata that can reveal publish and activity cadence, so
+it also stays outside the strict summary. The renderer may use the owner-held
+per-Version nonce only to derive the commitment; it never renders the Version
+number, nonce, installation, `identityLabel`, or Connection ids.
+
+The unapproved APRD currently names this acceptance contract
+[E16](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html#e16). The proof requirement survives if O10
+changes, renumbers, or rejects that draft contract: release still needs an exact
+leak, parity, same-Version digest-gate, and stable-commitment test.
 
 ## What is not decided
 
-- **Privacy beyond the reduced summary.** The reduced public-summary decision
-  (Product Ledger O7) is settled but not built. Before the
-  `angel.public-review.v1` summary is served for a Version, every public surface
-  for that Version must remove or gate the raw policy digest. The Version number
-  is operational metadata that can reveal publish and activity cadence, so it
-  also stays outside the strict summary. Broader privacy treatment for
-  user-authored charter and guard literals remains for the WS2
-  approval gate (O10). See
+- **Privacy of user-authored charter and guard literals.** Their final treatment
+  remains for the WS2 approval gate (O10). See
   [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
   and the canonical `docs/product-ledger.html` records O7, SI5, and O10.
 - **Widening the content.** Whether the page ever shows OAuth scopes,

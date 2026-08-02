@@ -295,7 +295,7 @@ This is the contract O2 supports; implementation remains forbidden until WS2 app
 - Vault path: `${XDG_DATA_HOME:-$HOME/.local/share}/angel/credentials.v1.json`.
 - Parent directories: mode 0700, owned by the effective user; reject symlinks and wrong ownership.
 - Vault file: regular file, mode 0600, owned by the effective user; reject group/other bits instead of repairing silently during read.
-- The ordinary project and `angel.json` contain only Connection nicknames, never credentials or vault keys.
+- The ordinary project and `angel.json` contain only cloud Connection nicknames, never credentials or vault keys.
 
 ##### O2 full record: Encrypted record
 

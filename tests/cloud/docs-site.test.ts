@@ -190,11 +190,22 @@ describe("docs-site build output", () => {
       ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
       ...readdirSync(join(canonicalDist, "core")).map((f) => `core/${f}`),
     ];
+    const servedRepoPaths = new Set(servedMarkdown.map((file) =>
+      file === "operator-journey.md"
+        ? "docs/google-read-proof-manual-journey.md"
+        : `docs/${file}`
+    ));
     for (const file of servedMarkdown) {
-      expect(
-        read(canonicalDist, file),
-        `${file} links repo files via github.com; use relative links`,
-      ).not.toMatch(/github\.com\/exocognito\/angel(?:-cloud|mcp)\/(blob|tree|raw)\//);
+      const source = read(canonicalDist, file);
+      for (const match of source.matchAll(
+        /https:\/\/github\.com\/exocognito\/angel(?:-cloud|mcp)\/(?:blob|tree|raw)\/[^/]+\/([^\s)#?]+)/g,
+      )) {
+        const target = decodeURIComponent(match[1] ?? "");
+        expect(
+          servedRepoPaths.has(target),
+          `${file} links served ${target} via github.com; use a relative link`,
+        ).toBe(false);
+      }
     }
   });
 

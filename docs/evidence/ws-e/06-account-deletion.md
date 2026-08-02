@@ -32,6 +32,12 @@ A transient failure leaves the Account disabled and retryable. Do not claim loca
 
 Delete Account needs a cross-Worker internal job, not demo reset. Owner copy must distinguish cloud deletion from local cleanup, warn about grant-wide Google revocation, state that old handles remain unavailable, and disclose bounded infrastructure retention.
 
+The owner-approved Product Ledger adds the dogfood identity proof: run cleanup
+with a first fresh identity, then a second independent identity. The second signup
+uses a new handle and requires no administrator. This requirement comes from the
+[owner's Product Ledger approval](https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328),
+not from shipped code.
+
 ## Execution gates
 
 - Generate and enumerate final Better Auth/D1, passkey, recovery, membership, email, and CLI-token schema before implementation approval.

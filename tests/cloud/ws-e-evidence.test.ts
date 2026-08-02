@@ -302,7 +302,11 @@ describe("WS-E evidence-only decision closure", () => {
       expect(row).toContain('data-learning-source="evidence/ws-e/06-account-deletion.md"');
       expect(row).toContain('href="evidence/ws-e/06-account-deletion.md"');
       expect(row).toContain("new handle");
+      if (key === "LR-010") expect(row).toContain("issuecomment-5152622328");
     }
+    expect(deletionBrief).toContain("first fresh identity, then a second independent identity");
+    expect(deletionBrief.replace(/\s+/g, " ")).toContain("The second signup uses a new handle");
+    expect(deletionBrief).toContain("issuecomment-5152622328");
     const df048 = ledger.match(/<tr data-learning-id="DF-048"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df048).toContain("Round 2 defers curl; no installer enters WS2");
     expect(df048).not.toContain("if it reduces clean-room failure");
@@ -319,8 +323,11 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq).toMatch(/raw policy digest must\s+be removed or gated/);
     const publicPageDecision = readFileSync(join(root, "docs/product-decisions/0002-public-angel-page.md"), "utf8");
     expect(publicPageDecision).toContain("raw policy digest");
-    expect(publicPageDecision).toMatch(/Before the\s+`angel\.public-review\.v1` summary is served for a Version/);
-    expect(publicPageDecision).toContain("[privacy requirement](#what-is-not-decided)");
+    expect(publicPageDecision).toMatch(/Before `angel\.public-review\.v1` is served for a Version/);
+    expect(publicPageDecision).toContain("[privacy requirement](#privacy-requirement-before-the-reduced-summary)");
+    expect(publicPageDecision).toContain("### Privacy requirement before the reduced summary");
+    expect(publicPageDecision).toContain("[E16](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html#e16)");
+    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("The proof requirement survives if O10 changes, renumbers, or rejects that draft contract");
     expect(publicPageDecision).toContain("Shipped invariants, each pinned by a current test");
     expect(publicPageDecision).not.toContain("This target must be pinned by E16 before the summary ships");
     expect(publicPageDecision).not.toContain("Invariants regardless, each pinned by a test");
@@ -364,8 +371,10 @@ describe("WS-E evidence-only decision closure", () => {
     expect(custodyBrief.match(/angel serve[^\n]*--connection/g)).toHaveLength(1);
     expect(custodyBrief).toContain("WS-E reconciliation renamed that local selector to `--grant`");
     expect(custodyBrief).toContain("angel serve draft-check-7k2m --port 7423 --grant local-gmail-7k2m");
-    expect(readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8"))
+    const storageBrief = readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8");
+    expect(storageBrief)
       .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target APRD and CLI guide said local tokens and Account management tokens lived in the OS keychain");
+    expect(storageBrief).toContain("only cloud Connection nicknames");
     const authBrief = readFileSync(join(root, "docs/evidence/ws-e/04-auth-expiry.md"), "utf8");
     expect(authBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token");
     expect(authBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, APRD §4.1 used days-long links and conflicted with the Ledger");
