@@ -54,6 +54,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
     expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="OPEN"/);
     expect(ledger).toContain("disposable real Google callback/client-type journey");
+    expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
+    expect(ledger).toContain("WS-E is now active.");
   });
 
   test("links every brief from the Ledger and preserves the evidence-only boundary", () => {
@@ -72,14 +74,23 @@ describe("WS-E evidence-only decision closure", () => {
     const syntaxBrief = readFileSync(join(root, "docs/evidence/ws-e/03-local-cloud-syntax.md"), "utf8");
     expect(syntaxBrief).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(syntaxBrief).toContain("bun add --global @angelmcp/cli@0.1.0 # pending O1");
+    expect(syntaxBrief).toContain("`apps connect google --local\\|--cloud`");
+    const packageBrief = readFileSync(join(root, "docs/evidence/ws-e/01-package-install-identity.md"), "utf8");
+    expect(packageBrief).toContain("Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
-    expect(ledger).not.toContain("full downloadable review bundle");
-    expect(ledger).not.toContain("Publish a downloadable secret-free review bundle");
+    expect(ledger).not.toMatch(/review bundle/i);
     expect(ledger).toContain("Publish only the O7 capability summary");
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
+    expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
+    const lr006 = ledger.match(/<tr data-learning-id="LR-006"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(lr006).toContain('href="evidence/ws-e/01-package-install-identity.md"');
+    expect(lr006).toContain('href="evidence/ws1-core-history.json"');
+    expect(lr006).toContain('href="evidence/ws1-release-baseline.json"');
+    const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
+    expect(faq).toContain("guard field names and literal values as public");
   });
 });

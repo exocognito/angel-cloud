@@ -18,7 +18,7 @@ Compared the live `@smcllns/angel-core@0.3.0` contract with the unclaimed `@ange
 
 - `@smcllns/angel-core@0.3.0` works, but its personal namespace and combined core/CLI surface are the WS1 compatibility baseline, not the Round-2 product identity.
 - `@angelmcp/cli` and `angelmcp` were absent from npm when tested; absence does not reserve either name or the `@angelmcp` scope.
-- Bun is both the required runtime and a working global package installer for a package that exposes `angel`; canonical pnpm-global install adds avoidable Node/pnpm setup.
+- Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested until the candidate package exists. Canonical pnpm-global install adds avoidable Node/pnpm setup.
 - No Angel curl installer, install route, checksum/signing contract, upgrade path, or uninstall path exists.
 
 ## Decision outcome

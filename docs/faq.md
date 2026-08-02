@@ -234,8 +234,7 @@ Both gates are compiled from your source at build time — no model and no runti
 config sit in the enforcement path. The charter is prose for humans and agents
 to read; only `tools` and `argGuards` are enforced
 ([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to be
-public-safe: its enforced fields hold no secrets, and the authoring rule is to
-keep secrets out of the free-text `charter` too.
+public-safe. Treat the free-text `charter` and all `argGuards` guard field names and literal values as public. Never put secrets or private content in them.
 
 ## Google custody
 

@@ -198,7 +198,7 @@ the later Ledger.
 
 | Alternative | Discoverability | Custody clarity | Errors and state | Composability | Verdict |
 |---|---|---|---|---|---|
-| Required flags: `apps connect google --local|--cloud` | Both modes appear together in one help page. | Explicit at the action that creates custody. | Parser can reject neither/both before OAuth or storage. | One verb and stable options across providers. | **Recommend.** Smallest change from the draft and matches the Ledger. |
+| Required flags: `apps connect google --local\|--cloud` | Both modes appear together in one help page. | Explicit at the action that creates custody. | Parser can reject neither/both before OAuth or storage. | One verb and stable options across providers. | **Recommend.** Smallest change from the draft and matches the Ledger. |
 | Positional mode: `apps connect local google` / `... cloud google` | Strong tree and completion. | Explicit. | Also easy to reject. | The phrase reads less naturally and changes provider position. | Sound, but no evidence justifies diverging from the Ledger's named flags. |
 | Root namespaces: `angel local apps connect` / `angel cloud apps connect` | Very strong if many commands gain two modes. | Explicit across the whole tree. | Clear state ownership. | Adds a hierarchy before evidence shows enough shared commands to need it. | Too broad for O3. |
 | Infer from login, config, `serve`, or `publish` | Shortest command. | Hidden; behavior changes with ambient state. | A stale login or old config can send a grant to the wrong custodian. | Poor in scripts and agent runs. | Reject. |
