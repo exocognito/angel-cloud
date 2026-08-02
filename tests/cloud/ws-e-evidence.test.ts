@@ -121,6 +121,10 @@ describe("WS-E evidence-only decision closure", () => {
     expect(syntaxBrief).toContain("Angel-owned encrypted vault");
     expect(syntaxBrief).not.toContain("machine credential store");
     expect(syntaxBrief).not.toContain("O2 must prove the supported Linux path");
+    const linuxBrief = readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8");
+    expect(linuxBrief).toContain("callback half of LR-009, tracked as Ledger contradiction C16");
+    expect(linuxBrief).not.toContain("callback half of LR-009/O3");
+    expect(linuxBrief).toContain("VM suffix uses UTC date 2026-08-02; the evidence run began on 2026-08-01 in America/Los_Angeles");
     const packageBrief = readFileSync(join(root, "docs/evidence/ws-e/01-package-install-identity.md"), "utf8");
     expect(packageBrief).toContain("Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
@@ -166,9 +170,13 @@ describe("WS-E evidence-only decision closure", () => {
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13"],
       deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
-      interface: ["SI5"],
+      interface: ["SI1", "SI2", "SI3", "SI4", "SI5", "SI6"],
+      machinery: ["MW1", "MW2", "MW3", "MW4", "MW5", "MW6", "MW7", "MW9"],
     } as const;
-    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · Pi release proof"/);
+    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · WS1 release proof \+ WS-E evidence"/);
+    for (const key of ["S1", "S2"]) expect(ledger).toMatch(new RegExp(
+      `data-scenario-key="${key}"[^>]+data-scenario-last-verified="2026-08-01 · Sam owner decision \\+ WS-E evidence"`,
+    ));
     for (const [kind, keys] of Object.entries(restamped)) {
       for (const key of keys) expect(ledger).toMatch(new RegExp(
         `data-${kind}-key="${key}"[^>]+data-${kind}-last-verified="2026-08-01 · WS-E evidence"`,

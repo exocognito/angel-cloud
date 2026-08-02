@@ -88,7 +88,7 @@ No real OAuth client, refresh token, provider account, production endpoint, or r
 
 ### Disposable exe.dev VM
 
-- Name: `angel-o2-20260802` (deleted after the spike).
+- Name: `angel-o2-20260802` (deleted after the spike). VM suffix uses UTC date 2026-08-02; the evidence run began on 2026-08-01 in America/Los_Angeles.
 - Image: `ubuntu:24.04`; 1 CPU, 2 GB RAM, 10 GB disk.
 - Kernel: Linux 6.12.93 x86_64.
 - Login: `root`; SSH command had no TTY.
@@ -346,7 +346,7 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 ## Product implication
 
 1. The target APRD/CLI wording “tokens live in the OS keychain” is false for headless exe.dev and must change before WS2 approval. No shipped manual should change now.
-2. O3 still must choose explicit local-versus-cloud consent syntax. The CLI must never infer custody from keyring availability or machine type.
+2. O3 chose explicit `--local`/`--cloud` consent syntax. Implementation must never infer custody from keyring availability or machine type.
 3. `angel apps connect` and `angel serve` need one coherent local Connection lifecycle. The current target guide is internally split: `apps connect` describes Broker custody while `serve` says it stores a local grant.
 4. “Credentials go in, never out” needs a local boundary statement. In local mode, the `angel` process necessarily decrypts credentials; they remain unavailable to the user's agent/MCP responses, not unavailable to the machine owner or same-UID process.
 5. Headless unattended operation requires an operator-owned secret source. Angel should support FD injection, not pretend encryption can bootstrap its own key.
@@ -363,4 +363,4 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 
 **Yes — O2 can close for the storage/retrieval decision.** The required real exe.dev evidence now distinguishes the candidates and supports an exact headless contract: authenticated encrypted local vault plus TTY/FD unlock, with no ambient Secret Service or environment fallback.
 
-The Google callback/client-type issue should remain a separate explicit blocker (the callback half of LR-009/O3), not be hidden inside O2 or treated as proven by this synthetic custody test.
+The Google callback/client-type issue should remain a separate explicit blocker (the callback half of LR-009, tracked as Ledger contradiction C16), not be hidden inside O2 or treated as proven by this synthetic custody test.
