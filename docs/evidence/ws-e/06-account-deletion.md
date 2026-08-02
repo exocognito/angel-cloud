@@ -326,9 +326,9 @@ The only recommended product retention exception is a **minimal non-resolving re
 
 ## Closure assessment
 
-**Current-store inventory: closed and verified.**  
-**Semantic deletion contract: decision-ready with the recommendation above.**  
-**Physical O6 closure: not yet complete.** Before O6 can be marked fully closed for implementation, WS2 must preserve evidence for four exact gaps:
+**O6 decision: closed.** The current-store inventory and semantic deletion contract are fixed by the recommendation above.
+
+**WS2/O10 implementation acceptance: unapproved.** Before O10 can approve implementation, WS2 must preserve evidence for four exact acceptance gates:
 
 1. generated Better Auth/D1 plus passkey/recovery/CLI-token schema and Account-to-user ownership mapping;
 2. Cloudflare confirmation/test for DO `deleteAll()` versus 30-day PITR;

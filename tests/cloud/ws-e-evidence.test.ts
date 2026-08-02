@@ -89,7 +89,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
-    expect(ledger).toContain("Bun-global install that is documentation-backed and untested");
+    expect(ledger).toContain("Bun-global install proved against the current registry tarball");
     expect(ledger).toContain("O10 blocks WS2 product work; O9 is closed.");
     expect(ledger).toContain("O10 blocks WS2 product work; O6 is closed.");
     for (const key of ["C4", "C6", "C13"]) {
@@ -132,6 +132,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(deletionBrief).toContain("all client IDs in the same Google Cloud project");
     expect(deletionBrief).toContain("Test sibling client IDs within one Google Cloud project");
     expect(deletionBrief).not.toContain("client/user grant");
+    expect(deletionBrief).toContain("O6 decision: closed");
+    expect(deletionBrief).toContain("WS2/O10 implementation acceptance: unapproved");
+    expect(deletionBrief).not.toContain("Physical O6 closure");
     expect(deletionBrief).not.toContain("local provider OAuth tokens in the OS keychain");
     expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
     const o7 = ledger.match(/<details id="decision-O7"[\s\S]*?<\/details>/)?.[0] ?? "";
@@ -165,11 +168,13 @@ describe("WS-E evidence-only decision closure", () => {
     expect(c10).toContain('href="evidence/ws-e/05-replay-syntax.md"');
     expect(ledger).toContain("WS-E decision evidence briefs 1–7");
     expect(ledger).not.toMatch(/proposed (?:Product Ledger )?contract v0\.1/i);
-    const proposedWs2 = [...ledger.matchAll(/<tr data-learning-id="[^"]+"[^>]+data-disposition="PROPOSED"[^>]+data-destination="WS2"[^>]*>[\s\S]*?<\/tr>/g)].map((match) => match[0]);
-    expect(proposedWs2).toHaveLength(43);
-    for (const row of proposedWs2) {
-      expect(row).toContain('data-learning-blocker="O10 blocks WS2 approval."');
-      expect(row).toContain("<strong>Decisions or blockers</strong><div>O10 blocks WS2 approval.</div>");
+    const proposed = [...ledger.matchAll(/<tr data-learning-id="[^"]+"[^>]+data-disposition="PROPOSED"[^>]+data-destination="([^"]+)"[^>]*>[\s\S]*?<\/tr>/g)];
+    expect(proposed).toHaveLength(44);
+    for (const match of proposed) {
+      const destination = match[1] ?? "";
+      const blocker = `O10 blocks ${destination} approval.`;
+      expect(match[0]).toContain(`data-learning-blocker="${blocker}"`);
+      expect(match[0]).toContain(`<strong>Decisions or blockers</strong><div>${blocker}</div>`);
     }
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
     const restamped = {
