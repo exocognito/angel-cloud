@@ -33,6 +33,24 @@ const recordBlocks = (tag: string, attribute: string): string[] =>
     "g",
   ))].map((match) => match[0]);
 
+const headingSlugs = (markdown: string): Set<string> => {
+  const slugs = new Set<string>();
+  for (const line of markdown.split("\n")) {
+    const heading = line.match(/^#{1,4}\s+(.*)$/)?.[1];
+    if (!heading) continue;
+    const text = heading
+      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/[`*]/g, "")
+      .replace(/\b_([^_]+)_\b/g, "$1");
+    const base = text.trim().toLowerCase().replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
+    let slug = base;
+    let suffix = 0;
+    while (slugs.has(slug)) slug = `${base}-${++suffix}`;
+    slugs.add(slug);
+  }
+  return slugs;
+};
+
 const truthStates = new Set(["LIVE", "PARTIAL", "BROKEN", "NOT BUILT"]);
 const planStates = new Set(["COMPLETE", "ACTIVE", "NEXT", "BLOCKED", "LATER"]);
 
@@ -280,6 +298,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(39);
     expect(dispositions.filter((value) => value === "DEFERRED")).toHaveLength(29);
     expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(10);
+    expect(ledger).toContain(`data-learning-count="${rows.length}"`);
     expect(ledger).toContain(`<span class="metric"><b>${rows.length}</b>reconciled</span>`);
     for (const disposition of validDispositions) {
       const count = dispositions.filter((value) => value === disposition).length;
@@ -447,6 +466,16 @@ describe("Angel Product Ledger contract v0.1 application", () => {
 
   test("resolves every repository-relative evidence link from the Ledger file", () => {
     for (const href of values(/<a href="([^"]+)"/g)) {
+      const githubDoc = href.match(/^https:\/\/github\.com\/exocognito\/angelmcp\/blob\/main\/([^#]+)(?:#(.+))?$/);
+      if (githubDoc?.[1]) {
+        const target = new URL(`../../${githubDoc[1]}`, import.meta.url);
+        expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
+        if (githubDoc[2]) {
+          const markdown = readFileSync(target, "utf8");
+          expect(headingSlugs(markdown).has(decodeURIComponent(githubDoc[2])), `Ledger heading does not resolve: ${href}`).toBe(true);
+        }
+        continue;
+      }
       if (/^(?:#|https?:|mailto:)/.test(href)) continue;
       const target = new URL(href, ledgerUrl);
       expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
