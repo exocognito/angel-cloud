@@ -177,6 +177,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(readme).toContain("[Roadmap](ROADMAP.md) — browsable pointer to milestone sequence and status");
     expect(readme).toContain("Product Ledger source: `docs/product-ledger.html` — canonical plan of record");
     expect(readme).not.toContain("[Product Ledger](docs/product-ledger.html)");
+    expect(next.replace(/\s+/g, " ")).toContain("[ROADMAP.md](ROADMAP.md) is the browsable pointer");
+    expect(next).not.toContain("[Angel Product Ledger](docs/product-ledger.html)");
     const engineeringView = readFileSync(join(root, "docs/aprd/views/engineering.html"), "utf8");
     expect(engineeringView).toContain("The Angel Product Ledger owns sequence/status");
     expect(engineeringView).not.toContain("ROADMAP.md owns sequence/status");
