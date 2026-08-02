@@ -95,6 +95,10 @@ describe("WS-E evidence-only decision closure", () => {
   test("links every brief from the Ledger and preserves the evidence-only boundary", () => {
     for (const [file] of briefs) expect(ledger).toContain(`evidence/ws-e/${file}`);
     expect(ledger).toContain("Seven briefs exist and WS-E changed no product behavior");
+    expect(ledger).not.toContain(">Open source</a>");
+    expect(ledger).not.toContain("oscodev@");
+    expect(ledger).not.toContain("oscollins@");
+    expect(ledger).toContain("first fresh identity, then a second independent identity");
     expect(ledger).toContain("The recorded WS-E bar allowed exact remaining gaps");
     expect(ledger).toContain("so the stricter bar governs, and WS-E stays active on O1");
     const df047 = ledger.match(/<tr data-learning-id="DF-047"[\s\S]*?<\/tr>/)?.[0] ?? "";
@@ -167,6 +171,7 @@ describe("WS-E evidence-only decision closure", () => {
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
+    expect(faq).toContain("meant to stay public-safe ([current public boundary](#why-is-enforcement-not-done-by-the-model-or-a-prompt))");
     expect(ledger).toContain("Today’s basic page still exposes charter and guard literals; see PD-00B and SI5");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
     expect(ledger).toMatch(/data-index-key="WS1"[^>]+data-index-last-verified="2026-08-01 · Pi release proof"/);

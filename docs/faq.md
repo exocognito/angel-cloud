@@ -312,7 +312,7 @@ requirements to any healthy compatible Connection in that Account.
 
 One holds policy, the other holds deployment detail
 ([write an Angel](user-manual.md#write-an-angel)). `ANGEL.yaml` is portable and
-meant to stay public-safe; `angel.json` is local — target URL, Account, Angel
+meant to stay public-safe ([current public boundary](#why-is-enforcement-not-done-by-the-model-or-a-prompt)); `angel.json` is local — target URL, Account, Angel
 slug, and private Connection nicknames ([angel.json](user-manual.md#angeljson)). The split
 keeps policy reusable: the same `ANGEL.yaml` can target Angel Cloud or a
 compatible self-hosted control plane, because `target` is an explicit URL, not a
