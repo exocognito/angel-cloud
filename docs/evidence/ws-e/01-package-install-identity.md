@@ -93,7 +93,7 @@ Repository sources:
 - Root toolchain/workspace contract: [`package.json:2-20`](../../../package.json).
 - Current package contract: [`packages/core/package.json:2-44`](../../../packages/core/package.json).
 - Bun executable contract: [`packages/core/src/scripts/angel.ts:1-8`](../../../packages/core/src/scripts/angel.ts).
-- Current install docs: [`docs/user-manual.md:449-465`](../../../docs/user-manual.md#install-the-cli), [`docs-site/public/SKILL.md:59-71`](../../../docs-site/public/SKILL.md#step-1--install-the-cli-no-repo-clone), and [`docs-site/public/llms.txt`](../../../docs-site/public/llms.txt).
+- Current install docs: [`docs/user-manual.md`](../../../docs/user-manual.md#install-the-cli), [`docs-site/public/SKILL.md:59-71`](../../../docs-site/public/SKILL.md#step-1--install-the-cli-no-repo-clone), and [`docs-site/public/llms.txt`](../../../docs-site/public/llms.txt).
 - Target guide with the disputed package: [`docs/aprd/v2.1-cli-user-guide.md:9-18`](../../../docs/aprd/v2.1-cli-user-guide.md#install-the-final-v21-cli).
 - Monorepo/package boundary: [`docs/adrs/0007-monorepo-source-and-release-integrity.md:9-29`](../../../docs/adrs/0007-monorepo-source-and-release-integrity.md#decision) and lines 71-78.
 - Existing evidence: [`docs/evidence/ws1-release-baseline.json`](../../../docs/evidence/ws1-release-baseline.json) and [`docs/evidence/ws1-starter-proof.json`](../../../docs/evidence/ws1-starter-proof.json).

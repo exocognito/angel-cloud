@@ -149,7 +149,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
     expect(ledger).toContain("It corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`");
-    expect(roadmap).toMatch(/It corrected `docs\/faq\.md`, which understated the current public charter and guard\s+exposure, and added an authoring cross-reference in `docs\/user-manual\.md`/);
+    expect(roadmap.replace(/\s+/g, " ")).toContain("It corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`.");
+    for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS-E → O10 → WS2");
     expect(ledger).not.toContain("WS-E must finish before O10");
@@ -179,11 +180,15 @@ describe("WS-E evidence-only decision closure", () => {
     expect(linuxBrief).not.toContain("local Connection");
     const packageBrief = readFileSync(join(root, "docs/evidence/ws-e/01-package-install-identity.md"), "utf8");
     expect(packageBrief).toContain("an isolated Bun-global install of the current registry tarball exposed bare `angel`");
+    expect(packageBrief).toContain("docs/user-manual.md#install-the-cli");
+    expect(packageBrief).not.toContain("docs/user-manual.md:449-465");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(deletionBrief).toContain("local provider OAuth tokens in the Angel-owned encrypted vault");
-    expect(deletionBrief).toContain("local files and the Angel-owned encrypted vault");
+    expect(deletionBrief).toContain("local files and the local Angel-owned encrypted vault");
     expect(deletionBrief).not.toContain("local files/keychain entries");
+    expect(deletionBrief).toContain("local files and the local Angel-owned encrypted vault remain untouched, as does provider content; name both to the owner");
+    expect(deletionBrief).not.toContain("provider content remains untouched and are named");
     expect(deletionBrief).toContain("public-review commitment nonces");
     expect(deletionBrief).toContain("project/user grant");
     expect(deletionBrief).toContain("all client IDs in the same Google Cloud project");
@@ -238,6 +243,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
+    expect(faq).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
+    expect(faq).not.toContain("plan-of-record `ROADMAP.md`");
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);

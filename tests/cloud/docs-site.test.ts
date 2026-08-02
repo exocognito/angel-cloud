@@ -20,6 +20,7 @@ const repoRoot = join(import.meta.dir, "../..");
 const buildScript = join(repoRoot, "docs-site/build.sh");
 const CANONICAL_BASE = "https://docs.angelmcp.ai";
 const INTERIM_BASE = "https://angelmcp-docs-demo.sam-633.workers.dev";
+const CANONICAL_LEDGER_SOURCE = "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html";
 
 // Every path the built site must serve. llms.txt and SKILL.md URL checks below
 // resolve against this same set, so the list cannot drift from the assertions.
@@ -184,6 +185,7 @@ describe("docs-site build output", () => {
     // A same-repo blob link sends a reader from the public site back to the
     // source tree — the workflow this site exists to end. Issue-tracker links
     // are fine; doc files must use relative links so they resolve on the site.
+    // The self-contained Product Ledger is canonical repo truth, not a docs-site file.
     const servedMarkdown = [
       ...SERVED_FILES.filter((f) => f.endsWith(".md")),
       ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
@@ -191,8 +193,9 @@ describe("docs-site build output", () => {
       ...readdirSync(join(canonicalDist, "core")).map((f) => `core/${f}`),
     ];
     for (const file of servedMarkdown) {
+      const content = read(canonicalDist, file).replaceAll(CANONICAL_LEDGER_SOURCE, "");
       expect(
-        read(canonicalDist, file),
+        content,
         `${file} links repo files via github.com; use relative links`,
       ).not.toMatch(/github\.com\/exocognito\/angel(?:-cloud|mcp)\/(blob|tree|raw)\//);
     }

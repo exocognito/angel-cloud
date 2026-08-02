@@ -448,8 +448,9 @@ Google consent, publish/deploy, seeded Gmail and Docs reads, loud revoke
 failure, row-level reauthorization on the same Connection, and the final pass
 are all verified. The acceptance workflow reached the default branch with the
 merge, so its schedule and manual dispatch run; durable scheduling still waits
-for the OAuth app to reach Production. The full milestone sequence and its
-ordering live in the repository's plan-of-record `ROADMAP.md`.
+for the OAuth app to reach Production. The full milestone sequence and ordering live in the
+[Angel Product Ledger](https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html).
+`ROADMAP.md` remains a stable pointer for old links.
 
 ### Can I sign up for Angel Cloud today?
 
