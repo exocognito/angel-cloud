@@ -418,7 +418,8 @@ describe("APRD v2", () => {
     expect(section).toContain("source/policy approval boundary: owner approves ANGEL.yaml before build, serve, publish, verify, receipt pull, or replay");
     expect(section).toContain("Local-only independence proof");
     expect(section).toContain("Angel Cloud is unavailable and no Account login exists");
-    expect(section).toContain("local MCP proof: <code>angel serve local-draft-proof --port 7423 --connection local-gmail</code>");
+    expect(section).toContain("local MCP proof: <code>angel serve local-draft-proof --port 7423 --grant local-gmail</code>");
+    expect(section).not.toContain("angel serve local-draft-proof --port 7423 --connection");
     expect(section).toContain("http://localhost:7423/mcp");
     expect(section).toContain("Apply the printed production binding edit to <code>angels/gmail-draft-assistant/angel.json</code>");
     expect(section).toContain("production-default publish: <code>angel publish gmail-draft-assistant</code>");
@@ -497,7 +498,9 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("angel apps connect google --local");
     expect(cliUserGuide).toContain("angel apps connect google --cloud");
     expect(cliUserGuide).toContain("grant nickname");
+    expect(cliUserGuide).toContain("angel serve <angel> [--bundle <path>] [--port <port>] [--grant <nickname>]");
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("local grant nickname");
+    expect(cliUserGuide).not.toMatch(/angel serve[^\n]*--connection/);
     expect(cliUserGuide).not.toContain("local provider Connection nickname");
     expect(cliUserGuide).toContain("Angel-owned encrypted vault");
     expect(cliUserGuide).not.toContain("OS keychain");
@@ -578,6 +581,19 @@ describe("APRD v2", () => {
       expect(userManual).not.toContain(unshippedCommand);
       expect(publicSkill).not.toContain(unshippedCommand);
     }
+  });
+
+  test("keeps closed O6 and O7 contracts exact in the APRD", () => {
+    expect(html).toContain("Account deletion is an asynchronous, retryable hard-delete");
+    expect(html).toContain("non-resolving tombstones for current and retired handles");
+    expect(html).toContain("A transient failure leaves the Account disabled and retryable");
+    expect(html).not.toContain("cascade details open");
+    expect(html).not.toContain('Delete-account cascade details beyond "cascades angels · keys · apps"');
+    expect(html).toContain("<code>angel.public-review.v1</code>");
+    expect(html).toContain("one owner-only nonce per published Version");
+    expect(html).toContain("remove or gate the raw <code>policyDigest</code> on every public surface for that Version");
+    expect(html).toContain("capability-summary-only");
+    expect(html).not.toContain("public coordinate browser and JSON proof showing charter, tools, guards, Version, digest");
   });
 
   test("defines a complete v2.1 target color matrix for all commitments", () => {

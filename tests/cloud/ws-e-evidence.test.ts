@@ -320,6 +320,9 @@ describe("WS-E evidence-only decision closure", () => {
       expect(readFileSync(join(root, "docs/evidence/ws-e", file), "utf8"))
         .toContain("At `6cc2ed5`, before the WS-E reconciliation");
     }
+    const custodyBrief = readFileSync(join(root, "docs/evidence/ws-e/03-local-cloud-syntax.md"), "utf8");
+    expect(custodyBrief).toContain("angel serve <angel> ... [--grant <nickname>]");
+    expect(custodyBrief).not.toMatch(/angel serve[^\n]*--connection/);
     expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);

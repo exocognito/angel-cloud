@@ -169,7 +169,7 @@ The target CLI guide defines:
 
 ```text
 angel apps connect google --nickname <name> --scopes <list> [--app <name>]
-angel serve <angel> ... [--connection <nickname>]
+angel serve <angel> ... [--grant <nickname>]
 ```
 
 But its `apps connect` side effect is cloud-specific: it stores the grant in
@@ -253,7 +253,7 @@ angel
 │       --nickname <nickname> --scopes <scope-list> [--app <app-name>]
 ├── build <angel> [--out <directory>]
 ├── serve <angel> [--bundle <path>] [--port <port>]
-│   [--connection <local-nickname>]
+│   [--grant <local-nickname>]
 ├── publish <angel> [--preview [--share-production-credentials]]
 ├── deploy <angel> --prod
 ├── verify <angel> --production [--bundle <path>]
@@ -287,7 +287,7 @@ angel create draft-check-7k2m --template gmail-draft-without-send
 angel build draft-check-7k2m
 angel apps connect google --local \
   --nickname local-gmail-7k2m --scopes gmail.compose --app local-google-7k2m
-angel serve draft-check-7k2m --port 7423 --connection local-gmail-7k2m
+angel serve draft-check-7k2m --port 7423 --grant local-gmail-7k2m
 ```
 
 State transitions:
@@ -317,7 +317,7 @@ identity: <provider-derived label>
 scopes: gmail.compose
 credential: <local store label>; secret not shown
 cloud changes: none
-next: angel serve draft-check-7k2m --connection local-gmail-7k2m
+next: angel serve draft-check-7k2m --grant local-gmail-7k2m
 ```
 
 Human handoffs: review source, enter/confirm the OAuth client, consent, and
