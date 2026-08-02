@@ -17,7 +17,7 @@ Compared the Ledger, APRD, CLI guide, eval draft, shipped parser, receipt shape,
 ## Verified results
 
 - Neither replay form ships.
-- The APRD conflicts with itself; the guide, evals, and Ledger use top-level replay.
+- At `6cc2ed5`, before the WS-E reconciliation, the APRD conflicted with itself; the guide, evals, and Ledger used top-level replay.
 - Replay is a one-shot, provider-free evidence check after receipt pull. It does not need a listening MCP server or local provider custody.
 - Current agent-safe receipts omit original arguments needed to recompute decisions; replay requires a separate private authenticated export.
 

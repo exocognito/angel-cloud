@@ -299,7 +299,13 @@ describe("WS-E evidence-only decision closure", () => {
     expect(manual).not.toContain("renders charter text");
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
-    expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
+    expect(faq).toMatch(/The O7 reduced-summary boundary is decided\s+but not built/);
+    expect(faq).toMatch(/Broader privacy\s+treatment for charter and guard literals remains for O10/);
+    expect(faq).toMatch(/raw policy digest must be removed or gated/);
+    const publicPageDecision = readFileSync(join(root, "docs/product-decisions/0002-public-angel-page.md"), "utf8");
+    expect(publicPageDecision).toMatch(/The O7 reduced summary is decided but not built/);
+    expect(publicPageDecision).toContain("raw policy digest");
+    expect(publicPageDecision).toMatch(/Before the `angel\.public-review\.v1` summary is served for a Version/);
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
     expect(faq).toContain("canonical `docs/product-ledger.html`");
@@ -307,6 +313,13 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq).not.toContain("github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
     expect(faq).not.toContain("plan-of-record `ROADMAP.md`");
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
+    const df049 = ledger.match(/<tr data-learning-id="DF-049"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(df049).toContain("APRD and target CLI auth text now state the 600-second single-use rule");
+    expect(df049).not.toContain("APRD says days");
+    for (const file of ["03-local-cloud-syntax.md", "04-auth-expiry.md", "05-replay-syntax.md"]) {
+      expect(readFileSync(join(root, "docs/evidence/ws-e", file), "utf8"))
+        .toContain("At `6cc2ed5`, before the WS-E reconciliation");
+    }
     expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);

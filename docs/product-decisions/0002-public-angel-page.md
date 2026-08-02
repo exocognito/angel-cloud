@@ -58,8 +58,10 @@ cookies on the public surface.
 
 ## What is not decided
 
-- **Privacy of user-authored charter and guard literals.** The page renders them
-  publicly; the final treatment is undecided. See
+- **Privacy beyond O7's reduced summary.** The O7 reduced summary is decided but not built.
+  Before the `angel.public-review.v1` summary is served for a Version, every public surface
+  for that Version must remove or gate the raw policy digest. Broader privacy treatment for
+  user-authored charter and guard literals remains for O10. See
   [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
   and Product Ledger O7/SI5.
 - **Widening the content.** Whether the page ever shows OAuth scopes,

@@ -17,7 +17,7 @@ Compared the target auth journey with authoritative and widely used single-use-l
 ## Verified results
 
 - Secure comparators range from 3–10 minutes; NIST's out-of-band ceiling is 10 minutes, though email itself is not a NIST-approved OOB authenticator.
-- Days-long target wording creates an unjustified stale bearer window.
+- At `6cc2ed5`, before the WS-E reconciliation, days-long target wording created an unjustified stale bearer window.
 - The complete CLI/browser/email handoff makes five minutes tight; delayed mail should trigger a fresh link, not extend an old one.
 - No SMS provider, phone store, consent, recovery, abuse, cost, or number-recycling contract exists.
 

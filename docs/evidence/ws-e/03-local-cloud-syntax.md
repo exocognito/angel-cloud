@@ -17,7 +17,7 @@ Read the shipped parser and target journeys, ran shipped parser probes in a clea
 ## Verified results
 
 - The shipped CLI has no `apps`, `connect`, or `serve` command.
-- The target guide ambiguously makes bare `apps connect` cloud-owned while `serve` may create local custody.
+- At `6cc2ed5`, before the WS-E reconciliation, the target guide ambiguously made bare `apps connect` cloud-owned while `serve` could create local custody.
 - A strict parser can reject missing or conflicting custody before OAuth or storage.
 - Inferring custody from login, config, machine type, command context, or available keyring can send authority to the wrong custodian.
 
