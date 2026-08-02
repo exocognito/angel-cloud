@@ -233,9 +233,9 @@ secret into it.
 Both gates are compiled from your source at build time — no model and no runtime
 config sit in the enforcement path. The charter is prose for humans and agents
 to read; only `tools` and `argGuards` are enforced
-([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to be public-safe. The public Angel page
-currently renders the free-text `charter`, `argGuards` field names, and literal
-values. Put no secrets or private content in them. The final privacy treatment
+([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to
+be public-safe. The public Angel page currently renders the free-text `charter`,
+`argGuards` field names, and literal values. Put no secrets or private content in them. The final privacy treatment
 remains undecided.
 
 ## Google custody
@@ -312,9 +312,11 @@ requirements to any healthy compatible Connection in that Account.
 
 One holds policy, the other holds deployment detail
 ([write an Angel](user-manual.md#write-an-angel)). `ANGEL.yaml` is portable and
-meant to stay public-safe ([current public boundary](#why-is-enforcement-not-done-by-the-model-or-a-prompt)); `angel.json` is local — target URL, Account, Angel
-slug, and private Connection nicknames ([angel.json](user-manual.md#angeljson)). The split
-keeps policy reusable: the same `ANGEL.yaml` can target Angel Cloud or a
+meant to stay public-safe
+([current public boundary](#why-is-enforcement-not-done-by-the-model-or-a-prompt));
+`angel.json` is local — target URL, Account, Angel slug, and private Connection
+nicknames ([angel.json](user-manual.md#angeljson)). The split keeps policy
+reusable: the same `ANGEL.yaml` can target Angel Cloud or a
 compatible self-hosted control plane, because `target` is an explicit URL, not a
 built-in platform name. It also lets another person reuse the policy without
 inheriting your Account identity or credential labels.

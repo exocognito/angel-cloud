@@ -108,6 +108,7 @@ describe("WS-E evidence-only decision closure", () => {
     const contradictionLinks: Record<string, string> = {
       C4: "WS2 · PD-01",
       C6: "WS2 · PD-02 · PD-03",
+      C7: "WS-E · WS2",
       C9: "WS2 · PD-00B",
       C11: "WS2 · PD-01",
       C13: "WS2 · PD-03",
@@ -117,6 +118,10 @@ describe("WS-E evidence-only decision closure", () => {
     for (const [key, linked] of Object.entries(contradictionLinks)) {
       const record = ledger.match(new RegExp(`data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
       expect(record).toContain(`<dt>Linked Project Index rows</dt><dd>${linked}</dd>`);
+    }
+    const contradictionRecords = [...ledger.matchAll(/<details class="contradiction"[\s\S]*?<\/details>/g)].map((match) => match[0]);
+    expect(contradictionRecords).toHaveLength(16);
+    for (const record of contradictionRecords) {
       expect(record).not.toMatch(/<dt>Linked Project Index rows<\/dt><dd>[^<]*\bO\d+/);
     }
     const df047 = ledger.match(/<tr data-learning-id="DF-047"[\s\S]*?<\/tr>/)?.[0] ?? "";
@@ -178,6 +183,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicBrief).toContain("32-byte owner-held random nonce");
     expect(publicBrief).toContain("one nonce per published Version");
     expect(publicBrief).toContain("reuse it for every public summary response for that Version");
+    expect(publicBrief).toContain("remove or gate the raw `policyDigest` on every public surface for the same Version");
+    expect(publicBrief).toContain("does not prevent offline confirmation while the current page publishes `policyDigest`");
     expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");
@@ -204,8 +211,9 @@ describe("WS-E evidence-only decision closure", () => {
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
-    expect(faq).toContain("meant to stay public-safe ([current public boundary](#why-is-enforcement-not-done-by-the-model-or-a-prompt))");
-    expect(ledger).toContain("Today’s basic page still exposes charter and guard literals; see PD-00B and SI5");
+    expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
+    expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
+    expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
     expect(ledger).toMatch(/data-index-key="WS1"[^>]+data-index-last-verified="2026-08-01 · Pi release proof"/);
     const c10 = ledger.match(/<details class="command" data-command-key="C10"[\s\S]*?<\/details>/)?.[0] ?? "";

@@ -38,7 +38,7 @@ O7 becomes a **public review summary**, not a full independently verifiable bund
 }
 ```
 
-Unknown keys fail. Generate one nonce per published Version, store it owner-only alongside the Version evidence, and reuse it for every public summary response for that Version. The commitment is SHA-256 over a domain separator, that fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings remain owner-only. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
+Unknown keys fail. Generate one nonce per published Version, store it owner-only alongside the Version evidence, and reuse it for every public summary response for that Version. Before serving this summary, remove or gate the raw `policyDigest` on every public surface for the same Version. Until that gate passes, the commitment does not prevent offline confirmation while the current page publishes `policyDigest`. After the gate, the commitment is SHA-256 over a domain separator, that fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings then remain owner-only. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
 
 O9 ships one honest status note: portable design and current Worker source exist; supported, licensed, reproducible self-hosting does not. Round 2 tests local and managed journeys only. Local use is not self-hosting.
 
@@ -49,6 +49,7 @@ G11 narrows from “full public review bundle” to public capability summary. T
 ## Execution gates
 
 - Implement an exact-key validator and adversarial leak corpus for the public summary; prove anonymous live output contains none of the explicit exclusions. Prove fresh nonce generation, owner-only nonce custody, and resistance to offline guesses of low-entropy charter and guard values.
+- Remove or gate the raw `policyDigest` on every public surface for the same Version before serving the summary; prove no anonymous same-Version response allows offline artifact guesses.
 - Decide whether the current charter/guard page is narrowed, owner-opt-in, or explicitly documented as public source.
 - Do not claim digest recomputability, exact-policy review, open source, turnkey setup, cross-implementation compatibility, support, upgrades, recovery, SLA, or security maintenance.
 - A future self-host claim requires a repository-wide license, parameterized manifests, public least-privilege setup, clean-room deployment, full lifecycle/recovery proof, versioned conformance tests, and a support boundary.
@@ -191,7 +192,7 @@ A local `bun -e` probe compiled this placeholder source and passed it through
 |---|---|---|---|
 | Fixed review schema ID | Lets clients reject another shape | No user or runtime data | **Include** |
 | Artifact format | States which portable contract applies | Public protocol fact | **Include** |
-| Hiding artifact commitment | Lets the owner correlate the summary with publish evidence after revealing the nonce | A fresh 32-byte owner-held random nonce prevents offline confirmation of guessed low-entropy fields | **Include; keep the nonce and raw digest owner-only** |
+| Hiding artifact commitment | Lets the owner correlate the summary with publish evidence after revealing the nonce | Once every same-Version public surface removes or gates raw `policyDigest`, a fresh 32-byte owner-held random nonce prevents offline confirmation of guessed low-entropy fields; until then the current digest defeats the hiding property | **Include only after the digest gate; then keep the nonce and raw digest owner-only** |
 | Canonical operation name | Shows the capability the agent can discover | Registry-controlled; reveals intended capability, which is the purpose of a public trust surface | **Include** |
 | `hasArgumentGuards` boolean | Warns that the operation is more constrained | Reveals no field or literal | **Include** |
 | Angel name/slug | Human navigation | User-authored and can encode identity/private project names; route already supplies it | **Exclude from payload** |
@@ -252,6 +253,9 @@ Contract details:
 - Generate one nonce per published Version, store it owner-only alongside the
   Version evidence, and reuse it for every public summary response for that
   Version. Never generate a new nonce per request.
+- Before serving the summary, remove or gate the raw `policyDigest` on every
+  public surface for the same Version. The nonce and raw digest become
+  owner-only, and the commitment becomes hiding, only after this gate passes.
 - `artifact.commitment` is SHA-256 of the UTF-8 domain separator
   `angel.public-review.v1\0`, that fresh 32-byte owner-held random nonce, and
   the exact canonical artifact bytes, in that order. The nonce and raw artifact
@@ -299,8 +303,9 @@ Before shipping the recommendation:
    every omitted artifact/installation field; assert zero occurrence.
 3. Prove the renderer receives only the proposed projection, not an
    installation, management view, custody summary, receipt, or full artifact.
-4. Decide separately whether the current charter/guard page is narrowed,
-   opt-in, or documented as intentional public source.
+4. Remove or gate the current page's raw `policyDigest` before serving the
+   summary for the same Version. Separately decide whether charter and guard
+   literals are narrowed, opt-in, or documented as intentional public source.
 5. Run a live anonymous GET after deployment and save the exact response.
 
 ## Closure assessment
