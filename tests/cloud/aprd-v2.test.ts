@@ -563,6 +563,12 @@ describe("APRD v2", () => {
     expect(generativeEvals).toContain("The generated E2E test file itself must be saved as evidence");
 
     expect(generativeEvals).toContain("## public review summary privacy, stability, and HTML/JSON parity");
+    expect(generativeEvals).toContain("cached_digest_adversary");
+    expect(generativeEvals).toContain("eligible_version_pair");
+    expect(html).toContain("one eligible replacement Version keep one commitment, a second eligible replacement Version gets another commitment");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("refuses to emit `angel.public-review.v1` with a hiding claim for the historically exposed Version");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("both replacement Versions use different canonical bytes whose raw digests have never been public");
+    expect(html.replace(/\s+/g, " ")).toContain("cached-digest adversary proves a historically exposed Version remains non-hiding");
     expect(generativeEvals.replace(/\s+/g, " ")).toContain("outside candidate sees public surfaces and generated inputs only");
     expect(generativeEvals).not.toContain("after the evaluator sees the current repository state");
     expect(generativeEvals).not.toContain("after the evaluator sees repository fixtures");
@@ -661,8 +667,9 @@ describe("APRD v2", () => {
     expect(publicPageCard).toContain('<span class="chip">Yellow</span>');
     expect(html).toContain("sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14)");
     expect(html).toContain("Route logic at <code>src/workers/gateway.ts:299</code>.");
-    expect(html).toContain("one owner-only nonce per published Version");
-    expect(html).toContain("remove or gate the raw <code>policyDigest</code> on every public surface for that Version");
+    expect(html).toContain("one owner-only nonce per eligible published Version");
+    expect(html).toContain("A Version whose raw digest was ever public remains non-hiding");
+    expect(html).toContain("replacement canonical bytes whose raw digest has never been public");
     expect(html).toContain("capability-summary-only");
     expect(html).not.toContain("public coordinate browser and JSON proof showing charter, tools, guards, Version, digest");
   });

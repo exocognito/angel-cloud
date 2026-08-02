@@ -150,6 +150,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("so the stricter bar governs, and WS-E stays active on O1");
     const c9 = ledger.match(/data-contradiction-key="C9"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c9).toContain("Brief 7 excludes provenance, adapter origin, and the source digest");
+    expect(c9).toContain("stay in owner review and outside the capability summary");
+    expect(c9).not.toContain("keep provenance owner-only in the capability summary");
     const c11 = ledger.match(/data-contradiction-key="C11"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c11).toContain("Account deletion is an asynchronous, retryable hard-delete");
     const contradictionLinks: Record<string, string> = {
@@ -274,16 +276,21 @@ describe("WS-E evidence-only decision closure", () => {
     const publicBrief = readFileSync(join(root, "docs/evidence/ws-e/07-public-review-and-self-hosting.md"), "utf8");
     expect(publicBrief).toContain('"commitment": "<64 lowercase hexadecimal SHA-256 characters>"');
     expect(publicBrief).toContain("32-byte owner-held random nonce");
-    expect(publicBrief).toContain("one nonce per published Version");
+    expect(publicBrief).toContain("one nonce per eligible published Version");
     expect(publicBrief).toContain("reuse it for every public summary response for that Version");
-    expect(publicBrief).toContain("remove or gate the raw `policyDigest` on every public surface for the same Version");
-    expect(publicBrief).toContain("does not prevent offline confirmation while the current page publishes `policyDigest`");
+    expect(publicBrief.replace(/\s+/g, " ")).toContain("A Version whose raw digest was ever publicly observable remains permanently non-hiding");
+    expect(publicBrief.replace(/\s+/g, " ")).toContain("replacement Version with different canonical bytes whose raw digest has never been public");
+    expect(publicBrief).toContain("cached-digest adversary");
     expect(publicBrief).toContain("A separate owner-opted-in public-source surface is outside `angel.public-review.v1`");
     expect(publicBrief).toContain("never include intentionally disclosed source fields in the summary");
-    expect(o7).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
+    expect(o7).toContain('<code>schema: "angel.public-review.v1"</code>');
+    expect(o7).toContain('<code>disclosure: "capability-summary-only"</code>');
+    expect(o7).toContain("eligible only when its canonical bytes and raw digest have never been public");
     expect(o7).toContain("Any owner-opted-in public-source disclosure is separate from the summary");
+    expect(ledger).toContain("A cached digest keeps a historically exposed Version permanently non-hiding");
+    expect(ledger).toContain("all existing digest-exposed Versions remain non-hiding");
     const lr002 = ledger.match(/<tr data-learning-id="LR-002"[\s\S]*?<\/tr>/)?.[0] ?? "";
-    expect(lr002).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
+    expect(lr002).toContain("eligible only when its canonical bytes and raw digest have never been public");
     expect(lr002).toContain("Any owner-opted-in public-source disclosure is separate from the summary");
     expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
     expect(publicBrief).not.toContain("hard-private public bundle");
@@ -305,10 +312,13 @@ describe("WS-E evidence-only decision closure", () => {
       expect(row).toContain('data-learning-source="evidence/ws-e/06-account-deletion.md"');
       expect(row).toContain('href="evidence/ws-e/06-account-deletion.md"');
       expect(row).toContain("new handle");
-      if (key === "LR-010") expect(row).toContain("issuecomment-5152622328");
+      if (key === "LR-010") {
+        expect(row).toContain("Owner-approved identity sequence + WS-E handle recommendation");
+        expect(row).toContain("issuecomment-5152622328");
+      }
     }
     expect(deletionBrief).toContain("first fresh identity, then a second independent identity");
-    expect(deletionBrief.replace(/\s+/g, " ")).toContain("The second signup uses a new handle");
+    expect(deletionBrief.replace(/\s+/g, " ")).toContain("WS-E recommends a new handle as the consequence of the permanent tombstone; O10 must accept that recommendation");
     expect(deletionBrief).toContain("issuecomment-5152622328");
     const df048 = ledger.match(/<tr data-learning-id="DF-048"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df048).toContain("Round 2 defers curl; no installer enters WS2");
@@ -323,7 +333,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(manual).not.toContain("renders charter text");
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
-    expect(faq).toMatch(/raw policy digest must\s+be removed or gated/);
+    expect(faq).toMatch(/raw digest was ever\s+public remains non-hiding/);
     const publicPageDecision = readFileSync(join(root, "docs/product-decisions/0002-public-angel-page.md"), "utf8");
     expect(publicPageDecision).toContain("- Status: Partly superseded by [0007](0007-capability-only-public-review.md)");
     expect(publicPageDecision.replace(/\s+/g, " ")).toContain("argument guards, Version number, policy digest, and the line that the artifact is immutable");
@@ -331,27 +341,34 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicPageDecision).not.toContain("Privacy requirement before the reduced summary");
     expect(publicPageDecision).not.toContain("angel.public-review.v1");
     const reducedSummaryDecision = readFileSync(join(root, "docs/product-decisions/0007-capability-only-public-review.md"), "utf8");
-    expect(reducedSummaryDecision).toMatch(/Before `angel\.public-review\.v1` is served for a Version/);
+    expect(reducedSummaryDecision).toContain("Do not emit `angel.public-review.v1` with a hiding claim for that Version");
     expect(reducedSummaryDecision).toContain("[E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html)");
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement survives if O10 changes, renumbers, or rejects that draft contract");
-    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("raw policy digest must leave or be gated on every public surface for that Version");
+    expect(reducedSummaryDecision).toContain('`schema: "angel.public-review.v1"`');
+    expect(reducedSummaryDecision).toContain('`disclosure: "capability-summary-only"`');
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("A Version whose raw digest was ever public is permanently ineligible for a hiding claim");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("different canonical bytes whose raw digest has never been public");
     expect(reducedSummaryDecision).not.toContain("the Version number and raw policy digest leave the public projection");
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("operational metadata that can reveal publish and activity cadence");
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
     expect(ledger).toContain("docs/product-decisions/0007-capability-only-public-review.md");
     const decisionIndex = readFileSync(join(root, "docs/product-decisions/README.md"), "utf8");
     expect(decisionIndex).toContain("[0007](0007-capability-only-public-review.md)");
-    expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
-    expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (Product Ledger O10");
+    expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (O7 in the");
+    expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10 in the");
     expect(faq).toContain("docs/product-ledger.html");
-    expect(faq).not.toMatch(/github\.com\/exocognito\/angelmcp\/(?:blob|tree|raw)\//);
+    expect(faq).toContain("[source-repository Product Ledger][product-ledger-source]");
+    expect(faq).toContain("[product-ledger-source]: https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
+    expect(faq.replace(/\s+/g, " ")).toContain("A Version whose raw digest was ever public remains non-hiding because an observer can retain it");
+    expect(faq.match(/github\.com\/exocognito\/angelmcp\/(?:blob|tree|raw)\//g) ?? []).toHaveLength(1);
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("reduced public-summary decision (Product Ledger O7)");
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10)");
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
-    expect(faq).toContain("canonical `docs/product-ledger.html`");
+    expect(faq).toContain("repository's canonical");
+    expect(faq).toContain("[source-repository Product Ledger][product-ledger-source]");
     expect(faq.replace(/\s+/g, " ")).toContain("`ROADMAP.md` remains a stable pointer for old links");
-    expect(faq).not.toContain("github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
+    expect(faq).toContain("github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
     expect(faq).not.toContain("plan-of-record `ROADMAP.md`");
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
     const df049 = ledger.match(/<tr data-learning-id="DF-049"[\s\S]*?<\/tr>/)?.[0] ?? "";
@@ -417,7 +434,7 @@ describe("WS-E evidence-only decision closure", () => {
       for (const term of terms) expect(source).toContain(term);
     }
     expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
-    expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
+    expect(ledger).toContain("only for an eligible Version whose canonical bytes and raw digest have never been public");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
     for (const [attribute, key] of [
       ["data-experience-key", "EW3"],
@@ -455,7 +472,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
     const restamped = {
       index: ["WS2", "M-DF2"],
-      experience: ["EW1", "EW2", "EW3", "EW4", "EW6"],
+      experience: ["EW3"],
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13"],
       deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
@@ -469,7 +486,9 @@ describe("WS-E evidence-only decision closure", () => {
       `data-machinery-key="${key}"[^>]+data-machinery-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
     ));
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-last-verified="2026-08-01 · WS0 page proof \+ WS-E privacy review"/);
-    expect(ledger).toMatch(/data-experience-key="EW5"[^>]+data-experience-last-verified="2026-08-01 · M1 product evidence \+ WS-E review"/);
+    for (const key of ["EW1", "EW2", "EW4", "EW5", "EW6"]) expect(ledger).toMatch(new RegExp(
+      `data-experience-key="${key}"[^>]+data-experience-last-verified="2026-08-01 · M1 product evidence \\+ WS-E review"`,
+    ));
     for (const key of ["S1", "S2"]) expect(ledger).toMatch(new RegExp(
       `data-scenario-key="${key}"[^>]+data-scenario-last-verified="2026-08-01 · Sam owner decision \\+ WS-E evidence"`,
     ));

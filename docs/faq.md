@@ -5,6 +5,8 @@ the platform works the way it does, what its limits are, and what comes next.
 For how to do anything — write, ship, connect, operate — start with the manual;
 this file links to it rather than repeat it.
 
+[product-ledger-source]: https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html
+
 Present-tense statements describe the live Milestone 1 slice: three deployed
 Workers, one pre-provisioned Account behind Cloudflare Access, and real Google
 calls for two pinned operations through bring-your-own OAuth custody. Where a
@@ -236,12 +238,14 @@ to read; only `tools` and `argGuards` are enforced
 ([ANGEL.yaml](user-manual.md#angelyaml)). Committed `ANGEL.yaml` is meant to
 be public-safe. The public Angel page currently renders the free-text `charter`,
 `argGuards` field names and literal values, and the raw policy digest. Put no
-secrets or private content in them. The public-summary decision (Product Ledger O7 in
-`docs/product-ledger.html`) is settled but not built: the raw policy digest must
-be removed or gated on every public surface for the same Version before its
-summary can be served. Broader privacy treatment for charter and guard literals
-remains for the WS2 approval gate (Product Ledger O10 in
-`docs/product-ledger.html`).
+secrets or private content in them. The public-summary decision (O7 in the
+[source-repository Product Ledger][product-ledger-source]) is settled but not
+built. A Version whose raw digest was ever public remains non-hiding because an
+observer can retain it. It must show a legacy warning, then be retired or
+replaced by different canonical bytes whose digest has never been public before
+a hiding summary can be served. Broader privacy treatment for charter and guard
+literals remains for the WS2 approval gate (O10 in the
+[source-repository Product Ledger][product-ledger-source]).
 
 ## Google custody
 
@@ -454,8 +458,9 @@ failure, row-level reauthorization on the same Connection, and the final pass
 are all verified. The acceptance workflow reached the default branch with the
 merge, so its schedule and manual dispatch run; durable scheduling still waits
 for the OAuth app to reach Production. The full milestone sequence and ordering
-live in the repository's canonical `docs/product-ledger.html`. `ROADMAP.md`
-remains a stable pointer for old links.
+live in the repository's canonical
+[source-repository Product Ledger][product-ledger-source]. `ROADMAP.md` remains
+a stable pointer for old links.
 
 ### Can I sign up for Angel Cloud today?
 

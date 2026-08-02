@@ -10,7 +10,9 @@
 The reduced public-summary decision (Product Ledger O7) makes
 `angel.public-review.v1` a capability-only summary when it ships. Its strict payload contains:
 
-- the format name;
+- `schema: "angel.public-review.v1"`;
+- `disclosure: "capability-summary-only"`;
+- the artifact format;
 - canonical operation names;
 - guard-presence booleans; and
 - a hiding artifact commitment.
@@ -21,21 +23,26 @@ installation, `identityLabel`, and Connection ids. Fixed,
 non-Version-specific provenance and limitation copy may remain outside the
 strict payload.
 
-Before `angel.public-review.v1` is served for a Version, the raw policy digest
-must leave or be gated on every public surface for that Version. The Version
-number remains excluded from the strict summary because it is operational
-metadata that can reveal publish and activity cadence.
+A Version whose raw digest was ever public is permanently ineligible for a
+hiding claim: removing the digest later cannot erase an observer's cached copy.
+Do not emit `angel.public-review.v1` with a hiding claim for that Version. Show
+an explicit non-hiding legacy warning, then retire or replace it with a Version
+that has different canonical bytes whose raw digest has never been public.
 
-Generate one 32-byte random nonce for each published Version. Store it
+For each eligible published Version, generate one 32-byte random nonce. Store it
 owner-only with that Version's evidence, reuse it for all public responses for
-that Version, and delete it through the Account-deletion cascade. The public
+that Version, and delete it through the Account-deletion cascade. Before serving
+the summary, prove that no public surface has ever exposed that Version's raw
+digest and that none exposes it now. The Version number remains excluded from
+the strict summary because it is operational metadata that can reveal publish
+and activity cadence. The public
 renderer may use the nonce only to derive the commitment. It never renders the
 nonce itself.
 
 The unapproved APRD currently names this acceptance contract
 [E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html).
 The proof requirement survives if O10 changes, renumbers, or rejects that draft
-contract: release still needs exact leak, parity, same-Version digest-gate, and
+contract: release still needs exact leak, parity, cached-digest eligibility, and
 stable-commitment tests.
 
 ## Relationship to PD 0002
@@ -55,7 +62,7 @@ the current trust page until this decision passes its release proof.
 
 ## Consequences
 
-- A public commitment is called hiding only after all same-Version public
-  surfaces remove or gate the raw digest.
+- A public commitment is called hiding only for an eligible Version whose raw
+  digest has never been public. Current digest exposure must stay absent.
 - Owner-opted-in public source disclosure remains separate from this summary.
 - WS2 must implement the summary and its release proof only after O10 approval.

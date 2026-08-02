@@ -190,11 +190,20 @@ describe("docs-site build output", () => {
       ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
       ...readdirSync(join(canonicalDist, "core")).map((f) => `core/${f}`),
     ];
-    const servedRepoPaths = new Set(servedMarkdown.map((file) =>
-      file === "operator-journey.md"
-        ? "docs/google-read-proof-manual-journey.md"
-        : `docs/${file}`
-    ));
+    const docsSitePublicFiles = new Set([
+      "index.html", "styles.css", "viewer.js", "llms.txt", "SKILL.md",
+    ]);
+    const servedRepoPaths = new Set([
+      ...SERVED_FILES.flatMap((file) => {
+        if (file === "demo/") return [];
+        if (docsSitePublicFiles.has(file)) return [`docs-site/public/${file}`];
+        if (file === "operator-journey.md") return ["docs/google-read-proof-manual-journey.md"];
+        return [`docs/${file}`];
+      }),
+      ...servedMarkdown.filter((file) => file.includes("/")).map((file) => `docs/${file}`),
+    ]);
+    expect(servedRepoPaths).toContain("docs-site/public/SKILL.md");
+    expect(servedRepoPaths).toContain("docs-site/public/llms.txt");
     for (const file of servedMarkdown) {
       const source = read(canonicalDist, file);
       for (const match of source.matchAll(
