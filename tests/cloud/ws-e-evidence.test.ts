@@ -57,6 +57,8 @@ describe("WS-E evidence-only decision closure", () => {
         expect(brief).not.toContain("O1 should close");
         expect(brief).toContain("a pnpm global install");
         expect(brief).toContain("Bun-global remains documentation-backed and unproved");
+        expect(brief).toContain("the first draft of this record recommended closing O1");
+        expect(brief).not.toContain("the investigator recommended closing O1");
         const canonical = brief.split("## Evidence record")[0] ?? "";
         expect(canonical).not.toContain("- Control the `@angelmcp` npm scope");
       } else expect(brief).toContain("Outcome: close");
@@ -80,8 +82,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("disposable real Google callback/client-type journey");
     expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
+    expect(ledger).toContain("The callback half of the original contradiction is carried by C16");
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
-    expect(ledger).toContain("O6 fixed the deletion cascade and non-resolving handle tombstones");
+    expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
     expect(ledger).toContain("WS-E is now active.");
   });
@@ -107,12 +110,17 @@ describe("WS-E evidence-only decision closure", () => {
     expect(packageBrief).toContain("Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
+    expect(deletionBrief).toContain("local provider OAuth tokens in the Angel-owned encrypted vault");
+    expect(deletionBrief).not.toContain("local provider OAuth tokens in the OS keychain");
     expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
-    expect(ledger).not.toMatch(/review bundle/i);
+    const o7 = ledger.match(/<details id="decision-O7"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(o7).toContain("What does the public review bundle contain?");
+    expect(ledger.replace(o7, "")).not.toMatch(/review bundle/i);
     expect(ledger).not.toMatch(/public bundle/i);
     expect(ledger).toContain("Publish only the O7 capability summary");
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");
+    expect(replayBrief).toContain("Product Ledger contradiction C13/LR-018");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
     expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
     const df048 = ledger.match(/<tr data-learning-id="DF-048"[\s\S]*?<\/tr>/)?.[0] ?? "";
@@ -130,6 +138,7 @@ describe("WS-E evidence-only decision closure", () => {
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13", "G14"],
       deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
+      interface: ["SI5"],
     } as const;
     for (const [kind, keys] of Object.entries(restamped)) {
       for (const key of keys) expect(ledger).toMatch(new RegExp(

@@ -42,7 +42,7 @@ The public journey becomes a product CLI journey with one prerequisite, Bun, rat
 
 ## Evidence record
 
-Editorial disposition: the investigator recommended closing O1 with scope control as an execution gate. The canonical Ledger keeps O1 open because namespace ownership can invalidate the identity itself.
+Editorial disposition: the first draft of this record recommended closing O1 with scope control as an execution gate; it was corrected to keep O1 open because namespace ownership can invalidate the identity itself.
 
 # O1 evidence brief — Round-2 package and install identity
 

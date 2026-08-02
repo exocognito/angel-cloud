@@ -451,6 +451,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "Claim or goal", "Evidence", "Linked Project Index rows",
       "Decisions or blockers", "Source artifacts", "Last verified",
     ]);
+    expectFields(recordBlocks("article", "data-interface-key"), [
+      "Evidence", "Linked Project Index rows", "Decisions or blockers",
+      "Source artifacts", "Last verified",
+    ]);
     expectFields(recordBlocks("article", "data-machinery-key"), [
       "Claim or goal", "Owner", "Relationships", "Source of truth",
       "Evidence and gap", "Linked Project Index rows", "Decisions or blockers",
@@ -472,9 +476,11 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     const lastVerifiedBlocks = [
       ...recordBlocks("details", "data-index-key"),
       ...recordBlocks("details", "data-deliverable-key"),
+      ...recordBlocks("article", "data-scenario-key"),
       ...recordBlocks("article", "data-guarantee-key"),
-      ...recordBlocks("figure", "data-experience-key"),
+      ...recordBlocks("article", "data-experience-key"),
       ...recordBlocks("article", "data-machinery-key"),
+      ...recordBlocks("article", "data-interface-key"),
       ...recordBlocks("details", "data-command-key"),
       ...recordBlocks("details", "data-decision-key"),
       ...recordBlocks("details", "data-contradiction-key"),

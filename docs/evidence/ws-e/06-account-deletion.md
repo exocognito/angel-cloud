@@ -192,7 +192,7 @@ Cloud deletion cannot and must not pretend to remove:
 - `ANGEL.yaml`, `angel.json`, source directories, built bundle and digest files;
 - locally pulled receipt files and replay reports;
 - the future CLI profile and Account handle stored on the machine;
-- future Account-scoped management token and local provider OAuth tokens in the OS keychain;
+- future Account-scoped management token on the machine and local provider OAuth tokens in the Angel-owned encrypted vault;
 - plaintext Angel keys saved by the owner or installed in an agent;
 - local MCP runtime state and logs;
 - authenticator-side passkey private keys, if the optional passkey target ships. Deleting their server public-key records makes them unusable at Angel, but does not erase an authenticator device;
