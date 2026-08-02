@@ -22,9 +22,10 @@ that list and its completed M0/M1 record.
 
 ## Current gate
 
-Sam approved Product Ledger contract v0.1, the Angel Product Ledger, WS1, and
-the evidence-only WS-E workstream on 2026-08-01. WS-E is active; WS1 is
-complete. All seven briefs exist and changed no product behavior.
+Sam approved Product Ledger contract v0.1 and the Angel Product Ledger on
+2026-08-01. Product/repository approval covers WS1, now complete. Separate
+evidence-only approval covers WS-E. WS-E is active. All seven briefs exist and
+changed no product behavior.
 WS-E authorizes no product implementation. O2–O7 and O9 are closed as decisions.
 O1 blocks WS-E closure because control of the
 recommended `@angelmcp` npm namespace is unverified. O10 waits for that exact

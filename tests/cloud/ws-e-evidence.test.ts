@@ -101,10 +101,15 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("first fresh identity, then a second independent identity");
     expect(ledger).toContain("The recorded WS-E bar allowed exact remaining gaps");
     expect(ledger).toContain("so the stricter bar governs, and WS-E stays active on O1");
+    const c9 = ledger.match(/data-contradiction-key="C9"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c9).toContain("Brief 7 excludes provenance, adapter origin, and the source digest");
+    const c11 = ledger.match(/data-contradiction-key="C11"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c11).toContain("Account deletion is an asynchronous, retryable hard-delete");
     const df047 = ledger.match(/<tr data-learning-id="DF-047"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df047).toContain("Registry check 2026-08-01: @angelmcp/cli and angelmcp absent");
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
+    expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS-E → O10 → WS2");
     expect(ledger).not.toContain("WS-E must finish before O10");
     expect(roadmap).toContain("WS-E is active");

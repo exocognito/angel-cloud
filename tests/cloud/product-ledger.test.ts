@@ -45,7 +45,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
   test("records approval of contract v0.1, this Ledger, and WS1 only", () => {
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
     expect(roadmap).toContain("WS-E is active");
-    expect(roadmap).toContain("the evidence-only WS-E workstream");
+    expect(roadmap).toContain("evidence-only approval covers WS-E");
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("remain proposed and unapproved");
     expect(aprdReadme).toContain(

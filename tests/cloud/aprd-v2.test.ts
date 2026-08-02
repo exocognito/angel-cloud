@@ -255,7 +255,7 @@ describe("APRD v2", () => {
     expect(aprdReadme).toContain("its v2.1 phase");
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
     expect(roadmap).toContain("WS-E is active");
-    expect(roadmap).toContain("the evidence-only WS-E workstream");
+    expect(roadmap).toContain("evidence-only approval covers WS-E");
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("remain proposed and unapproved");
     expect(roadmap).toContain("APRD v2");
