@@ -34,8 +34,8 @@ deployment ID and digest.
   — run the credentialed Gmail and Docs acceptance path.
 
 This README is the quick start and deployment reference. The user manual owns
-product mechanics; the FAQ owns rationale and current limits; the roadmap owns
-sequence and status.
+product mechanics; the FAQ owns rationale and current limits; the Product Ledger
+owns sequence and status.
 
 ## Verified live status — 2026-07-22
 

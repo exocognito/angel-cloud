@@ -12,7 +12,7 @@ What exact public package and install path does Round 2 use?
 
 ## Method
 
-Compared the live `@smcllns/angel-core@0.3.0` contract with the unclaimed `@angelmcp/cli` and `angelmcp` names. Tested current package packing and clean-consumer CLI behavior, pnpm and Bun global installs against the registry tarball, npm registry metadata, package provenance, the merged public starter, and the proposed install host. Bun-global registry-tarball install passed; the candidate package itself remains unbuilt and unpublished. No package was published or reserved.
+Compared the live `@smcllns/angel-core@0.3.0` contract with the `@angelmcp/cli` and `angelmcp` names, which were registry-absent when tested. Tested current package packing and clean-consumer CLI behavior, pnpm and Bun global installs against the registry tarball, npm registry metadata, package provenance, the merged public starter, and the proposed install host. Bun-global registry-tarball install passed; the candidate package itself remains unbuilt and unpublished. No package was published or reserved.
 
 ## Verified results
 

@@ -157,9 +157,9 @@ describe("WS-E evidence-only decision closure", () => {
       expect(row).toContain("<strong>Last verified</strong><div>2026-08-01 · repository evidence + WS-E review</div>");
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
-    expect(roadmap).toContain("WS-E authorizes no product implementation");
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, which understated the current public charter and guard exposure, and added an authoring cross-reference in <code>docs/user-manual.md</code>");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`.");
+    expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, which understated the current public charter and guard exposure, added an authoring cross-reference in <code>docs/user-manual.md</code>, and repaired stale plan-of-record pointers in <code>README.md</code>, <code>NEXT.md</code>, and the unapproved engineering view");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, added an authoring cross-reference in `docs/user-manual.md`, and repaired stale plan-of-record pointers in `README.md`, `NEXT.md`, and the unapproved engineering view.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS1 → WS-E → WS2");
@@ -171,10 +171,15 @@ describe("WS-E evidence-only decision closure", () => {
       expect(document).toContain("docs/product-ledger.html");
       expect(document).not.toContain("ROADMAP.md](ROADMAP.md) — plan of record");
       expect(document).not.toContain("The plan of record is [ROADMAP.md]");
+      expect(document).not.toMatch(/roadmap owns\s+sequence and status/i);
+      expect(document).not.toContain("sequence in ROADMAP.md");
     }
+    const engineeringView = readFileSync(join(root, "docs/aprd/views/engineering.html"), "utf8");
+    expect(engineeringView).toContain("Angel Product Ledger owns sequence/status");
+    expect(engineeringView).not.toContain("ROADMAP.md owns sequence/status");
     expect(ledger).not.toContain("WS-E must finish before O10");
     expect(roadmap).toContain("WS-E is active");
-    expect(roadmap).toContain("O1 blocks WS-E closure");
+    expect(roadmap).toMatch(/O1 blocks\s+WS-E closure/);
     expect(ledger).not.toContain("private-data-safe");
     expect(ledger).toContain("must treat charter and guard literals as public");
     expect(ledger).not.toContain("updates private binding config");
@@ -201,6 +206,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(packageBrief).toContain("an isolated Bun-global install of the current registry tarball exposed bare `angel`");
     expect(packageBrief).toContain("docs/user-manual.md#install-the-cli");
     expect(packageBrief).not.toContain("docs/user-manual.md:449-465");
+    expect(packageBrief).toContain("registry-absent when tested");
+    expect(packageBrief).not.toContain("unclaimed `@angelmcp/cli`");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(deletionBrief).toContain("local provider OAuth tokens in the Angel-owned encrypted vault");

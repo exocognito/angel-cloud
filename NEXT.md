@@ -89,7 +89,7 @@ after seven days.
   schedule and manual dispatch became runnable when the M1 merge put the
   workflow on the default branch.
 
-### Not yet implemented (sequence in ROADMAP.md)
+### Not yet implemented (sequence in the [Angel Product Ledger](docs/product-ledger.html))
 
 - Additional providers (Gmail drafts/write, Maps, Slack, WhatsApp, etc.)
 - Public signup/onboarding
