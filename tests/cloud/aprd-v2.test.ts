@@ -376,11 +376,11 @@ describe("APRD v2", () => {
   });
 
   test("defines every commitment evidence id in the normative document", () => {
-    for (let i = 1; i <= 15; i += 1) {
+    for (let i = 1; i <= 16; i += 1) {
       expect(html).toContain(`id="e${i}"`);
       expect(html).toContain(`<strong>E${i} ·`);
     }
-    expect(html).toContain("Evidence contracts · E1–E15");
+    expect(html).toContain("Evidence contracts · E1–E16");
   });
 
   test("records www parity as a product decision and updates current docs", () => {
@@ -429,6 +429,7 @@ describe("APRD v2", () => {
     expect(section).toContain("verify: <code>angel verify gmail-draft-assistant --production</code>");
     expect(section).toContain("trust boundary: everything attestable is client-checkable; execution is trusted, bounded by replay.");
     expect(section).toContain("agent call: tools/list, then tools/call gmail.users.drafts.create");
+    expect(section).toContain('<code class="break-all">POST https://mcp.angelmcp.ai/');
     expect(section).toContain("two receipts: Gateway and Broker");
     expect(section).toContain("anchored tail: sequence, previousHash, hash");
     expect(section).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
@@ -497,6 +498,11 @@ describe("APRD v2", () => {
 
   test("defines exact receipt pull and replay syntax in the target command guide", () => {
     expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from <sequence> --to <sequence> --out <path>");
+    expect(cliUserGuide).toContain("angel.replay-receipt.v1");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("canonical original `arguments`");
+    expect(cliUserGuide).toContain("mode `0600`");
+    expect(cliUserGuide).toContain("missing original arguments");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("recomputes `argumentsDigest` from each record's canonical original arguments");
     expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
     expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> --bundle <path>");
     expect(cliUserGuide).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json");
@@ -535,11 +541,15 @@ describe("APRD v2", () => {
     expect(generativeEvals).toContain("Target-state v2.1 eval contract");
     expect(generativeEvals).toContain("The generated E2E test file itself must be saved as evidence");
 
+    expect(generativeEvals).toContain("## public review summary privacy, stability, and HTML/JSON parity");
+    expect(generativeEvals).toContain("missing original arguments");
+    expect(generativeEvals).toContain("edit original arguments");
     const families = [
       "docs-only fresh-machine journey with a newly generated Angel",
       "novel generated policies and guards",
       "local/cloud artifact and decision parity with tamper detection",
       "account isolation, idempotent retry, and zero provider calls on failure",
+      "public review summary privacy, stability, and HTML/JSON parity",
       "live Gmail draft-without-send supplement",
     ];
     for (const family of families) {
@@ -602,6 +612,9 @@ describe("APRD v2", () => {
     expect(html).not.toContain("cascade details open");
     expect(html).not.toContain('Delete-account cascade details beyond "cascades angels · keys · apps"');
     expect(html).toContain("<code>angel.public-review.v1</code>");
+    expect(html).toContain("Evidence contracts · E1–E16");
+    expect(html).toContain('id="e16"');
+    expect(html).toMatch(/data-commitment-target="Every Angel has a public trust page"[^>]+data-evidence="e16"/);
     expect(html).toContain("sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14)");
     expect(html).toContain("Route logic at <code>src/workers/gateway.ts:299</code>.");
     expect(html).toContain("one owner-only nonce per published Version");
