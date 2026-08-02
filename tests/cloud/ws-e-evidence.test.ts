@@ -56,6 +56,13 @@ describe("WS-E evidence-only decision closure", () => {
         expect(canonical).not.toContain("- Control the `@angelmcp` npm scope");
       } else expect(brief).toContain("Outcome: close");
       expect(brief).toContain("Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`");
+      const fullRecord = brief.split("## Evidence record", 2)[1] ?? "";
+      expect(fullRecord).toContain("full record");
+      const fullRecordProse = fullRecord.replace(/(```|~~~)[\s\S]*?\1/g, "");
+      expect(fullRecordProse).not.toMatch(/^# /m);
+      for (const duplicate of ["Question", "Method", "Verified results", "Product implication"]) {
+        expect(fullRecordProse).not.toMatch(new RegExp(`^#{2,6} ${duplicate}$`, "m"));
+      }
     }
   });
 
@@ -102,7 +109,7 @@ describe("WS-E evidence-only decision closure", () => {
 
   test("links every brief from the Ledger and preserves the evidence-only boundary", () => {
     for (const [file] of briefs) expect(ledger).toContain(`evidence/ws-e/${file}`);
-    expect(ledger).toContain("Seven briefs exist and WS-E changed no product behavior");
+    expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
     expect(ledger).not.toContain(">Open source</a>");
     expect(ledger).not.toContain("oscodev@");
     expect(ledger).not.toContain("oscollins@");
@@ -148,8 +155,8 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
-    expect(ledger).toContain("It corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("It corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS-E → O10 → WS2");
@@ -257,6 +264,15 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
+    for (const [attribute, key] of [
+      ["data-experience-key", "EW3"],
+      ["data-machinery-key", "MW3"],
+      ["data-machinery-key", "MW4"],
+    ]) {
+      const record = ledger.match(new RegExp(`${attribute}="${key}"[\\s\\S]*?<\\/article>`))?.[0] ?? "";
+      expect(record).toContain("evidence/ws-e/02-linux-oauth-storage.md");
+      expect(record).toContain("evidence/ws-e/03-local-cloud-syntax.md");
+    }
     const pd00b = ledger.match(/data-deliverable-key="PD-00B"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(pd00b).toContain("product-decisions/0002-public-angel-page.md");
     const g13 = ledger.match(/data-guarantee-key="G13"[\s\S]*?<\/article>/)?.[0] ?? "";

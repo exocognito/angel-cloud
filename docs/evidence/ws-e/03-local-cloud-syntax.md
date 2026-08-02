@@ -48,13 +48,13 @@ Local can remain account-free and cloud can remain separately authenticated. The
 
 Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
-# Evidence brief O3 — local versus cloud consent and custody
+### O3 full record
 
-## Question
+#### O3 full record: Question
 
 What exact syntax separates local and cloud consent/custody?
 
-## Method
+#### O3 full record: Method
 
 1. Read the approved Product Ledger, shipped manual and FAQ, unapproved APRD,
    target CLI guide, package guide, parser source, parser tests, and examples.
@@ -67,7 +67,7 @@ What exact syntax separates local and cloud consent/custody?
 5. Walked two independent fresh-user journeys. Each starts without a repo,
    Account session, provider grant, Angel key, fixture, or seeded state.
 
-## Commands and sources
+#### O3 full record: Commands and sources
 
 Primary sources:
 
@@ -128,9 +128,9 @@ ACCEPT  apps connect google --cloud ...
 The temporary probe was not committed because this workstream authorizes
 saved evidence, not product implementation.
 
-## Verified results
+#### O3 full record: Verified results
 
-### Shipped behavior — FACT
+##### O3 full record: Shipped behavior — FACT
 
 The shipped CLI has exactly four top-level commands:
 
@@ -164,7 +164,7 @@ pre-provisioned Account, and an already healthy managed Connection.
 `angel`, and `bindings`, with exactly `preview` and `production`. It has no local
 profile or local binding namespace. Unknown keys fail.
 
-### Target documents — TARGET, not shipped
+##### O3 full record: Target documents — TARGET, not shipped
 
 The target CLI guide defines:
 
@@ -197,7 +197,7 @@ serve and says the same OAuth client works in both paths. Reusing an OAuth clien
 registration may be possible, but reusing or copying a grant is not allowed by
 the later Ledger.
 
-## Alternatives
+#### O3 full record: Alternatives
 
 | Alternative | Discoverability | Custody clarity | Errors and state | Composability | Verdict |
 |---|---|---|---|---|---|
@@ -207,7 +207,7 @@ the later Ledger.
 | Infer from login, config, `serve`, or `publish` | Shortest command. | Hidden; behavior changes with ambient state. | A stale login or old config can send a grant to the wrong custodian. | Poor in scripts and agent runs. | Reject. |
 | One consent copied or promoted between local and cloud | Appears convenient. | False custody boundary. | Couples revocation and leaks authority across modes. | Hidden side effect. | Reject by Ledger rule. |
 
-## Recommendation
+#### O3 full record: Recommendation
 
 Canonical syntax:
 
@@ -239,7 +239,7 @@ Rules:
 9. `serve` consumes local credentials only. `publish` consumes cloud
    Connections only. Each fails rather than crossing custody.
 
-## Recommended complete command tree
+#### O3 full record: Recommended complete command tree
 
 This is the combined target tree after O3 and O5. Existing supporting commands
 stay visible. It is a recommendation, not shipped behavior.
@@ -275,7 +275,7 @@ EVIDENCE    verify, receipts pull, replay
 `angel apps connect --help` must show `(--local | --cloud)` as required and say
 where each mode stores credentials before the owner starts OAuth.
 
-## Full fresh local journey — RECOMMENDATION
+#### O3 full record: Full fresh local journey — RECOMMENDATION
 
 This journey is independent. It starts with no Account session and must still
 pass if Angel Cloud is unavailable.
@@ -325,7 +325,7 @@ Human handoffs: review source, enter/confirm the OAuth client, consent, and
 inspect the provider side effect. The agent may open the browser and prepare
 non-secret fields; it may not consent.
 
-## Full fresh managed journey — RECOMMENDATION
+#### O3 full record: Full fresh managed journey — RECOMMENDATION
 
 This is a second independent start. It may reuse reviewed source bytes, but it
 must not reuse the local grant, old Account state, or local credential profile.
@@ -389,9 +389,9 @@ binding value: cloud-gmail-9p4r
 Human handoffs: Account sign-in, OAuth-client entry/confirmation, Google
 consent, source review, and final draft inspection.
 
-## Exact O3 target contract
+#### O3 full record: Exact O3 target contract
 
-### Inputs and outputs
+##### O3 full record: Inputs and outputs
 
 - Required: provider, one custody flag, nickname, scopes.
 - Optional: App-profile name.
@@ -400,7 +400,7 @@ consent, source review, and final draft inspection.
 - Never print bearer tokens, OAuth client secrets, refresh tokens, internal
   Connection IDs, or local secret-store contents.
 
-### Durable side effects
+##### O3 full record: Durable side effects
 
 - `--local`: one machine-local App profile and provider grant, stored in the O2
   Angel-owned encrypted vault with TTY/FD unlock. No cloud or project-policy mutation.
@@ -410,7 +410,7 @@ consent, source review, and final draft inspection.
 - Project binding changes require a named, reviewable follow-up because connect
   does not identify an Angel requirement.
 
-### Idempotency
+##### O3 full record: Idempotency
 
 - Retrying the same mode + provider + App + nickname + provider identity refreshes
   the same record atomically.
@@ -418,7 +418,7 @@ consent, source review, and final draft inspection.
 - Reusing a nickname for another identity or App fails without overwrite.
 - A record in the other custody namespace is never considered a retry match.
 
-### Failures
+##### O3 full record: Failures
 
 | Failure | Required behavior |
 |---|---|
@@ -432,12 +432,12 @@ consent, source review, and final draft inspection.
 | Broker custody failure | No local token, Connection summary, publish, or provider call. |
 | Account mismatch | Return the same isolation-safe error as an absent owned resource. |
 
-### Handoffs
+##### O3 full record: Handoffs
 
 Only the owner enters/confirms OAuth-client material and completes provider
 consent. An agent may run commands, open URLs, and prepare safe fields.
 
-## Product implication
+#### O3 full record: Product implication
 
 O3 is not cosmetic syntax. It makes G13 testable: local use remains independent,
 managed custody remains separate, and hosting stays optional. The CLI guide must
@@ -446,7 +446,7 @@ production-binding side effect, and make both journeys independently runnable.
 The config/profile migration and App registration command or browser handoff
 need their own build contracts before WS2 approval.
 
-## Can O3 close?
+#### O3 full record: Can O3 close?
 
 **Yes.** The evidence supports required, mutually exclusive `--local` and
 `--cloud` flags and rejects ambient inference. Closing O3 does not claim that

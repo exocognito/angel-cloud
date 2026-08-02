@@ -38,16 +38,16 @@ Target docs must replace “OS keychain” with the exact headless vault boundar
 
 ## Evidence record
 
-# O2 evidence brief — headless Linux local OAuth custody
+### O2 full record
 
 Date: 2026-08-01  
 Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
-## Question
+#### O2 full record: Question
 
 How should headless Linux store and retrieve local OAuth credentials?
 
-## Answer
+#### O2 full record: Answer
 
 Use an Angel-owned encrypted local vault, not an assumed OS keychain. Keep the vault's unlock secret outside the vault. Accept that secret from a no-echo TTY for attended use or from one inherited file descriptor for unattended use. Decrypt only into the `angel` process, never print credential values, and fail closed when the key, file, authentication tag, scope set, or record identity is wrong.
 
@@ -55,7 +55,7 @@ Do not use an environment variable as the default secret handoff. Do not silentl
 
 The real exe.dev spike supports this choice. Secret Service can be made to work, but a stock headless exe.dev VM has no session bus, keyring daemon, display, or login/PAM unlock. After installing 47 MB of packages, it still needs an explicit D-Bus session and an external master secret on every fresh session or boot. That is the same bootstrap problem as an encrypted file, with more moving parts.
 
-## Method
+#### O2 full record: Method
 
 1. Read the repository contract and evidence:
    - `AGENTS.md`
@@ -77,16 +77,16 @@ The real exe.dev spike supports this choice. Secret Service can be made to work,
 
 No real OAuth client, refresh token, provider account, production endpoint, or repository secret was used.
 
-## Environment
+#### O2 full record: Environment
 
-### Investigator host
+##### O2 full record: Investigator host
 
 - macOS client using OpenSSH.
 - No local `exe`/`exedev` executable was installed.
 - exe.dev authentication was available through the existing SSH identity. `ssh -o BatchMode=yes exe.dev whoami` succeeded; personal account output is intentionally omitted.
 - exe.dev exposes its CLI as an SSH REPL. `ssh exe.dev help` listed `new`, `ls`, `ssh`, `restart`, and `rm`.
 
-### Disposable exe.dev VM
+##### O2 full record: Disposable exe.dev VM
 
 - Name: `angel-o2-20260802` (deleted after the spike). VM suffix uses UTC date 2026-08-02; the evidence run began on 2026-08-01 in America/Los_Angeles.
 - Image: `ubuntu:24.04`; 1 CPU, 2 GB RAM, 10 GB disk.
@@ -100,11 +100,11 @@ No real OAuth client, refresh token, provider account, production endpoint, or r
   - `libsecret-tools 0.21.4-1build3`
   - `gnupg2 2.4.4-2ubuntu17.4`
 
-## Exact commands and sources
+#### O2 full record: Exact commands and sources
 
 The synthetic credential was `synthetic-o2-refresh-token`; the synthetic unlock value was `synthetic-o2-master`.
 
-### exe.dev discovery and lifecycle
+##### O2 full record: exe.dev discovery and lifecycle
 
 ```sh
 command -v exe || true
@@ -124,7 +124,7 @@ ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
 
 The attempted 1 GB VM creation failed clearly with `--memory must be at least 2 GB`; the successful command above used the minimum accepted size.
 
-### Candidate package installation and stock Secret Service test
+##### O2 full record: Candidate package installation and stock Secret Service test
 
 ```sh
 apt-get update
@@ -148,7 +148,7 @@ grep -E '^(Name|Exec)=' \
 
 It names `org.freedesktop.secrets` and executes `gnome-keyring-daemon --start --foreground --components=secrets`.
 
-### Explicit headless Secret Service unlock and retrieval
+##### O2 full record: Explicit headless Secret Service unlock and retrieval
 
 Write and read in one D-Bus session:
 
@@ -171,7 +171,7 @@ ssh exe.dev 'restart angel-o2-20260802'
 
 After restart, the same explicit unlock plus `secret-tool lookup` succeeded.
 
-### Encrypted-file candidate
+##### O2 full record: Encrypted-file candidate
 
 The spike used GnuPG only as a concrete encrypted-file probe; it is not the recommended product file format.
 
@@ -198,7 +198,7 @@ test "$out" = synthetic-o2-refresh-token
 
 The read was repeated in a new SSH command and after `ssh exe.dev restart`. No-key and wrong-key reads were run separately. One ciphertext byte was flipped with `od`, shell arithmetic, and `dd`, then decryption was retried.
 
-### Process/env handoff probe
+##### O2 full record: Process/env handoff probe
 
 ```sh
 env ANGEL_OAUTH_TOKEN=synthetic-o2-refresh-token \
@@ -219,7 +219,7 @@ tr '\0' ' ' </proc/"$(cat /tmp/o2-fd.pid)"/cmdline
 test -r /proc/"$(cat /tmp/o2-fd.pid)"/fd/3
 ```
 
-### Cleanup
+##### O2 full record: Cleanup
 
 ```sh
 ssh -o BatchMode=yes exe.dev 'rm angel-o2-20260802'
@@ -229,7 +229,7 @@ git status --short
 
 The VM no longer appeared in `ls`; `git status --short` was empty before writing this required evidence artifact.
 
-### Documentary sources
+##### O2 full record: Documentary sources
 
 Repository sources listed in Method are the product truth for this investigation. External behavior was checked against:
 
@@ -238,9 +238,9 @@ Repository sources listed in Method are the product truth for this investigation
 - Ubuntu Noble `gnome-keyring-daemon(1)`: <https://manpages.ubuntu.com/manpages/noble/man1/gnome-keyring-daemon.1.html>. It states that `--unlock` reads a password from stdin and unlocks or creates the login keyring.
 - Ubuntu Noble `dbus-run-session(1)`: <https://manpages.ubuntu.com/manpages/noble/man1/dbus-run-session.1.html>. It describes a private session bus for text-mode/SSH sessions whose lifetime matches the child program.
 
-## Verified results
+#### O2 full record: Verified results
 
-### Repository/current-product facts
+##### O2 full record: Repository/current-product facts
 
 1. The approved Ledger keeps O2 open and requires a real exe.dev spike before Linux storage is named as known. C15 and LR-009 say the APRD's OS-keychain and headless callback/retrieval assumptions are unproved.
 2. The APRD and v2.1 CLI guide are target-state, unapproved documents. They currently say local tokens and Account management tokens live in the “OS keychain.”
@@ -249,7 +249,7 @@ Repository sources listed in Method are the product truth for this investigation
 5. Current managed Google custody is not a local precedent for key bootstrapping: Broker holds a separately configured 32-byte KEK, wraps a per-Account DEK, encrypts client secrets and refresh tokens with AES-GCM and record-bound AAD, and exposes only safe summaries outside internal leases.
 6. Current Google OAuth uses PKCE, opaque one-use state with a ten-minute lifetime, verifies identity and required scopes, and requires a refresh token. The live user manual says managed custody setup is browser-only and has no headless API.
 
-### Real exe.dev facts
+##### O2 full record: Real exe.dev facts
 
 1. A stock `ubuntu:24.04` exe.dev VM had no session bus, keyring service, display, runtime directory, or keyring tools.
 2. After installing libsecret and GNOME Keyring, plain `secret-tool store` failed:
@@ -268,7 +268,7 @@ Repository sources listed in Method are the product truth for this investigation
 10. An environment handoff was inherited by the child and readable by another same-UID process through `/proc/<pid>/environ`. It was absent in a new SSH session, so it is not durable.
 11. An inherited FD kept the marker out of argv and the environment and delivered the exact bytes. Another same-UID process could still open `/proc/<pid>/fd/3`; an FD is a safer transport, not a same-UID security boundary.
 
-## Threat and operability comparison
+#### O2 full record: Threat and operability comparison
 
 | Candidate | Disk/backup exposure | Same-UID process exposure | Restart/unattended behavior | Headless operability | Result |
 |---|---|---|---|---|---|
@@ -280,24 +280,24 @@ Repository sources listed in Method are the product truth for this investigation
 
 Security boundary: none of these options protects against root, the VM host administrator, or hostile code already running as the Angel user's UID while credentials are unlocked. The useful encrypted-file claim is narrower: theft of the vault file, home directory backup, or detached disk does not itself reveal OAuth credentials.
 
-## Recommendation
+#### O2 full record: Recommendation
 
 Choose one explicit headless-Linux backend for WS2: an Angel-owned authenticated encrypted vault. Do not probe several backends and silently select one. Secret Service may remain a later desktop integration, but “OS keychain” must not describe the headless contract.
 
 This is the smallest design that is both real on exe.dev and honest about key bootstrapping. Secret Service adds a package and daemon stack but still requires the same external unlock secret. Environment-only custody is easier but is neither durable nor narrow.
 
-## Exact storage and retrieval contract
+#### O2 full record: Exact storage and retrieval contract
 
 This is the contract O2 supports; implementation remains forbidden until WS2 approval.
 
-### Location and permissions
+##### O2 full record: Location and permissions
 
 - Vault path: `${XDG_DATA_HOME:-$HOME/.local/share}/angel/credentials.v1.json`.
 - Parent directories: mode 0700, owned by the effective user; reject symlinks and wrong ownership.
 - Vault file: regular file, mode 0600, owned by the effective user; reject group/other bits instead of repairing silently during read.
 - The ordinary project and `angel.json` contain only Connection nicknames, never credentials or vault keys.
 
-### Encrypted record
+##### O2 full record: Encrypted record
 
 - One versioned vault contains all local grant profiles so nicknames and provider identity labels are not leaked through filenames.
 - Cleartext envelope fields: format version, KDF name and parameters, random salt, cipher name, random nonce, and ciphertext; binary values use canonical base64url.
@@ -308,14 +308,14 @@ This is the contract O2 supports; implementation remains forbidden until WS2 app
 
 The existing managed `EnvelopeCustody` code proves this repository already uses AES-GCM, random 12-byte IVs, 128-bit tags, and AAD-bound records. Local code must not reuse its cloud KEK assumption: headless unlock is a different boundary.
 
-### Unlock input
+##### O2 full record: Unlock input
 
 - Attended: read the vault passphrase from `/dev/tty` with echo disabled. Refuse if no TTY exists; never fall back to stdin when stdin may carry MCP data.
 - Unattended: accept only a caller-opened numeric FD through an explicit option such as `--credential-key-fd <n>`; read once, close immediately, and never put the value in argv or an environment variable.
 - The caller may source that FD from a real external secret manager or service supervisor. Angel never stores the passphrase/key beside the vault.
 - If no unlock source is available, fail with a specific action: attach a TTY or configure the FD. Do not begin provider consent or cloud work.
 
-### Write
+##### O2 full record: Write
 
 1. Obtain human consent and exchange the OAuth code entirely in memory.
 2. Verify provider identity and the exact required-scope floor before storage, matching current managed behavior.
@@ -327,7 +327,7 @@ The existing managed `EnvelopeCustody` code proves this repository already uses 
 
 A failed exchange, missing scope, wrong identity, encryption failure, or atomic-write failure leaves the previous vault bytes unchanged. Never revoke an existing provider-wide grant as automatic rollback, matching the current Google custody rule.
 
-### Read/use
+##### O2 full record: Read/use
 
 1. Validate ownership, regular-file type, mode, envelope shape, version, KDF bounds, nonce length, and ciphertext size before expensive work.
 2. Acquire the unlock secret from TTY or FD and derive the 32-byte key.
@@ -337,13 +337,13 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 6. Return only safe summaries to CLI/MCP surfaces. Close the inherited FD and best-effort clear key/plaintext buffers after use and on shutdown.
 7. Wrong key, changed ciphertext/AAD, malformed payload, missing nickname, or missing scope fails closed. There is no keyring, environment, cloud, or fixture fallback.
 
-### Rotation, loss, and removal
+##### O2 full record: Rotation, loss, and removal
 
 - Reauthorization atomically replaces the same local grant profile only after identity/client continuity checks.
 - A lost passphrase has no recovery path. The owner must revoke/re-authorize at the provider and create a new vault.
 - Removal deletes the local record only after any requested upstream revocation succeeds. If secure erasure cannot be guaranteed on the filesystem, docs must say deletion removes the live file/reference, not every historical block or backup.
 
-## Product implication
+#### O2 full record: Product implication
 
 1. The target APRD/CLI wording “tokens live in the OS keychain” is false for headless exe.dev and must change before WS2 approval. No shipped manual should change now.
 2. O3 chose explicit `--local`/`--cloud` consent syntax. Implementation must never infer custody from keyring availability or machine type.
@@ -352,14 +352,14 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 5. Headless unattended operation requires an operator-owned secret source. Angel should support FD injection, not pretend encryption can bootstrap its own key.
 6. Current environment-based management auth is separate shipped behavior and should not be cited as evidence that local OAuth-in-env is safe.
 
-## Remaining gap
+#### O2 full record: Remaining gap
 
 - No real Google OAuth consent was run. There was no approved disposable OAuth client/provider identity, and using current personal or production custody would have violated the task. Storage and retrieval behavior was tested with synthetic bytes of the same class and lifecycle.
 - The separate local OAuth callback question is not closed by this storage spike. In particular, the APRD claim that one OAuth client works for both hosted HTTPS callbacks and headless-local consent still needs a provider-valid test. The smallest safe closure test is: create a disposable Google OAuth client of the proposed application type, register the exact proposed loopback or HTTPS redirect, run PKCE from a fresh exe.dev VM through the documented browser handoff, exchange once, store the returned refresh token under this vault contract, restart the VM, unlock via FD, refresh one access token, revoke it, and delete the client/VM. Save only pass/fail and redacted metadata.
 - The recommended scrypt parameters and atomic-write/locking implementation need a 2 GB exe.dev implementation test before shipping. That is implementation proof, not an open storage-backend decision.
 - Desktop Linux behavior outside this Ubuntu/exe.dev shape was not tested; O2 asks specifically about headless Linux.
 
-## Can O2 close?
+#### O2 full record: Can O2 close?
 
 **Yes — O2 can close for the storage/retrieval decision.** The required real exe.dev evidence now distinguishes the candidates and supports an exact headless contract: authenticated encrypted local vault plus TTY/FD unlock, with no ambient Secret Service or environment fallback.
 

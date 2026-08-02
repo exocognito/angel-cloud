@@ -46,13 +46,13 @@ The journey has three explicit trust actions: `serve` exercises local runtime an
 
 Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
-# Evidence brief O5 — replay command shape
+### O5 full record
 
-## Question
+#### O5 full record: Question
 
 Is replay `angel replay` or `angel serve --replay`?
 
-## Method
+#### O5 full record: Method
 
 1. Traced every replay reference through the Ledger, APRD, target guide, evals,
    shipped parser, tests, manual, and FAQ.
@@ -61,7 +61,7 @@ Is replay `angel replay` or `angel serve --replay`?
 4. Compared process state, credential loading, help, errors, batch use, and
    provider side-effect risk.
 
-## Commands and sources
+#### O5 full record: Commands and sources
 
 - Product Ledger O5: “Recommend separate `angel replay` unless the complete
   journey disproves it.”
@@ -97,16 +97,16 @@ angel replay demo --receipts activity.ndjson
   REJECT: --bundle is required
 ```
 
-## Verified results
+#### O5 full record: Verified results
 
-### Shipped behavior — FACT
+##### O5 full record: Shipped behavior — FACT
 
 Neither form exists. The current runtime evaluator runs only in Workers, the
 agent-safe receipt omits fields needed by the target replay proof, and no public
 receipt-range export exists. The FAQ explicitly says receipt retention, search,
 and export have no guarantee yet.
 
-### Target contradiction — TARGET
+##### O5 full record: Target contradiction — TARGET
 
 The APRD's station sketch treats replay as a mode of the long-running local
 server. The target CLI guide, normative golden-path list, generative evals, and
@@ -122,7 +122,7 @@ There is also a data-contract gap: a local decision cannot be recomputed from an
 owner's client or included in a private authenticated export. The current guide
 names only a receipt file and bundle, so its input format is not yet executable.
 
-## Alternatives
+#### O5 full record: Alternatives
 
 | Alternative | Discoverability | Process and credential state | Errors | Composability | Verdict |
 |---|---|---|---|---|---|
@@ -130,7 +130,7 @@ names only a receipt file and bundle, so its input format is not yet executable.
 | `angel serve <angel> --replay <file>` | Buried under runtime help. | Overloads “serve”: unclear whether it loads a token, opens a port, calls a provider, or exits. | Mode conflicts grow as serve gains flags. | Poor batch semantics; accidental long-running process risk. | Reject. |
 | `angel receipts replay ...` | Groups evidence commands. | One-shot and safe. | Clear. | More typing; replay is also local-engine behavior, not merely receipt transport. | Sound but weaker than the already documented top-level command. |
 
-## Recommendation
+#### O5 full record: Recommendation
 
 Use a separate top-level command. `serve` has one job: start a local MCP server
 using local custody. `replay` has one job: recompute recorded decisions without
@@ -150,9 +150,9 @@ digest, engine, argument, or decision mismatch is always a failed verification
 and must always produce a nonzero exit. A report-only success status would make
 CI and agent use less safe.
 
-## Exact O5 target contract
+#### O5 full record: Exact O5 target contract
 
-### Purpose and inputs
+##### O5 full record: Purpose and inputs
 
 `angel replay` re-runs each recorded gate decision through the local engine over
 exactly one supplied bundle. It never invokes a provider.
@@ -179,7 +179,7 @@ Account evidence: `receipts pull` writes the file with owner-only permissions
 and never prints them. They do not enter a public trust page or agent-safe
 receipt. If the export contains only a digest, replay fails instead of guessing.
 
-### Output
+##### O5 full record: Output
 
 Success:
 
@@ -209,7 +209,7 @@ The command reports the first mismatch to stderr and exits nonzero. It may print
 aggregate counts before that point, but it must not print request arguments by
 default.
 
-### Side effects and state transitions
+##### O5 full record: Side effects and state transitions
 
 ```text
 bundle + private receipt export present
@@ -227,13 +227,13 @@ No server starts. No port binds. No Account session, Angel key, local provider
 grant, cloud Connection, Broker, Gateway, or provider is read or contacted.
 There is no default report file and no credential-store access.
 
-### Idempotency
+##### O5 full record: Idempotency
 
 Replay is deterministic and read-only. The same exact bundle and NDJSON bytes
 produce the same stdout, stderr, and exit status. File timestamps and ambient
 profiles do not affect the result.
 
-### Exit and failure contract
+##### O5 full record: Exit and failure contract
 
 | Exit | Meaning | Required output |
 |---|---|---|
@@ -246,12 +246,12 @@ wrong bundle digest, unsupported engine pin, chain break, sequence gap, missing
 arguments, argument digest mismatch, and policy divergence. Every error ends
 with `provider calls: 0` when replay began.
 
-### Handoffs
+##### O5 full record: Handoffs
 
 None. Receipt acquisition may require Account login in the prior `receipts pull`
 step; replay itself is fully local and non-interactive.
 
-### Help and discoverability
+##### O5 full record: Help and discoverability
 
 Top-level help lists `replay` under **Evidence**. Dedicated help is:
 
@@ -265,7 +265,7 @@ Recompute recorded decisions locally. Never starts a server or calls a provider.
 calls through a local grant. The contrast makes credential and side-effect
 boundaries visible before execution.
 
-## Full journey placement
+#### O5 full record: Full journey placement
 
 Replay belongs in the managed journey after the agent's production call:
 
@@ -278,7 +278,7 @@ It executes locally but is not part of local provider custody. A pure local
 journey has no cloud receipt range to pull. This placement keeps “where the
 command runs” separate from “where the evidence came from.”
 
-## Product implication
+#### O5 full record: Product implication
 
 Choosing top-level replay separates three trust operations:
 
@@ -292,7 +292,7 @@ The APRD §4.4 transcript and commitment matrix must change from
 replay-capable private export, not only `argumentsDigest`. The eval must assert
 zero network/provider calls and deterministic nonzero exits for every tamper.
 
-## Can O5 close?
+#### O5 full record: Can O5 close?
 
 **Yes.** The complete tree and both journeys favor `angel replay`; no evidence
 supports coupling replay to server startup. The private receipt/export schema
@@ -301,7 +301,7 @@ decision.
 
 ---
 
-# Verification record
+### 05-replay-syntax full record
 
 Commands run after the investigation:
 

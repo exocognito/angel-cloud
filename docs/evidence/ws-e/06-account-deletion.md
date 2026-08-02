@@ -45,13 +45,13 @@ Delete Account needs a cross-Worker internal job, not demo reset. Owner copy mus
 
 Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
-# Brief O6 — Exact Account-deletion scope
+### O6 full record
 
-## Question
+#### O6 full record: Question
 
 What exactly must Account deletion remove, what may remain, and which state is independent of the cloud deletion?
 
-## Method
+#### O6 full record: Method
 
 1. Enumerated every persistent API call and every stored state type in Control, Gateway, Broker, config, docs, ADRs, and tests.
 2. Traced ownership through Durable Object names and runtime IDs.
@@ -59,9 +59,9 @@ What exactly must Account deletion remove, what may remain, and which state is i
 4. Separated current physical stores from approved-but-unbuilt target stores and external-provider/local state. No missing target table was invented.
 5. Ran the relevant persistence, deletion, custody, handle, OAuth-state, provider-lifecycle, and gate tests.
 
-## Sources and commands
+#### O6 full record: Sources and commands
 
-### Repository sources
+##### O6 full record: Repository sources
 
 - `src/management-internal.ts`: full `ManagementState`, keys, deployments, bindings, idempotency records, and timestamps.
 - `src/management.ts`: Angel hard-delete order and actual purge boundaries.
@@ -101,16 +101,16 @@ pnpm exec bun test \
 
 **156 passed, 0 failed.**
 
-### External platform sources
+##### O6 full record: External platform sources
 
 - [Cloudflare Durable Object storage](https://developers.cloudflare.com/durable-objects/best-practices/access-durable-objects-storage/): a DO that has stored data only fully ceases to exist after `storage.deleteAll()`; SQLite DOs offer point-in-time recovery for up to 30 days.
 - [Cloudflare Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/): enabled observability stores invocation logs, request/response metadata, errors, and custom logs. Current documented retention is 3 days on Free and 7 days on Paid, with a 7-day maximum.
 - [Google OAuth token revocation](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke): revocation is part of removal; it invalidates the Google Cloud project/user grant's scopes and issued tokens across all client IDs in the same Google Cloud project and may take time to take full effect.
 - Better Auth's current docs describe core `user`, `session`, `account`, and `verification` stores and plugin-specific tables. **These are not current Angel stores:** no Better Auth dependency, config, D1 binding, migration, or exact plugin schema exists in this repository.
 
-## Verified current inventory
+#### O6 full record: Verified current inventory
 
-### 1. Control — Account-specific `AccountRegistry` Durable Object
+##### O6 full record: 1. Control — Account-specific `AccountRegistry` Durable Object
 
 Instance name: the opaque Account ID, such as `acct_example`.
 
@@ -126,7 +126,7 @@ Important persistence facts:
 - Versions and deployments remain until Angel deletion.
 - The agreed owner-only `ANGEL.yaml` source-draft store from ADR 0006 is **not implemented**. If added later, it is Account-owned and joins this cascade.
 
-### 2. Control — singleton handle directory `AccountRegistry`
+##### O6 full record: 2. Control — singleton handle directory `AccountRegistry`
 
 Instance name: `handle-directory`.
 
@@ -135,7 +135,7 @@ Instance name: `handle-directory`.
 
 This is platform-wide state, not inside the Account's own DO. Current policy says handles are permanent, retired names keep resolving, and names are never released.
 
-### 3. Gateway — singleton `HandleDirectory`
+##### O6 full record: 3. Gateway — singleton `HandleDirectory`
 
 Instance name: `directory`.
 
@@ -143,7 +143,7 @@ Instance name: `directory`.
 
 This is an append-only runtime replica used to route public coordinates.
 
-### 4. Gateway — one `GateRuntime` DO per Account + Angel slug + environment
+##### O6 full record: 4. Gateway — one `GateRuntime` DO per Account + Angel slug + environment
 
 Runtime ID: `<accountId>:<angel-slug>:<preview|production>`.
 
@@ -157,11 +157,11 @@ Stored under `state`:
 - all historical deployment fingerprints held by that runtime;
 - full hash-chained Gateway receipts, including request/deployment/version/digests/tool/decision, private Connection fields, argument digest, chain links, and checkpoint.
 
-### 5. Broker — one `GateRuntime` DO per Account + Angel slug + environment
+##### O6 full record: 5. Broker — one `GateRuntime` DO per Account + Angel slug + environment
 
 Same shape as Gateway, with the independent Broker installation, availability, deployment fingerprints, key state, receipt chain, and checkpoint.
 
-### 6. Broker — one `CredentialVault` DO per Account
+##### O6 full record: 6. Broker — one `CredentialVault` DO per Account
 
 Instance name: Account ID. Stored under `custody`:
 
@@ -172,7 +172,7 @@ Instance name: Account ID. Stored under `custody`:
 
 The Broker's root `CREDENTIAL_KEK` is a platform Worker secret, not an Account object. Deleting one Account must not delete it.
 
-### 7. Current auth and platform state outside those stores
+##### O6 full record: 7. Current auth and platform state outside those stores
 
 - Current browser auth is Cloudflare Access. Angel stores no auth user/session table; it validates an Access JWT and maps every valid identity to configured `ACCOUNT_ID`.
 - Cloudflare Access application/policy, Access sessions, service tokens, and Access logs are external platform state. No Account-deletion path controls them.
@@ -180,14 +180,14 @@ The Broker's root `CREDENTIAL_KEK` is a platform Worker secret, not an Account o
 - All three Workers enable observability at `head_sampling_rate: 1`, so Cloudflare stores invocation logs/metadata outside application DO state.
 - The SQLite DO namespaces support platform point-in-time recovery. The repository does not invoke it or state whether prior snapshots remain recoverable after `deleteAll()`.
 
-### 8. External Google state
+##### O6 full record: 8. External Google state
 
 - Google holds the OAuth grant and token status. Current Connection removal revokes the Google grant first, then removes the Connection from Broker custody and Control summaries.
 - Google revocation is Google Cloud project/user grant-wide, so it may invalidate sibling Connections made with any client ID in the same Google Cloud project for that user.
 - The owner-created Google OAuth client, consent-screen configuration, and Google Cloud project are owner/provider state, not Angel Cloud objects.
 - Gmail drafts/messages, Docs, Google account activity, and other provider data are provider-owned state. Account deletion must not erase them and generally cannot.
 
-### 9. Independent local state
+##### O6 full record: 9. Independent local state
 
 Cloud deletion cannot and must not pretend to remove:
 
@@ -200,9 +200,9 @@ Cloud deletion cannot and must not pretend to remove:
 - authenticator-side passkey private keys, if the optional passkey target ships. Deleting their server public-key records makes them unusable at Angel, but does not erase an authenticator device;
 - provider-side content and the owner's external OAuth-client configuration.
 
-## Actual deletion paths and gaps
+#### O6 full record: Actual deletion paths and gaps
 
-### Implemented Angel deletion
+##### O6 full record: Implemented Angel deletion
 
 `ManagementControl.deleteAngel`:
 
@@ -214,11 +214,11 @@ Cloud deletion cannot and must not pretend to remove:
 
 Tests prove receipts disappear because gate `reset` replaces the entire gate state. Shared Connections and other Angels remain.
 
-### Implemented Connection deletion
+##### O6 full record: Implemented Connection deletion
 
 Control asks Broker to revoke the Google grant if needed, removes the encrypted Connection from the vault, then removes the safe Control summary. Provider App removal remains `501`.
 
-### Demo reset is not Account deletion
+##### O6 full record: Demo reset is not Account deletion
 
 The reset path resets known gates and overwrites `management` with a fresh state. It does **not** delete:
 
@@ -229,7 +229,7 @@ The reset path resets known gates and overwrites `management` with a fresh state
 - Cloudflare Access sessions/state;
 - Workers Logs or platform recovery data.
 
-### No physical Account deletion exists
+##### O6 full record: No physical Account deletion exists
 
 - No Account-delete route or command exists.
 - No application code calls `storage.deleteAll()`.
@@ -237,7 +237,7 @@ The reset path resets known gates and overwrites `management` with a fresh state
 - Provider App deletion is not implemented.
 - The target Better Auth/D1 schema, Account-to-auth-user mapping, CLI-token server store, recovery-contact store, and email provider are not yet present, so their exact physical deletion keys cannot be verified now.
 
-## Alternatives
+#### O6 full record: Alternatives
 
 1. **Call Angel delete repeatedly, then reset.** Rejected: leaves custody, provider summaries, OAuth states, handles, auth state, and physical DOs.
 2. **Delete only Control's Account DO.** Rejected: leaves live keys/gates, receipts, bindings, CredentialVault secrets, handle replicas, and provider grants.
@@ -246,46 +246,46 @@ The reset path resets known gates and overwrites `management` with a fresh state
 5. **Retain a minimal, non-resolving handle reservation.** Recommended. It preserves “never released” without preserving a live Account mapping.
 6. **Keep receipts or an audit ledger after deletion.** Rejected absent a documented legal duty and retention period. Gate receipts are Account-owned activity data, and the FAQ explicitly has no retention guarantee.
 
-## Recommendation
+#### O6 full record: Recommendation
 
 Account deletion should be an asynchronous, retryable hard-delete that first removes authority, then external grants, then data. It must not report completion until every application-owned deletion step is confirmed. A transient provider/network failure leaves the Account visibly `deleting`, unable to sign in or invoke tools, and safe to retry.
 
 The only recommended product retention exception is a **minimal non-resolving reservation for current and retired handles**. Short-lived Cloudflare logs and any provider backup/PITR behavior must be disclosed as infrastructure retention, not presented as live Account state or a legal audit record.
 
-## Exact contract
+#### O6 full record: Exact contract
 
-### Preconditions and state transition
+##### O6 full record: Preconditions and state transition
 
 1. Require a fresh human authentication and explicit confirmation naming the Account handle.
 2. Atomically mark the Account `deleting`. From that point, reject new sessions, login-link completion, CLI-token minting, management mutations, publishes, deployments, and provider invocation.
 3. Run the cascade from an internal deletion job so removing the owner's session cannot strand the operation. Every step is idempotent.
 
-### Authority shutdown
+##### O6 full record: Authority shutdown
 
 4. Revoke/delete every Angel key hash and any Account-scoped management/CLI token server record.
 5. For every Angel and both environments, close Broker before Gateway, then call `storage.deleteAll()` on each Broker and Gateway gate DO. Do not use gate `reset` as the final erase.
 6. Remove all gate installations, artifacts, bindings, private Connection refs/identity labels, availability, deployment fingerprints, receipts, checkpoints, and DO metadata.
 
-### Provider and custody removal
+##### O6 full record: Provider and custody removal
 
 7. Before destroying refresh tokens, attempt revocation for every distinct external Google Cloud project/user grant. Treat provider confirmation that a grant is already invalid as success; retry transport/provider failures while the Account remains disabled.
 8. Warn that Google revocation is project/user-wide and may affect all client IDs in the same Google Cloud project for that user.
 9. After revocation completes, call `storage.deleteAll()` on the Account's CredentialVault. Remove the wrapped DEK, every Provider App, client ID/secret/scopes, every Connection, subject/nickname/identity/health field, and every encrypted refresh token.
 10. Do not delete the owner's Google Cloud project/OAuth client or provider content.
 
-### Control and auth removal
+##### O6 full record: Control and auth removal
 
 11. Delete the Account-specific `management` and `providers` state in full: Account record; Angels; Versions/artifacts; public-review commitment nonces; deployments; keys; bindings; availability/repair state; safe Connection/Provider App summaries; pending/expired OAuth states and PKCE verifiers; all idempotency records including encrypted shown-once responses; timestamps; and any owner-only source drafts added later. Finish with `storage.deleteAll()` on the AccountRegistry DO.
 12. Delete every target-auth row tied solely to the owner/Account: auth user, sessions, linked auth identities, magic-link/verification records, passkey public credentials, recovery addresses/contacts, account memberships, and server-side CLI-token records. The final table/key list must come from the generated Better Auth/D1 migration and Angel extensions; it cannot be frozen from this repository because they do not exist yet.
 13. If the auth identity owns no other Angel Account in the Round-2 one-owner model, delete that auth identity. A future multi-Account/member model must separate “delete this Account” from “delete my login”; do not guess that cascade now.
 
-### Handles
+##### O6 full record: Handles
 
 14. Remove `account:<accountId>` and remove current/retired live mappings from the Gateway directory so every old coordinate stops resolving immediately.
 15. Replace Control's current/retired live claims with non-resolving reservation tombstones containing no Account ID, email, auth-user ID, or Connection data. A hash of the normalized handle is enough for claim rejection, though low-entropy handles may still be personal data and need a stated policy basis.
 16. A fresh signup is self-service but must choose a new handle. Reusing the deleted handle would contradict the approved “never released” invariant and requires a separate product decision.
 
-### Completion and proof
+##### O6 full record: Completion and proof
 
 17. Remove the transient deletion job after all steps complete. Retain no application audit/legal record unless a later legal requirement names the fields, purpose, and exact duration.
 18. A completed deletion must prove:
@@ -298,20 +298,20 @@ The only recommended product retention exception is a **minimal non-resolving re
     - a fresh signup succeeds without admin help;
     - local files and the local Angel-owned encrypted vault remain untouched, as does provider content; name both to the owner.
 
-## Retention exceptions and risks
+#### O6 full record: Retention exceptions and risks
 
-### Verified infrastructure retention
+##### O6 full record: Verified infrastructure retention
 
 - Workers Logs are enabled at 100% sampling. Cloudflare says invocation logs contain request/response metadata and documents 3-day Free / 7-day Paid retention. The repository does not identify the plan or provide selective per-Account erasure. This is a short-lived infrastructure exception, not an Angel audit ledger.
 - SQLite Durable Objects offer point-in-time recovery to points within the prior 30 days. The source verifies the feature exists but not whether `deleteAll()` makes pre-delete snapshots unrestorable. Do not promise immediate physical purge from backups until this is tested or confirmed with Cloudflare.
 
-### Unverified future retention
+##### O6 full record: Unverified future retention
 
 - No email provider is chosen, so delivery-log content and retention are unknown.
 - Better Auth/D1 is unimplemented, so the final generated schema and database backup behavior are unknown.
 - No legal, tax, fraud, billing, or compliance retention requirement is documented. Do not invent one. If one appears, retain only the named fields for a fixed period and exclude credentials, grants, source, artifacts, receipts, and provider identities unless law specifically requires them.
 
-### Product and operational risks
+##### O6 full record: Product and operational risks
 
 - The permanent-handle rule conflicts with a literal claim that “nothing remains.” Product copy must say “all live Account data is deleted; the old handle remains permanently unavailable.”
 - Google revocation can affect sibling grants for the same Google Cloud project/user and may take time to take effect.
@@ -320,11 +320,11 @@ The only recommended product retention exception is a **minimal non-resolving re
 - Current expired OAuth states and idempotency records have no sweeper; Account deletion must remove them directly.
 - Saved plaintext Angel keys and local management/provider tokens remain valid-looking strings after cloud deletion even though server state rejects them. The owner-facing completion screen should tell the owner to remove local copies.
 
-## Product implication
+#### O6 full record: Product implication
 
 “Delete Account” cannot be implemented as demo reset or a loop over the existing Angel-delete endpoint. It needs a cross-Worker deletion job, physical DO deletion, provider-grant revocation, target-auth cleanup, and a deliberate handle tombstone policy. The UI and CLI must distinguish cloud deletion from local cleanup and state the infrastructure retention window honestly.
 
-## Closure assessment
+#### O6 full record: Closure assessment
 
 **O6 decision: closed.** The current-store inventory and semantic deletion contract are fixed by the recommendation above.
 

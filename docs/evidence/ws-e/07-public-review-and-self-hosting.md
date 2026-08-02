@@ -56,7 +56,7 @@ G11 narrows from “full public review bundle” to public capability summary. T
 
 ## Evidence record
 
-# WS-E boundary evidence: O7 and O9
+### O7 and O9 full record
 
 Evidence date: 2026-08-01  
 Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
@@ -64,15 +64,15 @@ Scope: evidence only; no product or repository files changed.
 
 ---
 
-# Brief O7 — Minimum public review bundle
+### O7 full record
 
-## Question
+#### O7 full record: Question
 
 What exact minimum public review bundle should managed publish expose without
 leaking identity, Connection, credential, secret, nickname, private source,
 private deployment, or operational metadata?
 
-## Method
+#### O7 full record: Method
 
 1. Read the Product Ledger records for O7, PD-00B, G03, G08, and G11.
 2. Read the APRD terminology and public-trust claims.
@@ -86,7 +86,7 @@ private deployment, or operational metadata?
 7. Ran focused artifact, public-page, and public-demo tests.
 8. Probed the documented live Gateway and docs hosts without credentials.
 
-## Commands and sources
+#### O7 full record: Commands and sources
 
 Principal sources:
 
@@ -128,9 +128,9 @@ A local `bun -e` probe compiled this placeholder source and passed it through
 `publicAngelView`: a charter containing `alice@example.test` and a
 `documentId` guard pinned to `private-doc-123`.
 
-## Verified results
+#### O7 full record: Verified results
 
-### Artifact and public-page boundary
+##### O7 full record: Artifact and public-page boundary
 
 - **Verified:** `angel.version.v2` canonical content has exactly
   `format`, `name`, `charter`, `children`, `providers`,
@@ -163,7 +163,7 @@ A local `bun -e` probe compiled this placeholder source and passed it through
   templates. Publishing the exact artifact restores verification but violates
   the requested disclosure boundary for valid current source.
 
-### Current public proof
+##### O7 full record: Current public proof
 
 - **Verified in code/tests:** the page can show a server-asserted association
   among a production Version, digest, canonical operation list, and rendered
@@ -186,7 +186,7 @@ A local `bun -e` probe compiled this placeholder source and passed it through
   trust page for a deployed Angel.
 - **Tests:** 65 focused tests passed, 0 failed.
 
-## Threat and field matrix
+#### O7 full record: Threat and field matrix
 
 | Candidate field | Review value | Threat/privacy result | Public decision |
 |---|---|---|---|
@@ -215,13 +215,13 @@ A local `bun -e` probe compiled this placeholder source and passed it through
 | Availability, health, gate alignment, timestamps, logs | Operator use | Operational state and timing disclosure | **Exclude** |
 | Fixed provenance copy | Explains origin | No leak, but prose is not schema evidence | **Exclude; document semantics outside payload** |
 
-## Recommendation
+#### O7 full record: Recommendation
 
 Do **not** publish the exact v2 artifact or reuse the demo projection as the
 minimum public bundle. Publish a closed, capability-only projection and call it
 a **public review summary**, not a verifiable artifact bundle.
 
-### Exact minimum public schema
+##### O7 full record: Exact minimum public schema
 
 ```json
 {
@@ -270,7 +270,7 @@ Contract details:
 - No optional extension bag is allowed. A later field requires a schema version
   and another threat review.
 
-### Explicit exclusions
+##### O7 full record: Explicit exclusions
 
 Never add: Account/handle/Angel names; charter; source/drafts/source paths;
 child/source/requirement names; guard fields or values; provider origin or
@@ -284,7 +284,7 @@ A full owner review remains authenticated/local: reviewed source plus exact
 artifact, digest, adapter pins, scopes, request templates, and deployment
 bindings. Public and owner review are separate claims.
 
-## Product implication
+#### O7 full record: Product implication
 
 - G11 cannot honestly say “full public review bundle” or “a stranger can verify
   the artifact.” The safe claim is: **“A public capability summary lists the
@@ -298,7 +298,7 @@ bindings. Public and owner review are separate claims.
   this schema is insufficient by design. That requires a new public-safe policy
   contract (or explicit opt-in disclosure), not another projection.
 
-## Remaining proof
+#### O7 full record: Remaining proof
 
 Before shipping the recommendation:
 
@@ -314,7 +314,7 @@ Before shipping the recommendation:
    outside the summary.
 5. Run a live anonymous GET after deployment and save the exact response.
 
-## Closure assessment
+#### O7 full record: Closure assessment
 
 **Evidence investigation: complete. Recommendation: close O7 to the reduced
 schema above and rename the deliverable “public review summary.”** A claim of a
@@ -323,15 +323,15 @@ current artifact/source contract and the required privacy exclusions.
 
 ---
 
-# Brief O9 — Round-2 self-hosting status
+### O9 full record
 
-## Question
+#### O9 full record: Question
 
 How should Round 2 describe self-hosting while separating source availability,
 portable contracts, protocol compatibility, implementation existence, support,
 and clean-room proof?
 
-## Method
+#### O9 full record: Method
 
 1. Read the Ledger O9, ID-07, G13, WS2, and Round-2 scenario boundaries.
 2. Read every ADR, with special attention to ADRs 0001, 0004, 0005, and 0007.
@@ -344,7 +344,7 @@ and clean-room proof?
 6. Searched for a self-host guide, clean-room attestation, conformance suite,
    upgrade/recovery procedure, and support commitment.
 
-## Commands and sources
+#### O9 full record: Commands and sources
 
 Principal sources:
 
@@ -380,7 +380,7 @@ rg -n -i 'self.host|clean.room|conformance|support|management contract' \
   README.md docs packages/core src tests
 ```
 
-## Verified results
+#### O9 full record: Verified results
 
 - **Source availability:** `exocognito/angelmcp` is publicly readable. The
   hosted repository has no repository-wide detected license. Public visibility
@@ -423,7 +423,7 @@ rg -n -i 'self.host|clean.room|conformance|support|management contract' \
   prove that current `angel.version.v2` plus the current management contract can
   be cleanly self-hosted.
 
-## Claim matrix
+#### O9 full record: Claim matrix
 
 | Layer | Verified claim Round 2 may make | Claim Round 2 must not make |
 |---|---|---|
@@ -441,12 +441,12 @@ rg -n -i 'self.host|clean.room|conformance|support|management contract' \
 | Support | “Unsupported; no self-host guide or support promise.” | “Supported self-hosting,” upgrades, recovery, SLA, or security response |
 | Local use | “Local and managed are separate target journeys.” | “Local serve is self-hosting” |
 
-## Recommendation
+#### O9 full record: Recommendation
 
 Round 2 should ship a status note only. It should not publish self-host setup
 instructions and should not add self-hosting to Round-2 acceptance.
 
-## Exact Round-2 status wording
+#### O9 full record: Exact Round-2 status wording
 
 > ### Self-hosting status — source available, not supported
 >
@@ -472,7 +472,7 @@ instructions and should not add self-hosting to Round-2 acceptance.
 > Self-host setup instructions can ship only after a separately scoped,
 > licensed clean-room deployment and conformance proof passes.
 
-## Product implication
+#### O9 full record: Product implication
 
 - Close ID-07 as an honest status note, not as a self-hosting feature.
 - G13 should keep “supported self-hosting” unproved and must not let “hosting is
@@ -484,7 +484,7 @@ instructions and should not add self-hosting to Round-2 acceptance.
 - Do not describe the hosted repository as open source until its root licensing
   is explicit.
 
-## Remaining proof to upgrade the claim
+#### O9 full record: Remaining proof to upgrade the claim
 
 A future self-hosting claim needs, at minimum:
 
@@ -502,7 +502,7 @@ A future self-hosting claim needs, at minimum:
    claiming cross-implementation compatibility.
 8. A stated support and security-maintenance boundary.
 
-## Closure assessment
+#### O9 full record: Closure assessment
 
 **Evidence investigation: complete. O9 can close now to the exact status-only
 wording above.** Supported or clean-room self-hosting remains a later outcome;

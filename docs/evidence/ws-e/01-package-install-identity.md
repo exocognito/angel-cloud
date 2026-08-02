@@ -46,16 +46,16 @@ Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
 Editorial disposition: the first draft of this record recommended closing O1 with scope control as an execution gate; it was corrected to keep O1 open because namespace ownership can invalidate the identity itself.
 
-# O1 evidence brief — Round-2 package and install identity
+### O1 full record
 
 **Investigated:** 2026-08-01  
 **Decision status:** provisional recommendation only; O1 remains open until namespace control is proved or the owner approves another identity.
 
-## Question
+#### O1 full record: Question
 
 What exact public package and install path should Angel Round 2 use, given the current `@smcllns/angel-core`, the candidate names `@angelmcp/cli` and `angelmcp`, package-manager prerequisites, and the proposed curl installer?
 
-## Method
+#### O1 full record: Method
 
 1. Read the canonical Product Ledger O1/C7/DF-029/DF-047/DF-048/LR-012 entries and the current and target install contracts.
 2. Inspected the root workspace, current package manifest, executable, exports, runtime imports, release proof, and public starter.
@@ -65,7 +65,7 @@ What exact public package and install path should Angel Round 2 use, given the c
 6. Probed the proposed Angel installer URLs and checked the official Bun, pnpm, and npm publication/provenance contracts.
 7. Did not publish, reserve, or change any package or repository file.
 
-## Commands and sources
+#### O1 full record: Commands and sources
 
 Representative commands:
 
@@ -102,9 +102,9 @@ Repository sources:
 - Registry records: [`@angelmcp/cli`](https://registry.npmjs.org/%40angelmcp%2Fcli), [`angelmcp`](https://registry.npmjs.org/angelmcp), and [`@smcllns/angel-core`](https://registry.npmjs.org/%40smcllns%2Fangel-core).
 - Official install/publication contracts: [Bun installation](https://bun.sh/docs/installation), [Bun global add](https://bun.sh/docs/pm/cli/add), [pnpm installation](https://pnpm.io/installation), [pnpm setup](https://pnpm.io/cli/setup), [npm scoped public packages](https://docs.npmjs.com/creating-and-publishing-scoped-public-packages/), and [npm provenance](https://docs.npmjs.com/generating-provenance-statements/).
 
-## Verified results
+#### O1 full record: Verified results
 
-### Current fact
+##### O1 full record: Current fact
 
 1. **Both candidate package records are absent now.** npm returned `404 Not found` for `@angelmcp/cli` and `angelmcp`. Exact-name registry search returned no `angelmcp` result. This proves absence, not reservation or guaranteed future acceptance.
 2. **The `@angelmcp` scope is not established in the public registry.** `GET /-/org/angelmcp/user` returned `404 {"error":"Scope not found"}` and the public user endpoint returned 404. The authenticated owner identity could not be checked: `pnpm whoami` was unauthorized and the 1Password service-account token returned 403. Therefore scope ownership is an exact, preserved gap.
@@ -120,7 +120,7 @@ Repository sources:
 12. **Bun already supplies both required roles.** Official Bun docs support `bun add --global <package>` for CLI tools, and the isolated registry-tarball proof passed. This removes Node/pnpm from the public install prerequisites while retaining the runtime the current CLI demonstrably needs.
 13. **No Angel curl installer exists.** `angelmcp.ai` is registered and delegated to Cloudflare nameservers, but it has no resolvable apex/custom-docs address record from the tested resolver. `https://angelmcp.ai/install.sh` could not resolve; `/install` and `/install.sh` both returned 404 on the live interim docs Worker. `docs/domain-architecture.md:102-103` also calls an install-script redirect a possible future surface, not current infrastructure.
 
-## Options
+#### O1 full record: Options
 
 | Option | Registry/current proof | Prerequisites | Fit with the product decision | Decision |
 |---|---|---|---|---|
@@ -131,7 +131,7 @@ Repository sources:
 | **`bun add --global @angelmcp/cli`** | Current CLI proven under Bun; Bun documents global CLI installs | Bun only | Smallest package-manager path and produces bare `angel` from an empty directory | **Canonical Round-2 install path** |
 | **`curl -fsSL https://angelmcp.ai/install.sh \| sh`** | URL does not exist or resolve today | Would need a maintained cross-platform installer, checksums/signing, upgrade/uninstall semantics | Useful later, but cannot be Round-2 evidence without building and independently proving another distribution system | Defer; do not document as shipped in Round 2 |
 
-## Recommendation
+#### O1 full record: Recommendation
 
 Publish one public user-facing package, **`@angelmcp/cli`**, and keep core separate from the public product contract. Start the new package at **`0.1.0`**. Make the canonical Round-2 install:
 
@@ -146,9 +146,9 @@ Do not use `@v2.1` as an npm version or dist-tag. It is a document/product targe
 
 Do not ship an `angelmcp` alias package. One public product package means one name to install and audit.
 
-## Exact Round-2 contract
+#### O1 full record: Exact Round-2 contract
 
-### Identity and boundary
+##### O1 full record: Identity and boundary
 
 - Public package: `@angelmcp/cli@0.1.0`.
 - Installed binary: `angel` on `PATH`.
@@ -156,7 +156,7 @@ Do not ship an `angelmcp` alias package. One public product package means one na
 - Internal core: a separate private/workspace implementation boundary, bundled into or compiled into the public CLI tarball. Round 2 must not require consumers to install `@smcllns/angel-core` or a second public core package.
 - Compatibility: leave `@smcllns/angel-core@0.3.0` available for existing consumers and the WS1 baseline. Do not silently repoint or remove it.
 
-### Installation
+##### O1 full record: Installation
 
 ```sh
 # Required first
@@ -175,7 +175,7 @@ angel --version               # must print 0.1.0 and exit 0
 - No curl installer claim in Round-2 docs.
 - A pnpm-local install may remain a contributor/starter alternative, but it is not the zero-state Round-2 path and must still state the Bun runtime requirement.
 
-### Publication
+##### O1 full record: Publication
 
 Before publication work starts:
 
@@ -187,7 +187,7 @@ Before publication work starts:
 6. Save registry SRI, tarball file/mode manifest, attestation URL, packed clean-consumer result, and public-starter result.
 7. Wait at least seven days after publication before the managed Round-2 clean-room run.
 
-### Acceptance
+##### O1 full record: Acceptance
 
 The package/install gate passes only when a fresh consumer with Bun—but no product clone, Node, pnpm, workspace link, seeded output, or old package—can:
 
@@ -198,7 +198,7 @@ The package/install gate passes only when a fresh consumer with Bun—but no pro
 5. verify the npm provenance attestation and tarball integrity; and
 6. prove no `@smcllns/angel-core` install appears in public journey docs.
 
-## Product implication
+#### O1 full record: Product implication
 
 Round 2 becomes a product CLI journey rather than a core-library journey. The package name says what users install; the bare `angel` command stays stable even if internal core/compiler boundaries change. Bun serves as both package manager and runtime, cutting the current Bun + pnpm/Node prerequisite stack to one tool.
 
@@ -213,7 +213,7 @@ After approval, the owning docs that must change together are:
 
 Teach the full install once in the user manual and link from the other surfaces, per `AGENTS.md`.
 
-## Risks and exact gaps
+#### O1 full record: Risks and exact gaps
 
 1. **Scope race:** `@angelmcp` is not created or controlled. A 404 is not a reservation. This is the first publication prerequisite.
 2. **Candidate package absent:** the exact candidate install cannot run until `@angelmcp/cli@0.1.0` exists. Substitute Bun-global mechanics passed with the current registry tarball; the actual candidate must still pass the acceptance above.
@@ -224,7 +224,7 @@ Teach the full install once in the user manual and link from the other surfaces,
 7. **Curl remains unproved:** DNS, host route, script, signing/checksum, architecture matrix, upgrade, and uninstall behavior are all absent.
 8. **Platform matrix:** O1 tested macOS arm64. Round-2 Linux and any Windows claim require their own clean tests; O2 owns Linux storage/OAuth evidence, not this package identity decision.
 
-## Saved-evidence candidates
+#### O1 full record: Saved-evidence candidates
 
 Promote these as durable `docs/evidence/` records during implementation rather than relying on terminal transcripts:
 
@@ -235,7 +235,7 @@ Promote these as durable `docs/evidence/` records during implementation rather t
 - `wse-o1-install-host-baseline.json` — apex/docs DNS and `/install{,.sh}` responses.
 - Future `round2-cli-release.json` — `@angelmcp/cli@0.1.0` SRI, provenance attestation, GitHub workflow/run/commit, seven-day maturity time, and cross-platform clean-consumer results.
 
-## Is evidence enough to close O1?
+#### O1 full record: Is evidence enough to close O1?
 
 **No—not yet.** The evidence distinguishes the working legacy package from the preferred product identity and shows why Bun-global is the smallest feasible package-manager path. O1 remains open until control of `@angelmcp` is proved or the owner approves another identity. Package implementation/publication, seven-day maturity, provenance, docs migration, and clean platform tests remain later Round-2 execution gates.
 

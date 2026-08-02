@@ -40,22 +40,22 @@ All days-long copy must change. Login shows the ten-minute expiry and one resend
 
 Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
-# Brief O4 — Email magic-link lifetime and SMS scope
+### O4 full record
 
-## Question
+#### O4 full record: Question
 
 How long should one single-use email magic link remain valid, and does SMS belong in Dogfood Round 2?
 
-## Method
+#### O4 full record: Method
 
 1. Reconciled the approved Product Ledger with the unapproved APRD and target CLI guide.
 2. Checked the intended auth framework's current default and other current passwordless defaults.
 3. Compared abuse window, usability, replay, clock handling, delayed email, and channel risk.
 4. Treated NIST's limits as security evidence, not as a claim that email magic links meet NIST out-of-band authentication requirements. NIST explicitly says email must not be used for out-of-band authentication.
 
-## Sources and commands
+#### O4 full record: Sources and commands
 
-### Repository sources
+##### O4 full record: Repository sources
 
 - `docs/product-ledger.html`: O4, C4, DF-049, LR-011, PD-01, C02, and G10.
 - `docs/aprd/angel-cloud-aprd.html`, §4.1: target Better Auth + D1, “days-long” links, optional passkey, and recovery-contact intent. This is an unapproved draft and conflicts with the Ledger.
@@ -72,7 +72,7 @@ rg -n -i '(O4|magic|email|sms|auth expiry|days-long)' \
 pnpm exec bun test tests/cloud/oauth-state-registry.test.ts
 ```
 
-### Authoritative external sources
+##### O4 full record: Authoritative external sources
 
 - [Better Auth magic-link plugin](https://www.better-auth.com/docs/plugins/magic-link): `expiresIn` defaults to **300 seconds (5 minutes)**; current redemption is atomic and single-use. Better Auth warns that multi-instance secondary storage needs an atomic get-and-delete primitive.
 - [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html): URL tokens must be random, securely stored, single-use, expire after an appropriate period, use HTTPS, avoid Host-header URL construction, prevent referrer leakage, and be rate-limited.
@@ -85,16 +85,16 @@ pnpm exec bun test tests/cloud/oauth-state-registry.test.ts
 
 External pages were fetched directly with `curl -L`; relevant statements were mechanically searched with `rg`.
 
-## Verified results
+#### O4 full record: Verified results
 
-### Product truth
+##### O4 full record: Product truth
 
 - **Verified:** O4 is open because the APRD says days while the owner/Ledger says minutes.
 - **Verified:** The intended framework is Better Auth on Control with D1, but Better Auth is not present in `package.json`, no auth migration exists, and no public login implementation exists.
 - **Verified:** The target CLI requires an email browser hop and a one-time login nonce. Login must create no Angel, Connection, key, Version, deployment, receipt, or provider object.
 - **Verified:** SMS is mentioned only as unresolved product intent. No SMS provider, phone store, consent flow, recovery flow, or test exists.
 
-### Risk comparison
+##### O4 full record: Risk comparison
 
 | Expiry | Abuse and replay | Usability and email delay | Evidence | Assessment |
 | --- | --- | --- | --- | --- |
@@ -103,7 +103,7 @@ External pages were fetched directly with `curl -L`; relevant statements were me
 | 15–60 minutes | 1.5–6× the recommended exposure window | More tolerant of delayed mail | Supabase defaults to 1 hour | Too broad for Angel's security posture without measured delivery need |
 | Days | A copied, logged, forwarded, or compromised message stays useful long after intent | Covers pathological SMTP delay, but stale mail still produces confusing sign-ins | APRD draft only | Reject |
 
-### Abuse, replay, clock, and delay findings
+##### O4 full record: Abuse, replay, clock, and delay findings
 
 - A long expiry does not solve SMTP delay safely. A delayed or expired message should direct the owner to request a fresh link.
 - Single-use must mean atomic consumption before session or CLI-token issuance. A read followed by a separate delete is not enough under concurrent redemption.
@@ -112,7 +112,7 @@ External pages were fetched directly with `curl -L`; relevant statements were me
 - Generic request responses and per-email/per-IP throttles are needed to limit account discovery, inbox flooding, and token guessing. These controls do not justify a longer expiry.
 - Mail scanners can pre-open links. If Round-2 evidence shows scanner consumption, use an explicit human confirmation step or a short code; do not lengthen the link lifetime.
 
-## Alternatives
+#### O4 full record: Alternatives
 
 1. **Use Better Auth's 5-minute default.** Simplest and strictest. Rejected as the recommendation because the CLI → browser → inbox → browser → CLI path adds more handoff time than a normal web-only sign-in.
 2. **Use 10 minutes.** One explicit override, supported by current secure comparators, with limited added exposure. Recommended.
@@ -120,12 +120,12 @@ External pages were fetched directly with `curl -L`; relevant statements were me
 4. **Use days.** Rejected. It resolves delivery trouble by preserving an authentication secret far too long.
 5. **Add SMS in Round 2.** Rejected. It adds phone-number personal data, a telephony provider, deliverability/cost abuse, number-recycling and SIM-swap handling, and recovery policy before the email path has passed one clean-room run.
 
-## Recommendation
+#### O4 full record: Recommendation
 
 - **Magic-link expiry: exactly 10 minutes (600 seconds).**
 - **SMS: not in Dogfood Round 2.** Keep it deferred. This does not permit zero recovery: retain the approved email recovery path and optional post-sign-in passkey direction, but do not add a phone channel to this milestone.
 
-## Exact contract
+#### O4 full record: Exact contract
 
 1. At successful token-record commit, set `expiresAt = issuedAt + 600 seconds` using the server clock.
 2. Redemption is valid only while `serverNow < expiresAt`; equality is expired. Add no client-clock grace.
@@ -137,18 +137,18 @@ External pages were fetched directly with `curl -L`; relevant statements were me
 8. Redirect targets are fixed/allowlisted; the redemption response uses `Referrer-Policy: no-referrer` and loads no third-party content before the token leaves the URL.
 9. No SMS, phone number, SMS recovery contact, or telephony dependency is part of Round 2.
 
-## Product implication
+#### O4 full record: Product implication
 
 Replace every “days-long” target statement with “single-use, 10 minutes.” Login copy must show the expiry and a clear resend path. Round-2 acceptance must test exact-time expiry, concurrent replay, newest-link-only behavior, wrong login transaction, delayed email/resend, generic unknown-email response, and no management/provider mutation on failure.
 
-## Risks
+#### O4 full record: Risks
 
 - Email login remains mailbox-dependent and is not phishing-resistant. NIST's 10-minute OOB rule does not make email a NIST-approved OOB authenticator.
 - A 10-minute window may still fail for greylisting or a slow inbox. The product should measure this in dogfood and shorten or lengthen only from saved delivery evidence.
 - Atomic single-use depends on the actual D1/Better Auth transaction path; framework configuration must be tested rather than assumed.
 - Link-scanning products may consume a simple GET link before the human sees it.
 
-## Closure assessment
+#### O4 full record: Closure assessment
 
 **Decision-ready; recommend closing O4 with the contract above.** The evidence resolves minutes versus days and SMS scope. Implementation and measured delivery proof remain WS2 work; they do not keep the product decision open.
 

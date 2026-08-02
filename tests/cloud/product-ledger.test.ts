@@ -83,7 +83,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toMatch(
       /data-index-key="WS-E" data-index-plan="ACTIVE" data-index-approval="APPROVED"/,
     );
-    expect(ledger).toContain("Seven briefs exist and WS-E changed no product behavior");
+    expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(count('<details id="index-')).toBe(keys.length);
     expect(ledger).toContain("Project Index");
