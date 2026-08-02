@@ -58,7 +58,7 @@ G11 narrows from “full public review bundle” to public capability summary. T
 # WS-E boundary evidence: O7 and O9
 
 Evidence date: 2026-08-01  
-Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`  
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 Scope: evidence only; no product or repository files changed.
 
 ---

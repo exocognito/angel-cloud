@@ -41,7 +41,7 @@ Target docs must replace “OS keychain” with the exact headless vault boundar
 # O2 evidence brief — headless Linux local OAuth custody
 
 Date: 2026-08-01  
-Repository evidence: `6cc2ed5abe084d9ed8a62584583f2caae0d0e980` (`evidence/ws-e-decision-briefs`)
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
 ## Question
 

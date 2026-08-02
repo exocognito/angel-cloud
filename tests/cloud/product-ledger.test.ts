@@ -528,8 +528,13 @@ describe("Angel Product Ledger contract v0.1 application", () => {
         continue;
       }
       if (/^(?:#|https?:|mailto:)/.test(href)) continue;
-      const target = new URL(href, ledgerUrl);
+      const [relativePath, fragment] = href.split("#", 2);
+      const target = new URL(relativePath ?? "", ledgerUrl);
       expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
+      if (fragment && target.pathname.endsWith(".md")) {
+        const markdown = readFileSync(target, "utf8");
+        expect(headingSlugs(markdown).has(decodeURIComponent(fragment)), `Ledger heading does not resolve: ${href}`).toBe(true);
+      }
     }
   });
 

@@ -38,7 +38,7 @@ Delete Account needs a cross-Worker internal job, not demo reset. Owner copy mus
 - Verify every created runtime is discoverable; add an ownership index if the current management list cannot prove this.
 - Test `storage.deleteAll()` against Cloudflare 30-day PITR semantics and record the deployed log plan/retention/per-Account erasure limits.
 - O10 must accept the non-resolving permanent-handle tombstone and the rule that fresh signup uses a new handle.
-- Implement idempotent Broker-before-Gateway cascade, distinct-grant revocation, vault/control/auth deletion, and non-resolving handle tombstones.
+- Implement idempotent Broker-before-Gateway cascade, project/user-grant revocation, vault/control/auth deletion, and non-resolving handle tombstones. Test sibling client IDs within one Google Cloud project before freezing deletion copy.
 - Prove every old session/token/key/coordinate/read fails, cloud stores are empty, provider grants are revoked/invalid, fresh signup works without admin help, and local/provider-owned state remains untouched.
 
 ## Evidence record
@@ -105,7 +105,7 @@ pnpm exec bun test \
 
 - [Cloudflare Durable Object storage](https://developers.cloudflare.com/durable-objects/best-practices/access-durable-objects-storage/): a DO that has stored data only fully ceases to exist after `storage.deleteAll()`; SQLite DOs offer point-in-time recovery for up to 30 days.
 - [Cloudflare Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/): enabled observability stores invocation logs, request/response metadata, errors, and custom logs. Current documented retention is 3 days on Free and 7 days on Paid, with a 7-day maximum.
-- [Google OAuth token revocation](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke): revocation is part of removal; it invalidates the client/user grant's scopes and issued tokens and may take time to take full effect.
+- [Google OAuth token revocation](https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke): revocation is part of removal; it invalidates the Google Cloud project/user grant's scopes and issued tokens across all client IDs in the same Google Cloud project and may take time to take full effect.
 - Better Auth's current docs describe core `user`, `session`, `account`, and `verification` stores and plugin-specific tables. **These are not current Angel stores:** no Better Auth dependency, config, D1 binding, migration, or exact plugin schema exists in this repository.
 
 ## Verified current inventory
@@ -183,7 +183,7 @@ The Broker's root `CREDENTIAL_KEK` is a platform Worker secret, not an Account o
 ### 8. External Google state
 
 - Google holds the OAuth grant and token status. Current Connection removal revokes the Google grant first, then removes the Connection from Broker custody and Control summaries.
-- Google revocation is client/user grant-wide, so it may invalidate sibling Connections made with the same OAuth client and Google identity.
+- Google revocation is Google Cloud project/user grant-wide, so it may invalidate sibling Connections made with any client ID in the same Google Cloud project for that user.
 - The owner-created Google OAuth client, consent-screen configuration, and Google Cloud project are owner/provider state, not Angel Cloud objects.
 - Gmail drafts/messages, Docs, Google account activity, and other provider data are provider-owned state. Account deletion must not erase them and generally cannot.
 
@@ -268,8 +268,8 @@ The only recommended product retention exception is a **minimal non-resolving re
 
 ### Provider and custody removal
 
-7. Before destroying refresh tokens, attempt revocation for every distinct external Google client/user grant. Treat provider confirmation that a grant is already invalid as success; retry transport/provider failures while the Account remains disabled.
-8. Warn that Google revocation is grant-wide and may affect sibling uses of the same Google OAuth client and identity.
+7. Before destroying refresh tokens, attempt revocation for every distinct external Google Cloud project/user grant. Treat provider confirmation that a grant is already invalid as success; retry transport/provider failures while the Account remains disabled.
+8. Warn that Google revocation is project/user-wide and may affect all client IDs in the same Google Cloud project for that user.
 9. After revocation completes, call `storage.deleteAll()` on the Account's CredentialVault. Remove the wrapped DEK, every Provider App, client ID/secret/scopes, every Connection, subject/nickname/identity/health field, and every encrypted refresh token.
 10. Do not delete the owner's Google Cloud project/OAuth client or provider content.
 
@@ -314,7 +314,7 @@ The only recommended product retention exception is a **minimal non-resolving re
 ### Product and operational risks
 
 - The permanent-handle rule conflicts with a literal claim that “nothing remains.” Product copy must say “all live Account data is deleted; the old handle remains permanently unavailable.”
-- Google revocation can affect sibling grants for the same OAuth client/user and may take time to take effect.
+- Google revocation can affect sibling grants for the same Google Cloud project/user and may take time to take effect.
 - Deleting auth state before creating an internal retryable job can strand a partial cascade.
 - Management state is the only current list of gate runtime IDs. A previously orphaned gate absent from that list would not be found by a naive cascade. No orphan index/store exists; do not claim one. WS2 must prove that every created runtime is discoverable or add an explicit ownership index.
 - Current expired OAuth states and idempotency records have no sweeper; Account deletion must remove them directly.

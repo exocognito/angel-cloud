@@ -12,13 +12,13 @@ What exact public package and install path does Round 2 use?
 
 ## Method
 
-Compared the live `@smcllns/angel-core@0.3.0` contract with the unclaimed `@angelmcp/cli` and `angelmcp` names. Tested current package packing and clean-consumer CLI behavior, a pnpm global install, npm registry metadata, package provenance, the merged public starter, and the proposed install host. Bun-global remains documentation-backed and unproved until the candidate package exists. No package was published or reserved.
+Compared the live `@smcllns/angel-core@0.3.0` contract with the unclaimed `@angelmcp/cli` and `angelmcp` names. Tested current package packing and clean-consumer CLI behavior, pnpm and Bun global installs against the registry tarball, npm registry metadata, package provenance, the merged public starter, and the proposed install host. Bun-global registry-tarball install passed; the candidate package itself remains unbuilt and unpublished. No package was published or reserved.
 
 ## Verified results
 
 - `@smcllns/angel-core@0.3.0` works, but its personal namespace and combined core/CLI surface are the WS1 compatibility baseline, not the Round-2 product identity.
 - `@angelmcp/cli` and `angelmcp` were absent from npm when tested; absence does not reserve either name or the `@angelmcp` scope.
-- Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested until the candidate package exists. Canonical pnpm-global install adds avoidable Node/pnpm setup.
+- Bun is the proven runtime, and an isolated Bun-global install of the current registry tarball exposed bare `angel` and ran the expected CLI usage path. The candidate package itself remains unbuilt. Canonical pnpm-global install adds avoidable Node/pnpm setup.
 - No Angel curl installer, install route, checksum/signing contract, upgrade path, or uninstall path exists.
 
 ## Decision outcome
@@ -41,6 +41,8 @@ The public journey becomes a product CLI journey with one prerequisite, Bun, rat
 - Keep public docs free of `@smcllns/angel-core` install instructions.
 
 ## Evidence record
+
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
 
 Editorial disposition: the first draft of this record recommended closing O1 with scope control as an execution gate; it was corrected to keep O1 open because namespace ownership can invalidate the identity itself.
 
@@ -76,6 +78,8 @@ curl -fsSL https://registry.npmjs.org/@smcllns/angel-core/-/angel-core-0.3.0.tgz
 pnpm add --ignore-scripts --save-exact file:<registry-tarball>
 pnpm add --global --global-dir <isolated-dir> --ignore-scripts file:<registry-tarball>
 pnpm exec angel
+BUN_INSTALL=<isolated-bun-dir> bun add --global file:<registry-tarball>
+PATH=<isolated-bun-dir>/bin:$PATH angel
 node node_modules/@smcllns/angel-core/src/scripts/angel.ts
 git clone --depth 1 https://github.com/exocognito/angels.git <temp>
 pnpm exec angel build gmail-read-and-draft
@@ -109,11 +113,11 @@ Repository sources:
 5. **Bun is a hard runtime prerequisite today.** Clean Bun imports of all three exports passed. The `angel` binary ran and printed its usage error under Bun. With Bun removed from `PATH`, the bin exited 127 (`bun: not found`). Direct Node 24.14.1 execution and all Node imports failed with `ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING` for TypeScript under `node_modules`.
 6. **The existing package's registry metadata is stale.** The published 0.3.0 tarball points to `https://github.com/exocognito/angels.git`, `packages/angel-core`; the current workspace manifest correctly points to `https://github.com/exocognito/angelmcp.git`, `packages/core`.
 7. **0.3.0 has no npm provenance attestation.** Registry metadata has no `dist.attestations`, and npm's attestation endpoint returned 404. This matches the Product Ledger gap.
-8. **Clean external-consumer behavior passes once the tarball is installable.** A clean local tarball install exposed the bin and all package exports. An isolated pnpm global install exposed bare `angel` after configuring `PNPM_HOME` and its v11 `bin` subdirectory.
+8. **Clean external-consumer behavior passes once the tarball is installable.** A clean local tarball install exposed the bin and all package exports. Isolated pnpm and Bun global installs both exposed bare `angel`. pnpm required configuring `PNPM_HOME` and its v11 `bin` subdirectory. Bun installed two packages in 343 ms; the bare binary reached the expected current usage error under Bun 1.3.11.
 9. **The merged public starter still builds exactly.** Fresh `exocognito/angels@2a635bf` plus the registry 0.3.0 tarball built `gmail-read-and-draft` with digest `11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4` and artifact SHA-256 `a122ce265d3daf51aec681866cc962ba8ec890073f44707ab62e85d18cb61411`, matching `docs/evidence/ws1-starter-proof.json`.
 10. **A direct registry install is temporarily blocked on this machine by the managed seven-day package-age policy.** npm says 0.3.0 was published `2026-07-29T23:26:04.037Z`; `pnpm add @smcllns/angel-core@0.3.0` rejected it as too recent. The tarball clean test passed. Round-2 dogfood must wait seven days after publication rather than add a policy exception.
 11. **pnpm global adds avoid a project clone but add setup burden.** pnpm 11 global bins live in `PNPM_HOME/bin`; the first isolated attempt failed until that path was configured. Current pnpm docs also require Node 22+ unless pnpm itself came from the standalone installer. Since Angel still needs Bun, a pnpm-global path asks users for two toolchains.
-12. **Bun already supplies both required roles.** Official Bun docs support `bun add --global <package>` for CLI tools. This removes Node/pnpm from the public install prerequisites while retaining the runtime the current CLI demonstrably needs.
+12. **Bun already supplies both required roles.** Official Bun docs support `bun add --global <package>` for CLI tools, and the isolated registry-tarball proof passed. This removes Node/pnpm from the public install prerequisites while retaining the runtime the current CLI demonstrably needs.
 13. **No Angel curl installer exists.** `angelmcp.ai` is registered and delegated to Cloudflare nameservers, but it has no resolvable apex/custom-docs address record from the tested resolver. `https://angelmcp.ai/install.sh` could not resolve; `/install` and `/install.sh` both returned 404 on the live interim docs Worker. `docs/domain-architecture.md:102-103` also calls an install-script redirect a possible future surface, not current infrastructure.
 
 ## Options
@@ -212,7 +216,7 @@ Teach the full install once in the user manual and link from the other surfaces,
 ## Risks and exact gaps
 
 1. **Scope race:** `@angelmcp` is not created or controlled. A 404 is not a reservation. This is the first publication prerequisite.
-2. **Candidate package absent:** no clean Bun-global registry install can run until `@angelmcp/cli@0.1.0` exists. The recommended command is supported by Bun's contract, while the actual candidate must still pass the acceptance above.
+2. **Candidate package absent:** the exact candidate install cannot run until `@angelmcp/cli@0.1.0` exists. Substitute Bun-global mechanics passed with the current registry tarball; the actual candidate must still pass the acceptance above.
 3. **Seven-day gate:** publishing immediately before dogfood will make this machine reject the package. Schedule the release lead time.
 4. **Runtime declaration:** current 0.3.0 has no `engines` field despite requiring Bun. The new manifest and README must state the same tested minimum.
 5. **Internal-core packaging:** the repo has not yet split CLI from core. The public package must not leak a second required public install or workspace-only link.

@@ -55,16 +55,14 @@ describe("WS-E evidence-only decision closure", () => {
         expect(brief).toContain("Outcome: exact gap");
         expect(brief).not.toContain("enough evidence to close O1");
         expect(brief).not.toContain("O1 should close");
-        expect(brief).toContain("a pnpm global install");
-        expect(brief).toContain("Bun-global remains documentation-backed and unproved");
+        expect(brief).toContain("pnpm and Bun global installs");
+        expect(brief).toContain("Bun-global registry-tarball install passed");
         expect(brief).toContain("the first draft of this record recommended closing O1");
         expect(brief).not.toContain("the investigator recommended closing O1");
         const canonical = brief.split("## Evidence record")[0] ?? "";
         expect(canonical).not.toContain("- Control the `@angelmcp` npm scope");
       } else expect(brief).toContain("Outcome: close");
-      if ((decisions as readonly string[]).some((decision) => ["O3", "O4", "O5", "O6"].includes(decision))) {
-        expect(brief).toContain("Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`");
-      }
+      expect(brief).toContain("Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`");
     }
   });
 
@@ -126,10 +124,14 @@ describe("WS-E evidence-only decision closure", () => {
     expect(linuxBrief).not.toContain("callback half of LR-009/O3");
     expect(linuxBrief).toContain("VM suffix uses UTC date 2026-08-02; the evidence run began on 2026-08-01 in America/Los_Angeles");
     const packageBrief = readFileSync(join(root, "docs/evidence/ws-e/01-package-install-identity.md"), "utf8");
-    expect(packageBrief).toContain("Bun is the proven runtime and documents global CLI installs; the Bun-global path is untested");
+    expect(packageBrief).toContain("an isolated Bun-global install of the current registry tarball exposed bare `angel`");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(deletionBrief).toContain("local provider OAuth tokens in the Angel-owned encrypted vault");
+    expect(deletionBrief).toContain("project/user grant");
+    expect(deletionBrief).toContain("all client IDs in the same Google Cloud project");
+    expect(deletionBrief).toContain("Test sibling client IDs within one Google Cloud project");
+    expect(deletionBrief).not.toContain("client/user grant");
     expect(deletionBrief).not.toContain("local provider OAuth tokens in the OS keychain");
     expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
     const o7 = ledger.match(/<details id="decision-O7"[\s\S]*?<\/details>/)?.[0] ?? "";
@@ -163,17 +165,30 @@ describe("WS-E evidence-only decision closure", () => {
     expect(c10).toContain('href="evidence/ws-e/05-replay-syntax.md"');
     expect(ledger).toContain("WS-E decision evidence briefs 1–7");
     expect(ledger).not.toMatch(/proposed (?:Product Ledger )?contract v0\.1/i);
+    const proposedWs2 = [...ledger.matchAll(/<tr data-learning-id="[^"]+"[^>]+data-disposition="PROPOSED"[^>]+data-destination="WS2"[^>]*>[\s\S]*?<\/tr>/g)].map((match) => match[0]);
+    expect(proposedWs2).toHaveLength(43);
+    for (const row of proposedWs2) {
+      expect(row).toContain('data-learning-blocker="O10 blocks WS2 approval."');
+      expect(row).toContain("<strong>Decisions or blockers</strong><div>O10 blocks WS2 approval.</div>");
+    }
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
     const restamped = {
       index: ["WS2", "M-DF2"],
-      experience: ["EW1", "EW2", "EW3", "EW4", "EW5", "EW6"],
+      experience: ["EW1", "EW2", "EW3", "EW4", "EW6"],
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13"],
       deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
-      interface: ["SI1", "SI2", "SI3", "SI4", "SI5", "SI6"],
-      machinery: ["MW1", "MW2", "MW3", "MW4", "MW5", "MW6", "MW7", "MW9"],
+      interface: ["SI5"],
     } as const;
     expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · WS1 release proof \+ WS-E evidence"/);
+    for (const key of ["SI1", "SI2", "SI3", "SI4", "SI6"]) expect(ledger).toMatch(new RegExp(
+      `data-interface-key="${key}"[^>]+data-interface-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
+    ));
+    for (const key of ["MW1", "MW2", "MW3", "MW4", "MW5", "MW6", "MW7", "MW9"]) expect(ledger).toMatch(new RegExp(
+      `data-machinery-key="${key}"[^>]+data-machinery-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
+    ));
+    expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-last-verified="2026-08-01 · WS0 page proof \+ WS-E privacy review"/);
+    expect(ledger).toMatch(/data-experience-key="EW5"[^>]+data-experience-last-verified="2026-08-01 · M1 product evidence \+ WS-E review"/);
     for (const key of ["S1", "S2"]) expect(ledger).toMatch(new RegExp(
       `data-scenario-key="${key}"[^>]+data-scenario-last-verified="2026-08-01 · Sam owner decision \\+ WS-E evidence"`,
     ));
