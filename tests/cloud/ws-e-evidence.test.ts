@@ -127,6 +127,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(syntaxBrief).toContain("Angel-owned encrypted vault");
     expect(syntaxBrief).not.toContain("machine credential store");
     expect(syntaxBrief).not.toContain("O2 must prove the supported Linux path");
+    expect(syntaxBrief).toContain("--control https://api.angelmcp.ai");
+    expect(syntaxBrief).not.toContain("--control https://control.angelmcp.ai");
+    expect(syntaxBrief).toContain("Reconcile the target guide's `--control` host with the settled host table");
     const linuxBrief = readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8");
     expect(linuxBrief).toContain("callback half of LR-009, tracked as Ledger contradiction C16");
     expect(linuxBrief).not.toContain("callback half of LR-009/O3");
@@ -138,6 +141,8 @@ describe("WS-E evidence-only decision closure", () => {
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(deletionBrief).toContain("local provider OAuth tokens in the Angel-owned encrypted vault");
+    expect(deletionBrief).toContain("local files and the Angel-owned encrypted vault");
+    expect(deletionBrief).not.toContain("local files/keychain entries");
     expect(deletionBrief).toContain("project/user grant");
     expect(deletionBrief).toContain("all client IDs in the same Google Cloud project");
     expect(deletionBrief).toContain("Test sibling client IDs within one Google Cloud project");
@@ -162,6 +167,12 @@ describe("WS-E evidence-only decision closure", () => {
     expect(replayBrief).toContain("Product Ledger contradiction C13/LR-018");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
     expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
+    for (const key of ["DF-026", "LR-010"]) {
+      const row = ledger.match(new RegExp(`<tr data-learning-id="${key}"[\\s\\S]*?<\\/tr>`))?.[0] ?? "";
+      expect(row).toContain('data-learning-source="evidence/ws-e/06-account-deletion.md"');
+      expect(row).toContain('href="evidence/ws-e/06-account-deletion.md"');
+      expect(row).toContain("new handle");
+    }
     const df048 = ledger.match(/<tr data-learning-id="DF-048"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df048).toContain("Round 2 defers curl; no installer enters WS2");
     expect(df048).not.toContain("if it reduces clean-room failure");

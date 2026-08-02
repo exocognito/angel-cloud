@@ -42,6 +42,7 @@ Local can remain account-free and cloud can remain separately authenticated. The
 - Define local and cloud profile/config schemas, exact help, outputs, failures, idempotency, and safe browser handoffs.
 - Prove omitted/both flags fail before side effects and local/cloud never inspect or fall back to each other.
 - Remove the target guide's implicit binding mutation; binding needs an Angel/requirement-aware command or explicit file edit.
+- Reconcile the target guide's `--control` host with the settled host table before approval.
 
 ## Evidence record
 
@@ -332,7 +333,7 @@ must not reuse the local grant, old Account state, or local credential profile.
 ```sh
 bun add --global @angelmcp/cli@0.1.0 # pending O1
 
-angel account login --control https://control.angelmcp.ai --account <fresh-handle>
+angel account login --control https://api.angelmcp.ai --account <fresh-handle>
 angel create draft-cloud-9p4r --template gmail-draft-without-send
 angel build draft-cloud-9p4r
 angel apps connect google --cloud \

@@ -296,7 +296,7 @@ The only recommended product retention exception is a **minimal non-resolving re
     - Google grants are revoked or provider-confirmed invalid;
     - gate, vault, and Account DO storage is empty/deleted;
     - a fresh signup succeeds without admin help;
-    - local files/keychain entries and provider content remain untouched and are named to the owner.
+    - local files and the Angel-owned encrypted vault remain untouched, and provider content remains untouched and are named to the owner.
 
 ## Retention exceptions and risks
 
