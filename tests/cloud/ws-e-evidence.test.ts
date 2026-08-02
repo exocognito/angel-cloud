@@ -1,21 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { headingSlugs } from "./markdown-slugs";
 
 const root = join(import.meta.dir, "../..");
 const ledger = readFileSync(join(root, "docs/product-ledger.html"), "utf8");
 const roadmap = readFileSync(join(root, "ROADMAP.md"), "utf8");
 
-const markdownAnchors = (source: string) => {
-  const seen = new Map<string, number>();
-  return new Set([...source.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) => {
-    const base = (match[1] ?? "").trim().toLowerCase().replace(/[`*]/g, "")
-      .replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
-    const count = seen.get(base) ?? 0;
-    seen.set(base, count + 1);
-    return count === 0 ? base : `${base}-${count}`;
-  }));
-};
 const briefs = [
   ["01-package-install-identity.md", ["O1"]],
   ["02-linux-oauth-storage.md", ["O2"]],
@@ -28,6 +19,8 @@ const briefs = [
 
 describe("WS-E evidence-only decision closure", () => {
   test("ships exactly seven decision-grade evidence briefs", () => {
+    expect(headingSlugs("```sh\n# not-a-heading\n```\n## real-heading"))
+      .toEqual(new Set(["real-heading"]));
     for (const [file, decisions] of briefs) {
       const path = join(root, "docs/evidence/ws-e", file);
       expect(existsSync(path), `${file} must exist`).toBe(true);
@@ -48,7 +41,7 @@ describe("WS-E evidence-only decision closure", () => {
         if (!fragment) continue;
         expect(fragment).not.toMatch(/^L\d/);
         const targetSource = readFileSync(resolvedPath, "utf8");
-        if (resolvedPath.endsWith(".md")) expect(markdownAnchors(targetSource).has(fragment)).toBe(true);
+        if (resolvedPath.endsWith(".md")) expect(headingSlugs(targetSource).has(fragment)).toBe(true);
         else if (resolvedPath.endsWith(".html")) expect(targetSource).toContain(`id="${fragment}"`);
       }
       if ((decisions as readonly string[]).includes("O1")) {
@@ -168,8 +161,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(lr006).toContain('href="evidence/ws1-core-history.json"');
     expect(lr006).toContain('href="evidence/ws1-release-baseline.json"');
     const manual = readFileSync(join(root, "docs/user-manual.md"), "utf8");
-    expect(manual).toMatch(/The public Angel page currently renders charter text and `argGuards` field names\s+and literal values/);
+    expect(manual).toContain("Before writing `charter` or `argGuards`, read");
     expect(manual).toContain("faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt");
+    expect(manual).not.toContain("renders charter text");
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);

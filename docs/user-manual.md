@@ -212,9 +212,8 @@ Three top-level keys:
   enforced; only `tools` and their guards are.
 - Exactly one of `tools` or `angels` — never both, never neither.
 
-The public Angel page currently renders charter text and `argGuards` field names
-and literal values. Keep private content out; the final privacy treatment is
-undecided ([current public boundary](faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)).
+Before writing `charter` or `argGuards`, read the
+[current public boundary](faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt).
 
 **Direct form** (`tools:`). Each entry is a canonical operation name, or a
 mapping with `tool` and optional `argGuards`:

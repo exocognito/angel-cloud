@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
+import { headingSlugs } from "./markdown-slugs";
 
 const ledgerUrl = new URL("../../docs/product-ledger.html", import.meta.url);
 const ledger = readFileSync(ledgerUrl, "utf8");
@@ -32,30 +33,6 @@ const recordBlocks = (tag: string, attribute: string): string[] =>
     `<${tag}[^>]*${attribute}="[^"]+"[^>]*>[\\s\\S]*?</${tag}>`,
     "g",
   ))].map((match) => match[0]);
-
-const headingSlugs = (markdown: string): Set<string> => {
-  const slugs = new Set<string>();
-  let inFence = false;
-  for (const line of markdown.split("\n")) {
-    if (/^\s*(```|~~~)/.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
-    const heading = line.match(/^#{1,4}\s+(.*)$/)?.[1];
-    if (!heading) continue;
-    const text = heading
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-      .replace(/[`*]/g, "")
-      .replace(/\b_([^_]+)_\b/g, "$1");
-    const base = text.trim().toLowerCase().replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
-    let slug = base;
-    let suffix = 0;
-    while (slugs.has(slug)) slug = `${base}-${++suffix}`;
-    slugs.add(slug);
-  }
-  return slugs;
-};
 
 const truthStates = new Set(["LIVE", "PARTIAL", "BROKEN", "NOT BUILT"]);
 const planStates = new Set(["COMPLETE", "ACTIVE", "NEXT", "BLOCKED", "LATER"]);
