@@ -48,6 +48,10 @@ writing a new record that supersedes the old one, never editing the old one.
 | [0004](0004-account-handles.md) | Account handles are permanent, renameable once, and never released | 2026-07-28 | Partly | [#12](https://github.com/exocognito/angelmcp/issues/12) |
 | [0005](0005-preview-binds-its-own-connections.md) | Preview binds its own Connections; sharing production's must be asked for | 2026-07-28 | Yes | [#3](https://github.com/exocognito/angelmcp/issues/3) |
 | [0006](0006-www-is-a-full-write-surface.md) | www can create, edit, build, and publish through the same artifact contract | 2026-07-30 | Partly | none yet |
+| [0007](0007-capability-only-public-review.md) | Public review is a capability-only summary | 2026-08-01 | No | [PR #46](https://github.com/exocognito/angelmcp/pull/46) |
+
+0007 partly supersedes 0002's content list when the reduced summary ships.
+The current page still implements 0002.
 
 0005 supersedes point 3 of 0003 — same day, before either shipped. The reversal
 is a record rather than an edit because the convention has to hold at one day
@@ -62,5 +66,6 @@ to production in one step.
 
 PD 0006 adds a deliberate product gap. The dashboard already promotes,
 changes availability, and manages keys, but it cannot author, build, or publish
-source. Those www controls are agreed and unbuilt. CLI spellings that remain
-unfinished are tracked separately in the APRD.
+source. Those www controls are agreed and unbuilt. PD 0007 adds a second gap:
+the current page still exposes more than the agreed capability-only summary.
+CLI spellings that remain unfinished are tracked separately in the APRD.

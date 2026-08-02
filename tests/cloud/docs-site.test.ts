@@ -212,7 +212,7 @@ describe("docs-site build output", () => {
   test("agent authoring warns before writing fields rendered on the public page", () => {
     const skill = read(canonicalDist, "SKILL.md").replace(/\s+/g, " ");
     expect(skill).toContain("Before writing `charter` or `argGuards`, read [the current public boundary]");
-    expect(skill).toContain("the public Angel page renders both verbatim");
+    expect(skill).toContain("The public Angel page renders the charter verbatim and the guard field names and literal values");
   });
 
   test("interim build rewrites the canonical base URL everywhere agents read", () => {

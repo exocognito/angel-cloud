@@ -85,7 +85,7 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
     expect(ledger).toContain("disposable real Google callback/client-type journey");
-    expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
+    expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux; no storage/callback path is proved.");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
     expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS-E · WS2 · PD-02<\/dd>/);
     expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS2 · PD-02<\/dd>/);
@@ -98,7 +98,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(o7).toContain('data-decision-linked="WS0 · PD-00B · WS2 · PD-03 · PD-05"');
     expect(o7).toContain("<dt>Linked Project Index rows</dt><dd>WS0 · PD-00B · WS2 · PD-03 · PD-05</dd>");
     const c7 = ledger.match(/data-contradiction-key="C7"[\s\S]*?<\/details>/)?.[0] ?? "";
-    expect(c7).toContain("Public product-package identity is unproved; the target guide cannot freeze an install path.");
+    expect(c7).toContain("CLI guide installs the core package; owner requires one public product package with separate internal core.");
     expect(c7).toContain("O1 blocks package identity; the target guide cannot freeze an install path until namespace control is proved.");
     for (const [key, label] of [
       ["O1", "Brief 1 · package/install"], ["O2", "Brief 2 · Linux storage"],
@@ -187,14 +187,16 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added authoring cross-references in <code>docs/user-manual.md</code> and <code>docs-site/public/SKILL.md</code>, recorded O7 in PD 0007, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added authoring cross-references in `docs/user-manual.md` and `docs-site/public/SKILL.md`, recorded O7 in PD 0007, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
     expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     const wsEIndex = ledger.match(/data-index-key="WS-E"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(wsEIndex).toContain("<strong>Linked rows</strong><div>WS2</div>");
     expect(wsEIndex).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → WS2</div>");
+    const id05 = ledger.match(/data-deliverable-key="ID-05"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(id05).toContain("matching public-boundary warning to <code>docs-site/public/SKILL.md</code>");
     expect(ledger).toContain('</div></div><div class="field compact"><strong>Required owner gate</strong><div>O10 between WS-E and WS2</div></div>');
     expect(ledger).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → O10 → WS2</div>");
     expect(ledger.split("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152675520").length - 1).toBe(5);
@@ -322,24 +324,27 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
     expect(faq).toMatch(/raw policy digest must\s+be removed or gated/);
     const publicPageDecision = readFileSync(join(root, "docs/product-decisions/0002-public-angel-page.md"), "utf8");
-    expect(publicPageDecision).toContain("raw policy digest");
-    expect(publicPageDecision).toMatch(/Before `angel\.public-review\.v1` is served for a Version/);
-    expect(publicPageDecision).toContain("[privacy requirement](#privacy-requirement-before-the-reduced-summary)");
-    expect(publicPageDecision).toContain("### Privacy requirement before the reduced summary");
-    expect(publicPageDecision).toContain("[E16](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html#e16)");
-    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("The proof requirement survives if O10 changes, renumbers, or rejects that draft contract");
-    expect(publicPageDecision).toContain("Shipped invariants, each pinned by a current test");
-    expect(publicPageDecision).not.toContain("This target must be pinned by E16 before the summary ships");
-    expect(publicPageDecision).not.toContain("Invariants regardless, each pinned by a test");
-    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
-    expect(publicPageDecision).toContain("operational metadata that can reveal publish and activity cadence");
-    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
+    expect(publicPageDecision).toContain("- Status: Partly superseded by [0007](0007-capability-only-public-review.md)");
+    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("argument guards, Version number, policy digest, and the line that the artifact is immutable");
+    expect(publicPageDecision).toContain("Invariants regardless, each pinned by a test");
+    expect(publicPageDecision).not.toContain("Privacy requirement before the reduced summary");
+    expect(publicPageDecision).not.toContain("angel.public-review.v1");
+    const reducedSummaryDecision = readFileSync(join(root, "docs/product-decisions/0007-capability-only-public-review.md"), "utf8");
+    expect(reducedSummaryDecision).toMatch(/Before `angel\.public-review\.v1` is served for a Version/);
+    expect(reducedSummaryDecision).toContain("[E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html)");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement survives if O10 changes, renumbers, or rejects that draft contract");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
+    expect(reducedSummaryDecision).toContain("operational metadata that can reveal publish and activity cadence");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
+    expect(ledger).toContain("docs/product-decisions/0007-capability-only-public-review.md");
+    const decisionIndex = readFileSync(join(root, "docs/product-decisions/README.md"), "utf8");
+    expect(decisionIndex).toContain("[0007](0007-capability-only-public-review.md)");
     expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
     expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (Product Ledger O10");
     expect(faq).toContain("docs/product-ledger.html");
     expect(faq).not.toMatch(/github\.com\/exocognito\/angelmcp\/(?:blob|tree|raw)\//);
-    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("reduced public-summary decision (Product Ledger O7)");
-    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10)");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("reduced public-summary decision (Product Ledger O7)");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10)");
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
     expect(faq).toContain("canonical `docs/product-ledger.html`");

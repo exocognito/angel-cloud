@@ -78,7 +78,7 @@ private deployment, or operational metadata?
 2. Read the APRD terminology and public-trust claims.
 3. Traced the v2 artifact from compiler to publish validation, gate install,
    public projection, receipts, and custody.
-4. Read PD 0002 and its privacy tests.
+4. Read PD 0002, PD 0007, and their privacy tests.
 5. Inspected the generated demo fixture and the deployed read-only demo.
 6. Ran an adversarial local artifact through the real compiler and public-page
    projection with a placeholder email in the charter and a private document ID
