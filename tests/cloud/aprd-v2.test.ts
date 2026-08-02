@@ -174,6 +174,7 @@ describe("APRD v2", () => {
     expect(html).toContain("● 2 yellow");
     expect(html).toContain("● 6 orange");
     expect(html).toContain("● 2 red");
+    expect(html).toContain("public-trust-page regraded 2026-08-01 · WS-E privacy review");
     expect(count(/class="card g"/g)).toBe(19);
     expect(count(/class="card y"/g)).toBe(2);
     expect(count(/class="card o"/g)).toBe(6);
@@ -519,6 +520,7 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --gate broker --from 93 --to 108 --anchor 92:<broker-hash> --out receipts/broker-93-108.ndjson");
     expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>");
     expect(cliUserGuide).toContain("--receipts receipts/gateway-128-151.ndjson --receipts receipts/broker-93-108.ndjson");
+    expect(cliUserGuide).toContain("checked count, first sequence, and last sequence for each gate");
     expect(cliUserGuide).not.toContain("--fail-on-tamper");
     expect(cliUserGuide).toContain("angel apps connect google --local");
     expect(cliUserGuide).toContain("angel apps connect google --cloud");

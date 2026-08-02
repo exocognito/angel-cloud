@@ -26,7 +26,7 @@ Compared the Ledger, APRD, CLI guide, eval draft, shipped parser, receipt shape,
 Outcome: close O5. Use only:
 
 ```sh
-angel replay <angel> --receipts <path> --bundle <path>
+angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>
 ```
 
 Do not add `serve --replay` as an alias. Every chain, range, bundle, engine, argument-digest, or decision mismatch is a hard failure; remove optional `--fail-on-tamper`. Replay starts no server, reads no credential store, changes no durable state, and makes zero provider calls.
@@ -65,7 +65,7 @@ Is replay `angel replay` or `angel serve --replay`?
 
 - Product Ledger O5: “Recommend separate `angel replay` unless the complete
   journey disproves it.”
-- Product Ledger contradiction C13/LR-018: APRD and target guide conflict.
+- Product Ledger contradiction C13 and learning LR-018: APRD and target guide conflict.
 - Product Ledger command C11: replay is read-only unless explicit report output.
 - APRD §4.4: `angel serve gmail-inbox-zero --replay activity.json`.
 - APRD §8.1: later uses top-level `angel replay ... --fail-on-tamper`.
@@ -139,7 +139,7 @@ starting a server or loading any provider credential.
 Canonical syntax:
 
 ```sh
-angel replay <angel> --receipts <path> --bundle <path>
+angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>
 ```
 
 Do **not** ship `angel serve --replay` as an alias. No compatibility burden
@@ -160,7 +160,7 @@ exactly one supplied bundle. It never invokes a provider.
 Required inputs:
 
 - Angel slug;
-- private replay NDJSON path;
+- one or more gate-homogeneous private replay NDJSON paths;
 - canonical bundle path.
 
 Each gate is exported separately because Gateway and Broker sequences and hashes
@@ -192,7 +192,10 @@ Success:
 ```text
 replay: MATCH
 angel: draft-cloud-9p4r
-records: 24 (128..151)
+Gateway records: 24 (128..151)
+Broker records: 16 (93..108)
+paired allows: 16
+Gateway-only denials: 8
 bundle digest: <sha256> match
 engine pin: <version> match
 decisions: 24/24 match
@@ -220,7 +223,8 @@ default.
 ```text
 bundle + private receipt export present
 → validate paths and schemas
-→ verify both hash chains and range continuity
+→ verify each gate's anchor, hash chain, and independent range
+→ correlate allowed pairs by requestId; preserve Gateway-only denials
 → verify bundle digest and engine pin
 → recompute each argumentsDigest
 → run policy decisions locally
@@ -244,7 +248,7 @@ profiles do not affect the result.
 | Exit | Meaning | Required output |
 |---|---|---|
 | `0` | Every record and comparison matches. | `replay: MATCH`, counts, digest, pin, and `provider calls: 0`. |
-| `1` | Input I/O/schema failure, chain break, range gap, digest/pin mismatch, missing original arguments, argumentsDigest mismatch, decision/detail divergence, or tamper. | First failing sequence and field path when available; no provider call. |
+| `1` | Input I/O/schema failure, either gate's chain/range/anchor failure, missing or duplicate allowed-call partner, unexpected Broker partner for a Gateway denial, request-ID/tool/argument/decision disagreement, digest/pin mismatch, missing original arguments, policy divergence, or tamper. | First failing gate, sequence, and field path when available; no provider call. |
 | `2` | CLI usage error. | Exact syntax and missing/unknown option. |
 
 Errors must distinguish unreadable file, malformed NDJSON line, wrong Angel,
@@ -262,7 +266,7 @@ step; replay itself is fully local and non-interactive.
 Top-level help lists `replay` under **Evidence**. Dedicated help is:
 
 ```text
-usage: angel replay <angel> --receipts <path> --bundle <path>
+usage: angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>
 
 Recompute recorded decisions locally. Never starts a server or calls a provider.
 ```

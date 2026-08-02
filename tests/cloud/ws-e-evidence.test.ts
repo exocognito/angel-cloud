@@ -289,7 +289,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(replayBrief).not.toContain("05-replay-syntax full record");
     expect(replayBrief).not.toContain(".agents/parallel-agents/");
     expect(replayBrief).toContain("Product Ledger command C11");
-    expect(replayBrief).toContain("Product Ledger contradiction C13/LR-018");
+    expect(replayBrief).toContain("Product Ledger contradiction C13 and learning LR-018");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
     expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
     const df002 = ledger.match(/<tr data-learning-id="DF-002"[\s\S]*?<\/tr>/)?.[0] ?? "";
@@ -366,6 +366,12 @@ describe("WS-E evidence-only decision closure", () => {
     expect(readFileSync(join(root, "docs/evidence/ws-e/04-auth-expiry.md"), "utf8"))
       .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token");
     const replayEvidenceBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
+    expect(replayEvidenceBrief).toContain("angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>");
+    expect(replayEvidenceBrief).not.toContain("angel replay <angel> --receipts <path> --bundle <path>");
+    expect(replayEvidenceBrief).toContain("Gateway records: 24 (128..151)");
+    expect(replayEvidenceBrief).toContain("Broker records: 16 (93..108)");
+    expect(replayEvidenceBrief).toContain("Product Ledger contradiction C13 and learning LR-018");
+    expect(replayEvidenceBrief).not.toContain("Product Ledger contradiction C13/LR-018");
     expect(replayEvidenceBrief).toContain("--gate <gateway|broker>");
     expect(replayEvidenceBrief).toContain("--anchor <sequence>:<hash>");
     expect(replayEvidenceBrief).toContain("Gateway-only denial");

@@ -301,7 +301,7 @@
           <span class="font-semibold" style="color:#A87900">● 2 yellow</span>
           <span class="font-semibold" style="color:#C2410C">● 6 orange</span>
           <span class="font-semibold" style="color:#B3261E">● 2 red</span>
-          <span class="ml-auto text-slate-400 text-[11.5px]">regenerated against main@faf4beb · 2026-07-30</span>
+          <span class="ml-auto text-slate-400 text-[11.5px]">regenerated against main@faf4beb · 2026-07-30; public-trust-page regraded 2026-08-01 · WS-E privacy review</span>
         </div>
         <p class="text-[13px] text-slate-500">
           <span style="color:#177245">green</span> demonstrable now ·
@@ -520,7 +520,7 @@
 
         <div class="card o"><span class="chip">Orange</span>
           <h4>Behavior spot-checkable by replay</h4>
-          <p class="dev">For calls its own agent made, the client holds the arguments and the v2 agent-facing receipt carries the cloud's <code>argumentsDigest</code>. Top-level <code>angel replay &lt;angel&gt; --receipts &lt;path&gt; --bundle &lt;path&gt;</code> re-runs the same tool + arguments through the local engine over the same bundle and compares decision, detail, and the recomputed digest (D10). Today <code>agentSafeGateReceipt</code> strips <code>argumentsDigest</code>. Sampling, not proof — but evidence the platform cannot manufacture. Replay starts no server, opens no port, reads no credential store, writes no report file, and makes no network or provider call; every mismatch fails.</p>
+          <p class="dev">For calls its own agent made, the client holds the arguments and the v2 agent-facing receipt carries the cloud's <code>argumentsDigest</code>. Top-level <code>angel replay &lt;angel&gt; --receipts &lt;path&gt; [--receipts &lt;path&gt; ...] --bundle &lt;path&gt;</code> re-runs the same tool + arguments through the local engine over the same bundle and compares decision, detail, and the recomputed digest (D10). Today <code>agentSafeGateReceipt</code> strips <code>argumentsDigest</code>. Sampling, not proof — but evidence the platform cannot manufacture. Replay starts no server, opens no port, reads no credential store, writes no report file, and makes no network or provider call; every mismatch fails.</p>
           <p class="demo">a replay run over recorded calls reporting decisions and argument digests all matching — or naming the first one that doesn't.</p>
           <p class="user">You can re-run any of your own calls at home and check that the cloud judged it exactly as your own copy of the rules would.</p>
         </div>
@@ -667,8 +667,10 @@
           <pre class="term"><span class="p">$</span> angel serve gmail-inbox-zero --grant local-google
 <span class="g">✓ bundle a004a3a3… · engine 0.3.0 · tokens: encrypted vault (local-google)</span>
 <span class="p">listening on http://localhost:7423 — point any MCP client at it</span>
-<span class="p">$</span> angel replay gmail-inbox-zero --receipts activity.ndjson --bundle build/angel.version.json
-<span class="g">MATCH · 42 calls · decisions and argument digests match</span></pre>
+<span class="p">$</span> angel receipts pull gmail-inbox-zero --production --gate gateway --from 128 --to 151 --anchor 127:&lt;gateway-hash&gt; --out gateway.ndjson
+<span class="p">$</span> angel receipts pull gmail-inbox-zero --production --gate broker --from 93 --to 108 --anchor 92:&lt;broker-hash&gt; --out broker.ndjson
+<span class="p">$</span> angel replay gmail-inbox-zero --receipts gateway.ndjson --receipts broker.ndjson --bundle build/angel.version.json
+<span class="g">MATCH · Gateway 24 · Broker 16 · paired allows 16 · Gateway-only denials 8</span></pre>
           <p class="text-sm text-slate-600"><strong>Today:</strong> no local run mode exists — the CLI is build/publish/deploy/delete, and the enforcement engine runs only in the workers. The transcript above is the acceptance sketch, not output.</p>
         </div>
 
