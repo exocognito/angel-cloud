@@ -106,7 +106,8 @@ Detail: [user manual → Add Google custody](https://docs.angelmcp.ai/user-manua
 ## Step 4 — Author the Angel
 
 In the user's project, create `angels/<slug>/ANGEL.yaml`. `ANGEL.yaml` is
-portable policy only — no targets, no secrets:
+portable policy only — no targets, no secrets. Before writing `charter` or
+`argGuards`, read [the current public boundary](https://docs.angelmcp.ai/faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt) — the public Angel page renders both verbatim:
 
 ```yaml
 name: google-read-proof

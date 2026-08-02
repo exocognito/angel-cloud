@@ -181,9 +181,9 @@ describe("docs-site build output", () => {
   });
 
   test("served markdown never links a served doc through the GitHub repo", () => {
-    // A same-repo blob link sends a reader from the public site back to the
-    // source tree — the workflow this site exists to end. Issue-tracker links
-    // are fine; doc files must use relative links so they resolve on the site.
+    // A same-repo blob link needlessly sends readers away when the public site
+    // already serves that file. Links to repo files the site does not serve,
+    // such as an unapproved APRD, remain valid.
     const servedMarkdown = [
       ...SERVED_FILES.filter((f) => f.endsWith(".md")),
       ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
@@ -207,6 +207,12 @@ describe("docs-site build output", () => {
         ).toBe(false);
       }
     }
+  });
+
+  test("agent authoring warns before writing fields rendered on the public page", () => {
+    const skill = read(canonicalDist, "SKILL.md").replace(/\s+/g, " ");
+    expect(skill).toContain("Before writing `charter` or `argGuards`, read [the current public boundary]");
+    expect(skill).toContain("the public Angel page renders both verbatim");
   });
 
   test("interim build rewrites the canonical base URL everywhere agents read", () => {
