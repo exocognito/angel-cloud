@@ -278,8 +278,8 @@ This journey is independent. It starts with no Account session and must still
 pass if Angel Cloud is unavailable.
 
 ```sh
-# O1 still owns the final package identity. This is the current target-draft install.
-pnpm add --global @smcllns/angel-core@v2.1
+# Brief 1 supersedes the target draft; this command remains pending O1 namespace control.
+bun add --global @angelmcp/cli@0.1.0 # pending O1
 
 angel create draft-check-7k2m --template gmail-draft-without-send
 angel build draft-check-7k2m
@@ -328,7 +328,7 @@ This is a second independent start. It may reuse reviewed source bytes, but it
 must not reuse the local grant, old Account state, or local credential profile.
 
 ```sh
-pnpm add --global @smcllns/angel-core@v2.1
+bun add --global @angelmcp/cli@0.1.0 # pending O1
 
 angel account login --control https://control.angelmcp.ai --account <fresh-handle>
 angel create draft-cloud-9p4r --template gmail-draft-without-send

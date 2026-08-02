@@ -37,6 +37,7 @@ Delete Account needs a cross-Worker internal job, not demo reset. Owner copy mus
 - Generate and enumerate final Better Auth/D1, passkey, recovery, membership, email, and CLI-token schema before implementation approval.
 - Verify every created runtime is discoverable; add an ownership index if the current management list cannot prove this.
 - Test `storage.deleteAll()` against Cloudflare 30-day PITR semantics and record the deployed log plan/retention/per-Account erasure limits.
+- O10 must accept the non-resolving permanent-handle tombstone and the rule that fresh signup uses a new handle.
 - Implement idempotent Broker-before-Gateway cascade, distinct-grant revocation, vault/control/auth deletion, and non-resolving handle tombstones.
 - Prove every old session/token/key/coordinate/read fails, cloud stores are empty, provider grants are revoked/invalid, fresh signup works without admin help, and local/provider-owned state remains untouched.
 

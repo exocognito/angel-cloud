@@ -279,7 +279,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     );
     expect(count('data-learning-last-verified="')).toBe(113);
     expect(count('data-learning-blocker="')).toBe(113);
-    expect(count('data-learning-source="#sources"')).toBe(113);
+    expect(count('data-learning-source="')).toBe(113);
   });
 
   test("keeps zero orphans with valid dispositions and destinations", () => {
@@ -342,8 +342,8 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       /data-contradiction-key="(C\d+)" data-record-state="([^"]+)"/g,
     )];
     expect(contradictions).toHaveLength(15);
-    expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(1);
-    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(14);
+    expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(2);
+    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(13);
     expect(count('data-contradiction-last-verified="')).toBe(15);
   });
 
@@ -462,11 +462,18 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "Claim or goal", "Evidence", "Linked Project Index rows",
       "Decisions or blockers", "Source artifacts", "Last verified",
     ]);
-    expectFields(recordBlocks("tr", "data-learning-id"), [
+    const learningRows = recordBlocks("tr", "data-learning-id");
+    expectFields(learningRows, [
       "data-disposition=", "data-destination=", "data-learning-blocker=",
       "data-learning-source=", "Evidence", "Decisions or blockers",
       "Source artifacts", "Last verified",
     ]);
+    for (const row of learningRows) {
+      expect(row.match(/<td(?:\s|>)/g) ?? []).toHaveLength(5);
+      const disposition = row.match(/data-disposition="([^"]+)"/)?.[1];
+      expect(disposition).toBeDefined();
+      expect(row).toContain(`>${disposition}</span>`);
+    }
     expect(ledger).not.toMatch(/N\/A —\s*(?:<|&lt;)/);
   });
 

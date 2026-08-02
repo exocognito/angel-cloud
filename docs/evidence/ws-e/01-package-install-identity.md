@@ -48,7 +48,7 @@ Editorial disposition: the investigator recommended closing O1 with scope contro
 # O1 evidence brief — Round-2 package and install identity
 
 **Investigated:** 2026-08-01  
-**Decision status:** enough evidence to close O1 as a product decision; publication remains unimplemented.
+**Decision status:** provisional recommendation only; O1 remains open until namespace control is proved or the owner approves another identity.
 
 ## Question
 
@@ -234,6 +234,6 @@ Promote these as durable `docs/evidence/` records during implementation rather t
 
 ## Is evidence enough to close O1?
 
-**Yes—as a decision.** The evidence distinguishes the working legacy package from the correct product identity and shows why Bun-global is the smallest feasible package-manager path. O1 should close with `@angelmcp/cli@0.1.0` + `bun add --global`, while recording scope creation, package implementation/publication, seven-day maturity, provenance, docs migration, and clean platform tests as Round-2 execution gates.
+**No—not yet.** The evidence distinguishes the working legacy package from the preferred product identity and shows why Bun-global is the smallest feasible package-manager path. O1 remains open until control of `@angelmcp` is proved or the owner approves another identity. Package implementation/publication, seven-day maturity, provenance, docs migration, and clean platform tests remain later Round-2 execution gates.
 
 It is **not** enough to claim the package or installer ships today. Neither `@angelmcp/cli` nor the Angel curl installer exists, and npm scope control is unverified.

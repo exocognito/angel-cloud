@@ -28,8 +28,11 @@ describe("WS-E evidence-only decision closure", () => {
       ]) expect(brief).toContain(heading);
       expect(brief).toContain("Evidence status: complete");
       expect(brief).toContain("Product implementation: none");
-      if ((decisions as readonly string[]).includes("O1")) expect(brief).toContain("Outcome: exact gap");
-      else expect(brief).toContain("Outcome: close");
+      if ((decisions as readonly string[]).includes("O1")) {
+        expect(brief).toContain("Outcome: exact gap");
+        expect(brief).not.toContain("enough evidence to close O1");
+        expect(brief).not.toContain("O1 should close");
+      } else expect(brief).toContain("Outcome: close");
     }
   });
 
@@ -44,6 +47,8 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("Control of the `@angelmcp` npm scope is unverified");
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
+    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="OPEN"/);
+    expect(ledger).toContain("disposable real Google callback/client-type journey");
   });
 
   test("links every brief from the Ledger and preserves the evidence-only boundary", () => {
@@ -53,5 +58,17 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).not.toContain("WS-E must finish before O10");
     expect(roadmap).toContain("WS-E is active");
     expect(roadmap).toContain("O1 blocks WS-E closure");
+    expect(ledger).not.toContain("private-data-safe");
+    expect(ledger).toContain("must treat charter and guard literals as public");
+    expect(ledger).not.toContain("updates private binding config");
+    expect(ledger).toContain("does not mutate a binding");
+    expect(ledger).not.toContain("O5 blocks replay syntax");
+    expect(ledger).toContain("no server, port, credential store, report file, or provider call");
+    const syntaxBrief = readFileSync(join(root, "docs/evidence/ws-e/03-local-cloud-syntax.md"), "utf8");
+    expect(syntaxBrief).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
+    expect(syntaxBrief).toContain("bun add --global @angelmcp/cli@0.1.0 # pending O1");
+    const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
+    expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
+    expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
   });
 });
