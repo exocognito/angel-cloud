@@ -130,6 +130,11 @@ const registryPaths = run(["tar", "-tzf", registryTarball]).trim().split("\n")
   .map((path) => path.slice("package/".length))
   .sort();
 sameJson(registryPaths, expectedPaths, "published registry file list");
+sameJson(
+  Object.keys(baseline.allowedPackedDifferences).sort(),
+  ["README.md", "package.json"],
+  "allowed packed differences",
+);
 
 for (const path of expectedPaths) {
   const candidate = join(candidateDirectory, "package", path);

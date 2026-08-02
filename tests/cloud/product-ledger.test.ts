@@ -466,13 +466,14 @@ describe("Angel Product Ledger contract v0.1 application", () => {
 
   test("resolves every repository-relative evidence link from the Ledger file", () => {
     for (const href of values(/<a href="([^"]+)"/g)) {
-      const githubDoc = href.match(/^https:\/\/github\.com\/exocognito\/angelmcp\/blob\/main\/([^#]+)(?:#(.+))?$/);
-      if (githubDoc?.[1]) {
-        const target = new URL(`../../${githubDoc[1]}`, import.meta.url);
+      const githubDoc = href.match(/^https:\/\/github\.com\/exocognito\/angelmcp\/blob\/([^/]+)\/([^#]+)(?:#(.+))?$/);
+      if (githubDoc?.[2]) {
+        expect(githubDoc[1], `Ledger evidence must use the canonical main ref: ${href}`).toBe("main");
+        const target = new URL(`../../${githubDoc[2]}`, import.meta.url);
         expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
-        if (githubDoc[2]) {
+        if (githubDoc[3]) {
           const markdown = readFileSync(target, "utf8");
-          expect(headingSlugs(markdown).has(decodeURIComponent(githubDoc[2])), `Ledger heading does not resolve: ${href}`).toBe(true);
+          expect(headingSlugs(markdown).has(decodeURIComponent(githubDoc[3])), `Ledger heading does not resolve: ${href}`).toBe(true);
         }
         continue;
       }

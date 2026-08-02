@@ -171,6 +171,8 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/core/format-v2.md");
     expect(proof.match(/"tar", "-xzpf"/g)).toHaveLength(2);
     expect(proof).not.toContain('"tar", "-xzf"');
+    const releaseBaseline = json<{ allowedPackedDifferences: Record<string, string> }>("docs/evidence/ws1-release-baseline.json");
+    expect(Object.keys(releaseBaseline.allowedPackedDifferences).sort()).toEqual(["README.md", "package.json"]);
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {
