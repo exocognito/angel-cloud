@@ -126,8 +126,22 @@ describe("WS-E evidence-only decision closure", () => {
     }
     const df047 = ledger.match(/<tr data-learning-id="DF-047"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(df047).toContain("Registry check 2026-08-01: @angelmcp/cli and angelmcp absent");
+    const repositoryReviewRows = [
+      "DF-001", "DF-007", "DF-009", "DF-010", "DF-014", "DF-016", "DF-018",
+      "DF-020", "DF-021", "DF-022", "DF-030", "DF-032", "DF-037", "DF-040",
+      "DF-050", "DF-052", "DF-054", "DF-058", "DF-059", "DF-063", "FB-006",
+      "FB-007", "LR-001", "LR-003", "LR-005", "LR-007", "LR-008", "LR-014",
+      "LR-015", "LR-016", "LR-017", "LR-019", "LR-028",
+    ];
+    for (const key of repositoryReviewRows) {
+      const row = ledger.match(new RegExp(`<tr data-learning-id="${key}"[\\s\\S]*?<\\/tr>`))?.[0] ?? "";
+      expect(row).toContain('data-learning-last-verified="2026-08-01 · repository evidence + WS-E review"');
+      expect(row).toContain("<strong>Last verified</strong><div>2026-08-01 · repository evidence + WS-E review</div>");
+    }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
+    expect(ledger).toContain("It corrected two shipped documents, `docs/faq.md` and `docs/user-manual.md`");
+    expect(roadmap).toMatch(/They corrected two shipped documents:\s+`docs\/faq\.md` and `docs\/user-manual\.md`/);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS-E → O10 → WS2");
     expect(ledger).not.toContain("WS-E must finish before O10");
@@ -185,6 +199,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicBrief).toContain("reuse it for every public summary response for that Version");
     expect(publicBrief).toContain("remove or gate the raw `policyDigest` on every public surface for the same Version");
     expect(publicBrief).toContain("does not prevent offline confirmation while the current page publishes `policyDigest`");
+    expect(o7).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
+    const lr002 = ledger.match(/<tr data-learning-id="LR-002"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(lr002).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
     expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");

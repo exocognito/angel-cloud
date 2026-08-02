@@ -25,7 +25,9 @@ that list and its completed M0/M1 record.
 Sam approved Product Ledger contract v0.1 and the Angel Product Ledger on
 2026-08-01. Product/repository approval covers WS1, now complete. Separate
 evidence-only approval covers WS-E. WS-E is active. All seven briefs exist and
-changed no product behavior. WS-E authorizes no product implementation. O2–O7
+changed no product behavior. They corrected two shipped documents:
+`docs/faq.md` and `docs/user-manual.md`, which understated the current public
+charter and guard exposure. WS-E authorizes no product implementation. O2–O7
 and O9 are closed as decisions. O1 blocks WS-E closure because control of the
 recommended `@angelmcp` npm namespace is unverified. O10 waits for that exact
 gap. **WS2 and Dogfood Round 2** remain proposed and unapproved. APRD v2 remains
