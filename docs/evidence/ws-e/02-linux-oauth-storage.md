@@ -27,7 +27,7 @@ Outcome: close O2. Use one explicit Angel-owned authenticated encrypted vault at
 
 ## Product implication
 
-Target docs must replace “OS keychain” with the exact headless vault boundary. In local mode, the `angel` process can decrypt credentials; the user agent and MCP responses cannot. Root, the VM host, and hostile same-UID code remain outside the claim.
+Target docs now use the exact headless vault boundary instead of “OS keychain”. In local mode, the `angel` process can decrypt credentials; the user agent and MCP responses cannot. Root, the VM host, and hostile same-UID code remain outside the claim.
 
 ## Execution gates
 

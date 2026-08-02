@@ -41,8 +41,7 @@ Local can remain account-free and cloud can remain separately authenticated. The
 - Freeze provider App registration and callback contracts, including a real disposable Google loopback/HTTPS PKCE test.
 - Define local and cloud profile/config schemas, exact help, outputs, failures, idempotency, and safe browser handoffs.
 - Prove omitted/both flags fail before side effects and local/cloud never inspect or fall back to each other.
-- Remove the target guide's implicit binding mutation; binding needs an Angel/requirement-aware command or explicit file edit.
-- Reconcile the target guide's `--control` host with the settled host table before approval.
+- Keep the reconciled target guide and APRD aligned with explicit custody, no implicit binding mutation, and the settled `api.angelmcp.ai` host.
 
 ## Evidence record
 

@@ -27,7 +27,7 @@ Outcome: close O4. Email magic links are single-use and expire exactly 600 secon
 
 ## Product implication
 
-All days-long copy must change. Login shows the ten-minute expiry and one resend action. Unknown-email responses stay generic. Login failure creates no Account or provider state.
+The APRD and target CLI contract now use the exact ten-minute, single-use rule. Login shows the ten-minute expiry and one resend action. Unknown-email responses stay generic. Login failure creates no Account or provider state.
 
 ## Execution gates
 

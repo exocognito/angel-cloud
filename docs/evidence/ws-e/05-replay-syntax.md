@@ -40,7 +40,7 @@ The journey has three explicit trust actions: `serve` exercises local runtime an
 - Define a private owner-only replay NDJSON schema containing original arguments plus complete Gateway/Broker chain identity.
 - Make pull output mode 0600 and never expose raw arguments on public or agent-safe surfaces.
 - Prove deterministic stdout/stderr/status, zero network/provider calls, first-mismatch diagnostics, and failures for every tamper or missing field.
-- Reconcile every APRD/guide/eval reference to the top-level command.
+- Keep the reconciled APRD, guide, and eval references on the mandatory top-level command.
 
 ## Evidence record
 

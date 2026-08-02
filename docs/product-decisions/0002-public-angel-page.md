@@ -58,6 +58,10 @@ cookies on the public surface.
 
 ## What is not decided
 
+- **Privacy of user-authored charter and guard literals.** The page renders them
+  publicly; the final treatment is undecided. See
+  [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
+  and Product Ledger O7/SI5.
 - **Widening the content.** Whether the page ever shows OAuth scopes,
   provider adapters, or child Angels stays open; today they are excluded.
 - **The retired-handle 301.** PD 0004 wants human-facing pages to redirect a

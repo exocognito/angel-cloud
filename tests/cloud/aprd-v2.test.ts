@@ -426,7 +426,8 @@ describe("APRD v2", () => {
     expect(section).toContain("two receipts: Gateway and Broker");
     expect(section).toContain("anchored tail: sequence, previousHash, hash");
     expect(section).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
-    expect(section).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json --fail-on-tamper");
+    expect(section).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json");
+    expect(section).not.toContain("--fail-on-tamper");
     expect(section).toContain("failure boundaries: every unsafe step fails before provider work");
     expect(section).toContain("done: Gmail contains a draft and no sent message");
     expect(section).toContain("href=\"v2.1-cli-user-guide.md\"");
@@ -485,8 +486,16 @@ describe("APRD v2", () => {
   test("defines exact receipt pull and replay syntax in the target command guide", () => {
     expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from <sequence> --to <sequence> --out <path>");
     expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
-    expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> --bundle <path> [--fail-on-tamper]");
-    expect(cliUserGuide).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json --fail-on-tamper");
+    expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> --bundle <path>");
+    expect(cliUserGuide).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json");
+    expect(cliUserGuide).not.toContain("--fail-on-tamper");
+    expect(cliUserGuide).toContain("angel apps connect google --local");
+    expect(cliUserGuide).toContain("angel apps connect google --cloud");
+    expect(cliUserGuide).toContain("Angel-owned encrypted vault");
+    expect(cliUserGuide).not.toContain("OS keychain");
+    expect(cliUserGuide).toContain("https://api.angelmcp.ai");
+    expect(cliUserGuide).not.toContain("https://control.angelmcp.ai");
+    expect(cliUserGuide).toContain("exactly 600 seconds after server-side commit");
     expect(cliUserGuide).not.toMatch(/export the (receipt )?lines/i);
   });
 
@@ -520,6 +529,10 @@ describe("APRD v2", () => {
     }
 
     for (const phrase of [
+      "exactly one of `--local` or `--cloud`",
+      "Angel-owned encrypted vault",
+      "exactly 600 seconds after server-side commit",
+      "Replay tamper detection is mandatory",
       "known fixture names",
       "static output strings",
       "mocked provider success",

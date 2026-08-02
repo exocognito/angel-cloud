@@ -79,13 +79,12 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
     for (const key of ["C4", "C6", "C13", "C15"]) {
-      expect(ledger).toMatch(new RegExp(`data-contradiction-key="${key}" data-record-state="OPEN"`));
+      expect(ledger).toMatch(new RegExp(`data-contradiction-key="${key}" data-record-state="CLOSED"`));
     }
     expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
     expect(ledger).toContain("disposable real Google callback/client-type journey");
     expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
-    expect(ledger).toContain("C16 carries the callback half");
     expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS-E · WS2 · PD-02<\/dd>/);
     expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS2 · PD-02<\/dd>/);
     const c16 = ledger.match(/data-contradiction-key="C16"[\s\S]*?<\/details>/)?.[0] ?? "";
@@ -107,10 +106,11 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("O10 blocks WS2 product work; O6 is closed.");
     for (const key of ["C4", "C6", "C13", "C15"]) {
       const contradiction = ledger.match(new RegExp(`<details class="contradiction" data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
-      expect(contradiction).toContain("WS2 execution gate");
+      expect(contradiction).toContain("source contracts reconciled by WS-E");
+      expect(contradiction).not.toContain("WS2 execution gate");
     }
     const c6 = ledger.match(/data-contradiction-key="C6"[\s\S]*?<\/details>/)?.[0] ?? "";
-    expect(c6).toContain("reconcile the target guide's <code>--control</code> host with settled <code>api.angelmcp.ai</code>");
+    expect(c6).toContain("APRD and target CLI custody/host text now agrees");
     for (const contradiction of ledger.matchAll(/<details class="contradiction"[^>]+data-record-state="OPEN"[\s\S]*?<\/details>/g)) {
       expect(contradiction[0]).not.toContain("resolved this contradiction");
     }
@@ -165,13 +165,13 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, which understated the current public charter and guard exposure, added an authoring cross-reference in <code>docs/user-manual.md</code>, and repaired stale plan-of-record pointers in <code>README.md</code>, <code>NEXT.md</code>, <code>docs/faq.md</code>, and the unapproved engineering view");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, added an authoring cross-reference in `docs/user-manual.md`, and repaired stale plan-of-record pointers in `README.md`, `NEXT.md`, `docs/faq.md`, and the unapproved engineering view.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O5 APRD, CLI, and eval contracts with the evidence decisions");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O5 APRD, CLI, and eval contracts with the evidence decisions.");
     expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS1 → WS-E → WS2");
-    expect(ledger).toContain("<strong>Required owner gate</strong><div>O10 between WS-E and WS2</div>");
+    expect(ledger).toContain('</div></div><div class="field compact"><strong>Required owner gate</strong><div>O10 between WS-E and WS2</div></div>');
     expect(ledger).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → O10 → WS2</div>");
     expect(ledger.split("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152675520").length - 1).toBe(5);
     const readme = readFileSync(join(root, "README.md"), "utf8");
@@ -209,7 +209,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(syntaxBrief).not.toContain("O2 must prove the supported Linux path");
     expect(syntaxBrief).toContain("--control https://api.angelmcp.ai");
     expect(syntaxBrief).not.toContain("--control https://control.angelmcp.ai");
-    expect(syntaxBrief).toContain("Reconcile the target guide's `--control` host with the settled host table");
+    expect(syntaxBrief).toContain("Keep the reconciled target guide and APRD aligned");
     const linuxBrief = readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8");
     expect(linuxBrief).toContain("callback half of LR-009, tracked as Ledger contradiction C16");
     expect(linuxBrief).not.toContain("callback half of LR-009/O3");
