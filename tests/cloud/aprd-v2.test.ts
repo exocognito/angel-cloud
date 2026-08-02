@@ -412,8 +412,10 @@ describe("APRD v2", () => {
     expect(section).toContain("persona: a developer's own agent");
     expect(section).toContain("empty starting state: a new directory with no repository clone");
     expect(section).toContain("public-doc-only entry point: https://docs.angelmcp.ai/llms.txt");
-    expect(section).toContain("v2.1 install path: <code>pnpm add --global @smcllns/angel-core@v2.1</code>");
-    expect(section).toContain("The installed binary is the bare <code>angel</code> command.");
+    expect(section).toContain("v2.1 install path: <strong>BLOCKED by O1</strong>");
+    expect(section).toContain("No install command is normative until namespace control and the final package identity are proved");
+    expect(section).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
+    expect(section).toContain("The final package must install the bare <code>angel</code> command.");
     expect(section).toContain("human-only handoffs: magic-link browser sign-in, Google Cloud OAuth-client setup, provider consent, and final Gmail draft review");
     expect(section).toContain("source/policy approval boundary: owner approves ANGEL.yaml before build, serve, publish, verify, receipt pull, or replay");
     expect(section).toContain("Local-only independence proof");
@@ -447,9 +449,11 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("# Angel Cloud v2.1 CLI user guide");
     expect(cliUserGuide).toContain("Normative v2.1 command contract");
     expect(cliUserGuide).toContain("Target-state contract, not shipped current behavior");
-    expect(cliUserGuide).toContain("Install the final v2.1 CLI");
-    expect(cliUserGuide).toContain("pnpm add --global @smcllns/angel-core@v2.1");
-    expect(cliUserGuide).toContain("the resulting command is `angel`");
+    expect(cliUserGuide).toContain("Install contract — blocked by O1");
+    expect(cliUserGuide).toContain("No install command is normative while O1 is open");
+    expect(cliUserGuide).toContain("<O1-BLOCKED-FINAL-INSTALL-COMMAND>");
+    expect(cliUserGuide).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
+    expect(cliUserGuide).toContain("must install the bare `angel` binary");
     expect(cliUserGuide).not.toContain("pnpm exec angel");
     expect(cliUserGuide).not.toContain("angelmcp-control-demo.sam-633.workers.dev");
     expect(cliUserGuide).not.toContain("angelmcp-gateway-demo.sam-633.workers.dev");

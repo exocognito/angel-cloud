@@ -172,12 +172,14 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O5 APRD, CLI, and eval contracts with the evidence decisions");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O5 APRD, CLI, and eval contracts with the evidence decisions.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
     expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
-    expect(ledger).toContain("WS1 → WS-E → WS2");
+    const wsEIndex = ledger.match(/data-index-key="WS-E"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(wsEIndex).toContain("<strong>Linked rows</strong><div>WS2</div>");
+    expect(wsEIndex).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → WS2</div>");
     expect(ledger).toContain('</div></div><div class="field compact"><strong>Required owner gate</strong><div>O10 between WS-E and WS2</div></div>');
     expect(ledger).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → O10 → WS2</div>");
     expect(ledger.split("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152675520").length - 1).toBe(5);

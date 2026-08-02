@@ -27,7 +27,7 @@ Sam approved Product Ledger contract v0.1 and the Angel Product Ledger on
 evidence-only approval covers WS-E. WS-E is active. All seven briefs exist.
 WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring
 cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002,
-repaired stale plan-of-record pointers, and reconciled the unapproved O2–O5
+repaired stale plan-of-record pointers, and reconciled the unapproved O2–O7
 APRD, CLI, and eval contracts with the evidence decisions. WS-E authorizes
 no product implementation. O2–O7 and O9 are closed as decisions. O1 blocks
 WS-E closure because control of the recommended `@angelmcp` npm namespace is
