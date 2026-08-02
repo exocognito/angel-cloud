@@ -253,7 +253,7 @@ describe("APRD v2", () => {
     expect(html).toContain('href="../product-ledger.html"');
     expect(aprdReadme).toContain("The [Angel Product Ledger](../product-ledger.html) owns the final goal, roadmap,");
     expect(aprdReadme).toContain("**not approved for implementation**");
-    expect(aprdReadme).toContain("its v2.1 phase");
+    expect(aprdReadme).toContain("its v2.1 build contract");
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
     expect(roadmap).toContain("WS-E is active");
     expect(roadmap).toContain("evidence-only approval covers WS-E");
@@ -505,7 +505,8 @@ describe("APRD v2", () => {
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("first exported `previousHash` must equal the supplied trusted hash");
     expect(cliUserGuide).toContain("angel.replay-receipt.v1");
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("top-level `schema`, `gate`, `anchor`, `request`, and `receipt`");
-    expect(cliUserGuide).toContain("complete GateReceipt identity");
+    expect(cliUserGuide).toContain("every current `GateReceipt` field");
+    expect(cliUserGuide).toContain("export-added `bundleDigest` and `engineVersion`");
     expect(cliUserGuide).toContain("Each file contains one gate's contiguous chain only");
     expect(cliUserGuide).toContain("Gateway denial has no Broker partner");
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("correlates allowed Gateway and Broker records by `requestId`");
@@ -606,7 +607,10 @@ describe("APRD v2", () => {
   });
 
   test("keeps target contracts in the unapproved APRD draft while current docs stay shipped-only", () => {
-    expect(aprdReadme).toContain("must be derived again from the approved ledger before build");
+    expect(aprdReadme).toContain("WS-E reconciled O2–O7 into this draft");
+    expect(aprdReadme).toContain("O1 and O10 still block approval");
+    expect(html).toContain("WS-E reconciled O2–O7 into this draft");
+    expect(html).toContain("O1 and O10 still block approval");
     expect(html).toContain('href="v2.1-cli-user-guide.md"');
     expect(html).toContain('href="v2.1-generative-evals.md"');
     expect(html).toContain("The current user manual remains the shipped Milestone 1 manual");

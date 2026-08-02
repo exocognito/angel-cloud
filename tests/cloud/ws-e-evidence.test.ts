@@ -377,6 +377,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(replayEvidenceBrief).toContain("Gateway-only denial");
     expect(replayEvidenceBrief.replace(/\s+/g, " ")).toContain("Allowed pairs correlate by `requestId`");
     expect(custodyBrief).toContain("--gate <gateway|broker>");
+    expect(custodyBrief).toContain("(--anchor <sequence>:<hash> | --bootstrap)");
     for (const [file, terms] of [
       ["01-package-install-identity.md", ["decision O1", "contradiction C7"]],
       ["02-linux-oauth-storage.md", ["decision O2", "contradiction C15"]],

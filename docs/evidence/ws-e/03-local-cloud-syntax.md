@@ -259,7 +259,7 @@ angel
 ├── verify <angel> --production [--bundle <path>]
 ├── receipts
 │   └── pull <angel> --production --gate <gateway|broker>
-│       --from <n> --to <n> --anchor <sequence>:<hash> --out <path>
+│       --from <n> --to <n> (--anchor <sequence>:<hash> | --bootstrap) --out <path>
 ├── replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>
 └── delete <angel> [--confirm <slug>]
 ```

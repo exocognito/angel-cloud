@@ -85,6 +85,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     );
     expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
     expect(ledger).toContain("WS-E authorizes no product implementation");
+    const ws2 = recordBlocks("details", "data-index-key")
+      .find((block) => block.includes('data-index-key="WS2"')) ?? "";
+    expect(ws2).toContain('href="https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-generative-evals.md"');
+    expect(ws2).toContain(">Generative eval draft</a>");
     expect(count('<details id="index-')).toBe(keys.length);
     const validProjectKeys = new Set([...keys, ...values(/data-deliverable-key="([^"]+)"/g)]);
     for (const block of recordBlocks("details", "data-index-key")) {
