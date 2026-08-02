@@ -123,13 +123,13 @@
               </tr>
               <tr>
                 <td class="p-3 font-semibold">Account</td>
-                <td class="p-3">The tenant boundary. Every Angel, Connection, and credential belongs to one Account.</td>
-                <td class="p-3">Do not substitute workspace, team, org, or user when the tenant is meant.</td>
+                <td class="p-3">The cloud tenant boundary. Every cloud Angel, Connection, and credential belongs to one Account. Local grant profiles belong to the local owner and device, not to a cloud Account.</td>
+                <td class="p-3">Do not substitute workspace, team, org, or user when the cloud tenant is meant.</td>
               </tr>
               <tr>
-                <td class="p-3 font-semibold">App / Connection</td>
-                <td class="p-3">App is the user's connected service. Connection is the stored grant to one provider identity, held write-only by the Broker.</td>
-                <td class="p-3">The UI says App. Technical contracts may say Provider App and Connection.</td>
+                <td class="p-3 font-semibold">Provider App / grant / Connection</td>
+                <td class="p-3">A Provider App is OAuth client material. A grant is provider authority from consent. A local grant profile stores that grant in the Angel-owned encrypted local vault. A cloud Connection stores it write-only in Broker custody.</td>
+                <td class="p-3"><code>apps connect --local</code> creates a local grant profile selected by grant nickname; <code>--cloud</code> creates an Account-owned Connection selected by Connection nickname in cloud bindings. Never call local custody a Connection.</td>
               </tr>
               <tr>
                 <td class="p-3 font-semibold">Charter / policy</td>

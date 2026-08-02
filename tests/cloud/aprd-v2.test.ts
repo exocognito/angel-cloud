@@ -612,6 +612,10 @@ describe("APRD v2", () => {
 
   test("keeps closed O6 and O7 contracts exact in the APRD", () => {
     expect(html).toContain("Account deletion is an asynchronous, retryable hard-delete");
+    expect(html).toContain("Provider App / grant / Connection");
+    expect(html).toContain("A local grant profile stores that grant in the Angel-owned encrypted local vault");
+    expect(html).toContain("A cloud Connection stores it write-only in Broker custody");
+    expect(html).toContain("Local grant profiles belong to the local owner and device, not to a cloud Account");
     expect(html).toContain("non-resolving tombstones for current and retired handles");
     expect(html).toContain("A transient failure leaves the Account disabled and retryable");
     expect(html).not.toContain("cascade details open");

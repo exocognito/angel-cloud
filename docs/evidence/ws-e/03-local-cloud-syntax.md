@@ -169,14 +169,14 @@ The target CLI guide defines:
 
 ```text
 angel apps connect google --nickname <name> --scopes <list> [--app <name>]
-angel serve <angel> ... [--grant <nickname>]
+angel serve <angel> ... [--connection <nickname>]
 ```
 
 But its `apps connect` side effect is cloud-specific: it stores the grant in
 Broker custody, stores a safe summary in Control, and updates the production
 binding. The guide then says `serve` may run a different local consent and store
 local tokens in the OS keychain. Nothing in the command name tells the owner
-which custody path will run.
+which custody path will run. This block quotes `6cc2ed5`; the WS-E reconciliation renamed that local selector to `--grant` so local vault custody is not called a Broker Connection.
 
 The guide also says `apps connect` updates a selected Angel binding, but its
 syntax names neither an Angel nor a binding requirement. That side effect is

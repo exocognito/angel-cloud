@@ -96,7 +96,17 @@ describe("WS-E evidence-only decision closure", () => {
     expect(o7).toContain('data-decision-linked="WS0 · PD-00B · WS2 · PD-03 · PD-05"');
     expect(o7).toContain("<dt>Linked Project Index rows</dt><dd>WS0 · PD-00B · WS2 · PD-03 · PD-05</dd>");
     const c7 = ledger.match(/data-contradiction-key="C7"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c7).toContain("Public product-package identity is unproved; the target guide cannot freeze an install path.");
     expect(c7).toContain("O1 blocks package identity; the target guide cannot freeze an install path until namespace control is proved.");
+    for (const [key, label] of [
+      ["O1", "Brief 1 · package/install"], ["O2", "Brief 2 · Linux storage"],
+      ["O3", "Brief 3 · custody syntax"], ["O4", "Brief 4 · auth expiry"],
+      ["O5", "Brief 5 · replay"], ["O6", "Brief 6 · deletion"],
+      ["O7", "Brief 7 · public/self-hosting"], ["O9", "Brief 7 · public/self-hosting"],
+    ] as const) {
+      const decision = ledger.match(new RegExp(`data-decision-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
+      expect(decision).toContain(`>${label}</a>`);
+    }
     const c06 = ledger.match(/data-command-key="C06"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c06).toContain("Consent already occurred through <code>angel apps connect --local</code>");
     expect(c06).toContain("Human unlocks the vault and inspects the final provider side effect");
@@ -309,6 +319,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicPageDecision).toContain("raw policy digest");
     expect(publicPageDecision).toMatch(/Before the\s+`angel\.public-review\.v1` summary is served for a Version/);
     expect(publicPageDecision).toContain("[privacy requirement](#what-is-not-decided)");
+    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
+    expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
     expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
     expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (Product Ledger O10");
     expect(faq).toContain("docs/product-ledger.html");
@@ -342,8 +354,10 @@ describe("WS-E evidence-only decision closure", () => {
         .toContain("At `6cc2ed5`, before the WS-E reconciliation");
     }
     const custodyBrief = readFileSync(join(root, "docs/evidence/ws-e/03-local-cloud-syntax.md"), "utf8");
-    expect(custodyBrief).toContain("angel serve <angel> ... [--grant <nickname>]");
-    expect(custodyBrief).not.toMatch(/angel serve[^\n]*--connection/);
+    expect(custodyBrief).toContain("angel serve <angel> ... [--connection <nickname>]");
+    expect(custodyBrief.match(/angel serve[^\n]*--connection/g)).toHaveLength(1);
+    expect(custodyBrief).toContain("WS-E reconciliation renamed that local selector to `--grant`");
+    expect(custodyBrief).toContain("angel serve draft-check-7k2m --port 7423 --grant local-gmail-7k2m");
     expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
