@@ -174,8 +174,11 @@ describe("WS-E evidence-only decision closure", () => {
       expect(document).not.toMatch(/roadmap owns\s+sequence and status/i);
       expect(document).not.toContain("sequence in ROADMAP.md");
     }
+    expect(readme).toContain("[Roadmap](ROADMAP.md) — browsable pointer to milestone sequence and status");
+    expect(readme).toContain("Product Ledger source: `docs/product-ledger.html` — canonical plan of record");
+    expect(readme).not.toContain("[Product Ledger](docs/product-ledger.html)");
     const engineeringView = readFileSync(join(root, "docs/aprd/views/engineering.html"), "utf8");
-    expect(engineeringView).toContain("Angel Product Ledger owns sequence/status");
+    expect(engineeringView).toContain("The Angel Product Ledger owns sequence/status");
     expect(engineeringView).not.toContain("ROADMAP.md owns sequence/status");
     expect(ledger).not.toContain("WS-E must finish before O10");
     expect(roadmap).toContain("WS-E is active");
