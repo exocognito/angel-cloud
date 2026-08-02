@@ -28,9 +28,8 @@ evidence-only approval covers WS-E. WS-E is active. All seven briefs exist.
 WS-E changed no product behavior, but corrected `docs/faq.md`, which understated
 the current public charter and guard exposure, added an authoring cross-reference
 in `docs/user-manual.md`, and repaired stale plan-of-record pointers in
-`README.md`, `NEXT.md`, and the unapproved engineering view. WS-E authorizes
+`README.md`, `NEXT.md`, `docs/faq.md`, and the unapproved engineering view. WS-E authorizes
 no product implementation. O2–O7 and O9 are closed as decisions. O1 blocks
 WS-E closure because control of the recommended `@angelmcp` npm namespace is
-unverified. O10 waits for that exact
-gap. **WS2 and Dogfood Round 2** remain proposed and unapproved. APRD v2 remains
-unapproved for implementation.
+unverified. O10 waits until that gap closes. **WS2 and Dogfood Round 2**
+remain proposed and unapproved. APRD v2 remains unapproved for implementation.

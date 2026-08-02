@@ -331,10 +331,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       /data-contradiction-key="(C\d+)" data-record-state="([^"]+)"/g,
     )];
     expect(contradictions).toHaveLength(16);
-    expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(2);
-    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(14);
+    expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(6);
+    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(10);
     expect(count('data-contradiction-last-verified="')).toBe(16);
-    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="CLOSED"/);
+    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="OPEN"/);
     expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
   });
 

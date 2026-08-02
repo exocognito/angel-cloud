@@ -78,7 +78,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Control of the <code>@angelmcp</code> npm scope is unverified");
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
-    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="CLOSED"/);
+    for (const key of ["C4", "C6", "C13", "C15"]) {
+      expect(ledger).toMatch(new RegExp(`data-contradiction-key="${key}" data-record-state="OPEN"`));
+    }
     expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
     expect(ledger).toContain("disposable real Google callback/client-type journey");
     expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
@@ -158,11 +160,13 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, which understated the current public charter and guard exposure, added an authoring cross-reference in <code>docs/user-manual.md</code>, and repaired stale plan-of-record pointers in <code>README.md</code>, <code>NEXT.md</code>, and the unapproved engineering view");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, added an authoring cross-reference in `docs/user-manual.md`, and repaired stale plan-of-record pointers in `README.md`, `NEXT.md`, and the unapproved engineering view.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, which understated the current public charter and guard exposure, added an authoring cross-reference in <code>docs/user-manual.md</code>, and repaired stale plan-of-record pointers in <code>README.md</code>, <code>NEXT.md</code>, <code>docs/faq.md</code>, and the unapproved engineering view");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, added an authoring cross-reference in `docs/user-manual.md`, and repaired stale plan-of-record pointers in `README.md`, `NEXT.md`, `docs/faq.md`, and the unapproved engineering view.");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
     expect(ledger).toContain("WS1 → WS-E → WS2");
+    expect(ledger).toContain("<strong>Required owner gate</strong><div>O10 between WS-E and WS2</div>");
     expect(ledger).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → O10 → WS2</div>");
     expect(ledger.split("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152675520").length - 1).toBe(5);
     const readme = readFileSync(join(root, "README.md"), "utf8");
@@ -286,6 +290,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq).not.toContain("github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
     expect(faq).not.toContain("plan-of-record `ROADMAP.md`");
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
+    expect(ledger).toContain("Before connecting, I—or another agent—can see which operations an Angel exposes and whether they are guarded; only the owner can check the artifact behind it.");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-parent="WS0"/);
     for (const [attribute, key] of [
