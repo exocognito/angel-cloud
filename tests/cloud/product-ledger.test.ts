@@ -35,7 +35,13 @@ const recordBlocks = (tag: string, attribute: string): string[] =>
 
 const headingSlugs = (markdown: string): Set<string> => {
   const slugs = new Set<string>();
+  let inFence = false;
   for (const line of markdown.split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
     const heading = line.match(/^#{1,4}\s+(.*)$/)?.[1];
     if (!heading) continue;
     const text = heading
@@ -465,7 +471,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
   });
 
   test("resolves every repository-relative evidence link from the Ledger file", () => {
-    for (const href of values(/<a href="([^"]+)"/g)) {
+    for (const href of values(/<a\s[^>]*href="([^"]+)"/g)) {
       const githubDoc = href.match(/^https:\/\/github\.com\/exocognito\/angelmcp\/blob\/([^/]+)\/([^#]+)(?:#(.+))?$/);
       if (githubDoc?.[2]) {
         expect(githubDoc[1], `Ledger evidence must use the canonical main ref: ${href}`).toBe("main");
