@@ -86,6 +86,12 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(count('<details id="index-')).toBe(keys.length);
+    const validProjectKeys = new Set([...keys, ...values(/data-deliverable-key="([^"]+)"/g)]);
+    for (const block of recordBlocks("details", "data-index-key")) {
+      const linked = block.match(/<strong>Linked rows<\/strong><div>(.*?)<\/div>/)?.[1] ?? "";
+      if (linked.startsWith("N/A —")) continue;
+      for (const key of linked.split(/\s*→\s*/)) expect(validProjectKeys.has(key)).toBe(true);
+    }
     expect(ledger).toContain("Project Index");
     expect(ledger).toContain("Expand all");
     expect(ledger).toContain("Collapse all");
@@ -243,8 +249,8 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     ]) {
       expect(ledger).toContain(command);
     }
-    expect(ledger).toContain("Require exactly one of `--local` or `--cloud`");
-    expect(ledger).toContain("Use one-shot top-level `angel replay`");
+    expect(ledger).toContain("Require exactly one of <code>--local</code> or <code>--cloud</code>");
+    expect(ledger).toContain("Use one-shot top-level <code>angel replay</code>");
   });
 
   test("reconciles all dogfood, trust, and owner-feedback learnings once", () => {
@@ -314,7 +320,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("O1 still needs namespace-control proof");
     expect(ledger).toContain("Approve WS2 and M-DF2 after WS-E closes O1–O7 and O9?");
     expect(ledger).toContain("O1 blocks WS-E evidence closure");
-    expect(ledger).toContain("`@angelmcp/cli@0.1.0`");
+    expect(ledger).toContain("<code>@angelmcp/cli@0.1.0</code>");
     expect(ledger).not.toContain("Blocks WS1 completion at ID-04");
     const g14 = ledger.slice(
       ledger.indexOf('id="guarantee-G14"'),
@@ -505,7 +511,12 @@ describe("Angel Product Ledger contract v0.1 application", () => {
         }
         continue;
       }
-      if (/^(?:#|https?:|mailto:)/.test(href)) continue;
+      if (href.startsWith("#")) {
+        const targetId = decodeURIComponent(href.slice(1));
+        expect(ledger).toContain(`id="${targetId}"`);
+        continue;
+      }
+      if (/^(?:https?:|mailto:)/.test(href)) continue;
       const [relativePath, fragment] = href.split("#", 2);
       const target = new URL(relativePath ?? "", ledgerUrl);
       expect(existsSync(fileURLToPath(target)), `Ledger link does not resolve: ${href}`).toBe(true);
@@ -517,6 +528,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
   });
 
   test("is self-contained and uses visible status text", () => {
+    expect(ledger.split("<script>", 1)[0]).not.toMatch(/`[^`]+`/);
     expect(ledger).not.toContain('<script src=');
     expect(ledger).not.toContain('<link rel="stylesheet"');
     expect(ledger).not.toMatch(/<img[^>]+src="https?:/);

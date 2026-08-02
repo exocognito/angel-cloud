@@ -75,7 +75,7 @@ describe("WS-E evidence-only decision closure", () => {
     for (const decision of ["O2", "O3", "O4", "O5", "O6", "O7", "O9"]) {
       expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="CLOSED"`));
     }
-    expect(ledger).toContain("Control of the `@angelmcp` npm scope is unverified");
+    expect(ledger).toContain("Control of the <code>@angelmcp</code> npm scope is unverified");
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
     expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="CLOSED"/);
@@ -86,6 +86,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("The callback half of the original contradiction is carried by C16");
     expect(ledger).toMatch(/data-contradiction-key="C15"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS-E · WS2 · PD-02<\/dd>/);
     expect(ledger).toMatch(/data-contradiction-key="C16"[\s\S]*?<dt>Linked Project Index rows<\/dt><dd>WS2 · PD-02<\/dd>/);
+    const c16 = ledger.match(/data-contradiction-key="C16"[\s\S]*?<\/details>/)?.[0] ?? "";
+    expect(c16).toContain("C16 / WS2 callback execution gate");
+    expect(c16).not.toContain("O2 callback execution gate");
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
@@ -155,11 +158,20 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, which understated the current public charter and guard exposure, and added an authoring cross-reference in <code>docs/user-manual.md</code>");
     expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, which understated the current public charter and guard exposure, and added an authoring cross-reference in `docs/user-manual.md`.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
-    expect(ledger).toContain("WS-E → O10 → WS2");
+    expect(ledger).toContain("WS1 → WS-E → WS2");
+    expect(ledger).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → O10 → WS2</div>");
+    expect(ledger.split("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152675520").length - 1).toBe(5);
+    const readme = readFileSync(join(root, "README.md"), "utf8");
+    const next = readFileSync(join(root, "NEXT.md"), "utf8");
+    for (const document of [readme, next]) {
+      expect(document).toContain("docs/product-ledger.html");
+      expect(document).not.toContain("ROADMAP.md](ROADMAP.md) — plan of record");
+      expect(document).not.toContain("The plan of record is [ROADMAP.md]");
+    }
     expect(ledger).not.toContain("WS-E must finish before O10");
     expect(roadmap).toContain("WS-E is active");
     expect(roadmap).toContain("O1 blocks WS-E closure");

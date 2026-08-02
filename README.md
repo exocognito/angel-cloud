@@ -24,7 +24,8 @@ deployment ID and digest.
 
 ## Documentation
 
-- [Roadmap](ROADMAP.md) — plan of record: milestone sequence and status.
+- [Product Ledger](docs/product-ledger.html) — plan of record: milestone sequence and status.
+- [Roadmap](ROADMAP.md) — stable pointer for old roadmap links.
 - [User manual](docs/user-manual.md) — write, build, publish, deploy, connect,
   and operate an Angel.
 - [FAQ](docs/faq.md) — design rationale, security boundaries, and current
