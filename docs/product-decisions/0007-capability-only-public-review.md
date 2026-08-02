@@ -21,10 +21,10 @@ installation, `identityLabel`, and Connection ids. Fixed,
 non-Version-specific provenance and limitation copy may remain outside the
 strict payload.
 
-Before `angel.public-review.v1` is served for a Version, the Version number and
-raw policy digest leave the public projection. Every public surface for that
-Version must remove or gate the raw policy digest. The Version number is
-operational metadata that can reveal publish and activity cadence.
+Before `angel.public-review.v1` is served for a Version, the raw policy digest
+must leave or be gated on every public surface for that Version. The Version
+number remains excluded from the strict summary because it is operational
+metadata that can reveal publish and activity cadence.
 
 Generate one 32-byte random nonce for each published Version. Store it
 owner-only with that Version's evidence, reuse it for all public responses for

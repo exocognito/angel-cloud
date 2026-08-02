@@ -430,7 +430,10 @@ describe("APRD v2", () => {
     expect(section).toContain("verify: <code>angel verify gmail-draft-assistant --production</code>");
     expect(section).toContain("trust boundary: everything attestable is client-checkable; execution is trusted, bounded by replay.");
     expect(section).toContain("agent call: tools/list, then tools/call gmail.users.drafts.create");
-    expect(section).toContain('<code class="break-all">POST https://mcp.angelmcp.ai/');
+    expect(section).toContain('<code class="break-all">POST https://mcp.angelmcp.ai/@&lt;handle&gt;/gmail-draft-assistant</code>');
+    expect(section).not.toContain('POST https://mcp.angelmcp.ai/@&lt;handle&gt;/gmail-draft-without-send');
+    expect(section).toContain('receipted <code>unknown_tool</code> denial before provider work');
+    expect(section).not.toContain('<code>unknown_tool</code>, not a denial');
     expect(section).toContain("two receipts: Gateway and Broker");
     expect(section).toContain("anchored tail: sequence, previousHash, hash");
     expect(section).toContain("angel receipts pull gmail-draft-assistant --production --gate gateway --from 128 --to 151 --anchor 127:&lt;gateway-hash&gt; --out receipts/gateway-128-151.ndjson");

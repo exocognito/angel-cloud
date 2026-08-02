@@ -516,8 +516,10 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       const renderedEvidence = row.match(/href="(evidence\/ws-e\/[^"]+)"/)?.[1];
       if (renderedEvidence) expect(source).toBe(renderedEvidence);
       if (source !== "#sources") {
-        expect(source?.startsWith("evidence/")).toBe(true);
-        expect(existsSync(fileURLToPath(new URL(source ?? "", ledgerUrl)))).toBe(true);
+        expect(source).not.toMatch(/^(?:[a-z]+:|\/|\.\.)/i);
+        const sourceUrl = new URL(source ?? "", ledgerUrl);
+        expect(sourceUrl.protocol).toBe("file:");
+        expect(existsSync(fileURLToPath(sourceUrl))).toBe(true);
         expect(row).toContain(`href="${source}"`);
       }
     }

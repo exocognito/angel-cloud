@@ -322,7 +322,8 @@ bun test tests/cloud/aprd-v2.test.ts tests/cloud/product-ledger.test.ts
   38 pass, 0 fail
 ```
 
-These passing tests prove the current parser and the saved target-document
-contradiction. They do not prove the recommended commands exist.
+At `6cc2ed5`, before the WS-E reconciliation, these 38 passing tests proved the
+current parser and the saved target-document contradiction. They do not prove
+the recommended commands exist.
 
 Repository files were not changed.

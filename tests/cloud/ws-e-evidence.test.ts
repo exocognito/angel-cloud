@@ -294,6 +294,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(replayBrief).not.toContain(".agents/parallel-agents/");
     expect(replayBrief).toContain("Product Ledger command C11");
     expect(replayBrief).toContain("Product Ledger contradiction C13 and learning LR-018");
+    expect(replayBrief.replace(/\s+/g, " ")).toContain("At `6cc2ed5`, before the WS-E reconciliation, these 38 passing tests proved the current parser and the saved target-document contradiction");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
     expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
     const df002 = ledger.match(/<tr data-learning-id="DF-002"[\s\S]*?<\/tr>/)?.[0] ?? "";
@@ -333,8 +334,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(reducedSummaryDecision).toMatch(/Before `angel\.public-review\.v1` is served for a Version/);
     expect(reducedSummaryDecision).toContain("[E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html)");
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement survives if O10 changes, renumbers, or rejects that draft contract");
-    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
-    expect(reducedSummaryDecision).toContain("operational metadata that can reveal publish and activity cadence");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("raw policy digest must leave or be gated on every public surface for that Version");
+    expect(reducedSummaryDecision).not.toContain("the Version number and raw policy digest leave the public projection");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("operational metadata that can reveal publish and activity cadence");
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
     expect(ledger).toContain("docs/product-decisions/0007-capability-only-public-review.md");
     const decisionIndex = readFileSync(join(root, "docs/product-decisions/README.md"), "utf8");
@@ -367,6 +369,12 @@ describe("WS-E evidence-only decision closure", () => {
       expect(row).toContain(evidence);
       expect(row).not.toMatch(/CLI guide line 14|Generative eval line 100|Raw notes line 111 vs APRD|APRD §4\.4 vs CLI guide/);
     }
+    const lr016 = ledger.match(/<tr data-learning-id="LR-016"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(lr016).toContain('data-learning-source="aprd/v2.1-generative-evals.md#docs-only-fresh-machine-journey-with-a-newly-generated-angel"');
+    expect(lr016).toContain('href="aprd/v2.1-generative-evals.md#docs-only-fresh-machine-journey-with-a-newly-generated-angel"');
+    const lr017 = ledger.match(/<tr data-learning-id="LR-017"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(lr017).toContain('data-learning-source="aprd/v2.1-cli-user-guide.md#fresh-local-independence-journey"');
+    expect(lr017).toContain('href="aprd/v2.1-cli-user-guide.md#fresh-local-independence-journey"');
     for (const file of ["02-linux-oauth-storage.md", "03-local-cloud-syntax.md", "04-auth-expiry.md", "05-replay-syntax.md"]) {
       expect(readFileSync(join(root, "docs/evidence/ws-e", file), "utf8"))
         .toContain("At `6cc2ed5`, before the WS-E reconciliation");
