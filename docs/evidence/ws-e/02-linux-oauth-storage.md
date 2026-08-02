@@ -299,11 +299,11 @@ This is the contract O2 supports; implementation remains forbidden until WS2 app
 
 ### Encrypted record
 
-- One versioned vault contains all local Connections so nicknames and provider identity labels are not leaked through filenames.
+- One versioned vault contains all local grant profiles so nicknames and provider identity labels are not leaked through filenames.
 - Cleartext envelope fields: format version, KDF name and parameters, random salt, cipher name, random nonce, and ciphertext; binary values use canonical base64url.
 - KDF: scrypt to 32 bytes with a fresh 16-byte salt per vault rewrite, `N=131072`, `r=8`, `p=1`, and an implementation memory ceiling of at least 256 MiB.
 - Cipher: AES-256-GCM with a fresh 12-byte nonce, 128-bit tag, and AAD exactly `angel:local-oauth:v1`.
-- Encrypted payload per local Connection: provider, nickname, OAuth client ID, OAuth client secret where the provider requires one, stable provider subject, owner-safe display label, exact granted scopes, refresh token, and creation/update timestamps.
+- Encrypted payload per local grant profile: provider, nickname, OAuth client ID, OAuth client secret where the provider requires one, stable provider subject, owner-safe display label, exact granted scopes, refresh token, and creation/update timestamps.
 - No access token is persisted; refresh in memory when needed.
 
 The existing managed `EnvelopeCustody` code proves this repository already uses AES-GCM, random 12-byte IVs, 128-bit tags, and AAD-bound records. Local code must not reuse its cloud KEK assumption: headless unlock is a different boundary.
@@ -320,7 +320,7 @@ The existing managed `EnvelopeCustody` code proves this repository already uses 
 1. Obtain human consent and exchange the OAuth code entirely in memory.
 2. Verify provider identity and the exact required-scope floor before storage, matching current managed behavior.
 3. Acquire the vault lock; decrypt and authenticate any existing vault before changing it.
-4. Replace only the named local Connection. A nickname bound to a different provider identity/client fails unless the owner explicitly removes or renames it.
+4. Replace only the named local grant profile. A nickname bound to a different provider identity/client fails unless the owner explicitly removes or renames it.
 5. Encrypt the full new payload with fresh salt and nonce.
 6. Write a mode-0600 temporary file in the same directory, flush it, atomically rename it over the vault, then flush the directory.
 7. Release the lock and best-effort clear temporary plaintext byte buffers. Print only provider, nickname, safe identity label, granted scopes, health, and vault path.
@@ -332,14 +332,14 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 1. Validate ownership, regular-file type, mode, envelope shape, version, KDF bounds, nonce length, and ciphertext size before expensive work.
 2. Acquire the unlock secret from TTY or FD and derive the 32-byte key.
 3. Authenticate and decrypt the complete payload before exposing any plaintext to provider code.
-4. Select exactly one Connection by nickname; verify provider and scope coverage.
+4. Select exactly one local grant profile by nickname; verify provider and scope coverage.
 5. Keep the client secret and refresh token only in the `angel serve` process; obtain short-lived access tokens in memory.
 6. Return only safe summaries to CLI/MCP surfaces. Close the inherited FD and best-effort clear key/plaintext buffers after use and on shutdown.
 7. Wrong key, changed ciphertext/AAD, malformed payload, missing nickname, or missing scope fails closed. There is no keyring, environment, cloud, or fixture fallback.
 
 ### Rotation, loss, and removal
 
-- Reauthorization atomically replaces the same local Connection only after identity/client continuity checks.
+- Reauthorization atomically replaces the same local grant profile only after identity/client continuity checks.
 - A lost passphrase has no recovery path. The owner must revoke/re-authorize at the provider and create a new vault.
 - Removal deletes the local record only after any requested upstream revocation succeeds. If secure erasure cannot be guaranteed on the filesystem, docs must say deletion removes the live file/reference, not every historical block or backup.
 
@@ -347,7 +347,7 @@ A failed exchange, missing scope, wrong identity, encryption failure, or atomic-
 
 1. The target APRD/CLI wording “tokens live in the OS keychain” is false for headless exe.dev and must change before WS2 approval. No shipped manual should change now.
 2. O3 chose explicit `--local`/`--cloud` consent syntax. Implementation must never infer custody from keyring availability or machine type.
-3. `angel apps connect` and `angel serve` need one coherent local Connection lifecycle. The current target guide is internally split: `apps connect` describes Broker custody while `serve` says it stores a local grant.
+3. `angel apps connect` and `angel serve` need one coherent local grant lifecycle. The current target guide is internally split: `apps connect` describes Broker custody while `serve` says it stores a local grant.
 4. “Credentials go in, never out” needs a local boundary statement. In local mode, the `angel` process necessarily decrypts credentials; they remain unavailable to the user's agent/MCP responses, not unavailable to the machine owner or same-UID process.
 5. Headless unattended operation requires an operator-owned secret source. Angel should support FD injection, not pretend encryption can bootstrap its own key.
 6. Current environment-based management auth is separate shipped behavior and should not be cited as evidence that local OAuth-in-env is safe.

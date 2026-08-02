@@ -103,6 +103,9 @@ describe("WS-E evidence-only decision closure", () => {
     for (const [file] of briefs) expect(ledger).toContain(`evidence/ws-e/${file}`);
     expect(ledger).toContain("Seven briefs exist and WS-E changed no product behavior");
     expect(ledger).toContain("The recorded WS-E bar allowed exact remaining gaps");
+    expect(ledger).toContain("so the stricter bar governs, and WS-E stays active on O1");
+    const df047 = ledger.match(/<tr data-learning-id="DF-047"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(df047).toContain("Registry check 2026-08-01: @angelmcp/cli and angelmcp absent");
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toContain("WS-E authorizes no product implementation");
     expect(ledger).toContain("WS-E → O10 → WS2");
@@ -126,6 +129,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(linuxBrief).toContain("callback half of LR-009, tracked as Ledger contradiction C16");
     expect(linuxBrief).not.toContain("callback half of LR-009/O3");
     expect(linuxBrief).toContain("VM suffix uses UTC date 2026-08-02; the evidence run began on 2026-08-01 in America/Los_Angeles");
+    expect(linuxBrief).toContain("local grant profile");
+    expect(linuxBrief).not.toContain("local Connection");
     const packageBrief = readFileSync(join(root, "docs/evidence/ws-e/01-package-install-identity.md"), "utf8");
     expect(packageBrief).toContain("an isolated Bun-global install of the current registry tarball exposed bare `angel`");
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
@@ -162,6 +167,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(lr006).toContain('href="evidence/ws-e/01-package-install-identity.md"');
     expect(lr006).toContain('href="evidence/ws1-core-history.json"');
     expect(lr006).toContain('href="evidence/ws1-release-baseline.json"');
+    const manual = readFileSync(join(root, "docs/user-manual.md"), "utf8");
+    expect(manual).toMatch(/The public Angel page currently renders charter text and `argGuards` field names\s+and literal values/);
+    expect(manual).toContain("faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt");
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
     expect(faq).toMatch(/The public Angel page\s+currently renders the free-text `charter`/);
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
