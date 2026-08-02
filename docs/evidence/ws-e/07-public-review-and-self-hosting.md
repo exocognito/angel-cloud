@@ -38,7 +38,7 @@ O7 becomes a **public review summary**, not a full independently verifiable bund
 }
 ```
 
-Unknown keys fail. Generate one nonce per published Version, store it owner-only alongside the Version evidence, and reuse it for every public summary response for that Version. Before serving this summary, remove or gate the raw `policyDigest` on every public surface for the same Version. Until that gate passes, the commitment does not prevent offline confirmation while the current page publishes `policyDigest`. After the gate, the commitment is SHA-256 over a domain separator, that fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings then remain owner-only. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
+Unknown keys fail. Generate one nonce per published Version, store it owner-only alongside the Version evidence, and reuse it for every public summary response for that Version. Before serving this summary, remove or gate the raw `policyDigest` on every public surface for the same Version. Until that gate passes, the commitment does not prevent offline confirmation while the current page publishes `policyDigest`. After the gate, the commitment is SHA-256 over a domain separator, that fresh 32-byte owner-held random nonce, and the canonical artifact bytes. The nonce, raw digest, exact source, guards, artifact, scopes, and bindings then remain owner-only within the summary contract. A separate owner-opted-in public-source surface is outside `angel.public-review.v1`; it may disclose chosen charter, guard, or source fields, but never include intentionally disclosed source fields in the summary or publish the same-Version raw digest while calling the commitment hiding. The copy must say the summary cannot independently verify the artifact or inspect exact guards.
 
 O9 ships one honest status note: portable design and current Worker source exist; supported, licensed, reproducible self-hosting does not. Round 2 tests local and managed journeys only. Local use is not self-hosting.
 
@@ -50,7 +50,7 @@ G11 narrows from “full public review bundle” to public capability summary. T
 
 - Implement an exact-key validator and adversarial leak corpus for the public summary; prove anonymous live output contains none of the explicit exclusions. Prove fresh nonce generation, owner-only nonce custody, and resistance to offline guesses of low-entropy charter and guard values.
 - Remove or gate the raw `policyDigest` on every public surface for the same Version before serving the summary; prove no anonymous same-Version response allows offline artifact guesses.
-- Decide whether the current charter/guard page is narrowed, owner-opt-in, or explicitly documented as public source.
+- Decide whether the current charter/guard page is narrowed or moved to a separate owner-opted-in public-source surface. Never include intentionally disclosed source fields in the summary; the summary's owner-only claim does not apply to fields the owner publishes separately.
 - Do not claim digest recomputability, exact-policy review, open source, turnkey setup, cross-implementation compatibility, support, upgrades, recovery, SLA, or security maintenance.
 - A future self-host claim requires a repository-wide license, parameterized manifests, public least-privilege setup, clean-room deployment, full lifecycle/recovery proof, versioned conformance tests, and a support boundary.
 
@@ -262,6 +262,11 @@ Contract details:
   digest stay owner-only. Copy must say: **“This summary contains a hiding
   commitment, not enough data to verify the artifact or inspect exact argument
   guards.”**
+- A separate owner-opted-in public-source surface is outside
+  `angel.public-review.v1`. It may disclose chosen charter, guard, or source
+  fields, but those fields never enter the summary and are not called
+  owner-only once intentionally published. The same-Version raw digest remains
+  gated while the commitment is called hiding.
 - No optional extension bag is allowed. A later field requires a schema version
   and another threat review.
 
@@ -305,7 +310,8 @@ Before shipping the recommendation:
    installation, management view, custody summary, receipt, or full artifact.
 4. Remove or gate the current page's raw `policyDigest` before serving the
    summary for the same Version. Separately decide whether charter and guard
-   literals are narrowed, opt-in, or documented as intentional public source.
+   literals are narrowed or moved to an owner-opted-in public-source surface
+   outside the summary.
 5. Run a live anonymous GET after deployment and save the exact response.
 
 ## Closure assessment

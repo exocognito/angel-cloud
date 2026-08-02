@@ -212,15 +212,22 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicBrief).toContain("reuse it for every public summary response for that Version");
     expect(publicBrief).toContain("remove or gate the raw `policyDigest` on every public surface for the same Version");
     expect(publicBrief).toContain("does not prevent offline confirmation while the current page publishes `policyDigest`");
+    expect(publicBrief).toContain("A separate owner-opted-in public-source surface is outside `angel.public-review.v1`");
+    expect(publicBrief).toContain("never include intentionally disclosed source fields in the summary");
     expect(o7).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
+    expect(o7).toContain("Any owner-opted-in public-source disclosure is separate from the summary");
     const lr002 = ledger.match(/<tr data-learning-id="LR-002"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(lr002).toContain("hiding only after every public surface for the same Version removes or gates the raw policy digest");
+    expect(lr002).toContain("Any owner-opted-in public-source disclosure is separate from the summary");
     expect(publicBrief).not.toContain('"digest": "<64 lowercase hexadecimal SHA-256 characters>"');
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");
     expect(replayBrief).toContain("Product Ledger contradiction C13/LR-018");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
     expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
+    const df002 = ledger.match(/<tr data-learning-id="DF-002"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(df002).toContain('data-learning-source="evidence/ws-e/06-account-deletion.md"');
+    expect(df002).toContain('href="evidence/ws-e/06-account-deletion.md"');
     for (const key of ["DF-026", "LR-010"]) {
       const row = ledger.match(new RegExp(`<tr data-learning-id="${key}"[\\s\\S]*?<\\/tr>`))?.[0] ?? "";
       expect(row).toContain('data-learning-source="evidence/ws-e/06-account-deletion.md"');
@@ -243,7 +250,9 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq).toMatch(/The final privacy treatment\s+remains undecided/);
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
-    expect(faq).toContain("https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
+    expect(faq).toContain("canonical `docs/product-ledger.html`");
+    expect(faq.replace(/\s+/g, " ")).toContain("`ROADMAP.md` remains a stable pointer for old links");
+    expect(faq).not.toContain("github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
     expect(faq).not.toContain("plan-of-record `ROADMAP.md`");
     expect(ledger).toContain("Today’s basic page still exposes the raw policy digest, charter, and guard literals");
     expect(ledger).toContain("only after every public surface for the same Version removes or gates the raw policy digest");
