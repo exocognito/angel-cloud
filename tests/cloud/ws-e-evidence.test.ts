@@ -1,10 +1,21 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 const root = join(import.meta.dir, "../..");
 const ledger = readFileSync(join(root, "docs/product-ledger.html"), "utf8");
 const roadmap = readFileSync(join(root, "ROADMAP.md"), "utf8");
+
+const markdownAnchors = (source: string) => {
+  const seen = new Map<string, number>();
+  return new Set([...source.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) => {
+    const base = (match[1] ?? "").trim().toLowerCase().replace(/[`*]/g, "")
+      .replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
+    const count = seen.get(base) ?? 0;
+    seen.set(base, count + 1);
+    return count === 0 ? base : `${base}-${count}`;
+  }));
+};
 const briefs = [
   ["01-package-install-identity.md", ["O1"]],
   ["02-linux-oauth-storage.md", ["O2"]],
@@ -28,6 +39,18 @@ describe("WS-E evidence-only decision closure", () => {
       ]) expect(brief).toContain(heading);
       expect(brief).toContain("Evidence status: complete");
       expect(brief).toContain("Product implementation: none");
+      for (const match of brief.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+        const target = match[1] ?? "";
+        if (/^(?:https?:|#)/.test(target)) continue;
+        const [relativePath, fragment] = target.split("#", 2);
+        const resolvedPath = resolve(dirname(path), relativePath ?? "");
+        expect(existsSync(resolvedPath), `${file}: ${target}`).toBe(true);
+        if (!fragment) continue;
+        expect(fragment).not.toMatch(/^L\d/);
+        const targetSource = readFileSync(resolvedPath, "utf8");
+        if (resolvedPath.endsWith(".md")) expect(markdownAnchors(targetSource).has(fragment)).toBe(true);
+        else if (resolvedPath.endsWith(".html")) expect(targetSource).toContain(`id="${fragment}"`);
+      }
       if ((decisions as readonly string[]).includes("O1")) {
         expect(brief).toContain("Outcome: exact gap");
         expect(brief).not.toContain("enough evidence to close O1");
@@ -52,9 +75,14 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Control of the `@angelmcp` npm scope is unverified");
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
-    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="OPEN"/);
+    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="CLOSED"/);
+    expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
     expect(ledger).toContain("disposable real Google callback/client-type journey");
+    expect(ledger).toContain("APRD assumes an OS keychain on exe.dev Linux");
     expect(ledger).toContain("APRD assumes one OAuth client can serve hosted and headless consent");
+    expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
+    expect(ledger).toContain("O6 fixed the deletion cascade and non-resolving handle tombstones");
+    expect(ledger).toContain("Seven decisions closed across six briefs");
     expect(ledger).toContain("WS-E is now active.");
   });
 
@@ -81,16 +109,32 @@ describe("WS-E evidence-only decision closure", () => {
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
     expect(ledger).not.toMatch(/review bundle/i);
+    expect(ledger).not.toMatch(/public bundle/i);
     expect(ledger).toContain("Publish only the O7 capability summary");
     const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayBrief).toContain("Product Ledger command C11");
     expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
     expect(ledger).toMatch(/data-learning-id="DF-035"[^>]+data-learning-source="evidence\/ws-e\/07-public-review-and-self-hosting\.md"/);
+    const df048 = ledger.match(/<tr data-learning-id="DF-048"[\s\S]*?<\/tr>/)?.[0] ?? "";
+    expect(df048).toContain("Round 2 defers curl; no installer enters WS2");
+    expect(df048).not.toContain("if it reduces clean-room failure");
     const lr006 = ledger.match(/<tr data-learning-id="LR-006"[\s\S]*?<\/tr>/)?.[0] ?? "";
     expect(lr006).toContain('href="evidence/ws-e/01-package-install-identity.md"');
     expect(lr006).toContain('href="evidence/ws1-core-history.json"');
     expect(lr006).toContain('href="evidence/ws1-release-baseline.json"');
     const faq = readFileSync(join(root, "docs/faq.md"), "utf8");
-    expect(faq).toContain("guard field names and literal values as public");
+    expect(faq).toMatch(/guard field\s+names and literal values as public/);
+    const restamped = {
+      index: ["WS1", "WS2", "M-DF2"],
+      experience: ["EW1", "EW2", "EW3", "EW4", "EW5", "EW6"],
+      command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
+      guarantee: ["G08", "G10", "G11", "G13", "G14"],
+      deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
+    } as const;
+    for (const [kind, keys] of Object.entries(restamped)) {
+      for (const key of keys) expect(ledger).toMatch(new RegExp(
+        `data-${kind}-key="${key}"[^>]+data-${kind}-last-verified="2026-08-01 · WS-E evidence"`,
+      ));
+    }
   });
 });

@@ -157,6 +157,11 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(count('data-deliverable-approval="')).toBe(ids.length);
     expect(count('data-deliverable-parent="')).toBe(ids.length);
     expect(count('data-deliverable-last-verified="')).toBe(ids.length);
+    for (const block of recordBlocks("details", "data-deliverable-key")) {
+      const parent = block.match(/data-deliverable-parent="([^"]+)"/)?.[1];
+      const rendered = block.match(/<dt>Linked Project Index rows<\/dt><dd>(.*?)<\/dd>/)?.[1];
+      expect(rendered).toBe(parent);
+    }
     for (const field of [
       "Claim or goal", "Evidence", "Linked Project Index rows",
       "Decisions or blockers", "Source artifacts", "Last verified",
@@ -341,10 +346,12 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     const contradictions = [...ledger.matchAll(
       /data-contradiction-key="(C\d+)" data-record-state="([^"]+)"/g,
     )];
-    expect(contradictions).toHaveLength(15);
+    expect(contradictions).toHaveLength(16);
     expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(2);
-    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(13);
-    expect(count('data-contradiction-last-verified="')).toBe(15);
+    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(14);
+    expect(count('data-contradiction-last-verified="')).toBe(16);
+    expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="CLOSED"/);
+    expect(ledger).toMatch(/data-contradiction-key="C16" data-record-state="OPEN"/);
   });
 
   test("shows the optional-module chooser without silently adopting modules", () => {
@@ -462,6 +469,21 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "Claim or goal", "Evidence", "Linked Project Index rows",
       "Decisions or blockers", "Source artifacts", "Last verified",
     ]);
+    const lastVerifiedBlocks = [
+      ...recordBlocks("details", "data-index-key"),
+      ...recordBlocks("details", "data-deliverable-key"),
+      ...recordBlocks("article", "data-guarantee-key"),
+      ...recordBlocks("figure", "data-experience-key"),
+      ...recordBlocks("article", "data-machinery-key"),
+      ...recordBlocks("details", "data-command-key"),
+      ...recordBlocks("details", "data-decision-key"),
+      ...recordBlocks("details", "data-contradiction-key"),
+    ];
+    for (const block of lastVerifiedBlocks) {
+      const machine = block.match(/data-[\w-]+-last-verified="([^"]+)"/)?.[1];
+      const rendered = block.match(/(?:<dt>Last verified<\/dt><dd>|<strong>Last verified<\/strong><div>)(.*?)(?:<\/dd>|<\/div>)/)?.[1];
+      expect(rendered).toBe(machine);
+    }
     const learningRows = recordBlocks("tr", "data-learning-id");
     expectFields(learningRows, [
       "data-disposition=", "data-destination=", "data-learning-blocker=",

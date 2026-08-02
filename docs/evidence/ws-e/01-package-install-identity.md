@@ -86,12 +86,12 @@ curl -I https://angelmcp-docs-demo.sam-633.workers.dev/install.sh
 Repository sources:
 
 - Product decision and unresolved evidence: [`docs/product-ledger.html`](../../../docs/product-ledger.html), entries O1, C7, DF-029, DF-047, DF-048, and LR-012.
-- Root toolchain/workspace contract: [`package.json:2-20`](../../../package.json#L2-L20).
-- Current package contract: [`packages/core/package.json:2-44`](../../../packages/core/package.json#L2-L44).
-- Bun executable contract: [`packages/core/src/scripts/angel.ts:1-8`](../../../packages/core/src/scripts/angel.ts#L1-L8).
-- Current install docs: [`docs/user-manual.md:449-465`](../../../docs/user-manual.md#L449-L465), [`docs-site/public/SKILL.md:59-71`](../../../docs-site/public/SKILL.md#L59-L71), and [`docs-site/public/llms.txt`](../../../docs-site/public/llms.txt).
-- Target guide with the disputed package: [`docs/aprd/v2.1-cli-user-guide.md:9-18`](../../../docs/aprd/v2.1-cli-user-guide.md#L9-L18).
-- Monorepo/package boundary: [`docs/adrs/0007-monorepo-source-and-release-integrity.md:9-29`](../../../docs/adrs/0007-monorepo-source-and-release-integrity.md#L9-L29) and lines 71-78.
+- Root toolchain/workspace contract: [`package.json:2-20`](../../../package.json).
+- Current package contract: [`packages/core/package.json:2-44`](../../../packages/core/package.json).
+- Bun executable contract: [`packages/core/src/scripts/angel.ts:1-8`](../../../packages/core/src/scripts/angel.ts).
+- Current install docs: [`docs/user-manual.md:449-465`](../../../docs/user-manual.md#install-the-cli), [`docs-site/public/SKILL.md:59-71`](../../../docs-site/public/SKILL.md#step-1--install-the-cli-no-repo-clone), and [`docs-site/public/llms.txt`](../../../docs-site/public/llms.txt).
+- Target guide with the disputed package: [`docs/aprd/v2.1-cli-user-guide.md:9-18`](../../../docs/aprd/v2.1-cli-user-guide.md#install-the-final-v21-cli).
+- Monorepo/package boundary: [`docs/adrs/0007-monorepo-source-and-release-integrity.md:9-29`](../../../docs/adrs/0007-monorepo-source-and-release-integrity.md#decision) and lines 71-78.
 - Existing evidence: [`docs/evidence/ws1-release-baseline.json`](../../../docs/evidence/ws1-release-baseline.json) and [`docs/evidence/ws1-starter-proof.json`](../../../docs/evidence/ws1-starter-proof.json).
 - Package-age failure: [GitHub issue #42](https://github.com/exocognito/angelmcp/issues/42).
 - Public starter at the tested commit: [exocognito/angels README at `2a635bf`](https://github.com/exocognito/angels/blob/2a635bf863a572a6c02e66d2a9e8e93b6d94243b/README.md).
