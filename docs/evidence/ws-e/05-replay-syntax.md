@@ -69,7 +69,7 @@ Is replay `angel replay` or `angel serve --replay`?
 - Product Ledger command C11: replay is read-only unless explicit report output.
 - APRD §4.4: `angel serve gmail-inbox-zero --replay activity.json`.
 - APRD §8.1: later uses top-level `angel replay ... --fail-on-tamper`.
-- APRD commitment matrix: still says `angel serve --replay`.
+- At `6cc2ed5`, before the WS-E reconciliation, the APRD commitment matrix still said `angel serve --replay`.
 - Target CLI guide **angel replay**: top-level replay with receipt and bundle
   paths.
 - Generative evals: require `angel replay`, tamper naming, and zero provider
@@ -110,8 +110,7 @@ and export have no guarantee yet.
 
 The APRD's station sketch treats replay as a mode of the long-running local
 server. The target CLI guide, normative golden-path list, generative evals, and
-Ledger Surface Window treat replay as a separate one-shot command. The APRD
-therefore contradicts itself as well as the guide.
+Ledger Surface Window treat replay as a separate one-shot command. At `6cc2ed5`, before the WS-E reconciliation, the APRD therefore contradicted itself as well as the guide.
 
 The complete journey does not disprove the Ledger's recommendation. Replay
 happens after a production call and receipt pull. At that point the owner needs

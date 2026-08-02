@@ -563,6 +563,10 @@ describe("APRD v2", () => {
     expect(generativeEvals.replace(/\s+/g, " ")).toContain("outside candidate sees public surfaces and generated inputs only");
     expect(generativeEvals).not.toContain("after the evaluator sees the current repository state");
     expect(generativeEvals).not.toContain("after the evaluator sees repository fixtures");
+    expect(generativeEvals).toContain('custody_mode ::= "--local" | "--cloud"');
+    expect(generativeEvals).toContain("grant_nickname ::= <lowercase name not present in seed fixtures>");
+    expect(generativeEvals).toContain("custody mode and grant nickname");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("no generated slug, handle, grant nickname, marker, path, Account, or cloud Connection nickname may equal a committed fixture");
     expect(generativeEvals).toContain("missing original arguments");
     expect(generativeEvals).toContain("edit original arguments");
     expect(generativeEvals).toContain("edit detail");

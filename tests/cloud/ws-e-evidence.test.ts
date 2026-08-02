@@ -322,7 +322,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicPageDecision).toMatch(/Before the\s+`angel\.public-review\.v1` summary is served for a Version/);
     expect(publicPageDecision).toContain("[privacy requirement](#what-is-not-decided)");
     expect(publicPageDecision).toContain("Shipped invariants, each pinned by a current test");
-    expect(publicPageDecision).toContain("must be pinned by E16 before the summary ships");
+    expect(publicPageDecision).not.toContain("This target must be pinned by E16 before the summary ships");
     expect(publicPageDecision).not.toContain("Invariants regardless, each pinned by a test");
     expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
     expect(publicPageDecision).toContain("operational metadata that can reveal publish and activity cadence");
@@ -366,14 +366,18 @@ describe("WS-E evidence-only decision closure", () => {
     expect(custodyBrief).toContain("angel serve draft-check-7k2m --port 7423 --grant local-gmail-7k2m");
     expect(readFileSync(join(root, "docs/evidence/ws-e/02-linux-oauth-storage.md"), "utf8"))
       .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target APRD and CLI guide said local tokens and Account management tokens lived in the OS keychain");
-    expect(readFileSync(join(root, "docs/evidence/ws-e/04-auth-expiry.md"), "utf8"))
-      .toContain("At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token");
+    const authBrief = readFileSync(join(root, "docs/evidence/ws-e/04-auth-expiry.md"), "utf8");
+    expect(authBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token");
+    expect(authBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, APRD §4.1 used days-long links and conflicted with the Ledger");
+    expect(authBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, O4 was open because the APRD said days while the owner and Ledger said minutes");
     const replayEvidenceBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
     expect(replayEvidenceBrief).toContain("angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>");
     expect(replayEvidenceBrief).not.toContain("angel replay <angel> --receipts <path> --bundle <path>");
     expect(replayEvidenceBrief).toContain("Gateway records: 24 (128..151)");
     expect(replayEvidenceBrief).toContain("Broker records: 16 (93..108)");
     expect(replayEvidenceBrief).toContain("Product Ledger contradiction C13 and learning LR-018");
+    expect(replayEvidenceBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, the APRD commitment matrix still said `angel serve --replay`");
+    expect(replayEvidenceBrief).toContain("At `6cc2ed5`, before the WS-E reconciliation, the APRD therefore contradicted itself as well as the guide");
     expect(replayEvidenceBrief).not.toContain("Product Ledger contradiction C13/LR-018");
     expect(replayEvidenceBrief).toContain("--gate <gateway|broker>");
     expect(replayEvidenceBrief).toContain("--anchor <sequence>:<hash>");

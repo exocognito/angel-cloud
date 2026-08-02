@@ -62,8 +62,7 @@ byte-identical; no cookies exist on the public surface.
 
 The unbuilt reduced-summary renderer may use the owner-held per-Version nonce
 only to derive the commitment. Before release, E16 must pin that it never renders
-the Version number, nonce, installation, `identityLabel`, or Connection ids. This
-target must be pinned by E16 before the summary ships.
+the Version number, nonce, installation, `identityLabel`, or Connection ids.
 
 ## What is not decided
 

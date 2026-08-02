@@ -58,7 +58,7 @@ How long should one single-use email magic link remain valid, and does SMS belon
 ##### O4 full record: Repository sources
 
 - `docs/product-ledger.html`: decision O4, contradiction C4, learning DF-049/LR-011, deliverable PD-01, command C02, and guarantee G10.
-- `docs/aprd/angel-cloud-aprd.html`, §4.1: target Better Auth + D1, “days-long” links, optional passkey, and recovery-contact intent. This is an unapproved draft and conflicts with the Ledger.
+- At `6cc2ed5`, before the WS-E reconciliation, APRD §4.1 used days-long links and conflicted with the Ledger; it also specified target Better Auth + D1, optional passkey, and recovery-contact intent. The draft remains unapproved.
 - At `6cc2ed5`, before the WS-E reconciliation, the target login guide described a keychain token, email link, browser hop, login nonce, and no management mutation before successful login. WS-E removed the keychain assumption; exact management-token storage remains a WS2 gate.
 - `docs/faq.md`: current reality is Cloudflare Access and one pre-provisioned Account; no signup exists.
 - `src/oauth-state.ts` and `tests/cloud/oauth-state-registry.test.ts`: the existing Google OAuth state is a separate 10-minute, single-consumption flow; it is useful implementation evidence but is not the future login link.
@@ -89,7 +89,7 @@ External pages were fetched directly with `curl -L`; relevant statements were me
 
 ##### O4 full record: Product truth
 
-- **Verified:** O4 is open because the APRD says days while the owner/Ledger says minutes.
+- **Verified:** At `6cc2ed5`, before the WS-E reconciliation, O4 was open because the APRD said days while the owner and Ledger said minutes. WS-E reconciled the target text to 600 seconds.
 - **Verified:** The intended framework is Better Auth on Control with D1, but Better Auth is not present in `package.json`, no auth migration exists, and no public login implementation exists.
 - **Verified:** The target CLI requires an email browser hop and a one-time login nonce. Login must create no Angel, Connection, key, Version, deployment, receipt, or provider object.
 - **Verified:** SMS is mentioned only as unresolved product intent. No SMS provider, phone store, consent flow, recovery flow, or test exists.
