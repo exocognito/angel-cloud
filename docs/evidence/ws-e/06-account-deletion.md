@@ -70,7 +70,7 @@ What exactly must Account deletion remove, what may remain, and which state is i
 - `src/handles.ts`, `src/workers/gateway.ts`: permanent handle policy and Gateway replica.
 - `src/workers/control.ts`, `src/workers/broker.ts`, `src/access.ts`: Access auth, Google grant revoke/remove, and external boundaries.
 - `wrangler.{control,gateway,broker}.jsonc`: all namespaces, SQLite classes, platform secrets/bindings, and 100% Workers Logs sampling.
-- `docs/user-manual.md`, `docs/faq.md`, Product Ledger O6/G10/C13, APRD §4.1, CLI target guide, ADRs 0001–0007.
+- `docs/user-manual.md`, `docs/faq.md`, Product Ledger decision O6, guarantee G10, and command C13, APRD §4.1, CLI target guide, ADRs 0001–0007.
 - `tests/cloud/management.test.ts`, `management-worker.test.ts`, `account-handles.test.ts`, `credential-vault.test.ts`, `custody.test.ts`, `control-provider-lifecycle.test.ts`, `oauth-state-registry.test.ts`, `gate-workers.test.ts`.
 
 Representative inventory commands:

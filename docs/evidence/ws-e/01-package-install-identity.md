@@ -12,7 +12,7 @@ What exact public package and install path does Round 2 use?
 
 ## Method
 
-Compared the live `@smcllns/angel-core@0.3.0` contract with the unclaimed `@angelmcp/cli` and `angelmcp` names. Tested current package packing and clean-consumer CLI behavior, Bun and pnpm global installs, npm registry metadata, package provenance, the merged public starter, and the proposed install host. No package was published or reserved.
+Compared the live `@smcllns/angel-core@0.3.0` contract with the unclaimed `@angelmcp/cli` and `angelmcp` names. Tested current package packing and clean-consumer CLI behavior, a pnpm global install, npm registry metadata, package provenance, the merged public starter, and the proposed install host. Bun-global remains documentation-backed and unproved until the candidate package exists. No package was published or reserved.
 
 ## Verified results
 
@@ -33,7 +33,6 @@ The public journey becomes a product CLI journey with one prerequisite, Bun, rat
 
 ## Execution gates
 
-- Control the `@angelmcp` npm scope without racing or squatting.
 - Build the CLI-only package without a second public core install or workspace link.
 - Declare the tested Bun minimum; use no lifecycle scripts.
 - Publish through GitHub OIDC/trusted publishing with npm provenance.

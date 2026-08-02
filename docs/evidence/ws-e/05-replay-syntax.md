@@ -64,7 +64,7 @@ Is replay `angel replay` or `angel serve --replay`?
 - Product Ledger O5: “Recommend separate `angel replay` unless the complete
   journey disproves it.”
 - Product Ledger C13/LR-018: APRD and target guide conflict.
-- Product Ledger C11: replay is read-only unless explicit report output.
+- Product Ledger command C11: replay is read-only unless explicit report output.
 - APRD §4.4: `angel serve gmail-inbox-zero --replay activity.json`.
 - APRD §8.1: later uses top-level `angel replay ... --fail-on-tamper`.
 - APRD commitment matrix: still says `angel serve --replay`.

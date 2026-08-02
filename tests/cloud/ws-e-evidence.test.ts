@@ -32,6 +32,10 @@ describe("WS-E evidence-only decision closure", () => {
         expect(brief).toContain("Outcome: exact gap");
         expect(brief).not.toContain("enough evidence to close O1");
         expect(brief).not.toContain("O1 should close");
+        expect(brief).toContain("a pnpm global install");
+        expect(brief).toContain("Bun-global remains documentation-backed and unproved");
+        const canonical = brief.split("## Evidence record")[0] ?? "";
+        expect(canonical).not.toContain("- Control the `@angelmcp` npm scope");
       } else expect(brief).toContain("Outcome: close");
     }
   });
@@ -46,6 +50,7 @@ describe("WS-E evidence-only decision closure", () => {
       expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="CLOSED"`));
     }
     expect(ledger).toContain("Control of the `@angelmcp` npm scope is unverified");
+    expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
     expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
     expect(ledger).toMatch(/data-contradiction-key="C15" data-record-state="OPEN"/);
     expect(ledger).toContain("disposable real Google callback/client-type journey");
@@ -70,5 +75,11 @@ describe("WS-E evidence-only decision closure", () => {
     const deletionBrief = readFileSync(join(root, "docs/evidence/ws-e/06-account-deletion.md"), "utf8");
     expect(deletionBrief).toContain("O10 must accept the non-resolving permanent-handle tombstone");
     expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
+    expect(ledger).not.toContain("full downloadable review bundle");
+    expect(ledger).not.toContain("Publish a downloadable secret-free review bundle");
+    expect(ledger).toContain("Publish only the O7 capability summary");
+    const replayBrief = readFileSync(join(root, "docs/evidence/ws-e/05-replay-syntax.md"), "utf8");
+    expect(replayBrief).toContain("Product Ledger command C11");
+    expect(deletionBrief).toContain("decision O6, guarantee G10, and command C13");
   });
 });
