@@ -452,7 +452,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "Decisions or blockers", "Source artifacts", "Last verified",
     ]);
     expectFields(recordBlocks("article", "data-interface-key"), [
-      "Evidence", "Linked Project Index rows", "Decisions or blockers",
+      "Claim or goal", "Evidence", "Linked Project Index rows", "Decisions or blockers",
       "Source artifacts", "Last verified",
     ]);
     expectFields(recordBlocks("article", "data-machinery-key"), [

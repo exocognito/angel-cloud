@@ -62,6 +62,9 @@ describe("WS-E evidence-only decision closure", () => {
         const canonical = brief.split("## Evidence record")[0] ?? "";
         expect(canonical).not.toContain("- Control the `@angelmcp` npm scope");
       } else expect(brief).toContain("Outcome: close");
+      if ((decisions as readonly string[]).some((decision) => ["O3", "O4", "O5", "O6"].includes(decision))) {
+        expect(brief).toContain("Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`");
+      }
     }
   });
 
@@ -88,6 +91,13 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
+    expect(ledger).toContain("Bun-global install that is documentation-backed and untested");
+    expect(ledger).toContain("O10 blocks WS2 product work; O9 is closed.");
+    expect(ledger).toContain("O10 blocks WS2 product work; O6 is closed.");
+    for (const key of ["C4", "C6", "C13"]) {
+      const contradiction = ledger.match(new RegExp(`<details class="contradiction" data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
+      expect(contradiction).toContain("WS2 execution gate");
+    }
     expect(ledger).toContain("WS-E is now active.");
   });
 
@@ -154,10 +164,11 @@ describe("WS-E evidence-only decision closure", () => {
       index: ["WS2", "M-DF2"],
       experience: ["EW1", "EW2", "EW3", "EW4", "EW5", "EW6"],
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
-      guarantee: ["G08", "G10", "G11", "G13", "G14"],
+      guarantee: ["G08", "G10", "G11", "G13"],
       deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
       interface: ["SI5"],
     } as const;
+    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · Pi release proof"/);
     for (const [kind, keys] of Object.entries(restamped)) {
       for (const key of keys) expect(ledger).toMatch(new RegExp(
         `data-${kind}-key="${key}"[^>]+data-${kind}-last-verified="2026-08-01 · WS-E evidence"`,

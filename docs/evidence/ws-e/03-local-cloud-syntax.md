@@ -45,6 +45,8 @@ Local can remain account-free and cloud can remain separately authenticated. The
 
 ## Evidence record
 
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
+
 # Evidence brief O3 — local versus cloud consent and custody
 
 ## Question

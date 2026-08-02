@@ -43,6 +43,8 @@ Delete Account needs a cross-Worker internal job, not demo reset. Owner copy mus
 
 ## Evidence record
 
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
+
 # Brief O6 — Exact Account-deletion scope
 
 ## Question

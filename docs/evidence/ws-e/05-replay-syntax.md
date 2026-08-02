@@ -44,6 +44,8 @@ The journey has three explicit trust actions: `serve` exercises local runtime an
 
 ## Evidence record
 
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
+
 # Evidence brief O5 — replay command shape
 
 ## Question

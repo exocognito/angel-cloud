@@ -38,6 +38,8 @@ All days-long copy must change. Login shows the ten-minute expiry and one resend
 
 ## Evidence record
 
+Repository state: `evidence/ws-e-decision-briefs` at `6cc2ed5`
+
 # Brief O4 — Email magic-link lifetime and SMS scope
 
 ## Question
