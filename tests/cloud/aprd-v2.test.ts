@@ -565,6 +565,9 @@ describe("APRD v2", () => {
     expect(generativeEvals).not.toContain("after the evaluator sees repository fixtures");
     expect(generativeEvals).toContain("missing original arguments");
     expect(generativeEvals).toContain("edit original arguments");
+    expect(generativeEvals).toContain("edit detail");
+    expect(cliUserGuide).toContain("recorded-versus-local decision and detail comparisons");
+    expect(cliUserGuide).toContain("recorded-versus-local detail disagreement");
     expect(generativeEvals).toContain("Gateway-only denial before a later allowed call");
     expect(generativeEvals).toContain("independent Gateway and Broker anchors");
     const families = [

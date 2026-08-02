@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { headingSlugs } from "./markdown-slugs";
 
@@ -19,6 +19,8 @@ const briefs = [
 
 describe("WS-E evidence-only decision closure", () => {
   test("ships exactly seven decision-grade evidence briefs", () => {
+    expect(readdirSync(join(root, "docs/evidence/ws-e")).sort())
+      .toEqual(briefs.map(([file]) => file).sort());
     expect(headingSlugs("```sh\n~~~\n# not-a-heading\n```\n## real-heading"))
       .toEqual(new Set(["real-heading"]));
     for (const [file, decisions] of briefs) {
@@ -185,8 +187,8 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
     expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
-    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
+    expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added an authoring cross-reference in <code>docs/user-manual.md</code>, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added an authoring cross-reference in `docs/user-manual.md`, added the privacy caveat to PD 0002, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
     expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
@@ -323,6 +325,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(publicPageDecision).toContain("must be pinned by E16 before the summary ships");
     expect(publicPageDecision).not.toContain("Invariants regardless, each pinned by a test");
     expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Version number and raw policy digest leave the public projection");
+    expect(publicPageDecision).toContain("operational metadata that can reveal publish and activity cadence");
     expect(publicPageDecision.replace(/\s+/g, " ")).toContain("Fixed, non-Version-specific provenance and limitation copy may remain outside the strict payload");
     expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (Product Ledger O7");
     expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (Product Ledger O10");

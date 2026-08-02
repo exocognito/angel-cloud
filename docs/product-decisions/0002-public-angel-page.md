@@ -70,8 +70,10 @@ target must be pinned by E16 before the summary ships.
 - **Privacy beyond the reduced summary.** The reduced public-summary decision
   (Product Ledger O7) is settled but not built. Before the
   `angel.public-review.v1` summary is served for a Version, every public surface
-  for that Version must remove or gate the raw policy digest. Broader privacy
-  treatment for user-authored charter and guard literals remains for the WS2
+  for that Version must remove or gate the raw policy digest. The Version number
+  is operational metadata that can reveal publish and activity cadence, so it
+  also stays outside the strict summary. Broader privacy treatment for
+  user-authored charter and guard literals remains for the WS2
   approval gate (O10). See
   [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
   and the canonical `docs/product-ledger.html` records O7, SI5, and O10.
