@@ -27,14 +27,16 @@ const TESTED_BUN_RANGE = ">=1.3.0";
 const GOLDEN_ANGEL = "gmail-read-and-draft";
 const GOLDEN_DIGEST = "11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4";
 
+// Only reproducible facts are committed. A gzip digest and the runner's Bun
+// build differ between machines, so committing them would make the comparison
+// unpassable on CI; they are reported instead. The published artifact's real
+// identity is npm's dist.integrity, which the release workflow records.
 interface ProofRecord {
   package: string;
   version: string;
   bin: string;
-  tarballSha256: string;
-  tarballBytes: number;
+  engines: string;
   files: string[];
-  bunVersion: string;
   installCommand: string;
   versionOutput: string;
   builtAngel: string;
@@ -195,10 +197,8 @@ try {
     package: EXPECTED_NAME,
     version: EXPECTED_VERSION,
     bin: EXPECTED_BIN,
-    tarballSha256,
-    tarballBytes: tarballBytes.byteLength,
+    engines: TESTED_BUN_RANGE,
     files,
-    bunVersion: Bun.version,
     installCommand: `bun add --global ${EXPECTED_NAME}@${EXPECTED_VERSION}`,
     versionOutput,
     builtAngel: GOLDEN_ANGEL,
@@ -226,7 +226,10 @@ try {
     }
   }
 
-  console.log(`WS2 CLI install proof passed: ${EXPECTED_NAME}@${versionOutput} installs a bare ${EXPECTED_BIN} under Bun ${Bun.version}`);
+  console.log(
+    `WS2 CLI install proof passed: ${EXPECTED_NAME}@${versionOutput} installs a bare ${EXPECTED_BIN}`
+    + ` under Bun ${Bun.version}; this run packed ${tarballBytes.byteLength} bytes, sha256 ${tarballSha256}`,
+  );
 } finally {
   rmSync(workspace, { recursive: true, force: true });
 }
