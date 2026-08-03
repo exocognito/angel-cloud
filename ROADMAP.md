@@ -35,8 +35,10 @@ evidence decisions.
 On 2026-08-03 Sam closed the last two decisions. O1 fixes the public package as
 `@angelmcp/cli@0.1.0`, to be installed with `bun add --global
 @angelmcp/cli@0.1.0`; he created the `@angelmcp` npm org, and control is
-verified. WS2 has since built that package and proved its clean install, but it
-is unpublished, so the command becomes normative on publication. O10
+verified. WS2 built that package and published it on 2026-08-03 as
+`@angelmcp/cli@0.1.0`, from a `cli-v0.1.0` tag through npm trusted publishing
+with provenance, so `bun add --global @angelmcp/cli@0.1.0` is now the real
+install command. O10
 approves **WS2 and Dogfood Round 2** as the seven WS-E briefs define them, with
 two choices attached: a deleted Account handle becomes a permanent non-resolving
 tombstone and re-signup takes a new handle; public charter text and guard

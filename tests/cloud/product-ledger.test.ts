@@ -150,7 +150,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("Brief 7 · public/self-hosting");
     const id09 = recordBlocks("details", "data-deliverable-key")
       .find((block) => block.includes('data-deliverable-key="ID-09"')) ?? "";
-    expect(id09).toContain("A runnable candidate is built and passes the install proof, but it is unpublished");
+    expect(id09).toContain("The CLI is published, so a clean agent can obtain it; the preflight still lacks an approved guide to follow.");
     // Rows this slice re-verified cite the proof and carry its date.
     for (const anchor of ['data-deliverable-key="ID-09"', 'data-learning-id="DF-029"', 'data-index-key="WS2"']) {
       const block = ledger.slice(ledger.indexOf(anchor), ledger.indexOf(anchor) + 2500);
@@ -270,7 +270,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-linked="${linked}"`));
     }
     const commandBlockers: Record<string, string> = {
-      C01: "N/A — the built candidate passes the install proof; publication is the remaining execution gate.",
+      C01: "N/A — published; the install command works.",
       C02: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
       C03: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
       C04: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
