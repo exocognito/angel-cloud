@@ -270,7 +270,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-linked="${linked}"`));
     }
     const commandBlockers: Record<string, string> = {
-      C01: "N/A — the built candidate passes the install proof; publication is the remaining execution gate.",
+      C01: "N/A — published; the install command works.",
       C02: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
       C03: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
       C04: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",

@@ -1,0 +1,26 @@
+{
+  "schema": "angelmcp.round2.cli-release.v1",
+  "package": "@angelmcp/cli",
+  "version": "0.1.0",
+  "publishedAt": "2026-08-03T22:13:04.263Z",
+  "distTag": "latest",
+  "integrity": "sha512-NvhdjNDG6gnFY7Jd0H+6OBLPxHrSA9sAa1YDil0wacNoeDppRZm2Gmq2egatcsv2Uut+wiFDvO6eytd/34LxUA==",
+  "shasum": "8bf4cc8897fdae5fa6d4a14dc51ea0fe1080fc82",
+  "fileCount": 5,
+  "unpackedSize": 294013,
+  "provenance": {
+    "attestationUrl": "https://registry.npmjs.org/-/npm/v1/attestations/@angelmcp%2fcli@0.1.0",
+    "predicateType": "https://slsa.dev/provenance/v1",
+    "publishedBy": "npm trusted publishing via GitHub OIDC",
+    "workflow": ".github/workflows/release-cli.yml",
+    "runUrl": "https://github.com/exocognito/angelmcp/actions/runs/30857762525",
+    "commit": "437ebc1e38a02d4fd4deddfc98d6b51e5fb38fc9",
+    "tag": "cli-v0.1.0"
+  },
+  "installCommand": "bun add --global @angelmcp/cli@0.1.0",
+  "placeholder": {
+    "version": "0.1.0-rc.0",
+    "distTag": "next",
+    "reason": "npm attaches a trusted publisher only to a package that already exists, so this prerelease created the package. It installs nothing and is deprecated."
+  }
+}
