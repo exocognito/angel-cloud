@@ -196,7 +196,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added authoring cross-references in `docs/user-manual.md` and `docs-site/public/SKILL.md`, recorded O7 in PD 0007, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
     expect(roadmap.replace(/\s+/g, " ")).toContain("O10 approves **WS2 and Dogfood Round 2** as the seven WS-E briefs define them");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
-    expect(roadmap).toMatch(/WS1 and WS-E are both complete\./);
+    expect(roadmap).toMatch(/evidence-only approval covers WS-E, also complete\./);
     const wsEIndex = ledger.match(/data-index-key="WS-E"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(wsEIndex).toContain("<strong>Linked rows</strong><div>WS2</div>");
     expect(wsEIndex).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → WS2</div>");
@@ -223,7 +223,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(engineeringView).toContain("The Angel Product Ledger owns sequence/status");
     expect(engineeringView).not.toContain("ROADMAP.md owns sequence/status");
     expect(ledger).not.toContain("WS-E must finish before O10");
-    expect(roadmap).toContain("WS1 and WS-E are both complete");
+    expect(roadmap).toContain("evidence-only approval covers WS-E, also complete");
     expect(roadmap).toMatch(/O1 fixes the public package as\s+`@angelmcp\/cli@0\.1\.0`/);
     expect(ledger).not.toContain("private-data-safe");
     expect(ledger).toContain("must treat charter and guard literals as public");
@@ -346,7 +346,7 @@ describe("WS-E evidence-only decision closure", () => {
     const reducedSummaryDecision = readFileSync(join(root, "docs/product-decisions/0007-capability-only-public-review.md"), "utf8");
     expect(reducedSummaryDecision).toContain("Do not emit `angel.public-review.v1` with a hiding claim for that Version");
     expect(reducedSummaryDecision).toContain("[E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html)");
-    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement stands however that draft contract is renumbered");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement stands however that draft contract changes, is renumbered, or is dropped");
     expect(reducedSummaryDecision).toContain('`schema: "angel.public-review.v1"`');
     expect(reducedSummaryDecision).toContain('`disclosure: "capability-summary-only"`');
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("A Version whose raw digest was ever public is permanently ineligible for a hiding claim");
@@ -380,7 +380,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(df049).not.toContain("APRD says days");
     for (const [key, evidence] of [
       ["LR-011", "APRD and target CLI auth text now state the 600-second single-use rule"],
-      ["LR-012", "The target CLI guide can now name @angelmcp/cli@0.1.0"],
+      ["LR-012", "The target CLI guide now names @angelmcp/cli@0.1.0"],
       ["LR-013", "target CLI guide now requires exactly one of <code>--local</code> or <code>--cloud</code>"],
       ["LR-016", "Target generative evals now separate an internal fixture-aware grader from a no-repo outside candidate"],
       ["LR-017", "APRD §8.1 and the target CLI guide now put the fresh local-independence journey before managed login"],

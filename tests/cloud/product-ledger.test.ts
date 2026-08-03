@@ -44,8 +44,8 @@ function expectAllAllowed(valuesToCheck: string[], allowed: Set<string>) {
 describe("Angel Product Ledger contract v0.1 application", () => {
   test("records approval of contract v0.1, this Ledger, and WS1 only", () => {
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
-    expect(roadmap).toContain("WS1 and WS-E are both complete");
-    expect(roadmap).toContain("O10 approves");
+    expect(roadmap).toContain("evidence-only approval covers WS-E, also complete");
+    expect(roadmap).toMatch(/O10\s+approves \*\*WS2 and Dogfood Round 2\*\*/);
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("APRD v2 remains unapproved for implementation");
     expect(aprdReadme).toContain(
@@ -65,7 +65,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-next-milestone-status="approved"');
     expect(ledger).toContain("Approved 2026-08-01");
     expect(ledger).toContain("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328");
-    expect(ledger).toContain("Product/repository approval: WS1 and WS-E, both complete. Sam closed O1 and O10 on 2026-08-03");
+    expect(ledger).toContain("Product/repository approval: WS1, complete. Evidence-only approval: WS-E, complete. Sam closed O1 and O10 on 2026-08-03");
     expect(ledger).toContain("WS2 and M-DF2 are approved; O10 closed on 2026-08-03.");
     expect(ledger).not.toContain("No Angel product build is approved");
   });
@@ -212,8 +212,16 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(values(/data-experience-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
     expect(count('class="experience-shot" src="data:image/png;base64,')).toBe(6);
     expect(count('data-experience-last-verified="')).toBe(6);
-    for (const key of ["EW1", "EW2", "EW3", "EW4", "EW5", "EW6"]) {
-      expect(ledger).toMatch(new RegExp(`data-experience-key="${key}"[^>]+data-experience-blockers="N/A — O1`));
+    const closedByBoth = "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.";
+    const approvedProofPending = "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.";
+    const experienceBlockers: Record<string, string> = {
+      EW1: closedByBoth, EW2: closedByBoth, EW3: approvedProofPending,
+      EW4: closedByBoth, EW5: approvedProofPending, EW6: approvedProofPending,
+    };
+    for (const [key, blocker] of Object.entries(experienceBlockers)) {
+      const block = recordBlocks("article", "data-experience-key")
+        .find((entry) => entry.includes(`data-experience-key="${key}"`)) ?? "";
+      expect(block).toContain(`data-experience-blockers="${blocker}"`);
     }
     expect(ledger).toContain("Experience Window — the skin");
     expect(ledger).toContain("wp4-zero-guide-light.png");
@@ -254,10 +262,24 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     for (const [key, linked] of Object.entries(commandLinks)) {
       expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-linked="${linked}"`));
     }
-    for (const key of ["C02", "C03", "C04", "C06", "C07", "C09", "C10", "C11", "C13"]) {
-      expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-blockers="N/A — O`));
+    const commandBlockers: Record<string, string> = {
+      C01: "N/A — O1 closed on 2026-08-03; @angelmcp/cli is not published yet.",
+      C02: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C03: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+      C04: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C05: "N/A — O1 closed on 2026-08-03; the package is @angelmcp/cli.",
+      C06: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C07: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+      C09: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C10: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C11: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C13: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+    };
+    for (const [key, blocker] of Object.entries(commandBlockers)) {
+      const block = recordBlocks("details", "data-command-key")
+        .find((entry) => entry.includes(`data-command-key="${key}"`)) ?? "";
+      expect(block).toContain(`data-command-blockers="${blocker}"`);
     }
-    expect(ledger).toMatch(/data-command-key="C01"[^>]+data-command-blockers="N\/A — O1 closed on 2026-08-03/);
     expect(ledger).not.toMatch(/data-command-key="C01"[^>]+data-command-blockers="[^"]*O8/);
     expect(ledger).toContain("Surface Window — control surfaces");
     for (const command of [

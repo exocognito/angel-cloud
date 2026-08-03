@@ -255,10 +255,11 @@ describe("APRD v2", () => {
     expect(aprdReadme).toContain("**not approved for implementation**");
     expect(aprdReadme).toContain("not this draft");
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
-    expect(roadmap).toContain("WS1 and WS-E are both complete");
-    expect(roadmap).toContain("O10 approves");
+    expect(roadmap).toContain("evidence-only approval covers WS-E, also complete");
+    expect(roadmap).toMatch(/O10\s+approves \*\*WS2 and Dogfood Round 2\*\*/);
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
-    expect(roadmap).toContain("APRD v2 remains unapproved for implementation");
+    expect(roadmap).toContain("O10\napproves **WS2 and Dogfood Round 2** as the seven WS-E briefs define them, with");
+    expect(roadmap).toContain("That package is unbuilt and unpublished");
     expect(roadmap).toContain("APRD v2");
     expect(roadmap).toMatch(/remains\s+unapproved for implementation/);
     expect(roadmap).not.toContain("This file is the canonical plan of record");

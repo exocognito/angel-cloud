@@ -245,7 +245,8 @@ observer can retain it. It must show a legacy warning, then be retired or
 replaced by different canonical bytes whose digest has never been public before
 a hiding summary can be served. On 2026-08-03 the owner settled the broader
 question (O10 in the [source-repository Product Ledger][product-ledger-source]):
-charter text and guard literals stay public. This warning is the boundary, so
+charter text and guard literals stay public. The rule above — put no secrets or
+private content in `charter` or `argGuards` — is that documented boundary, so
 treat both fields as published the moment you commit them.
 
 ## Google custody

@@ -41,9 +41,9 @@ nonce itself.
 
 The unapproved APRD currently names this acceptance contract
 [E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html).
-The proof requirement stands however that draft contract is renumbered: release
-still needs exact leak, parity, cached-digest eligibility, and stable-commitment
-tests.
+The proof requirement stands however that draft contract changes, is renumbered,
+or is dropped: release still needs exact leak, parity, cached-digest
+eligibility, and stable-commitment tests.
 
 ## Relationship to PD 0002
 
