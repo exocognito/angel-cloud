@@ -72,7 +72,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toMatch(/data-index-key="WS-E"[^>]+data-index-plan="COMPLETE"/);
     expect(ledger).toMatch(/data-deliverable-key="ID-05"[^>]+data-deliverable-truth="LIVE"[^>]+data-deliverable-plan="COMPLETE"/);
     // ID-05 describes the package O1 chose; WS2 built it, so "unbuilt" is stale.
-    expect(ledger).toContain("WS2 has since built that package and proved its clean install; it is unpublished.");
+    expect(ledger).toContain("WS2 built that package and published it on 2026-08-03 with provenance.");
     expect(ledger).not.toContain("the package itself is still unbuilt");
     for (const decision of ["O1", "O10"]) {
       expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="CLOSED"`));
