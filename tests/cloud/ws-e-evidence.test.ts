@@ -71,6 +71,9 @@ describe("WS-E evidence-only decision closure", () => {
   test("records WS-E complete with every decision closed", () => {
     expect(ledger).toMatch(/data-index-key="WS-E"[^>]+data-index-plan="COMPLETE"/);
     expect(ledger).toMatch(/data-deliverable-key="ID-05"[^>]+data-deliverable-truth="LIVE"[^>]+data-deliverable-plan="COMPLETE"/);
+    // ID-05 describes the package O1 chose; WS2 built it, so "unbuilt" is stale.
+    expect(ledger).toContain("WS2 has since built that package and proved its clean install; it is unpublished.");
+    expect(ledger).not.toContain("the package itself is still unbuilt");
     for (const decision of ["O1", "O10"]) {
       expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="CLOSED"`));
     }
@@ -80,7 +83,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("The owner created the <code>@angelmcp</code> npm org on 2026-08-03");
     expect(ledger).not.toContain("npm scope is unverified");
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
-    expect(ledger).toContain('data-current-workstream="WS2" data-current-workstream-status="NEXT"');
+    expect(ledger).toContain('data-current-workstream="WS2" data-current-workstream-status="ACTIVE"');
     for (const key of ["C4", "C6", "C13", "C15"]) {
       expect(ledger).toMatch(new RegExp(`data-contradiction-key="${key}" data-record-state="CLOSED"`));
     }
@@ -487,15 +490,22 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(seenO1).toBe(reconciledByO1.size);
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
-    for (const key of ["WS-E", "WS2", "M-DF2"]) expect(ledger).toMatch(new RegExp(
+    // The footer summarises status and has gone stale twice; pin it.
+    expect(ledger).toContain("WS2 active; M-DF2 approved and unbuilt.");
+    expect(ledger).not.toContain("WS2 and M-DF2 unapproved");
+    expect(ledger).not.toContain("WS2 and M-DF2 approved 2026-08-03, unbuilt");
+    for (const key of ["WS-E", "M-DF2"]) expect(ledger).toMatch(new RegExp(
       `data-index-key="${key}"[^>]+data-index-last-verified="2026-08-03 · Sam owner decision"`,
     ));
+    expect(ledger).toMatch(/data-index-key="WS2"[^>]+data-index-last-verified="2026-08-03 · WS2 CLI install proof"/);
     for (const key of [
-      "ID-05", "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
+      "ID-05", "ID-06", "ID-07", "ID-08", "ID-10",
       "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
     ]) expect(ledger).toMatch(new RegExp(
       `data-deliverable-key="${key}"[^>]+data-deliverable-last-verified="2026-08-03 · Sam owner decision"`,
     ));
+    // ID-09 was re-verified by the WS2 install proof, not by the owner decision.
+    expect(ledger).toMatch(/data-deliverable-key="ID-09"[^>]+data-deliverable-last-verified="2026-08-03 · WS2 CLI install proof"/);
     // O10 approved the named WS2 and M-DF2 increments, so approval reaches them.
     for (const key of [
       "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
@@ -516,7 +526,7 @@ describe("WS-E evidence-only decision closure", () => {
       deliverable: [],
       interface: ["SI5"],
     } as const;
-    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · WS1 release proof \+ WS-E evidence"/);
+    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-03 · WS1 release proof \+ WS-E evidence \+ WS2 CLI install proof"/);
     for (const key of ["SI1", "SI2", "SI3", "SI4", "SI6"]) expect(ledger).toMatch(new RegExp(
       `data-interface-key="${key}"[^>]+data-interface-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
     ));

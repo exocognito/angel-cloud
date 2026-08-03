@@ -259,7 +259,8 @@ describe("APRD v2", () => {
     expect(roadmap).toMatch(/O10\s+approves \*\*WS2 and Dogfood Round 2\*\*/);
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("O10\napproves **WS2 and Dogfood Round 2** as the seven WS-E briefs define them, with");
-    expect(roadmap).toContain("That package is unbuilt and unpublished");
+    expect(roadmap).toContain("WS2 has since built that package and proved its clean install, but it");
+    expect(roadmap).not.toContain("That package is unbuilt");
     expect(roadmap).toContain("APRD v2");
     expect(roadmap).toMatch(/remains\s+unapproved for implementation/);
     expect(roadmap).not.toContain("This file is the canonical plan of record");
@@ -415,7 +416,7 @@ describe("APRD v2", () => {
     expect(section).toContain("empty starting state: a new directory with no repository clone");
     expect(section).toContain("public-doc-only entry point: https://docs.angelmcp.ai/llms.txt");
     expect(section).toContain("v2.1 install path: <strong>decided, unpublished</strong>");
-    expect(section).toContain("No install command is normative until a built candidate passes the WS2 install acceptance");
+    expect(section).toContain("The candidate is built and passes the WS2 install proof; no install command is normative until it is published");
     expect(section).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(section).toContain("The final package must install the bare <code>angel</code> command.");
     expect(section).toContain("human-only handoffs: magic-link browser sign-in, Google Cloud OAuth-client setup, provider consent, and final Gmail draft review");
@@ -459,9 +460,9 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("Install contract — decided, not yet published");
     expect(cliUserGuide).toContain("O1 closed on 2026-08-03");
     expect(cliUserGuide).toMatch(/owner controls the `@angelmcp` npm scope/);
-    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("built candidate passes the WS2 install acceptance");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("it is unpublished, so nobody can run it. It becomes normative on publication.");
     expect(cliUserGuide).toContain("bun add --global @angelmcp/cli@0.1.0");
-    expect(cliUserGuide).toContain("That command is not normative yet");
+    expect(cliUserGuide).toContain("The candidate is built and passes the WS2\ninstall proof, but it is unpublished, so nobody can run it");
     expect(cliUserGuide).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(cliUserGuide).toContain("must install the bare `angel` binary");
     expect(cliUserGuide).not.toContain("pnpm exec angel");

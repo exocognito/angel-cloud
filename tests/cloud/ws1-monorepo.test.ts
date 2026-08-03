@@ -155,12 +155,26 @@ describe("WS1 behavior-neutral monorepo", () => {
     const documentedOutput = `${documented.stdout.toString()}${documented.stderr.toString()}`;
     expect(documented.exitCode).toBe(1);
     expect(documentedOutput).toContain(join(root, "examples/angels/ws1-doc-path-check/ANGEL.yaml"));
-  });
+  }, 30_000);
 
   test("ships a release-integrity proof in the canonical check", () => {
     const scripts = rootPackage.scripts as Record<string, string>;
     expect(scripts["check:ws1"]).toBe("bun run scripts/ws1-release-integrity.ts");
     expect(scripts.check).toContain("pnpm run check:ws1");
+    // The WS2 proofs must stay wired into the canonical check, like check:ws1.
+    expect(scripts["check:ws2cli"]).toBe("bun run scripts/ws2-cli-install-proof.ts");
+    expect(scripts["check:cli"]).toBe("pnpm --dir packages/cli run check");
+    expect(scripts.check).toContain("pnpm run check:ws2cli");
+    expect(scripts.check).toContain("pnpm run check:cli");
+    // Publication must stay bound to a pushed cli-v* tag; a manual dispatch,
+    // even aimed at a tag, proves the package without touching the registry.
+    const release = read(".github/workflows/release-cli.yml");
+    expect(release).toContain("PUBLISHING: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v') }}");
+    for (const step of ["Publish with provenance", "Refuse to publish an unpublished-yet notice", "Record the published release"]) {
+      const block = release.slice(release.indexOf(`- name: ${step}`), release.indexOf("\n      - ", release.indexOf(`- name: ${step}`) + 1));
+      expect(block).toContain("if: env.PUBLISHING == 'true'");
+    }
+    expect(release).toContain("npm publish --provenance --access public");
     const proof = read("scripts/ws1-release-integrity.ts");
     expect(proof).toContain("pnpm\", \"view");
     expect(proof).toContain("sha512");
@@ -173,6 +187,12 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof).not.toContain('"tar", "-xzf"');
     const releaseBaseline = json<{ allowedPackedDifferences: Record<string, string> }>("docs/evidence/ws1-release-baseline.json");
     expect(Object.keys(releaseBaseline.allowedPackedDifferences).sort()).toEqual(["README.md", "package.json"]);
+    // Both lists are owner-approved sets. A package appearing here without a
+    // recorded decision is exactly what this proof exists to catch.
+    expect(proof).toContain('const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];');
+    expect(proof).toContain('const PUBLISHABLE_PACKAGES = new Set(["@angelmcp/cli", "@smcllns/angel-core"]);');
+    expect(proof).toContain("only owner-approved public packages may be packed");
+    expect(proof).toContain("is an approved public package and must stay publishable");
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {

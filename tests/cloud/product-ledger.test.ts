@@ -56,7 +56,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-contract-version="approved-v0.1"');
     expect(ledger).toContain('data-ledger-approval="APPROVED"');
     expect(ledger).toContain('data-current-workstream="WS2"');
-    expect(ledger).toContain('data-current-workstream-status="NEXT"');
+    expect(ledger).toContain('data-current-workstream-status="ACTIVE"');
     expect(ledger).toContain('data-product-work-approval="WS1 · WS2 · M-DF2"');
     expect(ledger).toContain('data-evidence-work-approval="WS-E"');
     expect(ledger).toContain('data-approved-sequence="WS1&gt;WS-E&gt;O10&gt;WS2&gt;M-DF2"');
@@ -76,7 +76,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "M0", "M1", "WS0", "M-DF1", "WS1", "WS-E", "WS2", "M-DF2", "WS3", "WS4",
     ]);
     expect(new Set(keys).size).toBe(keys.length);
-    expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
+    expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["ACTIVE"]);
     expect(ledger).toMatch(
       /data-index-key="WS1" data-index-plan="COMPLETE" data-index-approval="APPROVED"/,
     );
@@ -86,7 +86,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
     expect(ledger).toContain("WS-E authorized no product implementation and built none");
     expect(ledger).toMatch(
-      /data-index-key="WS2" data-index-plan="NEXT" data-index-approval="APPROVED"/,
+      /data-index-key="WS2" data-index-plan="ACTIVE" data-index-approval="APPROVED"/,
     );
     expect(ledger).toMatch(
       /data-index-key="M-DF2" data-index-plan="BLOCKED" data-index-approval="APPROVED"/,
@@ -150,7 +150,14 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("Brief 7 · public/self-hosting");
     const id09 = recordBlocks("details", "data-deliverable-key")
       .find((block) => block.includes('data-deliverable-key="ID-09"')) ?? "";
-    expect(id09).toContain("No approved or published Round-2 guide and no runnable candidate exist");
+    expect(id09).toContain("A runnable candidate is built and passes the install proof, but it is unpublished");
+    // Rows this slice re-verified cite the proof and carry its date.
+    for (const anchor of ['data-deliverable-key="ID-09"', 'data-learning-id="DF-029"', 'data-index-key="WS2"']) {
+      const block = ledger.slice(ledger.indexOf(anchor), ledger.indexOf(anchor) + 2500);
+      expect(block).toContain("2026-08-03 · WS2 CLI install proof");
+      expect(block).toContain("evidence/ws2-cli-install-proof.json");
+    }
+    expect(ledger).toContain("The WS2 CLI install proof tests the packed tarball in an isolated consumer outside the workspace");
     expect(id09).toContain('href="aprd/v2.1-cli-user-guide.md"');
     expect(id09).not.toContain("No Round-2 candidate or guide exists");
     expect(count('data-deliverable-approval="')).toBe(ids.length);
@@ -253,7 +260,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(values(/data-command-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
     expect(count('data-command-last-verified="')).toBe(13);
     const commandLinks: Record<string, string> = {
-      C01: "WS1 · ID-04", C02: "WS2 · PD-01", C03: "WS2 · PD-02",
+      C01: "WS1 · ID-04 · WS2", C02: "WS2 · PD-01", C03: "WS2 · PD-02",
       C04: "WS2 · PD-02 · PD-03", C05: "M0 · WS1 · PD-02", C06: "WS2 · PD-02",
       C07: "M1 · WS2 · PD-03", C08: "M1", C09: "WS2 · PD-03",
       C10: "WS2 · PD-03", C11: "WS2 · PD-03", C12: "M1 · WS1",
@@ -263,7 +270,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-linked="${linked}"`));
     }
     const commandBlockers: Record<string, string> = {
-      C01: "N/A — O1 closed on 2026-08-03; @angelmcp/cli is not published yet.",
+      C01: "N/A — the built candidate passes the install proof; publication is the remaining execution gate.",
       C02: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
       C03: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
       C04: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",

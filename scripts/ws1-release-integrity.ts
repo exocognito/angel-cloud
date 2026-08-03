@@ -95,9 +95,30 @@ const workspace = JSON.parse(run(["pnpm", "-r", "list", "--depth", "-1", "--json
   name: string;
   private?: boolean;
 }>;
-sameJson(workspace.map(({ name }) => name).sort(), ["@exocognito/angelmcp", "@smcllns/angel-core"], "workspace package set");
+// Widening either list is an owner-approved product decision, never a drive-by
+// addition. @angelmcp/cli joined on 2026-08-03 under O1 and O10.
+const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];
+const PUBLISHABLE_PACKAGES = new Set(["@angelmcp/cli", "@smcllns/angel-core"]);
+
+sameJson(workspace.map(({ name }) => name).sort(), WORKSPACE_PACKAGES, "workspace package set");
 assert(workspace.find(({ name }) => name === "@exocognito/angelmcp")?.private === true, "workspace root must stay private");
-assert(workspace.find(({ name }) => name === "@smcllns/angel-core")?.private !== true, "only core may be packed");
+for (const { name, private: isPrivate } of workspace) {
+  if (name === "@exocognito/angelmcp") continue;
+  // A private package is never published, so it needs no publish approval. It
+  // can still be packed — private only stops publication.
+  if (isPrivate === true) continue;
+  assert(
+    PUBLISHABLE_PACKAGES.has(name),
+    `only owner-approved public packages may be packed; ${name} is not one`,
+  );
+}
+// The skip above must not become a way to silently retire a public package.
+for (const name of PUBLISHABLE_PACKAGES) {
+  assert(
+    workspace.find((entry) => entry.name === name)?.private !== true,
+    `${name} is an approved public package and must stay publishable`,
+  );
+}
 
 const temp = mkdtempSync(join(tmpdir(), "angelmcp-ws1-release-"));
 const packDirectory = join(temp, "pack");

@@ -1,0 +1,156 @@
+name: release-cli
+
+# Publishes @angelmcp/cli through npm trusted publishing. The job holds no npm
+# token: npm mints a short-lived credential from this workflow's OIDC identity,
+# which is also what stamps the provenance attestation.
+#
+# Publication requires a pushed cli-v* tag. workflow_dispatch packs and proves
+# without publishing, even when aimed at a tag, because every publishing step
+# also requires the push event.
+#
+# The first publication of a new package cannot use trusted publishing, because
+# npm attaches a trusted publisher to a package that already exists. Create the
+# package once with a scoped token, add this workflow as its trusted publisher,
+# then every release runs from here.
+
+on:
+  push:
+    tags: ["cli-v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PUBLISHING: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v') }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A tag can be pushed from any branch. Publishing unreviewed bytes is the
+      # one mistake a registry will not let us take back, so require the tagged
+      # commit to be an ancestor of the default branch.
+      - name: Require the tag to be on main
+        if: env.PUBLISHING == 'true'
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "$GITHUB_REF_NAME points at $GITHUB_SHA, which is not on origin/main" >&2
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26.0.0
+          registry-url: https://registry.npmjs.org
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.11
+
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+
+      # The same proof that gates every PR, run again against the exact commit
+      # being released.
+      - run: pnpm run check:ws2cli
+
+      # check:ws2cli builds dist/ as a side effect. Build it explicitly so a
+      # future edit to the proof cannot publish a package whose bin points at a
+      # file the tarball does not contain — a version number is never reusable.
+      - name: Build and verify the publishable bundle
+        run: |
+          pnpm --dir packages/cli run build
+          test -x packages/cli/dist/angel.js
+          test -s packages/cli/dist/THIRD-PARTY-NOTICES.txt
+
+      # The proof packs with pnpm; publication uploads what npm packs. Require
+      # the two file sets to agree before anything reaches the registry.
+      - name: Require npm to pack exactly what the proof proved
+        working-directory: packages/cli
+        run: |
+          npm pack --dry-run --json > /tmp/npm-pack.json
+          node -e '
+            const proof = require("../../docs/evidence/ws2-cli-install-proof.json");
+            const packed = require("/tmp/npm-pack.json")[0].files.map((f) => f.path).sort();
+            const expected = [...proof.files].sort();
+            if (JSON.stringify(packed) !== JSON.stringify(expected)) {
+              console.error("npm would publish a different file set than the proof proved");
+              console.error("npm:   " + JSON.stringify(packed));
+              console.error("proof: " + JSON.stringify(expected));
+              process.exit(1);
+            }
+          '
+
+      - name: Refuse a tag that disagrees with the manifest
+        if: startsWith(github.ref, 'refs/tags/cli-v')
+        run: |
+          manifest="$(node -p "require('./packages/cli/package.json').version")"
+          tagged="${GITHUB_REF_NAME#cli-v}"
+          if [ "$manifest" != "$tagged" ]; then
+            echo "tag $GITHUB_REF_NAME does not match packages/cli version $manifest" >&2
+            exit 1
+          fi
+
+      # The tree says the package is unpublished while that is true. That README
+      # ships inside the tarball, so it must not reach the npm page.
+      - name: Refuse to publish an unpublished-yet notice
+        if: env.PUBLISHING == 'true'
+        run: |
+          if grep -q "Not published yet" packages/cli/README.md; then
+            echo "packages/cli/README.md still says the package is unpublished" >&2
+            exit 1
+          fi
+
+      - name: Publish with provenance
+        if: env.PUBLISHING == 'true'
+        run: npm publish --provenance --access public
+        working-directory: packages/cli
+
+      # Registry propagation lags a successful publish, and the publish is
+      # irreversible, so retry rather than fail the job after the fact.
+      - name: Record the published release
+        if: env.PUBLISHING == 'true'
+        run: |
+          version="$(node -p "require('./packages/cli/package.json').version")"
+          rm -f release-record.json
+          for attempt in 1 2 3 4 5 6; do
+            # Write to a scratch file so a failed attempt cannot truncate a
+            # good record, and only promote it once npm actually answered.
+            if npm view "@angelmcp/cli@${version}" dist.integrity dist.attestations --json > /tmp/release-record.json \
+              && [ -s /tmp/release-record.json ]; then
+              mv /tmp/release-record.json release-record.json
+              break
+            fi
+            echo "registry has not caught up yet (attempt ${attempt}); waiting"
+            sleep 10
+          done
+          if [ ! -s release-record.json ]; then
+            echo "the registry never returned a record for @angelmcp/cli@${version}" >&2
+            echo "the publish itself may have succeeded — check the registry before retrying" >&2
+            exit 1
+          fi
+          node -e '
+            const record = require("./release-record.json");
+            if (!record["dist.integrity"]) { console.error("no integrity in the registry record"); process.exit(1); }
+            const attestations = record["dist.attestations"];
+            if (!attestations || Object.keys(attestations).length === 0) {
+              console.error("the registry record carries no attestations, so provenance is unproved");
+              process.exit(1);
+            }
+          '
+          cat release-record.json
+
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISHING == 'true'
+        with:
+          name: angelmcp-cli-release-record
+          path: release-record.json
