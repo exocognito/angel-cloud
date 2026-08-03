@@ -53,7 +53,7 @@ const VENDORED = [...new Set(
 // The transitive production closure, not core's direct dependencies: a
 // dependency of a dependency is compiled in just the same.
 const listed = Bun.spawnSync(
-  ["pnpm", "--dir", join(REPO_ROOT, "packages", "core"), "list", "--prod", "--depth", "Infinity", "--json"],
+  ["pnpm", "--filter", "@smcllns/angel-core", "list", "--prod", "--depth", "Infinity", "--json"],
   { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" },
 );
 if (listed.exitCode !== 0) {

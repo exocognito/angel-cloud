@@ -31,6 +31,21 @@ jobs:
     environment: npm-publish
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # A tag can be pushed from any branch. Publishing unreviewed bytes is the
+      # one mistake a registry will not let us take back, so require the tagged
+      # commit to be an ancestor of the default branch.
+      - name: Require the tag to be on main
+        if: env.PUBLISHING == 'true'
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "$GITHUB_REF_NAME points at $GITHUB_SHA, which is not on origin/main" >&2
+            exit 1
+          fi
+
       - uses: actions/setup-node@v4
         with:
           node-version: 26.0.0
@@ -126,6 +141,11 @@ jobs:
           node -e '
             const record = require("./release-record.json");
             if (!record["dist.integrity"]) { console.error("no integrity in the registry record"); process.exit(1); }
+            const attestations = record["dist.attestations"];
+            if (!attestations || Object.keys(attestations).length === 0) {
+              console.error("the registry record carries no attestations, so provenance is unproved");
+              process.exit(1);
+            }
           '
           cat release-record.json
 

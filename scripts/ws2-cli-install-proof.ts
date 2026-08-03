@@ -199,7 +199,11 @@ try {
   mustRun(["cp", "-R", join(REPO_ROOT, "examples", "angels"), project]);
   const built = run([EXPECTED_BIN, "build", GOLDEN_ANGEL], { cwd: project, env: consumerEnv });
   if (built.exitCode !== 0) fail(`angel build ${GOLDEN_ANGEL} failed outside the workspace:\n${built.stderr}`);
-  const digest = built.stdout.match(/\b([0-9a-f]{64})\b/)?.[1] ?? "";
+  // Match the build-result line specifically. Any 64-hex token anywhere in
+  // stdout would otherwise satisfy this.
+  const digest = built.stdout.match(
+    new RegExp(`^built ${GOLDEN_ANGEL} ([0-9a-f]{64}) in `, "m"),
+  )?.[1] ?? "";
   if (digest !== GOLDEN_DIGEST) {
     fail(`angel build ${GOLDEN_ANGEL} produced digest ${digest || "(none)"}, expected ${GOLDEN_DIGEST}`);
   }
@@ -214,7 +218,7 @@ try {
   const notices = readFileSync(join(installedRoot, "dist", "THIRD-PARTY-NOTICES.txt"), "utf8");
   // The same transitive closure build.ts derives, so the two cannot disagree.
   const closureListing = mustRun([
-    "pnpm", "--dir", join(REPO_ROOT, "packages", "core"), "list", "--prod", "--depth", "Infinity", "--json",
+    "pnpm", "--filter", "@smcllns/angel-core", "list", "--prod", "--depth", "Infinity", "--json",
   ]);
   type DepNode = { version?: string; dependencies?: Record<string, DepNode> };
   const vendored = new Set<string>();
