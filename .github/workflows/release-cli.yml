@@ -4,27 +4,26 @@ name: release-cli
 # token: npm mints a short-lived credential from this workflow's OIDC identity,
 # which is also what stamps the provenance attestation.
 #
+# Publication happens on a cli-v* tag and nowhere else. workflow_dispatch packs
+# and proves without publishing, so no manual run can put a package on the
+# registry from an arbitrary ref.
+#
 # The first publication of a new package cannot use trusted publishing, because
-# npm attaches a trusted publisher to an existing package. Publish 0.1.0 once
-# with a scoped token, add this workflow as the trusted publisher on the package
-# settings page, then every later release runs from here.
+# npm attaches a trusted publisher to a package that already exists. Create the
+# package once with a scoped token, add this workflow as its trusted publisher,
+# then every release runs from here.
 
 on:
   push:
     tags: ["cli-v*"]
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: Pack and prove without publishing
-        type: boolean
-        default: true
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     environment: npm-publish
     steps:
@@ -43,8 +42,17 @@ jobs:
       - run: pnpm install --frozen-lockfile --ignore-scripts
 
       # The same proof that gates every PR, run again against the exact commit
-      # being published.
+      # being released.
       - run: pnpm run check:ws2cli
+
+      # check:ws2cli builds dist/ as a side effect. Build it explicitly so a
+      # future edit to the proof cannot publish a package whose bin points at a
+      # file the tarball does not contain — a version number is never reusable.
+      - name: Build and verify the publishable bundle
+        run: |
+          pnpm --dir packages/cli run build
+          test -x packages/cli/dist/angel.js
+          test -s packages/cli/dist/THIRD-PARTY-NOTICES.txt
 
       - name: Refuse a tag that disagrees with the manifest
         if: startsWith(github.ref, 'refs/tags/cli-v')
@@ -56,11 +64,13 @@ jobs:
             exit 1
           fi
 
+      # Only a cli-v* tag publishes. A dispatch run stops here, having proved
+      # the package without touching the registry.
       - name: Publish with provenance
-        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
+        if: startsWith(github.ref, 'refs/tags/cli-v')
         run: npm publish --provenance --access public
         working-directory: packages/cli
 
       - name: Record the published tarball
-        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
+        if: startsWith(github.ref, 'refs/tags/cli-v')
         run: npm view @angelmcp/cli@"$(node -p "require('./packages/cli/package.json').version")" dist.integrity dist.attestations --json

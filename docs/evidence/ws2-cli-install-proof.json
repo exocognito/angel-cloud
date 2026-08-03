@@ -2,11 +2,12 @@
   "package": "@angelmcp/cli",
   "version": "0.1.0",
   "bin": "angel",
-  "tarballSha256": "c06baeec75b7badab39883f2dfbd561dcc3175da0d1041788d9d0ba5c291b6f7",
-  "tarballBytes": 59254,
+  "tarballSha256": "2f113b1d7470b32d1e83f327ccf03d3aba298de027678803a20c7418a2403256",
+  "tarballBytes": 59945,
   "files": [
     "LICENSE",
     "README.md",
+    "dist/THIRD-PARTY-NOTICES.txt",
     "dist/angel.js",
     "package.json"
   ],

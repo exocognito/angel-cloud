@@ -161,6 +161,11 @@ describe("WS1 behavior-neutral monorepo", () => {
     const scripts = rootPackage.scripts as Record<string, string>;
     expect(scripts["check:ws1"]).toBe("bun run scripts/ws1-release-integrity.ts");
     expect(scripts.check).toContain("pnpm run check:ws1");
+    // The WS2 proofs must stay wired into the canonical check, like check:ws1.
+    expect(scripts["check:ws2cli"]).toBe("bun run scripts/ws2-cli-install-proof.ts");
+    expect(scripts["check:cli"]).toBe("pnpm --dir packages/cli run check");
+    expect(scripts.check).toContain("pnpm run check:ws2cli");
+    expect(scripts.check).toContain("pnpm run check:cli");
     const proof = read("scripts/ws1-release-integrity.ts");
     expect(proof).toContain("pnpm\", \"view");
     expect(proof).toContain("sha512");

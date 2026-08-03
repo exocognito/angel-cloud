@@ -150,7 +150,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("Brief 7 · public/self-hosting");
     const id09 = recordBlocks("details", "data-deliverable-key")
       .find((block) => block.includes('data-deliverable-key="ID-09"')) ?? "";
-    expect(id09).toContain("No approved or published Round-2 guide and no runnable candidate exist");
+    expect(id09).toContain("A runnable candidate is built and passes the install proof, but it is unpublished");
     expect(id09).toContain('href="aprd/v2.1-cli-user-guide.md"');
     expect(id09).not.toContain("No Round-2 candidate or guide exists");
     expect(count('data-deliverable-approval="')).toBe(ids.length);
@@ -253,7 +253,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(values(/data-command-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
     expect(count('data-command-last-verified="')).toBe(13);
     const commandLinks: Record<string, string> = {
-      C01: "WS1 · ID-04", C02: "WS2 · PD-01", C03: "WS2 · PD-02",
+      C01: "WS1 · ID-04 · WS2", C02: "WS2 · PD-01", C03: "WS2 · PD-02",
       C04: "WS2 · PD-02 · PD-03", C05: "M0 · WS1 · PD-02", C06: "WS2 · PD-02",
       C07: "M1 · WS2 · PD-03", C08: "M1", C09: "WS2 · PD-03",
       C10: "WS2 · PD-03", C11: "WS2 · PD-03", C12: "M1 · WS1",

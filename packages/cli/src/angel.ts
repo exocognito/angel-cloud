@@ -1,6 +1,9 @@
 #!/usr/bin/env bun
 
-import { runAngelCommand } from "@smcllns/angel-core/cli";
+// Resolved by path rather than by package name on purpose: the public package
+// declares no dependency on core, so both packers produce the same manifest and
+// a consumer installs one package.
+import { runAngelCommand } from "../../core/src/cli/index";
 
 // Injected by build.ts from this package's manifest so the published binary
 // reports its own version without reading a file at runtime.
@@ -23,8 +26,15 @@ if (args[0] === "--version" || args[0] === "-v") {
 } else if (args.length === 0 || args[0] === "--help" || args[0] === "-h") {
   console.log(USAGE);
 } else {
-  await runAngelCommand(args, {
-    repoRoot: process.cwd(),
-    env: process.env,
-  });
+  try {
+    await runAngelCommand(args, {
+      repoRoot: process.cwd(),
+      env: process.env,
+    });
+  } catch (error) {
+    // A stack trace through bundled line numbers helps nobody. The command
+    // already explains itself; print that and keep the non-zero exit.
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
 }

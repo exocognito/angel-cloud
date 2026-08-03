@@ -13,8 +13,9 @@
     "typecheck:workers": "bun run tsc -p tsconfig.broker.json --noEmit && bun run tsc -p tsconfig.gateway.json --noEmit && bun run tsc -p tsconfig.control.json --noEmit",
     "check:core": "pnpm --dir packages/core run check",
     "check:ws1": "bun run scripts/ws1-release-integrity.ts",
-    "check": "bun run typecheck && bun run typecheck:workers && bun test tests/cloud && pnpm run check:core && bun run scripts/check-fixture-staleness.ts && bun run scripts/build-demo-fixture.ts .demo-fixture.check.json && rm -f .demo-fixture.check.json && pnpm run check:ws1 && pnpm run check:ws2cli",
-    "check:ws2cli": "bun run scripts/ws2-cli-install-proof.ts"
+    "check": "bun run typecheck && bun run typecheck:workers && bun test tests/cloud && pnpm run check:core && bun run scripts/check-fixture-staleness.ts && bun run scripts/build-demo-fixture.ts .demo-fixture.check.json && rm -f .demo-fixture.check.json && pnpm run check:ws1 && pnpm run check:cli && pnpm run check:ws2cli",
+    "check:ws2cli": "bun run scripts/ws2-cli-install-proof.ts",
+    "check:cli": "pnpm --dir packages/cli run check"
   },
   "dependencies": {
     "@smcllns/angel-core": "workspace:0.3.0",
