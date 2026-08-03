@@ -253,12 +253,12 @@ describe("APRD v2", () => {
     expect(html).toContain('href="../product-ledger.html"');
     expect(aprdReadme).toContain("The [Angel Product Ledger](../product-ledger.html) owns the final goal, roadmap,");
     expect(aprdReadme).toContain("**not approved for implementation**");
-    expect(aprdReadme).toContain("its v2.1 build contract");
+    expect(aprdReadme).toContain("not this draft");
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
-    expect(roadmap).toContain("WS-E is active");
-    expect(roadmap).toContain("evidence-only approval covers WS-E");
+    expect(roadmap).toContain("WS1 and WS-E are both complete");
+    expect(roadmap).toContain("O10 approves");
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
-    expect(roadmap).toContain("remain proposed and unapproved");
+    expect(roadmap).toContain("APRD v2 remains unapproved for implementation");
     expect(roadmap).toContain("APRD v2");
     expect(roadmap).toMatch(/remains\s+unapproved for implementation/);
     expect(roadmap).not.toContain("This file is the canonical plan of record");
@@ -413,8 +413,8 @@ describe("APRD v2", () => {
     expect(section).toContain("persona: a developer's own agent");
     expect(section).toContain("empty starting state: a new directory with no repository clone");
     expect(section).toContain("public-doc-only entry point: https://docs.angelmcp.ai/llms.txt");
-    expect(section).toContain("v2.1 install path: <strong>BLOCKED by O1</strong>");
-    expect(section).toContain("No install command is normative until namespace control and the final package identity are proved");
+    expect(section).toContain("v2.1 install path: <strong>decided, unpublished</strong>");
+    expect(section).toContain("No install command is normative until a built candidate passes the WS2 install acceptance");
     expect(section).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(section).toContain("The final package must install the bare <code>angel</code> command.");
     expect(section).toContain("human-only handoffs: magic-link browser sign-in, Google Cloud OAuth-client setup, provider consent, and final Gmail draft review");
@@ -455,11 +455,12 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("# Angel Cloud v2.1 CLI user guide");
     expect(cliUserGuide).toContain("Normative v2.1 command contract");
     expect(cliUserGuide).toContain("Target-state contract, not shipped current behavior");
-    expect(cliUserGuide).toContain("Install contract — blocked by O1");
-    expect(cliUserGuide).toContain("No install command is normative while O1 is open");
-    expect(cliUserGuide).toContain("O1 must prove namespace control and fix the final package identity");
+    expect(cliUserGuide).toContain("Install contract — decided, not yet published");
+    expect(cliUserGuide).toContain("O1 closed on 2026-08-03");
+    expect(cliUserGuide).toMatch(/owner controls the `@angelmcp` npm scope/);
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("built candidate passes the WS2 install acceptance");
-    expect(cliUserGuide).toContain("<O1-BLOCKED-FINAL-INSTALL-COMMAND>");
+    expect(cliUserGuide).toContain("bun add --global @angelmcp/cli@0.1.0");
+    expect(cliUserGuide).toContain("That command is not normative yet");
     expect(cliUserGuide).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(cliUserGuide).toContain("must install the bare `angel` binary");
     expect(cliUserGuide).not.toContain("pnpm exec angel");
@@ -624,9 +625,9 @@ describe("APRD v2", () => {
 
   test("keeps target contracts in the unapproved APRD draft while current docs stay shipped-only", () => {
     expect(aprdReadme).toContain("WS-E reconciled O2–O7 into this draft");
-    expect(aprdReadme).toContain("O1 and O10 still block approval");
+    expect(aprdReadme).toContain("O10 approved WS2 and M-DF2 as");
     expect(html).toContain("WS-E reconciled O2–O7 into this draft");
-    expect(html).toContain("O1 and O10 still block approval");
+    expect(html).toContain("O10 approved WS2 and M-DF2 as the seven WS-E briefs define");
     expect(html).toContain('href="v2.1-cli-user-guide.md"');
     expect(html).toContain('href="v2.1-generative-evals.md"');
     expect(html).toContain("The current user manual remains the shipped Milestone 1 manual");

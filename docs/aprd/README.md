@@ -9,10 +9,10 @@ learning disposition, and build-approval status. An APRD owns only the build
 contract for the next milestone after that milestone is approved.
 
 WS-E reconciled O2–O7 into this draft without approving implementation. It is
-**not approved for implementation**. O1 and O10 still block approval: O1 must
-close WS-E's namespace-control gap, then O10 may approve, change, or reject WS2
-and its v2.1 build contract. Until then, the reconciled terminology, commitments,
-commands, and evals are target-state source material only.
+**not approved for implementation**. On 2026-08-03 O10 approved WS2 and M-DF2 as
+the seven WS-E briefs define them — not this draft. Its terminology, commitments,
+commands, and evals stay target-state source material until a WS2 build contract
+derives from the approved Ledger.
 
 For an approved APRD, terminology defines the words used everywhere; goals and
 commitments state the milestone outcome; station detail expands them; the

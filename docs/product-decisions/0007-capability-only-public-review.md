@@ -41,9 +41,9 @@ nonce itself.
 
 The unapproved APRD currently names this acceptance contract
 [E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html).
-The proof requirement survives if O10 changes, renumbers, or rejects that draft
-contract: release still needs exact leak, parity, cached-digest eligibility, and
-stable-commitment tests.
+The proof requirement stands however that draft contract is renumbered: release
+still needs exact leak, parity, cached-digest eligibility, and stable-commitment
+tests.
 
 ## Relationship to PD 0002
 
@@ -51,12 +51,17 @@ This record partly supersedes PD 0002's content list when the reduced summary
 ships. It does not change the shipped page today. PD 0002 remains the record of
 the current trust page until this decision passes its release proof.
 
-## What is not decided
+## Settled at O10 on 2026-08-03
 
 - **Privacy of user-authored charter and guard literals outside the strict
-  summary.** Their final treatment remains for the WS2 approval gate (O10). See
+  summary.** They stay public. The owner chose a documented boundary over
+  narrowing the fields or moving them to a separate opt-in surface. Owners must
+  keep private content out of `charter` and `argGuards`. See
   [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
   and the canonical `docs/product-ledger.html` records O7, SI5, and O10.
+
+## What is not decided
+
 - **Widening public content.** Whether another public surface ever shows OAuth
   scopes, provider adapters, or child Angels remains open.
 
@@ -65,4 +70,5 @@ the current trust page until this decision passes its release proof.
 - A public commitment is called hiding only for an eligible Version whose raw
   digest has never been public. Current digest exposure must stay absent.
 - Owner-opted-in public source disclosure remains separate from this summary.
-- WS2 must implement the summary and its release proof only after O10 approval.
+- O10 approved WS2 on 2026-08-03, so implementing the summary and its release
+  proof is now an execution gate rather than a decision.
