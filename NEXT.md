@@ -1,8 +1,9 @@
 # Angel Cloud milestones
 
-The plan of record is [ROADMAP.md](ROADMAP.md) at the repository root; it
-owns milestone sequence and status. This file keeps the detailed M0/M1
-record, locked decisions, and operator notes behind it. For the broader
+The plan of record is the Angel Product Ledger (`docs/product-ledger.html`); it
+owns milestone sequence and status. [ROADMAP.md](ROADMAP.md) is the browsable
+pointer for old links. This file keeps the detailed M0/M1 record, locked
+decisions, and operator notes behind it. For the broader
 portable Angel ecosystem, see the comparison repository.
 
 ## Milestone 0: Hosted repository establishment
@@ -88,7 +89,7 @@ after seven days.
   schedule and manual dispatch became runnable when the M1 merge put the
   workflow on the default branch.
 
-### Not yet implemented (sequence in ROADMAP.md)
+### Not yet implemented (sequence in the Angel Product Ledger)
 
 - Additional providers (Gmail drafts/write, Maps, Slack, WhatsApp, etc.)
 - Public signup/onboarding

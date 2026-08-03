@@ -1,6 +1,6 @@
 # PD 0002: Every Angel has a public page anyone can read without a key
 
-- Status: Agreed
+- Status: Partly superseded by [0007](0007-capability-only-public-review.md)
 - Date: 2026-07-23; design settled 2026-07-29
   ([the five decisions](https://github.com/exocognito/angelmcp/issues/11#issuecomment-5123175434))
 - Implemented: Yes — [#28](https://github.com/exocognito/angelmcp/pull/28);

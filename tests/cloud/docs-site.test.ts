@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, normalize } from "node:path";
+import { headingSlugs as sharedHeadingSlugs } from "./markdown-slugs";
 
 /**
  * Contract for the public docs site (issue #4).
@@ -57,27 +58,7 @@ const read = (dist: string, file: string) => readFileSync(join(dist, file), "utf
 // repeated hyphens NOT collapsed, duplicates suffixed -1, -2, ...
 function headingSlugs(markdown: string): Set<string> {
   const body = markdown.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, "");
-  const seen = new Set<string>();
-  let inFence = false;
-  for (const line of body.split("\n")) {
-    if (/^\s*(```|~~~)/.test(line)) { inFence = !inFence; continue; }
-    if (inFence) continue;
-    const m = line.match(/^#{1,4}\s+(.*)$/);
-    if (!m || m[1] === undefined) continue;
-    // Headings are rendered as text: drop markdown link/code/emphasis markers
-    // the way the DOM's textContent would. Underscores survive inside code
-    // spans (`angel_connection`); only paired emphasis underscores are markup.
-    const text = m[1]
-      .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
-      .replace(/[`*]/g, "")
-      .replace(/\b_([^_]+)_\b/g, "$1");
-    let s = text.trim().toLowerCase().replace(/[^\w\- ]+/g, "").replace(/ /g, "-");
-    const base = s;
-    let n = 0;
-    while (seen.has(s)) { n += 1; s = `${base}-${n}`; }
-    seen.add(s);
-  }
-  return seen;
+  return sharedHeadingSlugs(body, 4);
 }
 
 // Every canonical docs URL in a file, as { path, anchor } pairs.
@@ -200,21 +181,47 @@ describe("docs-site build output", () => {
   });
 
   test("served markdown never links a served doc through the GitHub repo", () => {
-    // A same-repo blob link sends a reader from the public site back to the
-    // source tree — the workflow this site exists to end. Issue-tracker links
-    // are fine; doc files must use relative links so they resolve on the site.
+    // A same-repo blob link needlessly sends readers away when the public site
+    // already serves that file. Links to repo files the site does not serve,
+    // such as an unapproved APRD, remain valid.
     const servedMarkdown = [
       ...SERVED_FILES.filter((f) => f.endsWith(".md")),
       ...readdirSync(join(canonicalDist, "product-decisions")).map((f) => `product-decisions/${f}`),
       ...readdirSync(join(canonicalDist, "adrs")).map((f) => `adrs/${f}`),
       ...readdirSync(join(canonicalDist, "core")).map((f) => `core/${f}`),
     ];
+    const docsSitePublicFiles = new Set([
+      "index.html", "styles.css", "viewer.js", "llms.txt", "SKILL.md",
+    ]);
+    const servedRepoPaths = new Set([
+      ...SERVED_FILES.flatMap((file) => {
+        if (file === "demo/") return [];
+        if (docsSitePublicFiles.has(file)) return [`docs-site/public/${file}`];
+        if (file === "operator-journey.md") return ["docs/google-read-proof-manual-journey.md"];
+        return [`docs/${file}`];
+      }),
+      ...servedMarkdown.filter((file) => file.includes("/")).map((file) => `docs/${file}`),
+    ]);
+    expect(servedRepoPaths).toContain("docs-site/public/SKILL.md");
+    expect(servedRepoPaths).toContain("docs-site/public/llms.txt");
     for (const file of servedMarkdown) {
-      expect(
-        read(canonicalDist, file),
-        `${file} links repo files via github.com; use relative links`,
-      ).not.toMatch(/github\.com\/exocognito\/angel(?:-cloud|mcp)\/(blob|tree|raw)\//);
+      const source = read(canonicalDist, file);
+      for (const match of source.matchAll(
+        /https:\/\/github\.com\/exocognito\/angel(?:-cloud|mcp)\/(?:blob|tree|raw)\/[^/]+\/([^\s)#?]+)/g,
+      )) {
+        const target = decodeURIComponent(match[1] ?? "");
+        expect(
+          servedRepoPaths.has(target),
+          `${file} links served ${target} via github.com; use a relative link`,
+        ).toBe(false);
+      }
     }
+  });
+
+  test("agent authoring warns before writing fields rendered on the public page", () => {
+    const skill = read(canonicalDist, "SKILL.md").replace(/\s+/g, " ");
+    expect(skill).toContain("Before writing `charter` or `argGuards`, read [the current public boundary]");
+    expect(skill).toContain("The public Angel page renders the charter verbatim and the guard field names and literal values");
   });
 
   test("interim build rewrites the canonical base URL everywhere agents read", () => {

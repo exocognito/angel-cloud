@@ -170,12 +170,13 @@ describe("APRD v2", () => {
 
   test("grades commitments against the pinned branch commit", () => {
     expect(html).toContain("main@faf4beb");
-    expect(html).toContain("● 20 green");
-    expect(html).toContain("● 1 yellow");
+    expect(html).toContain("● 19 green");
+    expect(html).toContain("● 2 yellow");
     expect(html).toContain("● 6 orange");
     expect(html).toContain("● 2 red");
-    expect(count(/class="card g"/g)).toBe(20);
-    expect(count(/class="card y"/g)).toBe(1);
+    expect(html).toContain("public-trust-page regraded 2026-08-01 · WS-E privacy review");
+    expect(count(/class="card g"/g)).toBe(19);
+    expect(count(/class="card y"/g)).toBe(2);
     expect(count(/class="card o"/g)).toBe(6);
     expect(count(/class="card r"/g)).toBe(2);
   });
@@ -252,14 +253,14 @@ describe("APRD v2", () => {
     expect(html).toContain('href="../product-ledger.html"');
     expect(aprdReadme).toContain("The [Angel Product Ledger](../product-ledger.html) owns the final goal, roadmap,");
     expect(aprdReadme).toContain("**not approved for implementation**");
-    expect(aprdReadme).toContain("its v2.1 phase");
+    expect(aprdReadme).toContain("its v2.1 build contract");
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
-    expect(roadmap).toContain("Product/repository approval covers **WS1**");
-    expect(roadmap).toContain("Separate evidence-only approval covers");
+    expect(roadmap).toContain("WS-E is active");
+    expect(roadmap).toContain("evidence-only approval covers WS-E");
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("remain proposed and unapproved");
     expect(roadmap).toContain("APRD v2");
-    expect(roadmap).toContain("remains unapproved for implementation");
+    expect(roadmap).toMatch(/remains\s+unapproved for implementation/);
     expect(roadmap).not.toContain("This file is the canonical plan of record");
   });
 
@@ -376,11 +377,11 @@ describe("APRD v2", () => {
   });
 
   test("defines every commitment evidence id in the normative document", () => {
-    for (let i = 1; i <= 15; i += 1) {
+    for (let i = 1; i <= 16; i += 1) {
       expect(html).toContain(`id="e${i}"`);
       expect(html).toContain(`<strong>E${i} ·`);
     }
-    expect(html).toContain("Evidence contracts · E1–E15");
+    expect(html).toContain("Evidence contracts · E1–E16");
   });
 
   test("records www parity as a product decision and updates current docs", () => {
@@ -412,21 +413,35 @@ describe("APRD v2", () => {
     expect(section).toContain("persona: a developer's own agent");
     expect(section).toContain("empty starting state: a new directory with no repository clone");
     expect(section).toContain("public-doc-only entry point: https://docs.angelmcp.ai/llms.txt");
-    expect(section).toContain("v2.1 install path: <code>pnpm add --global @smcllns/angel-core@v2.1</code>");
-    expect(section).toContain("The installed binary is the bare <code>angel</code> command.");
+    expect(section).toContain("v2.1 install path: <strong>BLOCKED by O1</strong>");
+    expect(section).toContain("No install command is normative until namespace control and the final package identity are proved");
+    expect(section).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
+    expect(section).toContain("The final package must install the bare <code>angel</code> command.");
     expect(section).toContain("human-only handoffs: magic-link browser sign-in, Google Cloud OAuth-client setup, provider consent, and final Gmail draft review");
     expect(section).toContain("source/policy approval boundary: owner approves ANGEL.yaml before build, serve, publish, verify, receipt pull, or replay");
-    expect(section).toContain("local MCP proof: <code>angel serve gmail-draft-assistant --port 7423</code>");
+    expect(section).toContain("Local-only independence proof");
+    expect(section).toContain("Angel Cloud is unavailable and no Account login exists");
+    expect(section).toContain("local MCP proof: <code>angel serve local-draft-proof --port 7423 --grant local-gmail</code>");
+    expect(section).not.toContain("angel serve local-draft-proof --port 7423 --connection");
     expect(section).toContain("http://localhost:7423/mcp");
+    expect(section).toContain("Apply the printed production binding edit to <code>angels/gmail-draft-assistant/angel.json</code>");
     expect(section).toContain("production-default publish: <code>angel publish gmail-draft-assistant</code>");
     expect(section).toContain("no-op replay: the unchanged publish returns the same Version and digest and prints no new keys");
     expect(section).toContain("verify: <code>angel verify gmail-draft-assistant --production</code>");
     expect(section).toContain("trust boundary: everything attestable is client-checkable; execution is trusted, bounded by replay.");
     expect(section).toContain("agent call: tools/list, then tools/call gmail.users.drafts.create");
+    expect(section).toContain('<code class="break-all">POST https://mcp.angelmcp.ai/@&lt;handle&gt;/gmail-draft-assistant</code>');
+    expect(section).not.toContain('POST https://mcp.angelmcp.ai/@&lt;handle&gt;/gmail-draft-without-send');
+    expect(section).toContain('receipted <code>unknown_tool</code> denial before provider work');
+    expect(section).not.toContain('<code>unknown_tool</code>, not a denial');
     expect(section).toContain("two receipts: Gateway and Broker");
     expect(section).toContain("anchored tail: sequence, previousHash, hash");
-    expect(section).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
-    expect(section).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json --fail-on-tamper");
+    expect(section).toContain("angel receipts pull gmail-draft-assistant --production --gate gateway --from 128 --to 151 --anchor 127:&lt;gateway-hash&gt; --out receipts/gateway-128-151.ndjson");
+    expect(section).toContain("angel receipts pull gmail-draft-assistant --production --gate broker --from 93 --to 108 --anchor 92:&lt;broker-hash&gt; --out receipts/broker-93-108.ndjson");
+    expect(section).toContain("angel replay gmail-draft-assistant --receipts receipts/gateway-128-151.ndjson --receipts receipts/broker-93-108.ndjson --bundle build/angel.version.json");
+    expect(section).not.toContain("--fail-on-tamper");
+    expect(section).not.toMatch(/angel serve[^<\n]*--replay/);
+    expect(html).not.toMatch(/angel serve[^<\n]*--replay/);
     expect(section).toContain("failure boundaries: every unsafe step fails before provider work");
     expect(section).toContain("done: Gmail contains a draft and no sent message");
     expect(section).toContain("href=\"v2.1-cli-user-guide.md\"");
@@ -440,9 +455,13 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("# Angel Cloud v2.1 CLI user guide");
     expect(cliUserGuide).toContain("Normative v2.1 command contract");
     expect(cliUserGuide).toContain("Target-state contract, not shipped current behavior");
-    expect(cliUserGuide).toContain("Install the final v2.1 CLI");
-    expect(cliUserGuide).toContain("pnpm add --global @smcllns/angel-core@v2.1");
-    expect(cliUserGuide).toContain("the resulting command is `angel`");
+    expect(cliUserGuide).toContain("Install contract — blocked by O1");
+    expect(cliUserGuide).toContain("No install command is normative while O1 is open");
+    expect(cliUserGuide).toContain("O1 must prove namespace control and fix the final package identity");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("built candidate passes the WS2 install acceptance");
+    expect(cliUserGuide).toContain("<O1-BLOCKED-FINAL-INSTALL-COMMAND>");
+    expect(cliUserGuide).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
+    expect(cliUserGuide).toContain("must install the bare `angel` binary");
     expect(cliUserGuide).not.toContain("pnpm exec angel");
     expect(cliUserGuide).not.toContain("angelmcp-control-demo.sam-633.workers.dev");
     expect(cliUserGuide).not.toContain("angelmcp-gateway-demo.sam-633.workers.dev");
@@ -483,11 +502,59 @@ describe("APRD v2", () => {
   });
 
   test("defines exact receipt pull and replay syntax in the target command guide", () => {
-    expect(cliUserGuide).toContain("angel receipts pull <angel> --production --from <sequence> --to <sequence> --out <path>");
-    expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --from 128 --to 151 --out receipts/production-128-151.ndjson");
-    expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> --bundle <path> [--fail-on-tamper]");
-    expect(cliUserGuide).toContain("angel replay gmail-draft-assistant --receipts receipts/production-128-151.ndjson --bundle build/angel.version.json --fail-on-tamper");
+    expect(cliUserGuide).toContain("angel receipts pull <angel> --production --gate <gateway|broker> --from <sequence> --to <sequence> --anchor <sequence>:<hash> --out <path>");
+    expect(cliUserGuide).toContain("angel receipts pull <angel> --production --gate <gateway|broker> --from 1 --to <sequence> --bootstrap --out <path>");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("Exactly one of `--anchor` or `--bootstrap` is required");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("first exported `previousHash` must equal the supplied trusted hash");
+    expect(cliUserGuide).toContain("angel.replay-receipt.v1");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("top-level `schema`, `gate`, `anchor`, `request`, and `receipt`");
+    expect(cliUserGuide).toContain("every current `GateReceipt` field");
+    expect(cliUserGuide).toContain("export-added `bundleDigest` and `engineVersion`");
+    expect(cliUserGuide).toContain("Each file contains one gate's contiguous chain only");
+    expect(cliUserGuide).toContain("Gateway denial has no Broker partner");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("correlates allowed Gateway and Broker records by `requestId`");
+    for (const field of ["accountId", "angelId", "environment", "requestId", "tool", "provider", "operation", "connectionId", "connectionRef", "connectionIdentityLabel"]) {
+      expect(cliUserGuide).toContain(`\`${field}\``);
+    }
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("canonical original `arguments`");
+    expect(cliUserGuide).toContain("mode `0600`");
+    expect(cliUserGuide).toContain("missing original arguments");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("recomputes `argumentsDigest` from each record's canonical original arguments");
+    expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --gate gateway --from 128 --to 151 --anchor 127:<gateway-hash> --out receipts/gateway-128-151.ndjson");
+    expect(cliUserGuide).toContain("angel receipts pull gmail-draft-assistant --production --gate broker --from 93 --to 108 --anchor 92:<broker-hash> --out receipts/broker-93-108.ndjson");
+    expect(cliUserGuide).toContain("angel replay <angel> --receipts <path> [--receipts <path> ...] --bundle <path>");
+    expect(cliUserGuide).toContain("--receipts receipts/gateway-128-151.ndjson --receipts receipts/broker-93-108.ndjson");
+    expect(cliUserGuide).toContain("checked count, first sequence, and last sequence for each gate");
+    expect(cliUserGuide).not.toContain("--fail-on-tamper");
+    expect(cliUserGuide).toContain("angel apps connect google --local");
+    expect(cliUserGuide).toContain("angel apps connect google --cloud");
+    expect(cliUserGuide).toContain("grant nickname");
+    expect(cliUserGuide).toContain("angel serve <angel> [--bundle <path>] [--port <port>] [--grant <nickname>]");
+    expect(cliUserGuide).toContain("`--grant` is required when the bundle declares any provider-backed tool");
+    expect(cliUserGuide).toContain("angel serve gmail-draft-assistant --port 7423 --grant local-gmail");
+    expect(cliUserGuide.replace(/\s+/g, " ")).toContain("local grant nickname");
+    expect(cliUserGuide).not.toMatch(/angel serve[^\n]*--connection/);
+    expect(cliUserGuide).not.toContain("local provider Connection nickname");
+    expect(cliUserGuide).toContain("Angel-owned encrypted vault");
+    expect(cliUserGuide).toContain("never in an ambient OS keychain");
+    expect(cliUserGuide).toContain("https://api.angelmcp.ai");
+    expect(cliUserGuide).not.toContain("https://control.angelmcp.ai");
+    expect(cliUserGuide).toContain("Exact management-token storage, encryption, and unlock are a WS2 contract gate");
+    expect(cliUserGuide).not.toContain("Account-scoped management token in an\nAngel-owned encrypted local profile");
+    expect(html).toContain("Exact management-token storage, encryption, and unlock remain a WS2 contract gate");
+    expect(cliUserGuide).toContain("## Fresh local independence journey");
+    const localJourney = cliUserGuide.slice(
+      cliUserGuide.indexOf("## Fresh local independence journey"),
+      cliUserGuide.indexOf("## angel account login"),
+    );
+    expect(localJourney.replace(/\s+/g, " ")).toContain("Angel Cloud is unavailable");
+    expect(localJourney).not.toContain("angel account login");
+    expect(localJourney).not.toContain("--cloud");
+    expect(cliUserGuide).toContain("exactly 600 seconds after server-side commit");
     expect(cliUserGuide).not.toMatch(/export the (receipt )?lines/i);
+    expect(cliUserGuide).toContain("Durable side effects: none. Replay writes no report file");
+    expect(cliUserGuide).not.toContain("explicit report output flag");
+    expect(html).toContain("Replay starts no server, opens no port, reads no credential store, writes no report file, and makes no network or provider call");
   });
 
   test("specifies high-leverage generative eval families and bans hard-coded passes", () => {
@@ -495,11 +562,33 @@ describe("APRD v2", () => {
     expect(generativeEvals).toContain("Target-state v2.1 eval contract");
     expect(generativeEvals).toContain("The generated E2E test file itself must be saved as evidence");
 
+    expect(generativeEvals).toContain("## public review summary privacy, stability, and HTML/JSON parity");
+    expect(generativeEvals).toContain("cached_digest_adversary");
+    expect(generativeEvals).toContain("eligible_version_pair");
+    expect(html).toContain("one eligible replacement Version keep one commitment, a second eligible replacement Version gets another commitment");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("refuses to emit `angel.public-review.v1` with a hiding claim for the historically exposed Version");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("both replacement Versions use different canonical bytes whose raw digests have never been public");
+    expect(html.replace(/\s+/g, " ")).toContain("cached-digest adversary proves a historically exposed Version remains non-hiding");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("outside candidate sees public surfaces and generated inputs only");
+    expect(generativeEvals).not.toContain("after the evaluator sees the current repository state");
+    expect(generativeEvals).not.toContain("after the evaluator sees repository fixtures");
+    expect(generativeEvals).toContain('custody_mode ::= "--local" | "--cloud"');
+    expect(generativeEvals).toContain("grant_nickname ::= <lowercase name not present in seed fixtures>");
+    expect(generativeEvals).toContain("custody mode and grant nickname");
+    expect(generativeEvals.replace(/\s+/g, " ")).toContain("no generated slug, handle, grant nickname, marker, path, Account, or cloud Connection nickname may equal a committed fixture");
+    expect(generativeEvals).toContain("missing original arguments");
+    expect(generativeEvals).toContain("edit original arguments");
+    expect(generativeEvals).toContain("edit detail");
+    expect(cliUserGuide).toContain("recorded-versus-local decision and detail comparisons");
+    expect(cliUserGuide).toContain("recorded-versus-local detail disagreement");
+    expect(generativeEvals).toContain("Gateway-only denial before a later allowed call");
+    expect(generativeEvals).toContain("independent Gateway and Broker anchors");
     const families = [
       "docs-only fresh-machine journey with a newly generated Angel",
       "novel generated policies and guards",
       "local/cloud artifact and decision parity with tamper detection",
       "account isolation, idempotent retry, and zero provider calls on failure",
+      "public review summary privacy, stability, and HTML/JSON parity",
       "live Gmail draft-without-send supplement",
     ];
     for (const family of families) {
@@ -520,6 +609,10 @@ describe("APRD v2", () => {
     }
 
     for (const phrase of [
+      "exactly one of `--local` or `--cloud`",
+      "Angel-owned encrypted vault",
+      "exactly 600 seconds after server-side commit",
+      "Replay tamper detection is mandatory",
       "known fixture names",
       "static output strings",
       "mocked provider success",
@@ -530,7 +623,10 @@ describe("APRD v2", () => {
   });
 
   test("keeps target contracts in the unapproved APRD draft while current docs stay shipped-only", () => {
-    expect(aprdReadme).toContain("must be derived again from the approved ledger before build");
+    expect(aprdReadme).toContain("WS-E reconciled O2–O7 into this draft");
+    expect(aprdReadme).toContain("O1 and O10 still block approval");
+    expect(html).toContain("WS-E reconciled O2–O7 into this draft");
+    expect(html).toContain("O1 and O10 still block approval");
     expect(html).toContain('href="v2.1-cli-user-guide.md"');
     expect(html).toContain('href="v2.1-generative-evals.md"');
     expect(html).toContain("The current user manual remains the shipped Milestone 1 manual");
@@ -549,6 +645,33 @@ describe("APRD v2", () => {
       expect(userManual).not.toContain(unshippedCommand);
       expect(publicSkill).not.toContain(unshippedCommand);
     }
+  });
+
+  test("keeps closed O6 and O7 contracts exact in the APRD", () => {
+    expect(html).toContain("Account deletion is an asynchronous, retryable hard-delete");
+    expect(html).toContain("Provider App / grant / Connection");
+    expect(html).toContain("A local grant profile stores that grant in the Angel-owned encrypted local vault");
+    expect(html).toContain("A cloud Connection stores it write-only in Broker custody");
+    expect(html).toContain("Local grant profiles belong to the local owner and device, not to a cloud Account");
+    expect(html).toContain("non-resolving tombstones for current and retired handles");
+    expect(html).toContain("A transient failure leaves the Account disabled and retryable");
+    expect(html).not.toContain("cascade details open");
+    expect(html).not.toContain('Delete-account cascade details beyond "cascades angels · keys · apps"');
+    expect(html).toContain("<code>angel.public-review.v1</code>");
+    expect(html).toContain("Evidence contracts · E1–E16");
+    expect(html).toContain('id="e16"');
+    expect(html).toContain("semantically identical HTML and JSON projections of one strict <code>angel.public-review.v1</code> object");
+    expect(html).toMatch(/data-commitment-target="Every Angel has a public trust page" data-current="yellow"[^>]+data-evidence="e16"/);
+    const publicPageCard = html.slice(html.indexOf("Every Angel has a public trust page") - 120, html.indexOf("Every Angel has a public trust page") + 300);
+    expect(publicPageCard).toContain('class="card y"');
+    expect(publicPageCard).toContain('<span class="chip">Yellow</span>');
+    expect(html).toContain("sessions stay host-only on <code>dash.</code> and <code>auth.</code> (I14)");
+    expect(html).toContain("Route logic at <code>src/workers/gateway.ts:299</code>.");
+    expect(html).toContain("one owner-only nonce per eligible published Version");
+    expect(html).toContain("A Version whose raw digest was ever public remains non-hiding");
+    expect(html).toContain("replacement canonical bytes whose raw digest has never been public");
+    expect(html).toContain("capability-summary-only");
+    expect(html).not.toContain("public coordinate browser and JSON proof showing charter, tools, guards, Version, digest");
   });
 
   test("defines a complete v2.1 target color matrix for all commitments", () => {

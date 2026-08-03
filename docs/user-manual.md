@@ -212,6 +212,9 @@ Three top-level keys:
   enforced; only `tools` and their guards are.
 - Exactly one of `tools` or `angels` — never both, never neither.
 
+Before writing `charter` or `argGuards`, read the
+[current public boundary](faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt).
+
 **Direct form** (`tools:`). Each entry is a canonical operation name, or a
 mapping with `tool` and optional `argGuards`:
 

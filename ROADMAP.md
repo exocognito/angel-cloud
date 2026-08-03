@@ -22,9 +22,16 @@ that list and its completed M0/M1 record.
 
 ## Current gate
 
-Sam approved Product Ledger contract v0.1, the Angel Product Ledger, and WS1 on
-2026-08-01. Product/repository approval covers **WS1**, which starts after
-dotfiles PR #307 and Angel PR #43 merge. Separate evidence-only approval covers
-**WS-E** after WS1; its seven decision briefs authorize no product implementation. O10 then gates
-**WS2 and Dogfood Round 2**, which remain proposed and unapproved. APRD v2
-remains unapproved for implementation.
+Sam approved Product Ledger contract v0.1 and the Angel Product Ledger on
+2026-08-01. Product/repository approval covers WS1, now complete. Separate
+evidence-only approval covers WS-E. WS-E is active. All seven briefs exist.
+WS-E changed no product behavior, but corrected `docs/faq.md`, added authoring
+cross-references in `docs/user-manual.md` and `docs-site/public/SKILL.md`,
+recorded O7 in PD 0007, repaired stale plan-of-record pointers, blocked the
+target install contract on O1, applied LR-016's outside-candidate/internal-grader
+split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval
+contracts with the evidence decisions. WS-E authorizes
+no product implementation. O2–O7 and O9 are closed as decisions. O1 blocks
+WS-E closure because control of the recommended `@angelmcp` npm namespace is
+unverified. O10 waits until that gap closes. **WS2 and Dogfood Round 2**
+remain proposed and unapproved. APRD v2 remains unapproved for implementation.

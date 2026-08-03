@@ -24,7 +24,8 @@ deployment ID and digest.
 
 ## Documentation
 
-- [Roadmap](ROADMAP.md) — plan of record: milestone sequence and status.
+- [Roadmap](ROADMAP.md) — browsable pointer to milestone sequence and status.
+- Product Ledger source: `docs/product-ledger.html` — canonical plan of record.
 - [User manual](docs/user-manual.md) — write, build, publish, deploy, connect,
   and operate an Angel.
 - [FAQ](docs/faq.md) — design rationale, security boundaries, and current
@@ -33,8 +34,8 @@ deployment ID and digest.
   — run the credentialed Gmail and Docs acceptance path.
 
 This README is the quick start and deployment reference. The user manual owns
-product mechanics; the FAQ owns rationale and current limits; the roadmap owns
-sequence and status.
+product mechanics; the FAQ owns rationale and current limits; the Product Ledger
+owns sequence and status.
 
 ## Verified live status — 2026-07-22
 

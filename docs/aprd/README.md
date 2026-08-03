@@ -8,10 +8,11 @@ The [Angel Product Ledger](../product-ledger.html) owns the final goal, roadmap,
 learning disposition, and build-approval status. An APRD owns only the build
 contract for the next milestone after that milestone is approved.
 
-The current APRD v2 draft predates the Product Ledger reconciliation. It is
-**not approved for implementation**. Its end-state research, terminology,
-commitments, and evidence contracts remain source material, but its v2.1 phase
-and golden path must be derived again from the approved ledger before build.
+WS-E reconciled O2–O7 into this draft without approving implementation. It is
+**not approved for implementation**. O1 and O10 still block approval: O1 must
+close WS-E's namespace-control gap, then O10 may approve, change, or reject WS2
+and its v2.1 build contract. Until then, the reconciled terminology, commitments,
+commands, and evals are target-state source material only.
 
 For an approved APRD, terminology defines the words used everywhere; goals and
 commitments state the milestone outcome; station detail expands them; the
