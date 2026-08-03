@@ -56,7 +56,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-contract-version="approved-v0.1"');
     expect(ledger).toContain('data-ledger-approval="APPROVED"');
     expect(ledger).toContain('data-current-workstream="WS2"');
-    expect(ledger).toContain('data-current-workstream-status="NEXT"');
+    expect(ledger).toContain('data-current-workstream-status="ACTIVE"');
     expect(ledger).toContain('data-product-work-approval="WS1 · WS2 · M-DF2"');
     expect(ledger).toContain('data-evidence-work-approval="WS-E"');
     expect(ledger).toContain('data-approved-sequence="WS1&gt;WS-E&gt;O10&gt;WS2&gt;M-DF2"');
@@ -76,7 +76,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "M0", "M1", "WS0", "M-DF1", "WS1", "WS-E", "WS2", "M-DF2", "WS3", "WS4",
     ]);
     expect(new Set(keys).size).toBe(keys.length);
-    expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
+    expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["ACTIVE"]);
     expect(ledger).toMatch(
       /data-index-key="WS1" data-index-plan="COMPLETE" data-index-approval="APPROVED"/,
     );
@@ -86,7 +86,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
     expect(ledger).toContain("WS-E authorized no product implementation and built none");
     expect(ledger).toMatch(
-      /data-index-key="WS2" data-index-plan="NEXT" data-index-approval="APPROVED"/,
+      /data-index-key="WS2" data-index-plan="ACTIVE" data-index-approval="APPROVED"/,
     );
     expect(ledger).toMatch(
       /data-index-key="M-DF2" data-index-plan="BLOCKED" data-index-approval="APPROVED"/,
@@ -263,7 +263,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-linked="${linked}"`));
     }
     const commandBlockers: Record<string, string> = {
-      C01: "N/A — O1 closed on 2026-08-03; @angelmcp/cli is not published yet.",
+      C01: "N/A — the built candidate passes the install proof; publication is the remaining execution gate.",
       C02: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
       C03: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
       C04: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",

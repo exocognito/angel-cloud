@@ -80,7 +80,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("The owner created the <code>@angelmcp</code> npm org on 2026-08-03");
     expect(ledger).not.toContain("npm scope is unverified");
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
-    expect(ledger).toContain('data-current-workstream="WS2" data-current-workstream-status="NEXT"');
+    expect(ledger).toContain('data-current-workstream="WS2" data-current-workstream-status="ACTIVE"');
     for (const key of ["C4", "C6", "C13", "C15"]) {
       expect(ledger).toMatch(new RegExp(`data-contradiction-key="${key}" data-record-state="CLOSED"`));
     }
@@ -487,9 +487,10 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(seenO1).toBe(reconciledByO1.size);
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
-    for (const key of ["WS-E", "WS2", "M-DF2"]) expect(ledger).toMatch(new RegExp(
+    for (const key of ["WS-E", "M-DF2"]) expect(ledger).toMatch(new RegExp(
       `data-index-key="${key}"[^>]+data-index-last-verified="2026-08-03 · Sam owner decision"`,
     ));
+    expect(ledger).toMatch(/data-index-key="WS2"[^>]+data-index-last-verified="2026-08-03 · WS2 CLI install proof"/);
     for (const key of [
       "ID-05", "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
       "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
@@ -516,7 +517,7 @@ describe("WS-E evidence-only decision closure", () => {
       deliverable: [],
       interface: ["SI5"],
     } as const;
-    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · WS1 release proof \+ WS-E evidence"/);
+    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-03 · WS2 CLI install proof"/);
     for (const key of ["SI1", "SI2", "SI3", "SI4", "SI6"]) expect(ledger).toMatch(new RegExp(
       `data-interface-key="${key}"[^>]+data-interface-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
     ));

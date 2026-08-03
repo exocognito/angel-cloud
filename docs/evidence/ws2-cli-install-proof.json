@@ -1,0 +1,18 @@
+{
+  "package": "@angelmcp/cli",
+  "version": "0.1.0",
+  "bin": "angel",
+  "tarballSha256": "c06baeec75b7badab39883f2dfbd561dcc3175da0d1041788d9d0ba5c291b6f7",
+  "tarballBytes": 59254,
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist/angel.js",
+    "package.json"
+  ],
+  "bunVersion": "1.3.11",
+  "installCommand": "bun add --global @angelmcp/cli@0.1.0",
+  "versionOutput": "0.1.0",
+  "builtAngel": "gmail-read-and-draft",
+  "builtDigest": "11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4"
+}
