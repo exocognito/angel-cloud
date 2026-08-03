@@ -104,11 +104,19 @@ sameJson(workspace.map(({ name }) => name).sort(), WORKSPACE_PACKAGES, "workspac
 assert(workspace.find(({ name }) => name === "@exocognito/angelmcp")?.private === true, "workspace root must stay private");
 for (const { name, private: isPrivate } of workspace) {
   if (name === "@exocognito/angelmcp") continue;
-  // A private package cannot be packed at all, so it needs no approval.
+  // A private package is never published, so it needs no publish approval. It
+  // can still be packed — private only stops publication.
   if (isPrivate === true) continue;
   assert(
     PUBLISHABLE_PACKAGES.has(name),
     `only owner-approved public packages may be packed; ${name} is not one`,
+  );
+}
+// The skip above must not become a way to silently retire a public package.
+for (const name of PUBLISHABLE_PACKAGES) {
+  assert(
+    workspace.find((entry) => entry.name === name)?.private !== true,
+    `${name} is an approved public package and must stay publishable`,
   );
 }
 

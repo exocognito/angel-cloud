@@ -192,6 +192,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof).toContain('const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];');
     expect(proof).toContain('const PUBLISHABLE_PACKAGES = new Set(["@angelmcp/cli", "@smcllns/angel-core"]);');
     expect(proof).toContain("only owner-approved public packages may be packed");
+    expect(proof).toContain("is an approved public package and must stay publishable");
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {
