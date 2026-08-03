@@ -106,13 +106,27 @@ jobs:
         if: env.PUBLISHING == 'true'
         run: |
           version="$(node -p "require('./packages/cli/package.json').version")"
+          rm -f release-record.json
           for attempt in 1 2 3 4 5 6; do
-            if npm view "@angelmcp/cli@${version}" dist.integrity dist.attestations --json > release-record.json; then
+            # Write to a scratch file so a failed attempt cannot truncate a
+            # good record, and only promote it once npm actually answered.
+            if npm view "@angelmcp/cli@${version}" dist.integrity dist.attestations --json > /tmp/release-record.json \
+              && [ -s /tmp/release-record.json ]; then
+              mv /tmp/release-record.json release-record.json
               break
             fi
             echo "registry has not caught up yet (attempt ${attempt}); waiting"
             sleep 10
           done
+          if [ ! -s release-record.json ]; then
+            echo "the registry never returned a record for @angelmcp/cli@${version}" >&2
+            echo "the publish itself may have succeeded — check the registry before retrying" >&2
+            exit 1
+          fi
+          node -e '
+            const record = require("./release-record.json");
+            if (!record["dist.integrity"]) { console.error("no integrity in the registry record"); process.exit(1); }
+          '
           cat release-record.json
 
       - uses: actions/upload-artifact@v4

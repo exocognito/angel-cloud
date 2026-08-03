@@ -19,13 +19,22 @@ const EXPECTED_NAME = "@angelmcp/cli";
 const EXPECTED_VERSION = "0.1.0";
 const EXPECTED_BIN = "angel";
 
-// The merged public starter's checked-in Angel, and the digest docs/evidence/
-// ws1-starter-proof.json recorded for it.
-// The floor the manifest declares. Declaring a floor nobody tests is a guess,
-// so this proof requires the two to agree and records the Bun it actually ran.
+// The floor the manifest declares. This proof runs on whatever Bun is installed,
+// so it checks that the manifest agrees with this constant; it does not exercise
+// the floor. Declared, not proven.
 const DECLARED_BUN_RANGE = ">=1.3.0";
+
+// The merged public starter's checked-in Angel. Its digest is read from the WS1
+// record rather than copied, so the two cannot drift apart.
 const GOLDEN_ANGEL = "gmail-read-and-draft";
-const GOLDEN_DIGEST = "11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4";
+const STARTER_PROOF = JSON.parse(
+  readFileSync(join(REPO_ROOT, "docs", "evidence", "ws1-starter-proof.json"), "utf8"),
+) as { artifactDigest?: string };
+if (typeof STARTER_PROOF.artifactDigest !== "string" || STARTER_PROOF.artifactDigest === "") {
+  console.error("WS2 CLI install proof failed: ws1-starter-proof.json has no artifactDigest to compare against");
+  process.exit(1);
+}
+const GOLDEN_DIGEST = STARTER_PROOF.artifactDigest;
 
 // Only reproducible facts are committed. A gzip digest and the runner's Bun
 // build differ between machines, so committing them would make the comparison
@@ -80,7 +89,19 @@ if (Object.keys(manifest.bin ?? {}).join(",") !== EXPECTED_BIN) {
 }
 
 // Brief 1 execution gate: no lifecycle scripts, and no second public core install.
-for (const hook of ["preinstall", "install", "postinstall", "prepare", "prepublish", "prepublishOnly"]) {
+// Any npm lifecycle hook can mutate the artifact after this proof inspected it,
+// so the public package carries none of them.
+const LIFECYCLE_HOOKS = [
+  "preinstall", "install", "postinstall",
+  "preprepare", "prepare", "postprepare",
+  "prepack", "postpack",
+  "prepublish", "prepublishOnly", "publish", "postpublish",
+  "preversion", "version", "postversion",
+  "prerestart", "restart", "postrestart",
+  "prestop", "stop", "poststop",
+  "prestart", "start", "poststart",
+];
+for (const hook of LIFECYCLE_HOOKS) {
   if (manifest.scripts?.[hook]) fail(`lifecycle script "${hook}" is forbidden on the public package`);
 }
 for (const field of ["dependencies", "peerDependencies", "optionalDependencies"] as const) {
@@ -140,7 +161,12 @@ try {
     fail(`global install did not expose a bare ${EXPECTED_BIN} at ${binary}`);
   }
 
-  const versionRun = run([binary, "--version"], { cwd: consumer, env: { BUN_INSTALL: bunHome } });
+  // A user runs a bare `angel` found on PATH, so prove that, not an absolute path.
+  const consumerEnv = {
+    BUN_INSTALL: bunHome,
+    PATH: `${join(bunHome, "bin")}:${process.env.PATH ?? ""}`,
+  };
+  const versionRun = run([EXPECTED_BIN, "--version"], { cwd: consumer, env: consumerEnv });
   if (versionRun.exitCode !== 0) fail(`angel --version exited ${versionRun.exitCode}:\n${versionRun.stderr}`);
   const versionOutput = versionRun.stdout.trim();
   if (versionOutput !== EXPECTED_VERSION) {
@@ -148,20 +174,20 @@ try {
   }
 
   for (const flag of ["--version", "-v"]) {
-    const out = run([binary, flag], { cwd: consumer, env: { BUN_INSTALL: bunHome } });
+    const out = run([EXPECTED_BIN, flag], { cwd: consumer, env: consumerEnv });
     if (out.exitCode !== 0 || out.stdout.trim() !== EXPECTED_VERSION) {
       fail(`angel ${flag} printed "${out.stdout.trim()}" (exit ${out.exitCode}), expected ${EXPECTED_VERSION}`);
     }
   }
   for (const args of [[], ["--help"], ["-h"]]) {
-    const out = run([binary, ...args], { cwd: consumer, env: { BUN_INSTALL: bunHome } });
+    const out = run([EXPECTED_BIN, ...args], { cwd: consumer, env: consumerEnv });
     if (out.exitCode !== 0) fail(`angel ${args.join(" ") || "(no arguments)"} exited ${out.exitCode}`);
     if (!out.stdout.includes("usage:") || !out.stdout.includes(`angel ${EXPECTED_VERSION}`)) {
       fail(`angel ${args.join(" ") || "(no arguments)"} did not print usage with its version`);
     }
   }
   // A bad command explains itself instead of dumping a bundled stack trace.
-  const bogus = run([binary, "definitely-not-a-command"], { cwd: consumer, env: { BUN_INSTALL: bunHome } });
+  const bogus = run([EXPECTED_BIN, "definitely-not-a-command"], { cwd: consumer, env: consumerEnv });
   if (bogus.exitCode === 0) fail("an unknown command must exit non-zero");
   if (/\bat .*\.js:\d+/.test(bogus.stderr)) fail(`an unknown command printed a stack trace:\n${bogus.stderr}`);
 
@@ -171,7 +197,7 @@ try {
   const project = join(workspace, "project");
   mustRun(["mkdir", "-p", project]);
   mustRun(["cp", "-R", join(REPO_ROOT, "examples", "angels"), project]);
-  const built = run([binary, "build", GOLDEN_ANGEL], { cwd: project, env: { BUN_INSTALL: bunHome } });
+  const built = run([EXPECTED_BIN, "build", GOLDEN_ANGEL], { cwd: project, env: consumerEnv });
   if (built.exitCode !== 0) fail(`angel build ${GOLDEN_ANGEL} failed outside the workspace:\n${built.stderr}`);
   const digest = built.stdout.match(/\b([0-9a-f]{64})\b/)?.[1] ?? "";
   if (digest !== GOLDEN_DIGEST) {
@@ -186,12 +212,23 @@ try {
   }
   if (bundle.includes(REPO_ROOT)) fail("the installed bundle embeds an absolute workspace path");
   const notices = readFileSync(join(installedRoot, "dist", "THIRD-PARTY-NOTICES.txt"), "utf8");
-  const coreDeps = Object.keys(
-    (JSON.parse(readFileSync(join(REPO_ROOT, "packages", "core", "package.json"), "utf8")) as {
-      dependencies?: Record<string, string>;
-    }).dependencies ?? {},
-  );
-  for (const dependency of coreDeps) {
+  // The same transitive closure build.ts derives, so the two cannot disagree.
+  const closureListing = mustRun([
+    "pnpm", "--dir", join(REPO_ROOT, "packages", "core"), "list", "--prod", "--depth", "Infinity", "--json",
+  ]);
+  type DepNode = { version?: string; dependencies?: Record<string, DepNode> };
+  const vendored = new Set<string>();
+  const walk = (deps: Record<string, DepNode> | undefined) => {
+    for (const [name, entry] of Object.entries(deps ?? {})) {
+      const linked = entry.version?.startsWith("link:") || entry.version?.startsWith("file:");
+      if (!linked) vendored.add(name);
+      walk(entry.dependencies);
+    }
+  };
+  for (const project of JSON.parse(closureListing.stdout) as Array<{ dependencies?: Record<string, DepNode> }>) {
+    walk(project.dependencies);
+  }
+  for (const dependency of vendored) {
     if (!notices.includes(`${dependency}@`)) {
       fail(`the shipped third-party notices do not name ${dependency}, whose code the bundle contains`);
     }

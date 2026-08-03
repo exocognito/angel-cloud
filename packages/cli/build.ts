@@ -50,8 +50,30 @@ const VENDORED = [...new Set(
 // Deriving the list from bundler banners fails open: change the bundle options
 // and the list silently empties while the code stays vendored. Cross-check it
 // against what core actually declares at runtime.
-const coreManifest = JSON.parse(readFileSync(join(REPO_ROOT, "packages", "core", "package.json"), "utf8"));
-const expected = Object.keys(coreManifest.dependencies ?? {}).sort();
+// The transitive production closure, not core's direct dependencies: a
+// dependency of a dependency is compiled in just the same.
+const listed = Bun.spawnSync(
+  ["pnpm", "--dir", join(REPO_ROOT, "packages", "core"), "list", "--prod", "--depth", "Infinity", "--json"],
+  { cwd: REPO_ROOT, stdout: "pipe", stderr: "pipe" },
+);
+if (listed.exitCode !== 0) {
+  throw new Error(`could not resolve core's production closure:\n${listed.stderr.toString()}`);
+}
+type DepNode = { version?: string; dependencies?: Record<string, DepNode> };
+const closure = new Set<string>();
+const walk = (deps: Record<string, DepNode> | undefined) => {
+  for (const [name, entry] of Object.entries(deps ?? {})) {
+    // Workspace links are our own source, not vendored third-party code, but
+    // their dependencies still get compiled in.
+    const linked = entry.version?.startsWith("link:") || entry.version?.startsWith("file:");
+    if (!linked) closure.add(name);
+    walk(entry.dependencies);
+  }
+};
+for (const project of JSON.parse(listed.stdout.toString()) as Array<{ dependencies?: Record<string, DepNode> }>) {
+  walk(project.dependencies);
+}
+const expected = [...closure].sort();
 const missing = expected.filter((name) => !VENDORED.includes(name));
 if (missing.length > 0) {
   throw new Error(

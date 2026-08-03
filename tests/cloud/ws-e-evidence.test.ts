@@ -490,6 +490,10 @@ describe("WS-E evidence-only decision closure", () => {
     }
     expect(seenO1).toBe(reconciledByO1.size);
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
+    // The footer summarises status and has gone stale twice; pin it.
+    expect(ledger).toContain("WS2 active; M-DF2 approved and unbuilt.");
+    expect(ledger).not.toContain("WS2 and M-DF2 unapproved");
+    expect(ledger).not.toContain("WS2 and M-DF2 approved 2026-08-03, unbuilt");
     for (const key of ["WS-E", "M-DF2"]) expect(ledger).toMatch(new RegExp(
       `data-index-key="${key}"[^>]+data-index-last-verified="2026-08-03 · Sam owner decision"`,
     ));
@@ -522,7 +526,7 @@ describe("WS-E evidence-only decision closure", () => {
       deliverable: [],
       interface: ["SI5"],
     } as const;
-    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-03 · WS2 CLI install proof"/);
+    expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-03 · WS1 release proof \+ WS-E evidence \+ WS2 CLI install proof"/);
     for (const key of ["SI1", "SI2", "SI3", "SI4", "SI6"]) expect(ledger).toMatch(new RegExp(
       `data-interface-key="${key}"[^>]+data-interface-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
     ));
