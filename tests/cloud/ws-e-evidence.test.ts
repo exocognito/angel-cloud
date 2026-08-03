@@ -139,7 +139,7 @@ describe("WS-E evidence-only decision closure", () => {
     for (const contradiction of ledger.matchAll(/<details class="contradiction"[^>]+data-record-state="OPEN"[\s\S]*?<\/details>/g)) {
       expect(contradiction[0]).not.toContain("resolved this contradiction");
     }
-    expect(ledger).toContain("WS-E is now active.");
+    expect(ledger).toContain("WS-E followed and is complete.");
   });
 
   test("links every brief from the Ledger and preserves the evidence-only boundary", () => {
@@ -468,18 +468,42 @@ describe("WS-E evidence-only decision closure", () => {
     const proposed = [...ledger.matchAll(/<tr data-learning-id="[^"]+"[^>]+data-disposition="PROPOSED"[^>]+data-destination="([^"]+)"[^>]*>[\s\S]*?<\/tr>/g)];
     expect(proposed).toHaveLength(49);
     const o1Closure = "N/A — O1 closed on 2026-08-03; the @angelmcp scope is owner-controlled.";
+    // Exactly the five learnings O1 used to hold carry its closure text.
+    const reconciledByO1 = new Set(["DF-029", "DF-047", "DF-048", "LR-006", "LR-012"]);
+    let seenO1 = 0;
     for (const match of proposed) {
+      const id = match[0].match(/data-learning-id="([^"]+)"/)?.[1] ?? "";
       const destination = match[1] ?? "";
       const blocker = match[0].match(/data-learning-blocker="([^"]+)"/)?.[1] ?? "";
       const approval = `N/A — O10 approved ${destination} on 2026-08-03; delivery is an execution gate.`;
-      expect([approval, o1Closure]).toContain(blocker);
+      if (reconciledByO1.has(id)) {
+        expect(blocker).toBe(o1Closure);
+        expect(destination).toBe("WS2");
+        seenO1 += 1;
+      } else {
+        expect(blocker).toBe(approval);
+      }
       expect(match[0]).toContain(`<strong>Decisions or blockers</strong><div>${blocker}</div>`);
     }
+    expect(seenO1).toBe(reconciledByO1.size);
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
     for (const key of ["WS-E", "WS2", "M-DF2"]) expect(ledger).toMatch(new RegExp(
       `data-index-key="${key}"[^>]+data-index-last-verified="2026-08-03 · Sam owner decision"`,
     ));
-    expect(ledger).toMatch(/data-deliverable-key="ID-05"[^>]+data-deliverable-last-verified="2026-08-03 · Sam owner decision"/);
+    for (const key of [
+      "ID-05", "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
+      "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
+    ]) expect(ledger).toMatch(new RegExp(
+      `data-deliverable-key="${key}"[^>]+data-deliverable-last-verified="2026-08-03 · Sam owner decision"`,
+    ));
+    // O10 approved the named WS2 and M-DF2 increments, so approval reaches them.
+    for (const key of [
+      "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
+      "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
+    ]) expect(ledger).toMatch(new RegExp(
+      `data-deliverable-key="${key}"[^>]+data-deliverable-approval="APPROVED"`,
+    ));
+    expect(ledger).not.toContain('data-deliverable-approval="PROPOSED"');
     for (const key of ["O1", "O10"]) expect(ledger).toMatch(new RegExp(
       `data-decision-key="${key}"[^>]+data-decision-last-verified="2026-08-03 · Sam owner decision"`,
     ));
@@ -489,7 +513,7 @@ describe("WS-E evidence-only decision closure", () => {
       experience: ["EW3"],
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13"],
-      deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
+      deliverable: [],
       interface: ["SI5"],
     } as const;
     expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · WS1 release proof \+ WS-E evidence"/);

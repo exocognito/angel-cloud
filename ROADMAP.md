@@ -25,8 +25,7 @@ that list and its completed M0/M1 record.
 Sam approved Product Ledger contract v0.1 and the Angel Product Ledger on
 2026-08-01. Product/repository approval covers WS1, now complete. Separate
 evidence-only approval covers WS-E, also complete. WS-E changed no product
-behavior,
-but corrected `docs/faq.md`, added authoring cross-references in
+behavior, but corrected `docs/faq.md`, added authoring cross-references in
 `docs/user-manual.md` and `docs-site/public/SKILL.md`, recorded O7 in PD 0007,
 repaired stale plan-of-record pointers, blocked the target install contract on
 O1, applied LR-016's outside-candidate/internal-grader split to the eval draft,

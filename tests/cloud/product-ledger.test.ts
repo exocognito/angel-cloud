@@ -57,7 +57,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-ledger-approval="APPROVED"');
     expect(ledger).toContain('data-current-workstream="WS2"');
     expect(ledger).toContain('data-current-workstream-status="NEXT"');
-    expect(ledger).toContain('data-product-work-approval="WS1"');
+    expect(ledger).toContain('data-product-work-approval="WS1 · WS2 · M-DF2"');
     expect(ledger).toContain('data-evidence-work-approval="WS-E"');
     expect(ledger).toContain('data-approved-sequence="WS1&gt;WS-E&gt;O10&gt;WS2&gt;M-DF2"');
     expect(ledger).toContain('data-mobile-qa-width="390"');
@@ -65,7 +65,7 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain('data-next-milestone-status="approved"');
     expect(ledger).toContain("Approved 2026-08-01");
     expect(ledger).toContain("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328");
-    expect(ledger).toContain("Product/repository approval: WS1, complete. Evidence-only approval: WS-E, complete. Sam closed O1 and O10 on 2026-08-03");
+    expect(ledger).toContain("Product/repository approval: WS1, complete; WS2 and M-DF2, approved to build. Evidence-only approval: WS-E, complete.");
     expect(ledger).toContain("WS2 and M-DF2 are approved; O10 closed on 2026-08-03.");
     expect(ledger).not.toContain("No Angel product build is approved");
   });
