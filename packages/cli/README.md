@@ -4,10 +4,7 @@ The Angel CLI. Write, build, publish, and deploy an inspectable agent toolbox.
 
 ## Install
 
-**Not published yet.** This is the install contract the package will ship, not a
-command that works today.
-
-Angel runs on [Bun](https://bun.sh). Once published, with Bun installed:
+Angel runs on [Bun](https://bun.sh). With Bun installed:
 
 ```sh
 bun add --global @angelmcp/cli@0.1.0
