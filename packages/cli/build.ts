@@ -47,6 +47,19 @@ const VENDORED = [...new Set(
   .filter((name) => name !== "" && !name.startsWith("."))
   .sort();
 
+// Deriving the list from bundler banners fails open: change the bundle options
+// and the list silently empties while the code stays vendored. Cross-check it
+// against what core actually declares at runtime.
+const coreManifest = JSON.parse(readFileSync(join(REPO_ROOT, "packages", "core", "package.json"), "utf8"));
+const expected = Object.keys(coreManifest.dependencies ?? {}).sort();
+const missing = expected.filter((name) => !VENDORED.includes(name));
+if (missing.length > 0) {
+  throw new Error(
+    `third-party notice generation missed ${missing.join(", ")}. `
+    + `The bundle still contains that code, so shipping without its licence is not an option.`,
+  );
+}
+
 const notices = VENDORED.map((name) => {
   const packageDir = join(REPO_ROOT, "node_modules", name);
   const meta = JSON.parse(readFileSync(join(packageDir, "package.json"), "utf8"));

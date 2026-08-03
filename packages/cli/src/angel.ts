@@ -32,9 +32,11 @@ if (args[0] === "--version" || args[0] === "-v") {
       env: process.env,
     });
   } catch (error) {
-    // A stack trace through bundled line numbers helps nobody. The command
-    // already explains itself; print that and keep the non-zero exit.
-    console.error(error instanceof Error ? error.message : String(error));
+    // A stack trace through bundled line numbers helps nobody. Core raises its
+    // own shorter usage string, which omits --help and --version; print this
+    // package's instead so one command map is authoritative.
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(message.startsWith("usage:") ? USAGE : message);
     process.exit(1);
   }
 }

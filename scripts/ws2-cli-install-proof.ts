@@ -23,7 +23,7 @@ const EXPECTED_BIN = "angel";
 // ws1-starter-proof.json recorded for it.
 // The floor the manifest declares. Declaring a floor nobody tests is a guess,
 // so this proof requires the two to agree and records the Bun it actually ran.
-const TESTED_BUN_RANGE = ">=1.3.0";
+const DECLARED_BUN_RANGE = ">=1.3.0";
 const GOLDEN_ANGEL = "gmail-read-and-draft";
 const GOLDEN_DIGEST = "11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4";
 
@@ -37,7 +37,8 @@ interface ProofRecord {
   bin: string;
   engines: string;
   files: string[];
-  installCommand: string;
+  provedInstallCommand: string;
+  registryInstallCommand: string;
   versionOutput: string;
   builtAngel: string;
   builtDigest: string;
@@ -88,8 +89,8 @@ for (const field of ["dependencies", "peerDependencies", "optionalDependencies"]
     fail(`the published CLI must bundle its code; found ${field} ${declared.join(", ")}`);
   }
 }
-if (manifest.engines?.bun !== TESTED_BUN_RANGE) {
-  fail(`engines.bun is ${manifest.engines?.bun}, expected the tested ${TESTED_BUN_RANGE}`);
+if (manifest.engines?.bun !== DECLARED_BUN_RANGE) {
+  fail(`engines.bun is ${manifest.engines?.bun}, expected the declared ${DECLARED_BUN_RANGE}`);
 }
 
 const build = run(["bun", "run", "build"], { cwd: CLI_ROOT });
@@ -184,6 +185,18 @@ try {
     fail("the installed bundle references @smcllns/angel-core; the public CLI must not install core twice");
   }
   if (bundle.includes(REPO_ROOT)) fail("the installed bundle embeds an absolute workspace path");
+  const notices = readFileSync(join(installedRoot, "dist", "THIRD-PARTY-NOTICES.txt"), "utf8");
+  const coreDeps = Object.keys(
+    (JSON.parse(readFileSync(join(REPO_ROOT, "packages", "core", "package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+    }).dependencies ?? {},
+  );
+  for (const dependency of coreDeps) {
+    if (!notices.includes(`${dependency}@`)) {
+      fail(`the shipped third-party notices do not name ${dependency}, whose code the bundle contains`);
+    }
+  }
+
   const shipped = JSON.parse(readFileSync(join(installedRoot, "package.json"), "utf8"));
   // pnpm rewrites workspace: on pack and npm does not understand it at all, so
   // the two packers only agree while no manifest field uses the protocol.
@@ -197,9 +210,10 @@ try {
     package: EXPECTED_NAME,
     version: EXPECTED_VERSION,
     bin: EXPECTED_BIN,
-    engines: TESTED_BUN_RANGE,
+    engines: DECLARED_BUN_RANGE,
     files,
-    installCommand: `bun add --global ${EXPECTED_NAME}@${EXPECTED_VERSION}`,
+    provedInstallCommand: "bun add --global file:<packed-tarball>",
+    registryInstallCommand: `bun add --global ${EXPECTED_NAME}@${EXPECTED_VERSION}`,
     versionOutput,
     builtAngel: GOLDEN_ANGEL,
     builtDigest: digest,

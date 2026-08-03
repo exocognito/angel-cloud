@@ -151,6 +151,13 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     const id09 = recordBlocks("details", "data-deliverable-key")
       .find((block) => block.includes('data-deliverable-key="ID-09"')) ?? "";
     expect(id09).toContain("A runnable candidate is built and passes the install proof, but it is unpublished");
+    // Rows this slice re-verified cite the proof and carry its date.
+    for (const anchor of ['data-deliverable-key="ID-09"', 'data-learning-id="DF-029"']) {
+      const block = ledger.slice(ledger.indexOf(anchor), ledger.indexOf(anchor) + 2500);
+      expect(block).toContain("2026-08-03 · WS2 CLI install proof");
+      expect(block).toContain("evidence/ws2-cli-install-proof.json");
+    }
+    expect(ledger).toContain("The WS2 CLI install proof tests the packed tarball in an isolated consumer outside the workspace");
     expect(id09).toContain('href="aprd/v2.1-cli-user-guide.md"');
     expect(id09).not.toContain("No Round-2 candidate or guide exists");
     expect(count('data-deliverable-approval="')).toBe(ids.length);

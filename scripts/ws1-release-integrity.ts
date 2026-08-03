@@ -104,8 +104,10 @@ sameJson(workspace.map(({ name }) => name).sort(), WORKSPACE_PACKAGES, "workspac
 assert(workspace.find(({ name }) => name === "@exocognito/angelmcp")?.private === true, "workspace root must stay private");
 for (const { name, private: isPrivate } of workspace) {
   if (name === "@exocognito/angelmcp") continue;
+  // A private package cannot be packed at all, so it needs no approval.
+  if (isPrivate === true) continue;
   assert(
-    PUBLISHABLE_PACKAGES.has(name) && isPrivate !== true,
+    PUBLISHABLE_PACKAGES.has(name),
     `only owner-approved public packages may be packed; ${name} is not one`,
   );
 }

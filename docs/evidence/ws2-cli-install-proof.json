@@ -10,7 +10,8 @@
     "dist/angel.js",
     "package.json"
   ],
-  "installCommand": "bun add --global @angelmcp/cli@0.1.0",
+  "provedInstallCommand": "bun add --global file:<packed-tarball>",
+  "registryInstallCommand": "bun add --global @angelmcp/cli@0.1.0",
   "versionOutput": "0.1.0",
   "builtAngel": "gmail-read-and-draft",
   "builtDigest": "11542429eff4698ac6f7a121b91bd5ce5d9284c13bf7fba8773c78eb361fd0d4"

@@ -166,6 +166,15 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(scripts["check:cli"]).toBe("pnpm --dir packages/cli run check");
     expect(scripts.check).toContain("pnpm run check:ws2cli");
     expect(scripts.check).toContain("pnpm run check:cli");
+    // Publication must stay bound to a pushed cli-v* tag; a manual dispatch,
+    // even aimed at a tag, proves the package without touching the registry.
+    const release = read(".github/workflows/release-cli.yml");
+    expect(release).toContain("PUBLISHING: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v') }}");
+    for (const step of ["Publish with provenance", "Refuse to publish an unpublished-yet notice", "Record the published release"]) {
+      const block = release.slice(release.indexOf(`- name: ${step}`), release.indexOf("\n      - ", release.indexOf(`- name: ${step}`) + 1));
+      expect(block).toContain("if: env.PUBLISHING == 'true'");
+    }
+    expect(release).toContain("npm publish --provenance --access public");
     const proof = read("scripts/ws1-release-integrity.ts");
     expect(proof).toContain("pnpm\", \"view");
     expect(proof).toContain("sha512");

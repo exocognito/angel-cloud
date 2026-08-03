@@ -4,9 +4,9 @@ name: release-cli
 # token: npm mints a short-lived credential from this workflow's OIDC identity,
 # which is also what stamps the provenance attestation.
 #
-# Publication happens on a cli-v* tag and nowhere else. workflow_dispatch packs
-# and proves without publishing, so no manual run can put a package on the
-# registry from an arbitrary ref.
+# Publication requires a pushed cli-v* tag. workflow_dispatch packs and proves
+# without publishing, even when aimed at a tag, because every publishing step
+# also requires the push event.
 #
 # The first publication of a new package cannot use trusted publishing, because
 # npm attaches a trusted publisher to a package that already exists. Create the
@@ -21,6 +21,9 @@ on:
 permissions:
   contents: read
   id-token: write
+
+env:
+  PUBLISHING: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/cli-v') }}
 
 jobs:
   release:
@@ -54,6 +57,24 @@ jobs:
           test -x packages/cli/dist/angel.js
           test -s packages/cli/dist/THIRD-PARTY-NOTICES.txt
 
+      # The proof packs with pnpm; publication uploads what npm packs. Require
+      # the two file sets to agree before anything reaches the registry.
+      - name: Require npm to pack exactly what the proof proved
+        working-directory: packages/cli
+        run: |
+          npm pack --dry-run --json > /tmp/npm-pack.json
+          node -e '
+            const proof = require("../../docs/evidence/ws2-cli-install-proof.json");
+            const packed = require("/tmp/npm-pack.json")[0].files.map((f) => f.path).sort();
+            const expected = [...proof.files].sort();
+            if (JSON.stringify(packed) !== JSON.stringify(expected)) {
+              console.error("npm would publish a different file set than the proof proved");
+              console.error("npm:   " + JSON.stringify(packed));
+              console.error("proof: " + JSON.stringify(expected));
+              process.exit(1);
+            }
+          '
+
       - name: Refuse a tag that disagrees with the manifest
         if: startsWith(github.ref, 'refs/tags/cli-v')
         run: |
@@ -64,13 +85,38 @@ jobs:
             exit 1
           fi
 
-      # Only a cli-v* tag publishes. A dispatch run stops here, having proved
-      # the package without touching the registry.
+      # The tree says the package is unpublished while that is true. That README
+      # ships inside the tarball, so it must not reach the npm page.
+      - name: Refuse to publish an unpublished-yet notice
+        if: env.PUBLISHING == 'true'
+        run: |
+          if grep -q "Not published yet" packages/cli/README.md; then
+            echo "packages/cli/README.md still says the package is unpublished" >&2
+            exit 1
+          fi
+
       - name: Publish with provenance
-        if: startsWith(github.ref, 'refs/tags/cli-v')
+        if: env.PUBLISHING == 'true'
         run: npm publish --provenance --access public
         working-directory: packages/cli
 
-      - name: Record the published tarball
-        if: startsWith(github.ref, 'refs/tags/cli-v')
-        run: npm view @angelmcp/cli@"$(node -p "require('./packages/cli/package.json').version")" dist.integrity dist.attestations --json
+      # Registry propagation lags a successful publish, and the publish is
+      # irreversible, so retry rather than fail the job after the fact.
+      - name: Record the published release
+        if: env.PUBLISHING == 'true'
+        run: |
+          version="$(node -p "require('./packages/cli/package.json').version")"
+          for attempt in 1 2 3 4 5 6; do
+            if npm view "@angelmcp/cli@${version}" dist.integrity dist.attestations --json > release-record.json; then
+              break
+            fi
+            echo "registry has not caught up yet (attempt ${attempt}); waiting"
+            sleep 10
+          done
+          cat release-record.json
+
+      - uses: actions/upload-artifact@v4
+        if: env.PUBLISHING == 'true'
+        with:
+          name: angelmcp-cli-release-record
+          path: release-record.json

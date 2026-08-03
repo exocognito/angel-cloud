@@ -259,7 +259,8 @@ describe("APRD v2", () => {
     expect(roadmap).toMatch(/O10\s+approves \*\*WS2 and Dogfood Round 2\*\*/);
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
     expect(roadmap).toContain("O10\napproves **WS2 and Dogfood Round 2** as the seven WS-E briefs define them, with");
-    expect(roadmap).toContain("That package is unbuilt and unpublished");
+    expect(roadmap).toContain("WS2 has since built that package and proved its clean install, but it");
+    expect(roadmap).not.toContain("That package is unbuilt");
     expect(roadmap).toContain("APRD v2");
     expect(roadmap).toMatch(/remains\s+unapproved for implementation/);
     expect(roadmap).not.toContain("This file is the canonical plan of record");
