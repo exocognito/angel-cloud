@@ -460,10 +460,9 @@ describe("APRD v2", () => {
     expect(cliUserGuide).toContain("Target-state contract, not shipped current behavior");
     expect(cliUserGuide).toContain("Install contract — published");
     expect(cliUserGuide).toContain("it published the same day\nthrough npm trusted publishing with provenance");
-    expect(cliUserGuide).toMatch(/npm trusted publishing with provenance/);
     expect(cliUserGuide.replace(/\s+/g, " ")).toContain("That command is normative; see [the release record](../evidence/round2-cli-release.json).");
     expect(cliUserGuide).toContain("bun add --global @angelmcp/cli@0.1.0");
-    expect(cliUserGuide).toContain("Install contract");
+    expect(cliUserGuide).not.toContain("unpublished");
     expect(cliUserGuide).not.toContain("pnpm add --global @smcllns/angel-core@v2.1");
     expect(cliUserGuide).toContain("It installs the bare\n`angel` binary on `PATH`");
     expect(cliUserGuide).not.toContain("pnpm exec angel");

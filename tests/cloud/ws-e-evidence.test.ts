@@ -105,7 +105,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(o7).toContain("<dt>Linked Project Index rows</dt><dd>WS0 · PD-00B · WS2 · PD-03 · PD-05</dd>");
     const c7 = ledger.match(/data-contradiction-key="C7"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c7).toContain("CLI guide installs the core package; owner requires one public product package with separate internal core.");
-    expect(c7).toContain("N/A — O1 closed on 2026-08-03. Publishing @angelmcp/cli@0.1.0 is an execution gate, not a decision.");
+    expect(c7).toContain("N/A — O1 closed on 2026-08-03 and @angelmcp/cli@0.1.0 published the same day.");
     for (const [key, label] of [
       ["O1", "Brief 1 · package/install"], ["O2", "Brief 2 · Linux storage"],
       ["O3", "Brief 3 · custody syntax"], ["O4", "Brief 4 · auth expiry"],
@@ -383,7 +383,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(df049).not.toContain("APRD says days");
     for (const [key, evidence] of [
       ["LR-011", "APRD and target CLI auth text now state the 600-second single-use rule"],
-      ["LR-012", "The target CLI guide now names @angelmcp/cli@0.1.0"],
+      ["LR-012", "The target CLI guide names @angelmcp/cli@0.1.0 and that command is normative"],
       ["LR-013", "target CLI guide now requires exactly one of <code>--local</code> or <code>--cloud</code>"],
       ["LR-016", "Target generative evals now separate an internal fixture-aware grader from a no-repo outside candidate"],
       ["LR-017", "APRD §8.1 and the target CLI guide now put the fresh local-independence journey before managed login"],
