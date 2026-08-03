@@ -243,9 +243,11 @@ secrets or private content in them. The public-summary decision (O7 in the
 built. A Version whose raw digest was ever public remains non-hiding because an
 observer can retain it. It must show a legacy warning, then be retired or
 replaced by different canonical bytes whose digest has never been public before
-a hiding summary can be served. Broader privacy treatment for charter and guard
-literals remains for the WS2 approval gate (O10 in the
-[source-repository Product Ledger][product-ledger-source]).
+a hiding summary can be served. On 2026-08-03 the owner settled the broader
+question (O10 in the [source-repository Product Ledger][product-ledger-source]):
+charter text and guard literals stay public. The rule above — put no secrets or
+private content in `charter` or `argGuards` — is that documented boundary, so
+treat both fields as published the moment you commit them.
 
 ## Google custody
 

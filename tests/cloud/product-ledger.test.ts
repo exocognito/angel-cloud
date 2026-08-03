@@ -44,10 +44,10 @@ function expectAllAllowed(valuesToCheck: string[], allowed: Set<string>) {
 describe("Angel Product Ledger contract v0.1 application", () => {
   test("records approval of contract v0.1, this Ledger, and WS1 only", () => {
     expect(roadmap).toContain("[Angel Product Ledger](docs/product-ledger.html)");
-    expect(roadmap).toContain("WS-E is active");
-    expect(roadmap).toContain("evidence-only approval covers WS-E");
+    expect(roadmap).toContain("evidence-only approval covers WS-E, also complete");
+    expect(roadmap).toMatch(/O10\s+approves \*\*WS2 and Dogfood Round 2\*\*/);
     expect(roadmap).toContain("**WS2 and Dogfood Round 2**");
-    expect(roadmap).toContain("remain proposed and unapproved");
+    expect(roadmap).toContain("APRD v2 remains unapproved for implementation");
     expect(aprdReadme).toContain(
       "The [Angel Product Ledger](../product-ledger.html) owns the final goal, roadmap,",
     );
@@ -55,18 +55,18 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(aprd).toContain("Do not build from this draft.");
     expect(ledger).toContain('data-contract-version="approved-v0.1"');
     expect(ledger).toContain('data-ledger-approval="APPROVED"');
-    expect(ledger).toContain('data-current-workstream="WS-E"');
-    expect(ledger).toContain('data-current-workstream-status="ACTIVE"');
-    expect(ledger).toContain('data-product-work-approval="WS1"');
+    expect(ledger).toContain('data-current-workstream="WS2"');
+    expect(ledger).toContain('data-current-workstream-status="NEXT"');
+    expect(ledger).toContain('data-product-work-approval="WS1 · WS2 · M-DF2"');
     expect(ledger).toContain('data-evidence-work-approval="WS-E"');
     expect(ledger).toContain('data-approved-sequence="WS1&gt;WS-E&gt;O10&gt;WS2&gt;M-DF2"');
     expect(ledger).toContain('data-mobile-qa-width="390"');
     expect(ledger).toContain('data-mobile-qa-scroll-width="390"');
-    expect(ledger).toContain('data-next-milestone-status="unapproved"');
+    expect(ledger).toContain('data-next-milestone-status="approved"');
     expect(ledger).toContain("Approved 2026-08-01");
     expect(ledger).toContain("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328");
-    expect(ledger).toContain("Product/repository approval: WS1, now complete. Evidence-only approval: WS-E, now active. O1 is the exact closure gap; O10 waits.");
-    expect(ledger).toContain("WS2 and M-DF2 remain proposed and blocked by O10");
+    expect(ledger).toContain("Product/repository approval: WS1, complete; WS2 and M-DF2, approved to build. Evidence-only approval: WS-E, complete.");
+    expect(ledger).toContain("WS2 and M-DF2 are approved; O10 closed on 2026-08-03.");
     expect(ledger).not.toContain("No Angel product build is approved");
   });
 
@@ -76,15 +76,21 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       "M0", "M1", "WS0", "M-DF1", "WS1", "WS-E", "WS2", "M-DF2", "WS3", "WS4",
     ]);
     expect(new Set(keys).size).toBe(keys.length);
-    expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["ACTIVE"]);
+    expect(values(/data-index-plan="(ACTIVE|NEXT)"/g)).toEqual(["NEXT"]);
     expect(ledger).toMatch(
       /data-index-key="WS1" data-index-plan="COMPLETE" data-index-approval="APPROVED"/,
     );
     expect(ledger).toMatch(
-      /data-index-key="WS-E" data-index-plan="ACTIVE" data-index-approval="APPROVED"/,
+      /data-index-key="WS-E" data-index-plan="COMPLETE" data-index-approval="APPROVED"/,
     );
     expect(ledger).toContain("Seven briefs exist. WS-E changed no product behavior");
-    expect(ledger).toContain("WS-E authorizes no product implementation");
+    expect(ledger).toContain("WS-E authorized no product implementation and built none");
+    expect(ledger).toMatch(
+      /data-index-key="WS2" data-index-plan="NEXT" data-index-approval="APPROVED"/,
+    );
+    expect(ledger).toMatch(
+      /data-index-key="M-DF2" data-index-plan="BLOCKED" data-index-approval="APPROVED"/,
+    );
     const ws2 = recordBlocks("details", "data-index-key")
       .find((block) => block.includes('data-index-key="WS2"')) ?? "";
     expect(ws2).toContain('href="https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-generative-evals.md"');
@@ -133,13 +139,13 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       ));
     }
     expect(ledger).toMatch(
-      /data-deliverable-key="ID-05" data-deliverable-truth="PARTIAL" data-deliverable-plan="ACTIVE"/,
+      /data-deliverable-key="ID-05" data-deliverable-truth="LIVE" data-deliverable-plan="COMPLETE"/,
     );
     expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
     expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
-    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual(["ACTIVE"]);
+    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
     expect(ledger).toMatch(
-      /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="ACTIVE"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
+      /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="COMPLETE"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
     );
     expect(ledger).toContain("Brief 7 · public/self-hosting");
     const id09 = recordBlocks("details", "data-deliverable-key")
@@ -206,8 +212,16 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(values(/data-experience-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
     expect(count('class="experience-shot" src="data:image/png;base64,')).toBe(6);
     expect(count('data-experience-last-verified="')).toBe(6);
-    for (const key of ["EW1", "EW2", "EW3", "EW4", "EW5", "EW6"]) {
-      expect(ledger).toMatch(new RegExp(`data-experience-key="${key}"[^>]+data-experience-blockers="[^"]*O10`));
+    const closedByBoth = "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.";
+    const approvedProofPending = "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.";
+    const experienceBlockers: Record<string, string> = {
+      EW1: closedByBoth, EW2: closedByBoth, EW3: approvedProofPending,
+      EW4: closedByBoth, EW5: approvedProofPending, EW6: approvedProofPending,
+    };
+    for (const [key, blocker] of Object.entries(experienceBlockers)) {
+      const block = recordBlocks("article", "data-experience-key")
+        .find((entry) => entry.includes(`data-experience-key="${key}"`)) ?? "";
+      expect(block).toContain(`data-experience-blockers="${blocker}"`);
     }
     expect(ledger).toContain("Experience Window — the skin");
     expect(ledger).toContain("wp4-zero-guide-light.png");
@@ -248,10 +262,24 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     for (const [key, linked] of Object.entries(commandLinks)) {
       expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-linked="${linked}"`));
     }
-    for (const key of ["C02", "C03", "C04", "C06", "C07", "C09", "C10", "C11", "C13"]) {
-      expect(ledger).toMatch(new RegExp(`data-command-key="${key}"[^>]+data-command-blockers="[^"]*O10`));
+    const commandBlockers: Record<string, string> = {
+      C01: "N/A — O1 closed on 2026-08-03; @angelmcp/cli is not published yet.",
+      C02: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C03: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+      C04: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C05: "N/A — O1 closed on 2026-08-03; the package is @angelmcp/cli.",
+      C06: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C07: "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+      C09: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C10: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C11: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+      C13: "N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.",
+    };
+    for (const [key, blocker] of Object.entries(commandBlockers)) {
+      const block = recordBlocks("details", "data-command-key")
+        .find((entry) => entry.includes(`data-command-key="${key}"`)) ?? "";
+      expect(block).toContain(`data-command-blockers="${blocker}"`);
     }
-    expect(ledger).toMatch(/data-command-key="C01"[^>]+data-command-blockers="O1"/);
     expect(ledger).not.toMatch(/data-command-key="C01"[^>]+data-command-blockers="[^"]*O8/);
     expect(ledger).toContain("Surface Window — control surfaces");
     for (const command of [
@@ -307,9 +335,9 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     }
     const dispositions = rows.map((row) => row[2] ?? "");
     expect(dispositions.filter((value) => value === "INCLUDED")).toHaveLength(35);
-    expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(44);
+    expect(dispositions.filter((value) => value === "PROPOSED")).toHaveLength(49);
     expect(dispositions.filter((value) => value === "DEFERRED")).toHaveLength(29);
-    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(5);
+    expect(dispositions.filter((value) => value === "UNRESOLVED")).toHaveLength(0);
     expect(ledger).toContain(`data-learning-count="${rows.length}"`);
     expect(ledger).toContain(`<span class="metric"><b>${rows.length}</b>reconciled</span>`);
     for (const disposition of validDispositions) {
@@ -325,18 +353,21 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(values(/data-decision-key="([^"]+)"/g)).toEqual(
       Array.from({ length: 10 }, (_, index) => `O${index + 1}`),
     );
-    expect(count('data-decision-state="OPEN"')).toBe(2);
-    expect(count('data-decision-state="CLOSED"')).toBe(8);
+    expect(count('data-decision-state="OPEN"')).toBe(0);
+    expect(count('data-decision-state="CLOSED"')).toBe(10);
     expect(count('data-decision-last-verified="')).toBe(10);
     expect(ledger).toMatch(
       /data-decision-key="O8"[^>]+data-decision-state="CLOSED"[^>]+data-decision-linked="WS1"/,
     );
     expect(ledger).toMatch(/data-decision-key="O10"[^>]+data-decision-linked="WS2 · M-DF2"/);
     expect(ledger).toContain("O8 is closed: Sam approved contract v0.1, this Ledger, and WS1 only");
-    expect(ledger).toContain("O2–O7 and O9 are closed as decisions");
-    expect(ledger).toContain("O1 still needs namespace-control proof");
+    expect(ledger).toContain("WS-E produced all seven briefs, and O2–O7 and O9 closed from that evidence");
     expect(ledger).toContain("Approve WS2 and M-DF2 after WS-E closes O1–O7 and O9?");
-    expect(ledger).toContain("O1 blocks WS-E evidence closure");
+    expect(ledger).toContain("Sam approved WS2 and M-DF2 as defined by the seven WS-E briefs");
+    expect(ledger).toContain("a deleted Account handle becomes a permanent non-resolving tombstone");
+    expect(ledger).toContain("charter text and guard literals stay public with a documented boundary");
+    expect(ledger).toContain("bun add --global @angelmcp/cli@0.1.0");
+    expect(ledger).not.toContain("O1 blocks WS-E evidence closure");
     expect(ledger).toContain("<code>@angelmcp/cli@0.1.0</code>");
     expect(ledger).not.toContain("Blocks WS1 completion at ID-04");
     const g14 = ledger.slice(
@@ -348,8 +379,9 @@ describe("Angel Product Ledger contract v0.1 application", () => {
       /data-contradiction-key="(C\d+)" data-record-state="([^"]+)"/g,
     )];
     expect(contradictions).toHaveLength(16);
-    expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(2);
-    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(14);
+    expect(contradictions.filter((row) => row[2] === "OPEN")).toHaveLength(1);
+    expect(contradictions.filter((row) => row[2] === "CLOSED")).toHaveLength(15);
+    expect(ledger).toMatch(/data-contradiction-key="C7" data-record-state="CLOSED"/);
     expect(count('data-contradiction-last-verified="')).toBe(16);
     const c1 = recordBlocks("details", "data-contradiction-key")
       .find((block) => block.includes('data-contradiction-key="C1"')) ?? "";

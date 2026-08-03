@@ -68,18 +68,19 @@ describe("WS-E evidence-only decision closure", () => {
     }
   });
 
-  test("keeps WS-E active on the exact O1 namespace-control gap", () => {
-    expect(ledger).toMatch(/data-index-key="WS-E"[^>]+data-index-plan="ACTIVE"/);
-    expect(ledger).toMatch(/data-deliverable-key="ID-05"[^>]+data-deliverable-truth="PARTIAL"[^>]+data-deliverable-plan="ACTIVE"/);
+  test("records WS-E complete with every decision closed", () => {
+    expect(ledger).toMatch(/data-index-key="WS-E"[^>]+data-index-plan="COMPLETE"/);
+    expect(ledger).toMatch(/data-deliverable-key="ID-05"[^>]+data-deliverable-truth="LIVE"[^>]+data-deliverable-plan="COMPLETE"/);
     for (const decision of ["O1", "O10"]) {
-      expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="OPEN"`));
+      expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="CLOSED"`));
     }
     for (const decision of ["O2", "O3", "O4", "O5", "O6", "O7", "O9"]) {
       expect(ledger).toMatch(new RegExp(`data-decision-key="${decision}"[^>]+data-decision-state="CLOSED"`));
     }
-    expect(ledger).toContain("Control of the <code>@angelmcp</code> npm scope is unverified");
+    expect(ledger).toContain("The owner created the <code>@angelmcp</code> npm org on 2026-08-03");
+    expect(ledger).not.toContain("npm scope is unverified");
     expect(ledger).toMatch(/data-decision-key="O1"[^>]+data-decision-linked="WS-E · ID-05 · WS2"/);
-    expect(ledger).toContain('data-current-workstream="WS-E" data-current-workstream-status="ACTIVE"');
+    expect(ledger).toContain('data-current-workstream="WS2" data-current-workstream-status="NEXT"');
     for (const key of ["C4", "C6", "C13", "C15"]) {
       expect(ledger).toMatch(new RegExp(`data-contradiction-key="${key}" data-record-state="CLOSED"`));
     }
@@ -93,13 +94,15 @@ describe("WS-E evidence-only decision closure", () => {
     expect(c16).toContain("C16 / WS2 callback execution gate");
     expect(c16).not.toContain("O2 callback execution gate");
     const ws2 = ledger.match(/data-index-key="WS2"[\s\S]*?<\/details>/)?.[0] ?? "";
-    expect(ws2).toContain("Blocked by O1 and O10");
+    expect(ws2).toContain("O10 approved WS2 on 2026-08-03 as defined by the seven WS-E briefs");
+    expect(ws2).toContain("permanent non-resolving tombstone");
+    expect(ws2).toContain("stay public with a documented boundary");
     const o7 = ledger.match(/data-decision-key="O7"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(o7).toContain('data-decision-linked="WS0 · PD-00B · WS2 · PD-03 · PD-05"');
     expect(o7).toContain("<dt>Linked Project Index rows</dt><dd>WS0 · PD-00B · WS2 · PD-03 · PD-05</dd>");
     const c7 = ledger.match(/data-contradiction-key="C7"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c7).toContain("CLI guide installs the core package; owner requires one public product package with separate internal core.");
-    expect(c7).toContain("O1 blocks package identity; the target guide cannot freeze an install path until namespace control is proved.");
+    expect(c7).toContain("N/A — O1 closed on 2026-08-03. Publishing @angelmcp/cli@0.1.0 is an execution gate, not a decision.");
     for (const [key, label] of [
       ["O1", "Brief 1 · package/install"], ["O2", "Brief 2 · Linux storage"],
       ["O3", "Brief 3 · custody syntax"], ["O4", "Brief 4 · auth expiry"],
@@ -112,20 +115,20 @@ describe("WS-E evidence-only decision closure", () => {
     const c06 = ledger.match(/data-command-key="C06"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c06).toContain("Consent already occurred through <code>angel apps connect --local</code>");
     expect(c06).toContain("Human unlocks the vault and inspects the final provider side effect");
-    expect(ledger).toContain("Blocked by O1, O10, and every required WS2 proof");
+    expect(ledger).toContain("Blocked by every required WS2 proof. O10 approved M-DF2 on 2026-08-03");
     expect(ledger).toContain("O6 settled the deletion-cascade and non-resolving-handle-tombstone contract");
     expect(ledger).toContain("Seven decisions closed across six briefs");
     expect(ledger).toContain("Bun-global install proved against the current registry tarball");
-    expect(ledger).toContain("O10 blocks WS2 product work; O9 is closed.");
+    expect(ledger).toContain("N/A — O9 closed and O10 approved WS2 on 2026-08-03.");
     for (const [attribute, key] of [
       ...["MW1", "MW3", "MW4", "MW5", "MW7", "MW9"].map((key) => ["data-machinery-key", key]),
       ["data-interface-key", "SI2"],
     ]) {
       const record = ledger.match(new RegExp(`${attribute}="${key}"[\\s\\S]*?<\\/article>`))?.[0] ?? "";
-      expect(record).toContain("O10 blocks WS2 product work; linked execution proof remains incomplete.");
+      expect(record).toContain("N/A — O10 approved WS2 on 2026-08-03; linked execution proof remains incomplete.");
       expect(record).not.toContain("N/A — WS-E closed the decision");
     }
-    expect(ledger).toContain("O10 blocks WS2 product work; O6 is closed.");
+    expect(ledger).toContain("N/A — O6 closed and O10 approved WS2 on 2026-08-03.");
     for (const key of ["C4", "C6", "C13", "C15"]) {
       const contradiction = ledger.match(new RegExp(`<details class="contradiction" data-contradiction-key="${key}"[\\s\\S]*?<\\/details>`))?.[0] ?? "";
       expect(contradiction).toContain("source contracts reconciled by WS-E");
@@ -136,7 +139,7 @@ describe("WS-E evidence-only decision closure", () => {
     for (const contradiction of ledger.matchAll(/<details class="contradiction"[^>]+data-record-state="OPEN"[\s\S]*?<\/details>/g)) {
       expect(contradiction[0]).not.toContain("resolved this contradiction");
     }
-    expect(ledger).toContain("WS-E is now active.");
+    expect(ledger).toContain("WS-E followed and is complete.");
   });
 
   test("links every brief from the Ledger and preserves the evidence-only boundary", () => {
@@ -146,8 +149,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).not.toContain("oscodev@");
     expect(ledger).not.toContain("oscollins@");
     expect(ledger).toContain("first fresh identity, then a second independent identity");
-    expect(ledger).toContain("The recorded WS-E bar allowed exact remaining gaps");
-    expect(ledger).toContain("so the stricter bar governs, and WS-E stays active on O1");
+    expect(ledger).toContain("All ten decisions are closed: O2–O7 and O9 from the briefs on 2026-08-01, then O1 and O10 by owner decision on 2026-08-03");
+    expect(ledger).toContain("WS-E authorized no product implementation and built none");
     const c9 = ledger.match(/data-contradiction-key="C9"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(c9).toContain("Brief 7 excludes provenance, adapter origin, and the source digest");
     expect(c9).toContain("stay in owner review and outside the capability summary");
@@ -188,18 +191,18 @@ describe("WS-E evidence-only decision closure", () => {
       expect(row).toContain("<strong>Last verified</strong><div>2026-08-01 · repository evidence + WS-E review</div>");
     }
     expect(ledger).toContain("WS-E authorizes no product implementation");
-    expect(roadmap).toMatch(/WS-E authorizes\s+no product implementation/);
+    expect(roadmap).toMatch(/Every decision is now closed;\s+what remains is execution proof\./);
     expect(ledger).toContain("WS-E changed no product behavior, but corrected <code>docs/faq.md</code>, added authoring cross-references in <code>docs/user-manual.md</code> and <code>docs-site/public/SKILL.md</code>, recorded O7 in PD 0007, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions");
     expect(roadmap.replace(/\s+/g, " ")).toContain("WS-E changed no product behavior, but corrected `docs/faq.md`, added authoring cross-references in `docs/user-manual.md` and `docs-site/public/SKILL.md`, recorded O7 in PD 0007, repaired stale plan-of-record pointers, blocked the target install contract on O1, applied LR-016's outside-candidate/internal-grader split to the eval draft, and reconciled the unapproved O2–O7 APRD, CLI, and eval contracts with the evidence decisions.");
-    expect(roadmap.replace(/\s+/g, " ")).toContain("O10 waits until that gap closes.");
+    expect(roadmap.replace(/\s+/g, " ")).toContain("O10 approves **WS2 and Dogfood Round 2** as the seven WS-E briefs define them");
     for (const line of roadmap.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
-    expect(roadmap).toMatch(/Product\/repository approval covers WS1, now complete\. Separate\s+evidence-only approval covers WS-E\. WS-E is active/);
+    expect(roadmap).toMatch(/evidence-only approval covers WS-E, also complete\./);
     const wsEIndex = ledger.match(/data-index-key="WS-E"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(wsEIndex).toContain("<strong>Linked rows</strong><div>WS2</div>");
     expect(wsEIndex).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → WS2</div>");
     const id05 = ledger.match(/data-deliverable-key="ID-05"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(id05).toContain("matching public-boundary warning to <code>docs-site/public/SKILL.md</code>");
-    expect(ledger).toContain('</div></div><div class="field compact"><strong>Required owner gate</strong><div>O10 between WS-E and WS2</div></div>');
+    expect(ledger).toContain('</div></div><div class="field compact"><strong>Required owner gate</strong><div>Closed — the owner gate between WS-E and WS2 was answered on 2026-08-03</div></div>');
     expect(ledger).not.toContain("<strong>Linked rows</strong><div>WS1 → WS-E → O10 → WS2</div>");
     expect(ledger.split("https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152675520").length - 1).toBe(5);
     const readme = readFileSync(join(root, "README.md"), "utf8");
@@ -220,8 +223,8 @@ describe("WS-E evidence-only decision closure", () => {
     expect(engineeringView).toContain("The Angel Product Ledger owns sequence/status");
     expect(engineeringView).not.toContain("ROADMAP.md owns sequence/status");
     expect(ledger).not.toContain("WS-E must finish before O10");
-    expect(roadmap).toContain("WS-E is active");
-    expect(roadmap).toMatch(/O1 blocks\s+WS-E closure/);
+    expect(roadmap).toContain("evidence-only approval covers WS-E, also complete");
+    expect(roadmap).toMatch(/O1 fixes the public package as\s+`@angelmcp\/cli@0\.1\.0`/);
     expect(ledger).not.toContain("private-data-safe");
     expect(ledger).toContain("must treat charter and guard literals as public");
     expect(ledger).not.toContain("updates private binding config");
@@ -266,7 +269,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(deletionBrief).toContain("WS2/O10 implementation acceptance: unapproved");
     expect(deletionBrief).not.toContain("Physical O6 closure");
     expect(deletionBrief).not.toContain("local provider OAuth tokens in the OS keychain");
-    expect(ledger).toContain("O10 must accept the permanent-handle tombstone contract");
+    expect(ledger).toContain("O10 accepted the permanent non-resolving handle tombstone on 2026-08-03");
     const o7 = ledger.match(/<details id="decision-O7"[\s\S]*?<\/details>/)?.[0] ?? "";
     expect(o7).toContain("What does the public review bundle contain?");
     expect(ledger.replace(o7, "")).not.toMatch(/review bundle/i);
@@ -343,7 +346,7 @@ describe("WS-E evidence-only decision closure", () => {
     const reducedSummaryDecision = readFileSync(join(root, "docs/product-decisions/0007-capability-only-public-review.md"), "utf8");
     expect(reducedSummaryDecision).toContain("Do not emit `angel.public-review.v1` with a hiding claim for that Version");
     expect(reducedSummaryDecision).toContain("[E16 in the APRD's Evidence contracts list](https://github.com/exocognito/angelmcp/blob/main/docs/aprd/angel-cloud-aprd.html)");
-    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement survives if O10 changes, renumbers, or rejects that draft contract");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("The proof requirement stands however that draft contract changes, is renumbered, or is dropped");
     expect(reducedSummaryDecision).toContain('`schema: "angel.public-review.v1"`');
     expect(reducedSummaryDecision).toContain('`disclosure: "capability-summary-only"`');
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("A Version whose raw digest was ever public is permanently ineligible for a hiding claim");
@@ -355,14 +358,15 @@ describe("WS-E evidence-only decision closure", () => {
     const decisionIndex = readFileSync(join(root, "docs/product-decisions/README.md"), "utf8");
     expect(decisionIndex).toContain("[0007](0007-capability-only-public-review.md)");
     expect(faq.replace(/\s+/g, " ")).toContain("public-summary decision (O7 in the");
-    expect(faq.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10 in the");
+    expect(faq.replace(/\s+/g, " ")).toContain("the owner settled the broader question (O10 in the");
+    expect(faq.replace(/\s+/g, " ")).toContain("charter text and guard literals stay public");
     expect(faq).toContain("docs/product-ledger.html");
     expect(faq).toContain("[source-repository Product Ledger][product-ledger-source]");
     expect(faq).toContain("[product-ledger-source]: https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
     expect(faq.replace(/\s+/g, " ")).toContain("A Version whose raw digest was ever public remains non-hiding because an observer can retain it");
     expect(faq.match(/github\.com\/exocognito\/angelmcp\/(?:blob|tree|raw)\//g) ?? []).toHaveLength(1);
     expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("reduced public-summary decision (Product Ledger O7)");
-    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("WS2 approval gate (O10)");
+    expect(reducedSummaryDecision.replace(/\s+/g, " ")).toContain("They stay public. The owner chose a documented boundary");
     for (const line of faq.split("\n")) expect(line.length).toBeLessThanOrEqual(100);
     expect(faq).toMatch(/meant to stay public-safe\s+\(\[current public boundary\]\(#why-is-enforcement-not-done-by-the-model-or-a-prompt\)\)/);
     expect(faq).toContain("repository's canonical");
@@ -376,7 +380,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(df049).not.toContain("APRD says days");
     for (const [key, evidence] of [
       ["LR-011", "APRD and target CLI auth text now state the 600-second single-use rule"],
-      ["LR-012", "Target CLI guide now has an O1-blocked install placeholder"],
+      ["LR-012", "The target CLI guide now names @angelmcp/cli@0.1.0"],
       ["LR-013", "target CLI guide now requires exactly one of <code>--local</code> or <code>--cloud</code>"],
       ["LR-016", "Target generative evals now separate an internal fixture-aware grader from a no-repo outside candidate"],
       ["LR-017", "APRD §8.1 and the target CLI guide now put the fresh local-independence journey before managed login"],
@@ -462,20 +466,54 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toContain("WS-E decision evidence briefs 1–7");
     expect(ledger).not.toMatch(/proposed (?:Product Ledger )?contract v0\.1/i);
     const proposed = [...ledger.matchAll(/<tr data-learning-id="[^"]+"[^>]+data-disposition="PROPOSED"[^>]+data-destination="([^"]+)"[^>]*>[\s\S]*?<\/tr>/g)];
-    expect(proposed).toHaveLength(44);
+    expect(proposed).toHaveLength(49);
+    const o1Closure = "N/A — O1 closed on 2026-08-03; the @angelmcp scope is owner-controlled.";
+    // Exactly the five learnings O1 used to hold carry its closure text.
+    const reconciledByO1 = new Set(["DF-029", "DF-047", "DF-048", "LR-006", "LR-012"]);
+    let seenO1 = 0;
     for (const match of proposed) {
+      const id = match[0].match(/data-learning-id="([^"]+)"/)?.[1] ?? "";
       const destination = match[1] ?? "";
-      const blocker = `O10 blocks ${destination} approval.`;
-      expect(match[0]).toContain(`data-learning-blocker="${blocker}"`);
+      const blocker = match[0].match(/data-learning-blocker="([^"]+)"/)?.[1] ?? "";
+      const approval = `N/A — O10 approved ${destination} on 2026-08-03; delivery is an execution gate.`;
+      if (reconciledByO1.has(id)) {
+        expect(blocker).toBe(o1Closure);
+        expect(destination).toBe("WS2");
+        seenO1 += 1;
+      } else {
+        expect(blocker).toBe(approval);
+      }
       expect(match[0]).toContain(`<strong>Decisions or blockers</strong><div>${blocker}</div>`);
     }
+    expect(seenO1).toBe(reconciledByO1.size);
     expect(ledger).toContain("Approved Product Ledger · approved contract v0.1");
+    for (const key of ["WS-E", "WS2", "M-DF2"]) expect(ledger).toMatch(new RegExp(
+      `data-index-key="${key}"[^>]+data-index-last-verified="2026-08-03 · Sam owner decision"`,
+    ));
+    for (const key of [
+      "ID-05", "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
+      "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
+    ]) expect(ledger).toMatch(new RegExp(
+      `data-deliverable-key="${key}"[^>]+data-deliverable-last-verified="2026-08-03 · Sam owner decision"`,
+    ));
+    // O10 approved the named WS2 and M-DF2 increments, so approval reaches them.
+    for (const key of [
+      "ID-06", "ID-07", "ID-08", "ID-09", "ID-10",
+      "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
+    ]) expect(ledger).toMatch(new RegExp(
+      `data-deliverable-key="${key}"[^>]+data-deliverable-approval="APPROVED"`,
+    ));
+    expect(ledger).not.toContain('data-deliverable-approval="PROPOSED"');
+    for (const key of ["O1", "O10"]) expect(ledger).toMatch(new RegExp(
+      `data-decision-key="${key}"[^>]+data-decision-last-verified="2026-08-03 · Sam owner decision"`,
+    ));
+    expect(ledger).toMatch(/data-contradiction-key="C7" data-record-state="CLOSED" data-contradiction-last-verified="2026-08-03 · Sam owner decision"/);
     const restamped = {
-      index: ["WS2", "M-DF2"],
+      index: [],
       experience: ["EW3"],
       command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13"],
-      deliverable: ["ID-06", "ID-07", "ID-08", "PD-01", "PD-02", "PD-03", "PD-04"],
+      deliverable: [],
       interface: ["SI5"],
     } as const;
     expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-01 · WS1 release proof \+ WS-E evidence"/);
