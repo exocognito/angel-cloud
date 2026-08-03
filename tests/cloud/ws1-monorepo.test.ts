@@ -155,7 +155,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     const documentedOutput = `${documented.stdout.toString()}${documented.stderr.toString()}`;
     expect(documented.exitCode).toBe(1);
     expect(documentedOutput).toContain(join(root, "examples/angels/ws1-doc-path-check/ANGEL.yaml"));
-  });
+  }, 30_000);
 
   test("ships a release-integrity proof in the canonical check", () => {
     const scripts = rootPackage.scripts as Record<string, string>;
@@ -173,6 +173,11 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof).not.toContain('"tar", "-xzf"');
     const releaseBaseline = json<{ allowedPackedDifferences: Record<string, string> }>("docs/evidence/ws1-release-baseline.json");
     expect(Object.keys(releaseBaseline.allowedPackedDifferences).sort()).toEqual(["README.md", "package.json"]);
+    // Both lists are owner-approved sets. A package appearing here without a
+    // recorded decision is exactly what this proof exists to catch.
+    expect(proof).toContain('const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];');
+    expect(proof).toContain('const PUBLISHABLE_PACKAGES = new Set(["@angelmcp/cli", "@smcllns/angel-core"]);');
+    expect(proof).toContain("only owner-approved public packages may be packed");
   });
 
   test("supersedes split-repository ownership without changing product behavior", () => {

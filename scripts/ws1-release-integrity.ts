@@ -95,9 +95,20 @@ const workspace = JSON.parse(run(["pnpm", "-r", "list", "--depth", "-1", "--json
   name: string;
   private?: boolean;
 }>;
-sameJson(workspace.map(({ name }) => name).sort(), ["@exocognito/angelmcp", "@smcllns/angel-core"], "workspace package set");
+// Widening either list is an owner-approved product decision, never a drive-by
+// addition. @angelmcp/cli joined on 2026-08-03 under O1 and O10.
+const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];
+const PUBLISHABLE_PACKAGES = new Set(["@angelmcp/cli", "@smcllns/angel-core"]);
+
+sameJson(workspace.map(({ name }) => name).sort(), WORKSPACE_PACKAGES, "workspace package set");
 assert(workspace.find(({ name }) => name === "@exocognito/angelmcp")?.private === true, "workspace root must stay private");
-assert(workspace.find(({ name }) => name === "@smcllns/angel-core")?.private !== true, "only core may be packed");
+for (const { name, private: isPrivate } of workspace) {
+  if (name === "@exocognito/angelmcp") continue;
+  assert(
+    PUBLISHABLE_PACKAGES.has(name) && isPrivate !== true,
+    `only owner-approved public packages may be packed; ${name} is not one`,
+  );
+}
 
 const temp = mkdtempSync(join(tmpdir(), "angelmcp-ws1-release-"));
 const packDirectory = join(temp, "pack");
