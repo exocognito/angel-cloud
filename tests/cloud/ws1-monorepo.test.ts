@@ -186,7 +186,15 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(proof.match(/"tar", "-xzpf"/g)).toHaveLength(2);
     expect(proof).not.toContain('"tar", "-xzf"');
     const releaseBaseline = json<{ allowedPackedDifferences: Record<string, string> }>("docs/evidence/ws1-release-baseline.json");
-    expect(Object.keys(releaseBaseline.allowedPackedDifferences).sort()).toEqual(["README.md", "package.json"]);
+    // The two CLI files joined this list on 2026-08-04 when Cloudflare Access
+    // came off the control plane and the client stopped sending service-token
+    // headers. Naming them here is what keeps the exemption a decision rather
+    // than a place to hide an unexplained divergence.
+    expect(Object.keys(releaseBaseline.allowedPackedDifferences).sort()).toEqual([
+      "README.md", "package.json", "src/cli/client.ts", "src/cli/commands.ts",
+    ]);
+    expect(releaseBaseline.allowedPackedDifferences["src/cli/client.ts"])
+      .toContain("Cloudflare Access service-token headers removed");
     // Both lists are owner-approved sets. A package appearing here without a
     // recorded decision is exactly what this proof exists to catch.
     expect(proof).toContain('const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];');
