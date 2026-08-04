@@ -2,8 +2,13 @@ import { DurableObject } from "cloudflare:workers";
 import {
   MagicLinkError,
   consumeMagicLink,
+  type MagicLinkFailure,
   type MagicLinkRecord,
 } from "../magic-link";
+
+export type ConsumeOutcome =
+  | { ok: true; emailHash: string }
+  | { ok: false; failure: MagicLinkFailure };
 
 /**
  * One Durable Object per issued link, named by the token's selector. The
@@ -34,15 +39,25 @@ export class LoginAttempt extends DurableObject<LoginAttemptEnv> {
    * read, the decision and the write are one indivisible step and two
    * simultaneous clicks cannot both win.
    *
-   * Throws MagicLinkError. Deliberately not wrapped in
-   * `blockConcurrencyWhile`, which resets the object on a thrown exception —
-   * a stranger typing a wrong token must not be able to do that.
+   * Reports refusal as a value rather than an exception, because a thrown
+   * error crossing the Durable Object boundary arrives as a plain Error and
+   * the caller can no longer tell a refused link from a broken service.
+   *
+   * Deliberately not wrapped in `blockConcurrencyWhile`, which resets the
+   * object when its callback throws — a stranger typing a wrong token must
+   * not be able to do that.
    */
-  async consume(presentedVerifierHash: string, now: number): Promise<{ emailHash: string }> {
+  async consume(presentedVerifierHash: string, now: number): Promise<ConsumeOutcome> {
     const stored = await this.ctx.storage.get<MagicLinkRecord>(RECORD_KEY);
-    const consumed = consumeMagicLink(stored, presentedVerifierHash, now);
+    let consumed: MagicLinkRecord;
+    try {
+      consumed = consumeMagicLink(stored, presentedVerifierHash, now);
+    } catch (error) {
+      if (error instanceof MagicLinkError) return { ok: false, failure: error.failure };
+      throw error;
+    }
     await this.ctx.storage.put(RECORD_KEY, consumed);
-    return { emailHash: consumed.emailHash };
+    return { ok: true, emailHash: consumed.emailHash };
   }
 
   async alarm(): Promise<void> {

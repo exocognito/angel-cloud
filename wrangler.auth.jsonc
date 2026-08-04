@@ -1,0 +1,30 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "angelmcp-auth-demo",
+  "account_id": "6334e1f9af90be70f091a0116425606a",
+  "main": "src/workers/auth.ts",
+  "compatibility_date": "2026-07-18",
+  "compatibility_flags": ["nodejs_compat"],
+  // Secrets: RESEND_API_KEY
+  //
+  // Deliberately NOT behind the Cloudflare Access application that fronts the
+  // Control worker. Signup is the one surface a stranger has to reach.
+  "vars": {
+    "AUTH_BASE_URL": "https://angelmcp-auth-demo.sam-633.workers.dev",
+    "LOGIN_FROM_ADDRESS": "Angel <noreply@angelicagents.com>"
+  },
+  "durable_objects": {
+    "bindings": [
+      { "name": "LOGIN", "class_name": "LoginAttempt" },
+      { "name": "IDENTITY", "class_name": "LoginIdentity" },
+      { "name": "SESSION", "class_name": "LoginSession" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["LoginAttempt", "LoginIdentity", "LoginSession"] }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

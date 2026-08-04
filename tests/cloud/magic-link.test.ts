@@ -161,26 +161,31 @@ describe("LoginAttempt storage", () => {
     await attempt.issue(storedRecord());
 
     const first = await attempt.consume("verifier-hash", 1_500);
-    const second = await attempt.consume("verifier-hash", 1_500).then(
-      () => null,
-      (error: unknown) => error,
-    );
+    const second = await attempt.consume("verifier-hash", 1_500);
 
-    expect(first).toEqual({ emailHash: "email-hash" });
-    expect(second).toBeInstanceOf(MagicLinkError);
-    expect((second as MagicLinkError).failure).toBe("consumed");
+    expect(first).toEqual({ ok: true, emailHash: "email-hash" });
+    expect(second).toEqual({ ok: false, failure: "consumed" });
+  });
+
+  test("refusal comes back as a value, because a thrown class does not survive the object boundary", async () => {
+    const { attempt } = makeAttempt();
+    await attempt.issue(storedRecord());
+
+    const refused = await attempt.consume("wrong-hash", 1_500);
+
+    expect(refused).toEqual({ ok: false, failure: "mismatched" });
+    expect(JSON.parse(JSON.stringify(refused))).toEqual(refused);
   });
 
   test("a refused spend leaves the link usable", async () => {
     const { attempt, storage } = makeAttempt();
     await attempt.issue(storedRecord());
 
-    await expect(attempt.consume("wrong-hash", 1_500)).rejects.toThrow(
-      expect.objectContaining({ failure: "mismatched" }),
-    );
+    await attempt.consume("wrong-hash", 1_500);
 
     expect((storage.map.get("record") as MagicLinkRecord).consumedAt).toBeNull();
-    expect(await attempt.consume("verifier-hash", 1_600)).toEqual({ emailHash: "email-hash" });
+    expect(await attempt.consume("verifier-hash", 1_600))
+      .toEqual({ ok: true, emailHash: "email-hash" });
   });
 
   test("the sweep alarm erases the record", async () => {
