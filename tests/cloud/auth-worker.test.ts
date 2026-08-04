@@ -223,6 +223,25 @@ describe("throttling", () => {
     const response = await world.requestLink("one-too-many@example.test");
 
     expect(response.status).toBe(429);
+    // Whose 429 matters. Better Auth ships its own per-IP limit on these
+    // paths, and it used to fire first — five requests in sixty seconds, well
+    // inside our window, with its own wording. Asserting only the status let
+    // that through, and the live run found it on the third request.
+    expect(await response.json()).toEqual({ error: "too many sign-in requests" });
+  });
+
+  test("the framework's own limit never fires before ours does", async () => {
+    const world = makeWorld();
+
+    const answers = [];
+    for (let index = 0; index < MAX_LINKS_PER_SOURCE; index += 1) {
+      answers.push(await world.requestLink(`person-${index}@example.test`));
+    }
+
+    expect(answers.map((response) => response.status)).toEqual(
+      Array.from({ length: MAX_LINKS_PER_SOURCE }, () => 200),
+    );
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_SOURCE);
   });
 
   test("the window reopens once it has passed", async () => {

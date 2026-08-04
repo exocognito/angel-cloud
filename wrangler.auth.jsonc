@@ -19,7 +19,7 @@
     {
       "binding": "AUTH_DB",
       "database_name": "angelmcp-auth",
-      "database_id": "cd6a7d28-fce3-4a9d-8a69-6ccb05bc941a"
+      "database_id": "78c02424-849a-4352-bc6f-12ad5a024b5b"
     }
   ],
   // The one Durable Object that survives the cutover. Counting requests per

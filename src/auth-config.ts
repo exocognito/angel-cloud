@@ -1,5 +1,5 @@
 import { betterAuth } from "better-auth";
-import { magicLink } from "better-auth/plugins";
+import { bearer, magicLink } from "better-auth/plugins";
 import { mintAccountId } from "./angel-account";
 import { EmailSendError, loginLinkEmail, resendSender, type EmailSender } from "./email-sender";
 
@@ -53,8 +53,7 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
     session: { expiresIn: SESSION_TTL_SECONDS },
     // In-memory limits are decorative on Workers: an isolate is per-request
     // and per-colo, so nothing accumulates. This is the framework's own
-    // per-IP limit and it is not the per-address cap O4 asks for — that one
-    // is ours, in the Worker.
+    // per-IP limit, kept for the endpoints the Worker does not guard itself.
     rateLimit: { enabled: true, storage: "database" },
     user: {
       additionalFields: {
@@ -75,7 +74,17 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
       },
     },
     plugins: [
+      // Lets a session token arrive as `Authorization: Bearer`, not only as a
+      // cookie. The CLI has no cookie jar, and the implementation this
+      // replaces answered on a bearer header.
+      bearer(),
       magicLink({
+        // The plugin's own limit is 5 per 60 seconds per IP across both
+        // magic-link paths, and it fires ahead of the Worker's caps — which
+        // are stricter, per address as well as per source, and are the ones
+        // O4 specifies. Widened past the source cap so ours always binds
+        // first; this stays as a backstop rather than a competitor.
+        rateLimit: { window: 900, max: 1_000 },
         expiresIn: MAGIC_LINK_TTL_SECONDS,
         // O4 clause 3. The default stores the token in the clear.
         storeToken: "hashed",
