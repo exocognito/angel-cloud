@@ -64,11 +64,24 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
     // ever span two Workers there.
     advanced: {
       crossSubDomainCookies: { enabled: true, domain: env.SESSION_COOKIE_DOMAIN },
+      // Without this the framework reads `x-forwarded-for` only, finds nothing
+      // behind Cloudflare, and — by its own warning — falls back to "a single
+      // shared per-path bucket". Every caller would then share one allowance.
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"] },
     },
     // In-memory limits are decorative on Workers: an isolate is per-request
     // and per-colo, so nothing accumulates. This is the framework's own
     // per-IP limit, kept for the endpoints the Worker does not guard itself.
-    rateLimit: { enabled: true, storage: "database" },
+    rateLimit: {
+      enabled: true,
+      storage: "database",
+      // Control asks this once for every authenticated request it serves, so a
+      // limit here is a cap on the product rather than on an attacker. The
+      // question it answers cannot be brute-forced — a session token is either
+      // one that was issued or it is not — so the cap buys nothing and would
+      // lock out everyone who is signed in.
+      customRules: { "/get-session": false },
+    },
     user: {
       additionalFields: {
         // Named `angel` to keep it clear of Better Auth's own `account`

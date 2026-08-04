@@ -51,6 +51,12 @@ export async function authenticateSessionRequest(
   if (cookie !== null) headers.set("cookie", cookie);
   else if (authorization !== null) headers.set("authorization", authorization);
   else throw new SessionAuthenticationError("sign-in required");
+  // The caller's address travels too, and only that. Without it the framework
+  // resolves no IP and rate-limits every tenant out of one shared bucket, so
+  // this is load-bearing rather than telemetry. It is Cloudflare's own header,
+  // which a caller cannot forge past the edge.
+  const clientIp = request.headers.get("cf-connecting-ip");
+  if (clientIp !== null) headers.set("cf-connecting-ip", clientIp);
 
   let response: Response;
   try {
