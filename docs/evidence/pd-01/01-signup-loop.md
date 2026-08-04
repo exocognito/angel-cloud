@@ -75,18 +75,25 @@ uncapped path waited on Resend. The send is now handed to `waitUntil` and
 happens after the answer, so the status and the body say nothing about the
 address and the Resend round trip is off the reply path entirely. A smaller
 timing difference remains, and is not closed: a capped request answers before
-minting a link, so an uncapped one additionally does one HMAC, one SHA-256 and
-one Durable Object write — the address HMAC is paid on both paths. Equalising that means doing the mint and the write for
+minting a link, so an uncapped one additionally does one HMAC, one SHA-256 and **two**
+Durable Object writes, one of them creating a brand-new object, both awaited
+before the reply. The address HMAC is paid on both paths; the writes are not. Equalising that means doing the mint and the write for
 capped requests too, which hands an attacker exactly the storage growth the cap
 exists to prevent; the alternative, padding every reply to a fixed floor, puts
-a permanent cost on every sign-in to hide a sub-millisecond difference behind
-internet jitter.
+a permanent cost on every sign-in. The residual is a Durable Object
+create-and-write over RPC, not a hash — measurably more than the earlier
+description of it claimed.
 
 **Owner decision, 2026-08-04: leave it, recorded here as an open gap.** Two
 independent reviewers judged the residual a contract violation and raised it in
 three consecutive rounds. It is a real signal against a three-per-fifteen-minutes
 cap, and closing it is cheap to do badly. It stays open deliberately, not by
 oversight.
+
+That decision was taken on a description of the gap that later review found
+wrong twice — first overstating the crypto, then understating the writes. What
+it actually costs is a Durable Object create-and-write, so the owner should be
+asked again now the arithmetic is right.
 
 ## Caps on asking
 

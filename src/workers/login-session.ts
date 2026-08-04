@@ -17,9 +17,16 @@ export interface LoginSessionEnv {
 }
 
 export class LoginSession extends DurableObject<LoginSessionEnv> {
+  /**
+   * Arms the sweep before it writes. The other order can leave a record with
+   * no alarm if `setAlarm` fails — a durable session a failed login left
+   * behind, which is exactly what the callback's ordering exists to prevent.
+   * This way a failed `put` leaves an alarm over empty storage, which is
+   * harmless.
+   */
   async open(record: SessionRecord): Promise<void> {
-    await this.ctx.storage.put(SESSION_KEY, record);
     await this.ctx.storage.setAlarm(record.expiresAt + LOGIN_SESSION_SWEEP_MS);
+    await this.ctx.storage.put(SESSION_KEY, record);
   }
 
   async resolve(now: number): Promise<SessionRecord | null> {

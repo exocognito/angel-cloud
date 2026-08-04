@@ -32,9 +32,10 @@ export class LoginAttempt extends DurableObject<LoginAttemptEnv> {
     return Date.now();
   }
 
+  /** Arms the sweep first, for the reason in `LoginSession.open`. */
   async issue(record: MagicLinkRecord): Promise<void> {
-    await this.ctx.storage.put(RECORD_KEY, record);
     await this.ctx.storage.setAlarm(record.expiresAt + LOGIN_ATTEMPT_SWEEP_MS);
+    await this.ctx.storage.put(RECORD_KEY, record);
   }
 
   /**
