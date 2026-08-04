@@ -151,9 +151,13 @@ const registryPaths = run(["tar", "-tzf", registryTarball]).trim().split("\n")
   .map((path) => path.slice("package/".length))
   .sort();
 sameJson(registryPaths, expectedPaths, "published registry file list");
+// Named here as well as in the baseline, so a file cannot become exempt by
+// editing one JSON value. The two CLI files joined on 2026-08-04, when
+// Cloudflare Access came off the control plane and the client stopped sending
+// service-token headers.
 sameJson(
   Object.keys(baseline.allowedPackedDifferences).sort(),
-  ["README.md", "package.json"],
+  ["README.md", "package.json", "src/cli/client.ts", "src/cli/commands.ts"],
   "allowed packed differences",
 );
 
