@@ -7,10 +7,11 @@ this file links to it rather than repeat it.
 
 [product-ledger-source]: https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html
 
-Present-tense statements describe the live Milestone 1 slice: three deployed
+Present-tense statements describe the live Milestone 1 slice: the deployed
 Workers, one pre-provisioned Account behind Cloudflare Access, and real Google
-calls for two pinned operations through bring-your-own OAuth custody. Where a
-limit bites, it is called out.
+calls for two pinned operations through bring-your-own OAuth custody. A separate
+demo Worker now offers signup, but the Account it creates reaches nothing here.
+Where a limit bites, it is called out.
 
 ## Choosing Angel Cloud
 
@@ -181,7 +182,7 @@ bindings, holds gate 1, custody, and the pinned provider calls
 credential-encryption key; the Gateway never holds provider credentials; and
 Control passes provider client material straight to Broker custody without
 persisting or custodying it. Each internal token belongs to exactly one
-caller/callee pair. And it is three Workers for the whole platform, not three
+caller/callee pair. And it is a fixed handful of Workers for the whole platform, not three
 per Angel — the deploy count stays constant as Angels multiply.
 
 ### Why install the Broker before the Gateway?

@@ -5,8 +5,12 @@ variant testable. It has Accounts, immutable Angel Versions, explicit
 Connection bindings, stable Angel keys, and credential custody boundaries. It
 has no code-execution engine.
 
-The deployed shape is three Workers:
+The deployed shape is four Workers:
 
+- **Auth** is the public signup surface, deliberately outside the Cloudflare
+  Access application: it mails a one-time sign-in link and gives whoever clicks
+  it an empty Account. A dogfooding implementation; Better Auth is expected to
+  replace it.
 - **Control** owns one demo Account, the management API, immutable Versions,
   environment deployments, stable key hashes, and the private www read model.
 - **Gateway** exposes each Angel MCP endpoint and independently enforces its

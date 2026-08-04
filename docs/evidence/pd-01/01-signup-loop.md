@@ -49,9 +49,9 @@ sign-in link", carrying one URL back to `/v1/auth/callback`.
 | Eleven requests from one machine | the first ten answered, then `429 {"error":"too many sign-in requests"}` |
 | Five requests for one address | five identical `202`s, three mails delivered |
 | An address the sender refuses | `202`, the same answer every address gets |
-| The sender is down | `202`, unchanged — see below |
+| The sender is down | `202`, unchanged — the send no longer sits on the response path at all |
 | The session is missing, unknown or expired | `401 {"error":"sign in required"}` |
-| A session whose Account write never landed | `401`, worded identically, and no Account exists |
+
 | Response headers on the callback | `referrer-policy: no-referrer`, `cache-control: no-store` |
 | The session cookie | `HttpOnly; Secure; SameSite=Lax; Max-Age=1209600` |
 
@@ -70,8 +70,11 @@ address got a `202` — an enumeration oracle, exactly what O4 forbids.
 The first fix was half a fix: address-level rejections were answered normally
 but a sender *outage* still returned `502`. Review caught that a capped address
 never reaches the sender at all, so the `502` said "this address was not
-capped" — the same oracle through a different door. Every send failure now
-answers `202` and goes loudly to the logs instead.
+capped" — the same oracle through a different door. The second fix was also
+half a fix: matching bodies still left matching *timing*, because only the
+uncapped path waited on Resend. The send is now handed to `waitUntil` and
+happens after the answer, so neither the status, the body, nor the wait says
+anything about the address. Failures are logged.
 
 ## Caps on asking
 
@@ -95,9 +98,19 @@ two adjacent windows. A sliding window would not, but it holds a list of
 timestamps, which is storage an attacker grows by asking. The burst is the
 lesser problem, so the window is fixed.
 
-Refusing costs nothing: an over-limit request is not written back, so hammering
-the endpoint neither extends the caller's own lockout nor reaches anyone else,
-because the count is per source.
+Refusing costs nothing for the source cap: an over-limit request is not written
+back, so hammering the endpoint does not extend the caller's own lockout. That
+sentence does not carry over to the address cap, which is keyed by the address
+alone. Anyone can spend a known address's three-per-fifteen-minutes from
+anywhere, and the owner's own request is then refused in silence, with no mail
+and no way to tell why. Making the cap generous enough to be harmless would
+make it useless against the abuse it exists for; the answer is to key it by
+source as well, which is not in this slice.
+
+Not proven against the deployed Worker: what a login does when the Account
+write fails. That state cannot be produced from outside without instrumenting
+the Worker, and it is covered by two tests in
+`tests/cloud/auth-worker.test.ts` instead.
 
 ## What review changed after the first run
 
@@ -140,7 +153,9 @@ redirect, deletion and the handle tombstone, and the cutover to
 
 A source cap is per source address, and an IPv6 caller holds a whole /64, so it
 slows a flood rather than stopping one. The per-address cap is what actually
-protects a given mailbox from being mailed repeatedly.
+protects a given mailbox from being mailed repeatedly — and, keyed by address
+alone, it is also what lets a stranger lock a known address out of signing in.
+Keying it by source as well closes both, and belongs with the throttling work.
 
 Sign-in mail comes from `angelicagents.com`, not `angelmcp.ai`: the Resend free
 plan holds one sending domain and that one already had it. Moving it is a

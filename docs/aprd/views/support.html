@@ -265,7 +265,7 @@
               <li><strong>Any <code>-32603</code> convergence failure.</strong> Platform fault by definition. Collect the request ID and escalate.</li>
               <li><strong>Environment dark right after a promote.</strong> This is what issue #1 used to do, and it is fixed — so a report of it now is a new fault, not that one. Escalate with timing; don't troubleshoot the user.</li>
               <li><strong>Activity history requests.</strong> No retention, search, or export guarantee exists yet. Never promise "we can pull the logs from last month."</li>
-              <li><strong>"How do I sign up?"</strong> There is no signup — one pre-provisioned Account behind Cloudflare Access. Say so; don't waitlist people informally.</li>
+              <li><strong>"How do I sign up?"</strong> There is a dogfooding signup on the separate <span class="font-mono">angelmcp-auth-demo</span> Worker: it mails a one-time link and gives you an empty Account. That Account grants nothing on Control, which still serves one pre-provisioned Account behind Cloudflare Access. Say exactly that; don't waitlist people informally.</li>
               <li><strong>Naming heads-up.</strong> "Staging" is now "preview" — the dashboard, the docs and the platform all say preview. The published command-line tool still says <code>staging</code>, and old <code>/v1/a/…/staging/mcp</code> endpoints still answer, so a user pasting CLI output or an old URL will show you the old word. They mean the same environment. Translate silently; don't make the user care.</li>
             </ul>
           </div>

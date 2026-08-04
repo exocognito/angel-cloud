@@ -41,6 +41,8 @@ export interface AuthRequestEnv {
 export interface AuthDependencies {
   now?: () => number;
   sender?: EmailSender;
+  /** Where a send is handed to so it does not sit on the response path. */
+  waitUntil?: (work: Promise<unknown>) => void;
 }
 
 export async function handleAuthRequest(
@@ -49,11 +51,12 @@ export async function handleAuthRequest(
   dependencies: AuthDependencies = {},
 ): Promise<Response> {
   const now = dependencies.now ?? (() => Date.now());
+  const waitUntil = dependencies.waitUntil ?? ((work: Promise<unknown>) => void work);
   const url = new URL(request.url);
 
   try {
     if (url.pathname === "/v1/auth/request-link" && request.method === "POST") {
-      return await requestLink(request, env, now(), dependencies.sender);
+      return await requestLink(request, env, now(), dependencies.sender, waitUntil);
     }
     if (url.pathname === "/v1/auth/callback" && request.method === "GET") {
       return await callback(url, env, now());
@@ -63,12 +66,9 @@ export async function handleAuthRequest(
     }
     return json({ error: "not found" }, 404);
   } catch (error) {
+    // Sending no longer sits on this path at all, so nothing about an address
+    // can reach the caller through a status code.
     if (error instanceof EmailSendError) {
-      // Reaching here means the send failed on a path the caller can see.
-      // Every such failure answers `202`, because a capped address never
-      // reaches the sender at all — so any other status here would say "that
-      // address was not capped", which is the oracle O4 forbids. The failure
-      // is loud in the logs instead, where it costs nobody their privacy.
       console.error(`sign-in mail failed: ${error.failure}: ${error.message}`);
       return json({ status: "accepted" }, 202);
     }
@@ -86,6 +86,7 @@ async function requestLink(
   env: AuthRequestEnv,
   now: number,
   sender: EmailSender | undefined,
+  waitUntil: (work: Promise<unknown>) => void,
 ): Promise<Response> {
   // The source cap comes first, and counts malformed requests too: a flood is
   // a flood. Refusing by source names no address, so it can say what it is.
@@ -118,17 +119,21 @@ async function requestLink(
 
   const link = new URL("/v1/auth/callback", env.AUTH_BASE_URL);
   link.searchParams.set("token", minted.token);
-  try {
-    await (sender ?? resendSender({ apiKey: env.RESEND_API_KEY, from: env.LOGIN_FROM_ADDRESS }))
-      .send(loginLinkEmail({ to: email, url: link.toString() }));
-  } catch (error) {
-    // An undeliverable address is a fact about one person, and answering it
-    // here would turn this endpoint into the enumeration oracle O4 forbids.
-    // It goes to the logs and the caller gets everyone's answer. A broken
-    // sender is true of every address at once, so that one is allowed to show.
-    if (!(error instanceof EmailSendError) || error.failure !== "address") throw error;
-    console.warn(`login link undeliverable for selector ${minted.selector}: ${error.message}`);
-  }
+
+  // The send happens after the answer, not before it. A capped address never
+  // reaches the sender, so waiting on Resend here would make "not capped" the
+  // slow answer and "capped" the fast one — the same thing the matching bodies
+  // exist to prevent. Every outcome is logged; none of them reaches the caller.
+  waitUntil((async () => {
+    try {
+      await (sender ?? resendSender({ apiKey: env.RESEND_API_KEY, from: env.LOGIN_FROM_ADDRESS }))
+        .send(loginLinkEmail({ to: email, url: link.toString() }));
+    } catch (error) {
+      const failure = error instanceof EmailSendError ? error.failure : "unknown";
+      const detail = error instanceof Error ? error.message : String(error);
+      console.error(`sign-in mail failed (${failure}) for selector ${minted.selector}: ${detail}`);
+    }
+  })());
 
   return json({ status: "accepted" }, 202);
 }
@@ -142,8 +147,11 @@ async function callback(url: URL, env: AuthRequestEnv, now: number): Promise<Res
   const token = parseMagicLinkToken(url.searchParams.get("token"));
   if (token === null) return refuseLink();
 
+  // No clock is passed: the object reads its own, immediately before it
+  // decides, so nothing spends a link using a timestamp taken before the hash
+  // and the queue.
   const spent = await env.LOGIN.getByName(token.selector)
-    .consume(await hashMagicLinkVerifier(token.verifier), now);
+    .consume(await hashMagicLinkVerifier(token.verifier));
   if (!spent.ok) return refuseLink();
 
   // The session names the identity, not the Account, and is written before the
@@ -200,7 +208,7 @@ function json(body: unknown, status = 200, headers: Record<string, string> = {})
 }
 
 export default {
-  fetch(request: Request, env: AuthRequestEnv): Promise<Response> {
-    return handleAuthRequest(request, env);
+  fetch(request: Request, env: AuthRequestEnv, ctx: ExecutionContext): Promise<Response> {
+    return handleAuthRequest(request, env, { waitUntil: (work) => ctx.waitUntil(work) });
   },
 };

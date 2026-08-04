@@ -20,12 +20,20 @@ mock.module("cloudflare:workers", () => ({
 }));
 
 const { handleAuthRequest } = await import("../../src/workers/auth");
-const { LoginAttempt } = await import("../../src/workers/login-attempt");
+const { LoginAttempt: RealLoginAttempt } = await import("../../src/workers/login-attempt");
 const { LoginIdentity } = await import("../../src/workers/login-identity");
 const { LoginSession } = await import("../../src/workers/login-session");
 const { LoginThrottle } = await import("../../src/workers/login-throttle");
 
 const START = 1_700_000_000_000;
+
+/** Holds the clock still for a test; the real object reads Date.now(). */
+let attemptClock = START;
+class LoginAttempt extends RealLoginAttempt {
+  protected override now(): number {
+    return attemptClock;
+  }
+}
 
 describe("asking for a sign-in link", () => {
   test("answers the same way for every address, and mails a link", async () => {
@@ -337,6 +345,22 @@ describe("a login that half-fails", () => {
     expect(failed).toBeInstanceOf(Error);
   });
 
+  test("an older object answering with undefined is refused, not answered 200 with no Account", async () => {
+    // What a rolling deploy did once: the identity object on the other side of
+    // the call was an earlier version and returned undefined, which a
+    // `=== null` check waved through.
+    const world = makeWorld();
+    const signedUp = await world.signUp("stranger@example.test");
+    for (const identity of world.identities.values()) {
+      (identity as { account: () => Promise<unknown> }).account = async () => undefined;
+    }
+
+    const response = await world.session(signedUp.session);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "sign in required" });
+  });
+
   test("a session whose Account never landed is refused like an unknown one", async () => {
     const world = makeWorld();
     const signedUp = await world.signUp("stranger@example.test");
@@ -418,8 +442,14 @@ function makeWorld() {
     AUTH_BASE_URL: "https://auth.test",
   } as never;
 
+  attemptClock = START;
   const world = {
-    clock: START,
+    get clock() {
+      return attemptClock;
+    },
+    set clock(value: number) {
+      attemptClock = value;
+    },
     rejectSendWith: null as EmailSendError | null,
     breakAccountWrite: false,
     sent,
@@ -427,8 +457,17 @@ function makeWorld() {
     identities: identities.instances,
     sessions: sessions.instances,
 
-    call(request: Request) {
-      return handleAuthRequest(request, env, { now: () => world.clock, sender });
+    async call(request: Request) {
+      const pending: Array<Promise<unknown>> = [];
+      const response = await handleAuthRequest(request, env, {
+        now: () => world.clock,
+        sender,
+        waitUntil: (work) => void pending.push(work),
+      });
+      // The send is handed off rather than awaited, so drain it here — the
+      // Worker runtime does the same before the request is finished with.
+      await Promise.all(pending);
+      return response;
     },
     requestLink(email: unknown, source: string | null = "198.51.100.7") {
       return world.call(new Request("https://auth.test/v1/auth/request-link", {

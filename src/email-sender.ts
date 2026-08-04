@@ -65,7 +65,10 @@ export function resendSender(input: {
         // Fail loudly either way. A swallowed send looks identical to a link
         // the owner never clicked, and we would debug the wrong end of it.
         const failure = response.status === 400 || response.status === 422 ? "address" : "service";
-        throw new EmailSendError(failure, `sending failed with ${response.status}: ${await response.text()}`);
+        // Reading the body can itself fail, and an escaping error here would
+        // arrive somewhere that does not know it came from the sender.
+        const detail = await response.text().catch(() => "<body unreadable>");
+        throw new EmailSendError(failure, `sending failed with ${response.status}: ${detail}`);
       }
     },
   };

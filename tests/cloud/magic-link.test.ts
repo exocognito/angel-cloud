@@ -21,7 +21,8 @@ mock.module("cloudflare:workers", () => ({
   },
 }));
 
-const { LoginAttempt, LOGIN_ATTEMPT_SWEEP_MS } = await import("../../src/workers/login-attempt");
+const { LoginAttempt: RealLoginAttempt, LOGIN_ATTEMPT_SWEEP_MS } =
+  await import("../../src/workers/login-attempt");
 
 const KEY = "test-name-key";
 
@@ -147,6 +148,34 @@ describe("spending a magic link", () => {
   });
 });
 
+describe("LoginAttempt reads its own clock", () => {
+  test("a link that dies while the call is queued is refused, not spent", async () => {
+    // The caller's clock is read before the verifier is hashed and before this
+    // object gets to the request. O4 gives no grace, so the decision has to use
+    // the clock at the moment it decides.
+    const { attempt, setClock } = makeAttempt();
+    const record = storedRecord();
+    setClock(1_500);
+    await attempt.issue(record);
+
+    setClock(record.expiresAt);
+    const outcome = await attempt.consume("verifier-hash");
+
+    expect(outcome).toEqual({ ok: false, failure: "expired" });
+    expect((await attempt.consume("verifier-hash")).ok).toBe(false);
+  });
+
+  test("the last live instant still spends", async () => {
+    const { attempt, setClock } = makeAttempt();
+    const record = storedRecord();
+    await attempt.issue(record);
+
+    setClock(record.expiresAt - 1);
+
+    expect(await attempt.consume("verifier-hash")).toEqual({ ok: true, emailHash: "email-hash" });
+  });
+});
+
 describe("LoginAttempt storage", () => {
   test("issuing keeps the record and arms a sweep past expiry", async () => {
     const { attempt, storage } = makeAttempt();
@@ -162,8 +191,8 @@ describe("LoginAttempt storage", () => {
     const { attempt } = makeAttempt();
     await attempt.issue(storedRecord());
 
-    const first = await attempt.consume("verifier-hash", 1_500);
-    const second = await attempt.consume("verifier-hash", 1_500);
+    const first = await attempt.consume("verifier-hash");
+    const second = await attempt.consume("verifier-hash");
 
     expect(first).toEqual({ ok: true, emailHash: "email-hash" });
     expect(second).toEqual({ ok: false, failure: "consumed" });
@@ -173,7 +202,7 @@ describe("LoginAttempt storage", () => {
     const { attempt } = makeAttempt();
     await attempt.issue(storedRecord());
 
-    const refused = await attempt.consume("wrong-hash", 1_500);
+    const refused = await attempt.consume("wrong-hash");
 
     expect(refused).toEqual({ ok: false, failure: "mismatched" });
     expect(JSON.parse(JSON.stringify(refused))).toEqual(refused);
@@ -183,10 +212,10 @@ describe("LoginAttempt storage", () => {
     const { attempt, storage } = makeAttempt();
     await attempt.issue(storedRecord());
 
-    await attempt.consume("wrong-hash", 1_500);
+    await attempt.consume("wrong-hash");
 
     expect((storage.map.get("record") as MagicLinkRecord).consumedAt).toBeNull();
-    expect(await attempt.consume("verifier-hash", 1_600))
+    expect(await attempt.consume("verifier-hash"))
       .toEqual({ ok: true, emailHash: "email-hash" });
   });
 
@@ -217,6 +246,12 @@ function storedRecord(): MagicLinkRecord {
  * proves, and the live signup run tests it for real.
  */
 function makeAttempt() {
+  let clock = 1_500;
+  class TestLoginAttempt extends RealLoginAttempt {
+    protected override now(): number {
+      return clock;
+    }
+  }
   const map = new Map<string, unknown>();
   const storage = {
     map,
@@ -234,6 +269,6 @@ function makeAttempt() {
       map.clear();
     },
   };
-  const attempt = new LoginAttempt({ storage } as never, {} as never);
-  return { attempt, storage };
+  const attempt = new TestLoginAttempt({ storage } as never, {} as never);
+  return { attempt, storage, setClock: (value: number) => { clock = value; } };
 }

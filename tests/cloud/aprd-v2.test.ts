@@ -211,7 +211,12 @@ describe("APRD v2", () => {
     expect(html).toContain("The current page does make other writes — Promote, availability changes, and key lifecycle actions");
     expect(html).toContain('<span class="text-emerald-700">[slug]:Settings.Availability</span> · <span class="text-amber-600">MasterToggle</span>');
     expect(html).not.toContain("This station is red");
-    expect(html).toContain("This station is amber — agreed and unbuilt");
+    // Was "amber — agreed and unbuilt" until signup shipped on the demo Worker.
+    // It stays amber: the entry step exists for dogfooding, and logout, delete
+    // and the wiring into Control do not.
+    expect(html).toContain("so this station is amber rather than red");
+    expect(html).toContain("angelmcp-auth-demo");
+    expect(html).not.toContain("No signup, no logout, no delete");
     expect(html).toContain('href="#s2" class="m-1 rounded border-2 border-emerald-300');
   });
 

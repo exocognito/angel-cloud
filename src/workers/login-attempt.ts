@@ -27,6 +27,11 @@ export interface LoginAttemptEnv {
 }
 
 export class LoginAttempt extends DurableObject<LoginAttemptEnv> {
+  /** Overridable so a test can hold the clock still. Nothing else touches it. */
+  protected now(): number {
+    return Date.now();
+  }
+
   async issue(record: MagicLinkRecord): Promise<void> {
     await this.ctx.storage.put(RECORD_KEY, record);
     await this.ctx.storage.setAlarm(record.expiresAt + LOGIN_ATTEMPT_SWEEP_MS);
@@ -47,8 +52,13 @@ export class LoginAttempt extends DurableObject<LoginAttemptEnv> {
    * object when its callback throws — a stranger typing a wrong token must
    * not be able to do that.
    */
-  async consume(presentedVerifierHash: string, now: number): Promise<ConsumeOutcome> {
+  async consume(presentedVerifierHash: string): Promise<ConsumeOutcome> {
     const stored = await this.ctx.storage.get<MagicLinkRecord>(RECORD_KEY);
+    // The clock is read here, not passed in. A caller reads it before hashing
+    // the verifier and before this call queues behind whatever else this
+    // object is doing, and O4 allows no grace — so a timestamp taken out there
+    // can be old enough to spend a link that has already died.
+    const now = this.now();
     let consumed: MagicLinkRecord;
     try {
       consumed = consumeMagicLink(stored, presentedVerifierHash, now);
