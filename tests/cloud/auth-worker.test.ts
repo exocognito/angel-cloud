@@ -132,6 +132,29 @@ describe("asking for a sign-in link", () => {
     expect(world.sent).toHaveLength(0);
   });
 
+  test("the answer does not wait on the sender", async () => {
+    // The send is handed off, not awaited. If it were awaited, a capped
+    // address — which never reaches the sender — would answer faster than an
+    // uncapped one, and the matching bodies would not hide that.
+    const world = makeWorld();
+    let releaseSend = () => {};
+    world.holdSend = new Promise<void>((resolve) => {
+      releaseSend = resolve;
+    });
+
+    const answered = await world.callWithoutDraining(
+      new Request("https://auth.test/v1/auth/request-link", {
+        method: "POST",
+        headers: { "cf-connecting-ip": "198.51.100.7" },
+        body: JSON.stringify({ email: "stranger@example.test" }),
+      }),
+    );
+
+    expect(answered.status).toBe(202);
+    expect(world.sent).toHaveLength(0);
+    releaseSend();
+  });
+
   test("the mail carries a link back to this service and nothing else secret", async () => {
     const world = makeWorld();
     await world.requestLink("stranger@example.test");
@@ -421,6 +444,7 @@ function makeWorld() {
   const sent: OutboundEmail[] = [];
   const sender: EmailSender = {
     async send(message) {
+      if (world.holdSend !== null) await world.holdSend;
       if (world.rejectSendWith !== null) throw world.rejectSendWith;
       sent.push(message);
     },
@@ -451,12 +475,21 @@ function makeWorld() {
       attemptClock = value;
     },
     rejectSendWith: null as EmailSendError | null,
+    holdSend: null as Promise<void> | null,
     breakAccountWrite: false,
     sent,
     attempts: attempts.instances,
     identities: identities.instances,
     sessions: sessions.instances,
 
+    /** Answers without draining the handed-off send, as the runtime does. */
+    callWithoutDraining(request: Request) {
+      return handleAuthRequest(request, env, {
+        now: () => world.clock,
+        sender,
+        waitUntil: () => {},
+      });
+    },
     async call(request: Request) {
       const pending: Array<Promise<unknown>> = [];
       const response = await handleAuthRequest(request, env, {

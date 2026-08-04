@@ -80,7 +80,9 @@ export async function deriveLoginName(
   kind: string,
   value: string,
 ): Promise<string> {
-  if (key === "") throw new Error("LOGIN_NAME_KEY must be set");
+  // Falsy, not empty-string: an unset Worker secret arrives as undefined, and
+  // TextEncoder turns that into a zero-length key that slips past `=== ""`.
+  if (!key) throw new Error("LOGIN_NAME_KEY must be set");
   const mac = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(key),

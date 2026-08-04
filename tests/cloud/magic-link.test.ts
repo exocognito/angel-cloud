@@ -1,6 +1,9 @@
 import { describe, expect, mock, test } from "bun:test";
+import { sha256Hex } from "@smcllns/angel-core";
 import {
   MAGIC_LINK_TTL_MS,
+  deriveLoginName,
+  hashLoginEmail,
   MagicLinkError,
   consumeMagicLink,
   hashMagicLinkVerifier,
@@ -83,6 +86,38 @@ describe("magic link minting", () => {
     expect(first.selector).not.toBe(second.selector);
     expect(first.token).not.toBe(second.token);
     expect(first.record.emailHash).toBe(second.record.emailHash);
+  });
+});
+
+describe("names for stored objects", () => {
+  test("a name is keyed, so it is not a bare digest anyone can rebuild offline", async () => {
+    const email = "sam@example.test";
+
+    const underOneKey = await hashLoginEmail("key-one", email);
+    const underAnother = await hashLoginEmail("key-two", email);
+
+    expect(underOneKey).not.toBe(underAnother);
+    expect(underOneKey).not.toBe(await sha256Hex(email));
+    expect(underOneKey).not.toBe(await sha256Hex(`angel.login.email.v1:${email}`));
+    expect(underOneKey).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  test("the same address under the same key always names the same object", async () => {
+    expect(await hashLoginEmail(KEY, "sam@example.test"))
+      .toBe(await hashLoginEmail(KEY, "sam@example.test"));
+  });
+
+  test("two kinds of thing never collide, so an address cannot name a source bucket", async () => {
+    expect(await deriveLoginName(KEY, "email", "same")).not.toBe(
+      await deriveLoginName(KEY, "source", "same"),
+    );
+  });
+
+  test("refuses to name anything without a key, however the key went missing", async () => {
+    for (const missing of ["", undefined as unknown as string, null as unknown as string]) {
+      await expect(deriveLoginName(missing, "email", "sam@example.test"))
+        .rejects.toThrow("LOGIN_NAME_KEY must be set");
+    }
   });
 });
 

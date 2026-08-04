@@ -50,9 +50,7 @@ sign-in link", carrying one URL back to `/v1/auth/callback`.
 | Five requests for one address | five identical `202`s, three mails delivered |
 | An address the sender refuses | `202`, the same answer every address gets |
 | The sender is down | `202`, unchanged — the send no longer sits on the response path at all |
-| The session is missing, unknown or expired | `401 {"error":"sign in required"}` |
-
-| Response headers on the callback | `referrer-policy: no-referrer`, `cache-control: no-store` |
+| The session is missing, unknown or expired | `401 {"error":"sign in required"}` || Response headers on the callback | `referrer-policy: no-referrer`, `cache-control: no-store` |
 | The session cookie | `HttpOnly; Secure; SameSite=Lax; Max-Age=1209600` |
 
 ## Two things the live run caught that the tests could not
@@ -73,8 +71,13 @@ never reaches the sender at all, so the `502` said "this address was not
 capped" — the same oracle through a different door. The second fix was also
 half a fix: matching bodies still left matching *timing*, because only the
 uncapped path waited on Resend. The send is now handed to `waitUntil` and
-happens after the answer, so neither the status, the body, nor the wait says
-anything about the address. Failures are logged.
+happens after the answer, so the status and the body say nothing about the
+address and the Resend round trip is off the reply path entirely. A smaller
+timing difference remains, and is not closed: a capped request answers before
+minting a link, so an uncapped one additionally does one HMAC, two SHA-256s and
+one Durable Object write. Equalising that means doing the mint and the write for
+capped requests too, which hands an attacker exactly the storage growth the cap
+exists to prevent. Recorded rather than closed.
 
 ## Caps on asking
 
@@ -130,7 +133,9 @@ had already claimed:
 - **The Worker logged the live token.** `head_sampling_rate: 1` writes request
   URLs to Workers Logs, and the callback carries the verifier in its query
   string, so a spendable token sat in a retained store for the ten minutes it
-  worked. Observability is off on this Worker, and the config says why.
+  worked. Observability stays on, so this Worker's own logs are retained — they are the
+only record a send failure leaves now. What is off is the automatic per-request
+invocation log, which carried the callback URL and with it a live verifier.
 
 Two more were about naming: stored objects were named by unkeyed SHA-256 over
 an email address or an IP, both small enough to enumerate offline by anyone who

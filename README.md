@@ -231,9 +231,13 @@ in that list does not matter. It is deliberately outside the Cloudflare Access
 application that fronts Control — signup is the one surface a stranger has to
 reach — and it needs two secrets of its own, `RESEND_API_KEY` and
 `LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
-`wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string; it keys the
-hashes that name stored objects, so changing it orphans every existing session
-and identity.
+`wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
+rotatable in place: it keys the hash that names each identity's storage, so
+after a rotation the same address resolves to a fresh, empty identity and the
+next sign-in mints a **second** Account for someone who already has one.
+Sessions issued before the rotation keep working, because they carry the old
+hash — so the two Accounts coexist. Treat it as set-once until identity
+migration exists.
 
 Required secrets:
 

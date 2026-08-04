@@ -55,6 +55,22 @@ describe("the Resend sender", () => {
     }
   });
 
+  test("a reply whose body will not read is still a classified failure", async () => {
+    const sender = stubbed(async () => ({
+      ok: false,
+      status: 422,
+      async text() {
+        throw new TypeError("body already consumed");
+      },
+    }) as unknown as Response);
+
+    const thrown = await sender.send(message()).then(() => null, (error: unknown) => error);
+
+    expect(thrown).toBeInstanceOf(EmailSendError);
+    expect((thrown as EmailSendError).failure).toBe("address");
+    expect((thrown as EmailSendError).message).toContain("422");
+  });
+
   test("a connection that never replies is a sender that is down, not an escaping error", async () => {
     const sender = stubbed(async () => {
       throw new TypeError("network error");

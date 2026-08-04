@@ -54,26 +54,16 @@ export async function handleAuthRequest(
   const waitUntil = dependencies.waitUntil ?? ((work: Promise<unknown>) => void work);
   const url = new URL(request.url);
 
-  try {
-    if (url.pathname === "/v1/auth/request-link" && request.method === "POST") {
-      return await requestLink(request, env, now(), dependencies.sender, waitUntil);
-    }
-    if (url.pathname === "/v1/auth/callback" && request.method === "GET") {
-      return await callback(url, env, now());
-    }
-    if (url.pathname === "/v1/auth/session" && request.method === "GET") {
-      return await session(request, env, now());
-    }
-    return json({ error: "not found" }, 404);
-  } catch (error) {
-    // Sending no longer sits on this path at all, so nothing about an address
-    // can reach the caller through a status code.
-    if (error instanceof EmailSendError) {
-      console.error(`sign-in mail failed: ${error.failure}: ${error.message}`);
-      return json({ status: "accepted" }, 202);
-    }
-    throw error;
+  if (url.pathname === "/v1/auth/request-link" && request.method === "POST") {
+    return requestLink(request, env, now(), dependencies.sender, waitUntil);
   }
+  if (url.pathname === "/v1/auth/callback" && request.method === "GET") {
+    return callback(url, env, now());
+  }
+  if (url.pathname === "/v1/auth/session" && request.method === "GET") {
+    return session(request, env, now());
+  }
+  return json({ error: "not found" }, 404);
 }
 
 /**
