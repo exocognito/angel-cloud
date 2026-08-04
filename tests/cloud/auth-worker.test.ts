@@ -230,6 +230,35 @@ describe("caps on asking", () => {
     expect((await world.requestLink("real@example.test")).status).toBe(429);
   });
 
+  test("a refusal writes too, so a capped address does not answer faster", async () => {
+    const world = makeWorld();
+    for (let attempt = 0; attempt <= MAX_LINKS_PER_EMAIL; attempt += 1) {
+      await world.requestLink("keen@example.test");
+    }
+
+    const writesBefore = world.throttleWrites;
+    await world.requestLink("keen@example.test");
+
+    expect(world.throttleWrites).toBe(writesBefore + 2);
+  });
+
+  test("writing on refusal does not extend the caller's own lockout", async () => {
+    const world = makeWorld();
+    for (let attempt = 0; attempt <= MAX_LINKS_PER_EMAIL; attempt += 1) {
+      await world.requestLink("keen@example.test");
+    }
+    // Keep asking right up to the boundary; the window must still end when the
+    // first request started it, not when the last refusal landed.
+    world.clock = START + THROTTLE_WINDOW_MS - 1;
+    await world.requestLink("keen@example.test");
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_EMAIL);
+
+    world.clock = START + THROTTLE_WINDOW_MS;
+    await world.requestLink("keen@example.test");
+
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_EMAIL + 1);
+  });
+
   test("a different source has its own allowance", async () => {
     const world = makeWorld();
     for (let attempt = 0; attempt <= MAX_LINKS_PER_SOURCE; attempt += 1) {
@@ -486,7 +515,9 @@ function makeWorld() {
     if (world.breakAccountWrite) throw new Error("identity storage is unavailable");
   });
   const sessions = objectNamespace(LoginSession);
-  const throttles = objectNamespace(LoginThrottle);
+  const throttles = objectNamespace(LoginThrottle, undefined, () => {
+    world.throttleWrites += 1;
+  });
   const env = {
     LOGIN: attempts.namespace,
     IDENTITY: identities.namespace,
@@ -509,6 +540,7 @@ function makeWorld() {
     rejectSendWith: null as EmailSendError | null,
     holdSend: null as Promise<void> | null,
     breakAccountWrite: false,
+    throttleWrites: 0,
     sent,
     attempts: attempts.instances,
     identities: identities.instances,
@@ -569,7 +601,11 @@ function makeWorld() {
 }
 
 /** A Durable Object namespace over in-memory instances, one per name. */
-function objectNamespace<T>(Class: new (ctx: never, env: never) => T, onGet?: () => void) {
+function objectNamespace<T>(
+  Class: new (ctx: never, env: never) => T,
+  onGet?: () => void,
+  onWrite?: () => void,
+) {
   const instances = new Map<string, T & { dump(): unknown }>();
   return {
     instances,
@@ -584,6 +620,7 @@ function objectNamespace<T>(Class: new (ctx: never, env: never) => T, onGet?: ()
             return map.get(key);
           },
           async put(key: string, value: unknown) {
+            if (onWrite !== undefined) onWrite();
             map.set(key, value);
           },
           async setAlarm() {},

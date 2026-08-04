@@ -75,14 +75,19 @@ uncapped path waited on Resend. The send is now handed to `waitUntil` and
 happens after the answer, so the status and the body say nothing about the
 address and the Resend round trip is off the reply path entirely. A smaller
 timing difference remains, and is not closed: a capped request answers before
-minting a link, so an uncapped one additionally does one HMAC, one SHA-256 and **two**
-Durable Object writes, one of them creating a brand-new object, both awaited
-before the reply. The address HMAC is paid on both paths; the writes are not. Equalising that means doing the mint and the write for
+minting a link, so an uncapped one additionally does one HMAC, one SHA-256 and one
+Durable Object write — the creation of the link object. The address HMAC and
+the throttle write are now paid on both paths. Equalising that means doing the mint and the write for
 capped requests too, which hands an attacker exactly the storage growth the cap
 exists to prevent; the alternative, padding every reply to a fixed floor, puts
-a permanent cost on every sign-in. The residual is a Durable Object
-create-and-write over RPC, not a hash — measurably more than the earlier
-description of it claimed.
+a permanent cost on every sign-in. The residual is one Durable Object
+creation, not a hash.
+
+Half of it was closed for free after the loop ended: the throttle object used
+to return before writing when it refused, so a capped address skipped a write
+an uncapped one paid. It now writes either way. That costs no storage — the
+object already exists and the window is written back unchanged — so a refusal
+still does not extend the caller's own lockout, which is tested.
 
 **Owner decision, 2026-08-04: leave it, recorded here as an open gap.** Two
 independent reviewers judged the residual a contract violation and raised it in
@@ -91,9 +96,16 @@ cap, and closing it is cheap to do badly. It stays open deliberately, not by
 oversight.
 
 That decision was taken on a description of the gap that later review found
-wrong twice — first overstating the crypto, then understating the writes. What
-it actually costs is a Durable Object create-and-write, so the owner should be
-asked again now the arithmetic is right.
+wrong twice — first overstating the crypto, then understating the writes. Put
+to the owner again on 2026-08-04 with the arithmetic corrected, the answer was
+to take the free half-fix above and leave the remainder open.
+
+Worth stating plainly, since three rounds argued about it: what leaks is not
+whether an address has an Account. The window counts requests *for* an address,
+and an attacker's own probes fill it, so a fast answer mostly reports their own
+traffic. Learning anything about somebody else means finding their address
+already capped without having capped it — which reveals that they asked for a
+sign-in link in the last fifteen minutes, and nothing more.
 
 ## Caps on asking
 
@@ -117,8 +129,8 @@ two adjacent windows. A sliding window would not, but it holds a list of
 timestamps, which is storage an attacker grows by asking. The burst is the
 lesser problem, so the window is fixed.
 
-Refusing costs nothing for the source cap: an over-limit request is not written
-back, so hammering the endpoint does not extend the caller's own lockout. That
+Refusing does not extend the caller's own lockout: the window is written back
+with its original start, so hammering the endpoint buys the attacker nothing. That
 sentence does not carry over to the address cap, which is keyed by the address
 alone. Anyone can spend a known address's three-per-fifteen-minutes from
 anywhere, and the owner's own request is then refused in silence, with no mail
