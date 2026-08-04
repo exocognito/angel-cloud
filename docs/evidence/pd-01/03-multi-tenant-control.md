@@ -90,6 +90,20 @@ could only widen what the session already bounds. It was removed rather than
 scoped. SI3 asks for a *strict* Account-scoped management contract, and strict
 is what the session gives.
 
+## The WS1 bundle baseline moved, and what it now means
+
+`scripts/ws1-release-integrity.ts` pins each Worker's normalized bundle to
+`docs/evidence/ws1-release-baseline.json`, and Control's hash changed here for
+the first time since that file was written. Broker and Gateway are still
+byte-identical, which is worth stating: the guard was not blanket-updated.
+
+The number's meaning changed with it. It was captured to prove the monorepo
+migration altered no runtime bytes; Control's source has now legitimately
+changed, so for Control it records the last approved build rather than the
+pre-migration one. That is a weaker claim, and it should be read as one. The
+migration question it was built to answer is closed; the guard's remaining use
+is catching a bundle that moves when no source did.
+
 ## Not in this run
 
 The pilot Account. `acct_m1` was left behind by owner decision on 2026-08-04:
