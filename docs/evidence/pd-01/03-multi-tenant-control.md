@@ -154,6 +154,18 @@ pre-migration one. That is a weaker claim, and it should be read as one. The
 migration question it was built to answer is closed; the guard's remaining use
 is catching a bundle that moves when no source did.
 
+The same file also pins the packed `@smcllns/angel-core` against the published
+0.3.0 tarball, and `src/cli/client.ts` and `src/cli/commands.ts` now diverge
+from it because the CLI stopped speaking Cloudflare Access. They join
+`package.json` and `README.md` in `allowedPackedDifferences`, which is the
+mechanism the baseline already provides for a divergence that is meant.
+
+Worth being blunt about what that means: **the published 0.3.0 still contains
+the Access code.** Anybody installing it from the registry gets a client that
+attaches service-token headers no application reads any more. Harmless — the
+headers are ignored — but it is one more reason the CLI login hand-off is the
+real fix rather than a tidy-up.
+
 One gap worth naming rather than leaving to be discovered: `angelmcp-auth` has
 no baseline entry at all. The guard pins Broker, Gateway and Control, and this
 work made a fourth Worker load-bearing for tenant isolation without bringing it

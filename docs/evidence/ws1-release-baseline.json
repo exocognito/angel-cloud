@@ -113,7 +113,9 @@
   },
   "allowedPackedDifferences": {
     "package.json": "canonical repository metadata and JSON formatting",
-    "README.md": "canonical monorepo command paths, angel.version.v2 format correction and Distribution section rewrite"
+    "README.md": "canonical monorepo command paths, angel.version.v2 format correction and Distribution section rewrite",
+    "src/cli/client.ts": "Cloudflare Access service-token headers removed; the control plane resolves one bearer as a session",
+    "src/cli/commands.ts": "ANGEL_ACCESS_TOKEN no longer read, and the missing-credential error names what the value now is"
   },
   "workerNormalizedJsSha256": {
     "broker": "78f989e9b778e45718dbb13244594eca5892bbb7eb921d2120723b08de6fb62e",
