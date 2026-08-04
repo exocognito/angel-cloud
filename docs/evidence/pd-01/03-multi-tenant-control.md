@@ -77,7 +77,41 @@ nobody outside can choose.
 
 Both are pinned by tests that fail with the fix reverted.
 
-## The management surface lost its token
+## What review found that the live run had not
+
+**One rate-limit bucket for the whole platform.** Better Auth reads
+`x-forwarded-for` to identify a caller, which is absent behind Cloudflare. It
+then resolves no address and — in its own logged warning — falls back to "a
+single shared per-path bucket". Control asks `/get-session` on every
+authenticated request it serves, so the framework's default of 100 per 10
+seconds was a cap on the product rather than on an attacker: past it, everyone
+signed in gets `500 session verifier failed` at once, and any one caller
+looping a request locks out everybody.
+
+Three things were wrong together and all three are fixed: the address header is
+named, `authenticateSessionRequest` forwards it, and `/get-session` is exempt.
+A session token cannot be brute-forced, so a cap there bought nothing.
+
+Read against the framework source rather than taken on trust —
+`better-auth/dist/api/rate-limiter/index.mjs` builds the key from
+`ip ?? "no-trusted-ip"`, and `@better-auth/core/dist/utils/ip.mjs` defaults
+`ipAddressHeaders` to `["x-forwarded-for"]` and returns null when nothing
+matches. The test that pins it fails against the old configuration.
+
+**A stranger's malformed body returned a runtime 500.** `/api/sign-in` sits
+outside the guarded block, so the 400 it raises for invalid JSON escaped the
+handler — on the one route a stranger can reach. The test covering that route
+passed a signed-in verifier, which is why it went unnoticed; it now asks with
+no session at all, which is the only kind of person who needs a link.
+
+**Cloudflare Access was still in the CLI and the golden runner.** Both
+presented Access service-token headers to a control plane with no Access
+application in front of it, and the runner demanded `GOLDEN_ACCESS_TOKEN`
+before it would start. The runner now carries a real session — bearer on the
+management API, cookie on the dashboard's own routes, where the admin token
+needs the `Authorization` header to itself.
+
+## The management surface lost its token, and the CLI with it
 
 `/v1/` required `MANAGEMENT_API_TOKEN` as well as an identity. Every route
 already ended in `requireAuthenticatedAccount`, which is what bounded it; the
@@ -89,6 +123,22 @@ With the identity now naming one Account, keeping a shared secret beside it
 could only widen what the session already bounds. It was removed rather than
 scoped. SI3 asks for a *strict* Account-scoped management contract, and strict
 is what the session gives.
+
+The cost is that no CLI or service can reach that surface today, and saying so
+plainly matters more than the tidiness of the change. Measured against the
+deployed Worker:
+
+| Credential | Answer |
+|---|---|
+| A session token as `Authorization: Bearer` | `404 {"error":"not found"}` — authenticated, and Account-scoped |
+| A shared secret as a bearer | `401 {"error":"sign-in required"}` |
+| No credential at all | `401 {"error":"sign-in required"}` |
+
+So the CLI's transport survives — a session works as a bearer, which is what
+`bearer()` is for — but nothing issues one to a terminal. `ANGEL_MANAGEMENT_TOKEN`
+keeps its name and changes its meaning, and its error message says so. Renaming
+a published package's variable is a separate decision; the CLI login hand-off is
+the real fix.
 
 ## The WS1 bundle baseline moved, and what it now means
 
@@ -103,6 +153,18 @@ changed, so for Control it records the last approved build rather than the
 pre-migration one. That is a weaker claim, and it should be read as one. The
 migration question it was built to answer is closed; the guard's remaining use
 is catching a bundle that moves when no source did.
+
+One gap worth naming rather than leaving to be discovered: `angelmcp-auth` has
+no baseline entry at all. The guard pins Broker, Gateway and Control, and this
+work made a fourth Worker load-bearing for tenant isolation without bringing it
+under the pin. Adding it while PD-01 is actively moving would turn the entry
+into a changelog rather than a guard, so it is left for when sign-in settles.
+
+The script refuses to run on anything but Node v26, so the hashes here were
+reproduced independently: the same `wrangler deploy --dry-run` bundles, the
+same source-path normalisation, hashed in Python. Broker and Gateway came out
+byte-identical to the recorded values, which is what makes the Control number
+credible rather than merely asserted.
 
 ## Not in this run
 

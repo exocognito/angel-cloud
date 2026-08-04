@@ -118,7 +118,7 @@
   "workerNormalizedJsSha256": {
     "broker": "78f989e9b778e45718dbb13244594eca5892bbb7eb921d2120723b08de6fb62e",
     "gateway": "26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7",
-    "control": "dd6e42cc7872e783688131ec7ea225dec672750232605c745768fa3f3e7bc8e8"
+    "control": "626f6fa2003806f1e6122dc156802d2143477ea360a784139ae022a8f535ab5b"
   },
   "registryIntegrity": "sha512-taID3iPF89XFzjyZnEi+ZF6rA3GlvzlNH8F/UOBY4mSvQBHPW7dQqGmQz4a2PhzHgzbmYt/rkn4cKcfK5rvcXg=="
 }
