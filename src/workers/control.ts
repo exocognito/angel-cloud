@@ -48,7 +48,6 @@ export interface ControlRequestEnv {
   CONTROL_GATEWAY_TOKEN: string;
   CONTROL_RESPONSE_KEK: string;
   DEMO_ADMIN_TOKEN: string;
-  MANAGEMENT_API_TOKEN: string;
   GATEWAY_BASE_URL: string;
   ACCOUNTS: { getByName(name: string): RegistryStub };
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -98,7 +97,6 @@ export async function handleControlRequest(
     await requireDistinctRoleCredentials(
       [
         env.DEMO_ADMIN_TOKEN,
-        env.MANAGEMENT_API_TOKEN,
         env.CONTROL_GATEWAY_TOKEN,
         env.CONTROL_BROKER_TOKEN,
         env.CONTROL_RESPONSE_KEK,
@@ -119,7 +117,11 @@ export async function handleControlRequest(
       return await providerRequest(request, env, sessionIdentity);
     }
     if (url.pathname.startsWith("/v1/")) {
-      await requireBearer(request, env.MANAGEMENT_API_TOKEN, "management authorization required");
+      // No separate management token. G07 says other tenants do not exist, and
+      // what enforces that is `requireAuthenticatedAccount` on every route
+      // below: the Account in the path must be the Account in the session, or
+      // the answer is 404. A shared token names no Account, so it could only
+      // ever widen that — it gated nothing the session did not already gate.
       const handled = await handleRoutes(request, url, env, sessionIdentity);
       if (handled !== null) return handled;
       const routed = await managementCommand(

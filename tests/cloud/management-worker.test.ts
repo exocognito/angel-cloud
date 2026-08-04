@@ -22,9 +22,10 @@ const handleControlRequest = (request: Request, env: Record<string, unknown>) =>
     subject: "test-access-subject",
   }));
 const { AccountRegistry } = await import("../../src/workers/account-registry");
+const { SessionAuthenticationError } = await import("../../src/session-identity");
 
 describe("management resource routes", () => {
-  test("routes all Control surfaces through the Worker with Access JWT verification", () => {
+  test("routes all Control surfaces through the Worker so the session decides", () => {
     const wrangler = readFileSync(
       new URL("../../wrangler.control.jsonc", import.meta.url),
       "utf8",
@@ -34,12 +35,31 @@ describe("management resource routes", () => {
 
   test("authenticates mutations before parsing JSON", async () => {
     const env = managementEnv();
-    const response = await handleControlRequest(new Request(
+    const response = await handleControlRequestReal(new Request(
       "https://cloud.test/v1/accounts/acct_personal/angels/golden-assistant",
       { method: "PUT", headers: { "content-type": "application/json" }, body: "{" },
-    ), env as never);
+    ), env as never, async () => {
+      throw new SessionAuthenticationError("sign-in required");
+    });
 
     expect(response.status).toBe(401);
+    expect(env.calls).toEqual([]);
+  });
+
+  test("answers 404 for a mutation aimed at another Account, before parsing JSON", async () => {
+    // G07 again, on the mutation path: a body is never even read for an
+    // Account the session does not own, so a malformed one cannot be used to
+    // tell an existing Account from an absent one.
+    const env = managementEnv();
+    const response = await handleControlRequestReal(new Request(
+      "https://cloud.test/v1/accounts/acct_somebody_else/angels/golden-assistant",
+      { method: "PUT", headers: { "content-type": "application/json" }, body: "{" },
+    ), env as never, async () => ({
+      accountId: "acct_personal",
+      subject: "test-session-subject",
+    }));
+
+    expect(response.status).toBe(404);
     expect(env.calls).toEqual([]);
   });
 

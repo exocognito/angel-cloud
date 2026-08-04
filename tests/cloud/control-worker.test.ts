@@ -624,7 +624,6 @@ describe("control Worker routing", () => {
   test("fails closed when any Control credential or response KEK is reused", async () => {
     const fields = [
       "DEMO_ADMIN_TOKEN",
-      "MANAGEMENT_API_TOKEN",
       "CONTROL_GATEWAY_TOKEN",
       "CONTROL_BROKER_TOKEN",
       "CONTROL_RESPONSE_KEK",
@@ -650,7 +649,6 @@ describe("control Worker routing", () => {
     for (const invalid of [undefined, ""]) {
       for (const field of [
         "DEMO_ADMIN_TOKEN",
-        "MANAGEMENT_API_TOKEN",
         "CONTROL_GATEWAY_TOKEN",
         "CONTROL_BROKER_TOKEN",
         "CONTROL_RESPONSE_KEK",

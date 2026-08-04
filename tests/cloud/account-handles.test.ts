@@ -23,6 +23,7 @@ mock.module("cloudflare:workers", () => ({
 const { AccountRegistry } = await import("../../src/workers/account-registry");
 const { handleControlRequest: handleControlRequestReal } = await import("../../src/workers/control");
 const { handleGatewayRequest, HandleDirectory } = await import("../../src/workers/gateway");
+const { SessionAuthenticationError } = await import("../../src/session-identity");
 
 const handleControlRequest = (request: Request, env: Record<string, unknown>) =>
   handleControlRequestReal(request, env as never, async () => ({
@@ -366,16 +367,39 @@ describe("Control handle routes", () => {
     expect(harness.gatewayPushes).toEqual([]);
   });
 
-  test("requires the management bearer", async () => {
+  test("answers 404 for another Account's handle, as if it were not there", async () => {
+    // G07: cross-Account resources are indistinguishable from absent ones. The
+    // session names the Account; naming a different one in the path must not
+    // reveal that it exists. This is what scopes the management surface — the
+    // shared bearer it replaced named no Account and so could not.
     const harness = controlHarness();
-    const response = await handleControlRequest(new Request(
+    const response = await handleControlRequestReal(new Request(
+      "https://control.test/v1/accounts/acct_somebody_else/handle",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ handle: "smcllns" }),
+      },
+    ), harness.env as never, async () => ({
+      accountId: "acct_demo",
+      subject: "test-session-subject",
+    }));
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "not found" });
+  });
+
+  test("refuses a caller with no session before touching the directory", async () => {
+    const harness = controlHarness();
+    const response = await handleControlRequestReal(new Request(
       "https://control.test/v1/accounts/acct_demo/handle",
       {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ handle: "smcllns" }),
       },
-    ), harness.env);
+    ), harness.env as never, async () => {
+      throw new SessionAuthenticationError("sign-in required");
+    });
     expect(response.status).toBe(401);
   });
 

@@ -5,8 +5,10 @@
   "main": "src/workers/control.ts",
   "compatibility_date": "2026-07-18",
   "compatibility_flags": ["nodejs_compat"],
-  // Secrets: MANAGEMENT_API_TOKEN, CONTROL_RESPONSE_KEK, CONTROL_GATEWAY_TOKEN,
-  // CONTROL_BROKER_TOKEN, DEMO_ADMIN_TOKEN
+  // Secrets: CONTROL_RESPONSE_KEK, CONTROL_GATEWAY_TOKEN, CONTROL_BROKER_TOKEN,
+  // DEMO_ADMIN_TOKEN. MANAGEMENT_API_TOKEN is gone: the session names exactly
+  // one Account and every /v1 route checks the path against it, so a shared
+  // secret that named no Account could only ever have widened that.
   // No ACCOUNT_ID: the Account now arrives from the session, so naming one here
   // is what made this Worker serve a single tenant. No ACCESS_* either — the
   // Cloudflare Access application in front of this Worker is gone, and the

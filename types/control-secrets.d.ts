@@ -5,7 +5,6 @@
 // break. Keep in step with the secret list in `wrangler.control.jsonc`.
 declare namespace Cloudflare {
   interface Env {
-    MANAGEMENT_API_TOKEN: string;
     CONTROL_RESPONSE_KEK: string;
     CONTROL_GATEWAY_TOKEN: string;
     CONTROL_BROKER_TOKEN: string;
