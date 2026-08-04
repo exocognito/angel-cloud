@@ -252,12 +252,16 @@ function resolveBindings(
 function managementClient(target: string, dependencies: AngelCommandDependencies): ManagementClient {
   const token = dependencies.env?.ANGEL_MANAGEMENT_TOKEN;
   if (typeof token !== "string" || token.trim() === "") {
-    throw new Error("ANGEL_MANAGEMENT_TOKEN must be set");
+    // Deliberately says what the value is now, because the value changed
+    // underneath the name: the control plane no longer accepts a shared
+    // secret, only a session token, and no command mints one yet.
+    throw new Error(
+      "ANGEL_MANAGEMENT_TOKEN must be set to a control-plane session token",
+    );
   }
   return new ManagementClient({
     target,
     token,
-    accessToken: dependencies.env?.ANGEL_ACCESS_TOKEN,
     fetch: dependencies.fetch ?? globalThis.fetch,
   });
 }

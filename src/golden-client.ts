@@ -21,7 +21,6 @@ import {
   loadAngelDeploymentConfig,
   runAngelCommand,
   type AngelDeploymentConfig,
-  cloudflareAccessHeaders,
 } from "@smcllns/angel-core/cli";
 import { MCP_PROTOCOL_VERSION } from "./mcp";
 
@@ -59,9 +58,14 @@ export interface GoldenJourneyOptions {
   repoRoot: string;
   controlBaseUrl: string;
   gatewayBaseUrl: string;
-  managementToken: string;
+  /**
+   * A control-plane session token. It rides as `Authorization: Bearer` on the
+   * management API and as the session cookie on the dashboard's own routes —
+   * the same token either way, because Control asks the sign-in Worker to
+   * resolve it whichever header it arrives in.
+   */
+  sessionToken: string;
   adminToken: string;
-  accessToken: string;
   fetch?: FetchLike;
   loadDeploymentConfig?: GoldenDeploymentConfigLoader;
 }
@@ -74,9 +78,8 @@ export function goldenOptionsFromEnv(
     repoRoot,
     controlBaseUrl: requiredEnvironment(env, "GOLDEN_CONTROL_URL"),
     gatewayBaseUrl: requiredEnvironment(env, "GOLDEN_GATEWAY_URL"),
-    managementToken: requiredEnvironment(env, "GOLDEN_MANAGEMENT_TOKEN"),
+    sessionToken: requiredEnvironment(env, "GOLDEN_SESSION_TOKEN"),
     adminToken: requiredEnvironment(env, "GOLDEN_ADMIN_TOKEN"),
-    accessToken: requiredEnvironment(env, "GOLDEN_ACCESS_TOKEN"),
   };
 }
 
@@ -171,10 +174,13 @@ export async function runGoldenJourney(
     }
   }
 
+  // Reset wants two things at once: who is asking, and the admin token that
+  // authorises a destructive demo action. One `Authorization` header cannot
+  // carry both, and Control reads a cookie in preference to a bearer for
+  // exactly this reason — so the session travels as a cookie, as it does from
+  // a browser, and the bearer stays the admin token.
   const resetHeaders = new Headers(bearerJson(options.adminToken));
-  const resetAccessHeaders = cloudflareAccessHeaders(options.accessToken);
-  resetHeaders.set("CF-Access-Client-ID", resetAccessHeaders["CF-Access-Client-ID"]);
-  resetHeaders.set("CF-Access-Client-Secret", resetAccessHeaders["CF-Access-Client-Secret"]);
+  resetHeaders.set("cookie", sessionCookie(options.sessionToken));
   const reset = await requestJson<{ schema: string; angels: unknown[] }>(
     fetch,
     `${controlBaseUrl}/api/demo/reset`,
@@ -197,8 +203,7 @@ export async function runGoldenJourney(
 
   const client = new ManagementClient({
     target: controlBaseUrl,
-    token: options.managementToken,
-    accessToken: options.accessToken,
+    token: options.sessionToken,
     fetch,
   });
   const inboxPublished = await cliPublish(
@@ -289,7 +294,7 @@ export async function runGoldenJourney(
     `golden-assistant:call:${GMAIL_TOOL}:connection:2`,
   );
 
-  await demoAction(fetch, controlBaseUrl, options.accessToken, {
+  await demoAction(fetch, controlBaseUrl, options.sessionToken, {
     angelId: assistantConfig.angel,
     action: "pause_tool",
     environment: "production",
@@ -307,13 +312,13 @@ export async function runGoldenJourney(
     throw new Error("www tuple pause did not isolate one Gmail Connection");
   }
 
-  await demoAction(fetch, controlBaseUrl, options.accessToken, {
+  await demoAction(fetch, controlBaseUrl, options.sessionToken, {
     angelId: assistantConfig.angel,
     action: "pause_all",
     environment: "production",
   });
   trace.push("golden-assistant:pause:all");
-  await demoAction(fetch, controlBaseUrl, options.accessToken, {
+  await demoAction(fetch, controlBaseUrl, options.sessionToken, {
     angelId: assistantConfig.angel,
     action: "resume_tool",
     environment: "production",
@@ -328,7 +333,7 @@ export async function runGoldenJourney(
   if (oneResumed.length !== 1 || oneResumed[0]?.ref !== personalChoice.ref) {
     throw new Error("Pause all then resume one exposed the wrong Connection set");
   }
-  await demoAction(fetch, controlBaseUrl, options.accessToken, {
+  await demoAction(fetch, controlBaseUrl, options.sessionToken, {
     angelId: assistantConfig.angel,
     action: "resume_all",
     environment: "production",
@@ -351,7 +356,7 @@ export async function runGoldenJourney(
   if (stagedV2 === null || stagedV2.digest !== v2Artifact.digest) {
     throw new Error("CLI did not stage the checked-in v2 artifact");
   }
-  await demoAction(fetch, controlBaseUrl, options.accessToken, {
+  await demoAction(fetch, controlBaseUrl, options.sessionToken, {
     angelId: assistantConfig.angel,
     action: "promote",
     environment: "production",
@@ -381,7 +386,7 @@ export async function runGoldenJourney(
   const finalView = await requestJson<{ schema: string; angels: Array<{ id: string }> }>(
     fetch,
     `${controlBaseUrl}/api/demo/state`,
-    { headers: cloudflareAccessHeaders(options.accessToken) },
+    { headers: { cookie: sessionCookie(options.sessionToken) } },
   );
   if (
     finalView.schema !== "angelmcp.demo.v4"
@@ -393,10 +398,7 @@ export async function runGoldenJourney(
     throw new Error("www state did not project both CLI-published Angels");
   }
   const wrongAccount = await fetch(`${controlBaseUrl}/v1/accounts/acct_wrong/connections`, {
-    headers: {
-      authorization: `Bearer ${options.managementToken}`,
-      ...cloudflareAccessHeaders(options.accessToken),
-    },
+    headers: { authorization: `Bearer ${options.sessionToken}` },
   });
   if (wrongAccount.status !== 404) throw new Error("wrong Account was not tenant-safe denied");
   trace.push("account-isolation:wrong-account-denied");
@@ -494,9 +496,8 @@ async function cliPublish(
       : ({ angelId: id }) => options.loadDeploymentConfig!(options.repoRoot, id),
     output: (line) => output.push(line),
     env: {
-      ANGEL_MANAGEMENT_TOKEN: options.managementToken,
-      ANGEL_ACCESS_TOKEN: options.accessToken,
-    },
+      ANGEL_MANAGEMENT_TOKEN: options.sessionToken,
+          },
   });
   if (artifact === undefined) throw new Error(`CLI did not build ${angelId}`);
   return {
@@ -520,9 +521,8 @@ async function cliDeployProduction(
       : ({ angelId: id }) => options.loadDeploymentConfig!(options.repoRoot, id),
     output: () => {},
     env: {
-      ANGEL_MANAGEMENT_TOKEN: options.managementToken,
-      ANGEL_ACCESS_TOKEN: options.accessToken,
-    },
+      ANGEL_MANAGEMENT_TOKEN: options.sessionToken,
+          },
   });
 }
 
@@ -736,10 +736,7 @@ async function ensureAccountHandle(
   accountId: string,
   fallbackHandle: string,
 ): Promise<string> {
-  const headers = new Headers(bearerJson(options.managementToken));
-  const access = cloudflareAccessHeaders(options.accessToken);
-  headers.set("CF-Access-Client-ID", access["CF-Access-Client-ID"]);
-  headers.set("CF-Access-Client-Secret", access["CF-Access-Client-Secret"]);
+  const headers = new Headers(bearerJson(options.sessionToken));
   const handleUrl = `${controlBaseUrl}/v1/accounts/${encodeURIComponent(accountId)}/handle`;
   const current = await fetch(handleUrl, { headers });
   if (current.status === 200) {
@@ -763,17 +760,22 @@ async function ensureAccountHandle(
 async function demoAction(
   fetch: FetchLike,
   controlBaseUrl: string,
-  accessToken: string,
+  sessionToken: string,
   body: Record<string, unknown>,
 ): Promise<void> {
   await requestJson(fetch, `${controlBaseUrl}/api/demo/action`, {
     method: "POST",
     headers: {
-      ...cloudflareAccessHeaders(accessToken),
+      cookie: sessionCookie(sessionToken),
       "content-type": "application/json",
     },
     body: JSON.stringify(body),
   });
+}
+
+/** The cookie Better Auth issues, named exactly as it names it. */
+function sessionCookie(sessionToken: string): string {
+  return `__Secure-better-auth.session_token=${sessionToken}`;
 }
 
 function mcpHeaders(key: string, subsequent: boolean): Headers {

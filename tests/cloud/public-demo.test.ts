@@ -23,7 +23,7 @@ const shimJs = readFileSync(resolve(repoRoot, "docs-site/public/demo/shim.js"), 
 // mutations, and mutations are refused rather than answered.
 function literalApiPaths(source: string): string[] {
   const found = new Set<string>();
-  for (const match of source.matchAll(/(?:fetch|fetchProvider)\(\s*(["'])(\/api\/[^"']*)\1/g)) {
+  for (const match of source.matchAll(/(?:fetch|guardedFetch|fetchProvider)\(\s*(["'])(\/api\/[^"']*)\1/g)) {
     found.add(match[2]!);
   }
   return [...found].sort();

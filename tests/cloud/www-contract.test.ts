@@ -301,8 +301,8 @@ describe("Angel Cloud deployable demo UI contract", () => {
 
   test("loads normalized state and sends only the five authorized demo actions", () => {
     const js = source("app.js");
-    expect(js).toContain('fetch("/api/demo/state"');
-    expect(js).toContain('fetch("/api/demo/action"');
+    expect(js).toContain('guardedFetch("/api/demo/state"');
+    expect(js).toContain('guardedFetch("/api/demo/action"');
     expect(js).toContain('method: "POST"');
     expect(js).toContain("JSON.stringify(body)");
     for (const action of ["promote", "pause_all", "resume_all", "pause_tool", "resume_tool"]) {
@@ -311,10 +311,15 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).not.toMatch(/fallback|mockState|fixtureState/i);
   });
 
-  test("uses the Access session for owner state and actions without a demo bearer", () => {
+  test("uses the sign-in session for owner state and actions without a demo bearer", () => {
     const js = source("app.js");
-    expect(js).toContain('fetch("/api/demo/state", {');
-    expect(js).toContain('fetch("/api/demo/action", {');
+    expect(js).toContain('guardedFetch("/api/demo/state", {');
+    expect(js).toContain('guardedFetch("/api/demo/action", {');
+    // Every guarded request goes through one place, so a session expiring
+    // mid-visit sends the person to sign in rather than showing a raw 401 on
+    // whichever request happened to be in flight.
+    expect(js).not.toMatch(/await fetch\("\/api\//);
+    expect(js).toContain('window.location.replace("/sign-in.html")');
     expect(js).not.toMatch(/demo[_-]?action[_-]?token|sessionStorage|window\.location\.hash|authorization:\s*`Bearer/);
     expect(js).toContain('control.disabled = busy || availabilityBlocked');
   });
@@ -482,7 +487,7 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).toContain("resetKeysPaneTransient()");
     // Mutations reuse the demo action idiom; copy uses the clipboard API, never
     // the deprecated execCommand.
-    expect(js).toContain('fetch("/api/demo/action"');
+    expect(js).toContain('guardedFetch("/api/demo/action"');
     expect(js).toContain("navigator.clipboard.writeText");
     expect(js).not.toContain("execCommand");
     // The masked fingerprint is an honest suffix, not a fabricated key_live_ prefix.
