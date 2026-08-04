@@ -1,5 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
-import type { SessionIdentity } from "../../src/session-identity";
+import { SessionAuthenticationError, type SessionIdentity } from "../../src/session-identity";
 
 mock.module("cloudflare:workers", () => ({
   DurableObject: class {
@@ -52,7 +52,6 @@ function twoTenantEnv() {
   }
 
   const env = {
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",
@@ -81,6 +80,11 @@ function signedInAs(accountId: string) {
     email: `${accountId}@example.invalid`,
   });
 }
+
+/** Whoever is asking for a sign-in link, by definition. */
+const signedInAsNobody = async (): Promise<SessionIdentity> => {
+  throw new SessionAuthenticationError("sign-in required");
+};
 
 describe("Control serves whoever signed in", () => {
   test("sends two people to two different Accounts", async () => {
@@ -146,6 +150,9 @@ describe("Control serves whoever signed in", () => {
       },
     };
 
+    // Asked by somebody with no session, because that is the only kind of
+    // person who needs one. A verifier that succeeds here would let the route
+    // drift behind the session check and the test would not notice.
     const response = await handleControlRequest(
       new Request("https://dash.test/api/sign-in", {
         method: "POST",
@@ -153,7 +160,7 @@ describe("Control serves whoever signed in", () => {
         body: JSON.stringify({ email: "stranger@example.invalid", callbackURL: "https://evil.test/" }),
       }),
       withAuth as never,
-      signedInAs("acct_one"),
+      signedInAsNobody,
     );
 
     expect(response.status).toBe(200);
@@ -162,6 +169,31 @@ describe("Control serves whoever signed in", () => {
       email: "stranger@example.invalid",
       callbackURL: "https://dash.test",
     });
+  });
+
+  test("answers a stranger's malformed sign-in body with 400, not a runtime 500", async () => {
+    // This route sits outside the guarded block, so an uncaught throw here
+    // escapes handleControlRequest and the deployed Worker answers a bare 500
+    // on the one path a stranger can reach.
+    const { env } = twoTenantEnv();
+    const withAuth = {
+      ...env,
+      CONTROL_BASE_URL: "https://dash.test",
+      AUTH: { async fetch() { return Response.json({ status: true }); } },
+    };
+
+    const response = await handleControlRequest(
+      new Request("https://dash.test/api/sign-in", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "not json at all",
+      }),
+      withAuth as never,
+      signedInAsNobody,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "request body must be valid JSON" });
   });
 
   test("refuses a session whose Account is not an internal id", async () => {

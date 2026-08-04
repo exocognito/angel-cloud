@@ -80,7 +80,14 @@ export async function handleControlRequest(
   // It is proxied rather than posted straight at the sign-in Worker so the
   // browser stays on one origin and no CORS grant has to exist at all.
   if (url.pathname === "/api/sign-in" && request.method === "POST") {
-    return requestSignInLink(request, env);
+    // A malformed body raises here, and this route sits outside the guarded
+    // block below, so without catching it a stranger sending junk gets a bare
+    // runtime 500 on the one route a stranger can reach.
+    try {
+      return await requestSignInLink(request, env);
+    } catch (error) {
+      return controlErrorResponse(error);
+    }
   }
 
   let sessionIdentity: SessionIdentity;
