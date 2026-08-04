@@ -36,6 +36,7 @@ sign-in link", carrying one URL back to `/v1/auth/callback`.
 | A link older than ten minutes | `400` — issued 00:28:39Z, clicked 00:38:54Z at 615 seconds |
 | Did that expired click create anything? | No. The next link for the same address still reported `accountCreated:true` |
 | Eleven requests from one machine | the first ten answered, then `429 {"error":"too many sign-in requests"}` |
+| Five requests for one address | five identical `202`s, three mails delivered |
 | An address the sender refuses | `202`, the same answer every address gets |
 | The sender is down | `502` — true of every address at once, so it gives nothing away |
 | The session is missing, unknown or expired | `401 {"error":"sign in required"}` |
@@ -67,8 +68,20 @@ each counted in its own Durable Object:
 - **ten requests per source**, refused with `429` — a source names no address,
   so that refusal is allowed to say what it is. Malformed requests count too.
 
-The source cap is proven live, above. The address cap is proven in tests; both
-go through the same object and the same fixed-window rule.
+Both are proven live. Asking five times for one address returned five
+identical `202`s and put exactly three mails in the inbox — 00:57:58, 00:57:59
+and 00:58:00 — so two requests were dropped without the caller being able to
+tell. Asking eleven times from one machine was answered ten times and then
+refused.
+
+A fixed window lets a burst through at the boundary: up to twice the cap across
+two adjacent windows. A sliding window would not, but it holds a list of
+timestamps, which is storage an attacker grows by asking. The burst is the
+lesser problem, so the window is fixed.
+
+Refusing costs nothing: an over-limit request is not written back, so hammering
+the endpoint neither extends the caller's own lockout nor reaches anyone else,
+because the count is per source.
 
 ## Why signup is its own Worker
 
