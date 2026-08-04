@@ -84,7 +84,8 @@ export function loginLinkEmail(input: { to: string; url: string }): OutboundEmai
       input.url,
       "",
       "It works once and lasts ten minutes.",
-      "If you did not ask to sign in, ignore this — nothing has been created.",
+      "If you did not ask to sign in, ignore this — no Account has been created,",
+      "and the link above stops working on its own.",
       "",
     ].join("\n"),
   };

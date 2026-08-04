@@ -287,7 +287,7 @@ HttpRequestTemplate { kind:"http"; method; pathTemplate; pathParams[]; pathDefau
         <!-- ═══════ DIAGRAM ═══════ -->
         <section id="diagram" class="space-y-3">
           <h2 class="font-serif text-2xl">Component diagram</h2>
-          <p class="text-sm text-slate-600">Three Workers total, constant as Angels multiply. The Broker has no hostname — service bindings only. Orange stroke marks the new public surface.</p>
+          <p class="text-sm text-slate-600">A fixed Worker set, constant as Angels multiply. The Broker has no hostname — service bindings only. Orange stroke marks the new public surface.</p>
           <div class="rounded-lg border border-slate-200 bg-white p-4 overflow-x-auto">
             <pre class="mermaid">
 flowchart LR
@@ -419,7 +419,7 @@ flowchart LR
                 <tr><td>Digest computation</td><td>The artifact digest is computed over compiler-ordered <code>JSON.stringify</code> bytes — not re-canonicalized JSON. Same digest republished returns the same Version (I2).</td></tr>
                 <tr><td>Internal role tokens</td><td>Must be non-empty and pairwise distinct; misconfiguration fails closed at boot.</td></tr>
                 <tr><td>Gate key routing</td><td>Key hashes go to the gateway gate only; the broker gate rejects them. <code>presentedKey</code> is never forwarded across S5.</td></tr>
-                <tr><td>Infrastructure ceiling</td><td>Three Workers total, constant as Angels multiply. The Broker is reachable only over service bindings — no hostname, ever.</td></tr>
+                <tr><td>Infrastructure ceiling</td><td>A fixed Worker set, constant as Angels multiply. The Broker is reachable only over service bindings — no hostname, ever.</td></tr>
                 <tr><td>Artifact intake</td><td>The platform accepts canonical secret-free artifacts only; never source YAML, never a user's build (non-goal: no code-execution engine).</td></tr>
               </tbody>
             </table>

@@ -50,7 +50,8 @@ sign-in link", carrying one URL back to `/v1/auth/callback`.
 | Five requests for one address | five identical `202`s, three mails delivered |
 | An address the sender refuses | `202`, the same answer every address gets |
 | The sender is down | `202`, unchanged — the send no longer sits on the response path at all |
-| The session is missing, unknown or expired | `401 {"error":"sign in required"}` || Response headers on the callback | `referrer-policy: no-referrer`, `cache-control: no-store` |
+| The session is missing, unknown or expired | `401 {"error":"sign in required"}` |
+| Response headers on the callback | `referrer-policy: no-referrer`, `cache-control: no-store` |
 | The session cookie | `HttpOnly; Secure; SameSite=Lax; Max-Age=1209600` |
 
 ## Two things the live run caught that the tests could not
@@ -74,8 +75,8 @@ uncapped path waited on Resend. The send is now handed to `waitUntil` and
 happens after the answer, so the status and the body say nothing about the
 address and the Resend round trip is off the reply path entirely. A smaller
 timing difference remains, and is not closed: a capped request answers before
-minting a link, so an uncapped one additionally does one HMAC, two SHA-256s and
-one Durable Object write. Equalising that means doing the mint and the write for
+minting a link, so an uncapped one additionally does one HMAC, one SHA-256 and
+one Durable Object write — the address HMAC is paid on both paths. Equalising that means doing the mint and the write for
 capped requests too, which hands an attacker exactly the storage growth the cap
 exists to prevent; the alternative, padding every reply to a fixed floor, puts
 a permanent cost on every sign-in to hide a sub-millisecond difference behind

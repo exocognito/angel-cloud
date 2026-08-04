@@ -368,6 +368,22 @@ describe("a login that half-fails", () => {
     expect(failed).toBeInstanceOf(Error);
   });
 
+  test("an older session object answering with undefined is refused, not answered 500", async () => {
+    // Same rolling-deploy hazard as the identity read below, on the other of
+    // the two calls. `record === null` would be false for undefined and then
+    // throw on `record.emailHash`.
+    const world = makeWorld();
+    const signedUp = await world.signUp("stranger@example.test");
+    for (const session of world.sessions.values()) {
+      (session as { resolve: (now: number) => Promise<unknown> }).resolve = async () => undefined;
+    }
+
+    const response = await world.session(signedUp.session);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "sign in required" });
+  });
+
   test("an older object answering with undefined is refused, not answered 200 with no Account", async () => {
     // What a rolling deploy did once: the identity object on the other side of
     // the call was an earlier version and returned undefined, which a

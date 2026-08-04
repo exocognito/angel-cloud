@@ -91,7 +91,10 @@ describe("the sign-in mail", () => {
     expect(mail.to).toBe("sam@example.test");
     expect(mail.text).toContain("https://auth.test/x?token=a.b");
     expect(mail.text).toContain("works once and lasts ten minutes");
-    expect(mail.text).toContain("nothing has been created");
+    expect(mail.text).toContain("no Account has been created");
+    // A LoginAttempt record does exist until it expires, so the mail must not
+    // claim nothing at all was written.
+    expect(mail.text).not.toContain("nothing has been created");
   });
 });
 
