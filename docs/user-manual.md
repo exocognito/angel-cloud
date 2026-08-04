@@ -855,7 +855,8 @@ Sessions issued before the rotation keep working, because they carry the old
 hash — so the two Accounts coexist. Treat it as set-once until identity
 migration exists.
 
-Required secrets:
+Required secrets (Auth needs `RESEND_API_KEY` and `LOGIN_NAME_KEY`; the rest
+belong to the three older Workers):
 
 - Broker: `CONTROL_BROKER_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`, `CREDENTIAL_KEK`.
 - Gateway: `CONTROL_GATEWAY_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`.

@@ -151,8 +151,21 @@ async function callback(url: URL, env: AuthRequestEnv, now: number): Promise<Res
   // order cannot say that.
   const sessionToken = mintSessionToken();
   const record = newSession(spent.emailHash, now);
-  await env.SESSION.getByName(await hashSessionToken(sessionToken)).open(record);
-  const account = await env.IDENTITY.getByName(spent.emailHash).accountFor(now);
+  const sessionName = await hashSessionToken(sessionToken);
+  await env.SESSION.getByName(sessionName).open(record);
+
+  let account: { accountId: string; created: boolean };
+  try {
+    account = await env.IDENTITY.getByName(spent.emailHash).accountFor(now);
+  } catch (error) {
+    // One of the two writes has to go first, and this order is the lesser
+    // harm: an unreachable session grants nothing and expires, where an
+    // unreachable Account would be a real Account nothing could reach. Clear
+    // it anyway so the failed login leaves nothing at all; if even that fails,
+    // the object's own alarm sweeps it.
+    await env.SESSION.getByName(sessionName).close().catch(() => {});
+    throw error;
+  }
 
   return json(
     { accountId: account.accountId, session: sessionToken, accountCreated: account.created },
@@ -173,8 +186,11 @@ async function session(request: Request, env: AuthRequestEnv, now: number): Prom
   const presented = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
   if (presented === "") return json({ error: "sign in required" }, 401);
 
+  // Falsy-wide for the same reason as `account()` below: a rolling deploy can
+  // put an older object on the far side of this call, and `=== null` would let
+  // an `undefined` through to `record.emailHash` and answer 500 instead of 401.
   const record = await env.SESSION.getByName(await hashSessionToken(presented)).resolve(now);
-  if (record === null) return json({ error: "sign in required" }, 401);
+  if (!record) return json({ error: "sign in required" }, 401);
 
   // A session written by a login whose Account write then failed resolves to
   // nothing, and is refused exactly like an unknown one.

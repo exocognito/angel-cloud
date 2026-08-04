@@ -384,6 +384,22 @@ describe("a login that half-fails", () => {
     expect(await response.json()).toEqual({ error: "sign in required" });
   });
 
+  test("the session the failed login opened is cleared, not left to expire", async () => {
+    const world = makeWorld();
+    await world.requestLink("stranger@example.test");
+    const token = new URL(world.linkFrom(world.sent[0]!)).searchParams.get("token")!;
+    world.breakAccountWrite = true;
+
+    await world.click(token).catch(() => {});
+
+    // Nothing durable survives the failed login: no Account, and no session
+    // sitting in storage for a fortnight.
+    expect(world.identities.size).toBe(0);
+    for (const session of world.sessions.values()) {
+      expect(await session.resolve(START)).toBeNull();
+    }
+  });
+
   test("a session whose Account never landed is refused like an unknown one", async () => {
     const world = makeWorld();
     const signedUp = await world.signUp("stranger@example.test");

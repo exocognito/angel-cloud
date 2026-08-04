@@ -214,9 +214,10 @@ describe("APRD v2", () => {
     // Was "amber — agreed and unbuilt" until signup shipped on the demo Worker.
     // It stays amber: the entry step exists for dogfooding, and logout, delete
     // and the wiring into Control do not.
-    expect(html).toContain("so this station is amber rather than red");
+    expect(html).toContain("so this station stays amber");
     expect(html).toContain("angelmcp-auth-demo");
     expect(html).not.toContain("No signup, no logout, no delete");
+    expect(html).toContain("<strong>Today:</strong> none of it on Control.");
     expect(html).toContain('href="#s2" class="m-1 rounded border-2 border-emerald-300');
   });
 

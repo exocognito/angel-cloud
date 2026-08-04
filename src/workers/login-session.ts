@@ -26,6 +26,11 @@ export class LoginSession extends DurableObject<LoginSessionEnv> {
     return activeSession(await this.ctx.storage.get<SessionRecord>(SESSION_KEY), now);
   }
 
+  /** Drop a session written by a login that then failed. */
+  async close(): Promise<void> {
+    await this.ctx.storage.deleteAll();
+  }
+
   async alarm(): Promise<void> {
     await this.ctx.storage.deleteAll();
   }
