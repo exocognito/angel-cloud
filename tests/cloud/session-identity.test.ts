@@ -15,7 +15,7 @@ function authService(reply: Response | (() => Response | Promise<Response>)): Se
     async fetch(input, init) {
       seen.push({
         url: String(input),
-        headers: Object.fromEntries(new Headers(init?.headers).entries()),
+        headers: Object.fromEntries(init.headers.entries()),
       });
       return typeof reply === "function" ? await reply() : reply.clone();
     },

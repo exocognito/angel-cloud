@@ -20,8 +20,13 @@ export class SessionAuthenticationError extends Error {
   }
 }
 
+/**
+ * Narrower than `fetch` on purpose: this is one service binding asked one
+ * question, and the narrow shape is what lets a test fake read the headers
+ * without reconciling Bun's `HeadersInit` with the Workers runtime's.
+ */
 export interface SessionFetcher {
-  fetch(input: string | URL | Request, init?: RequestInit): Promise<Response>;
+  fetch(input: string, init: { headers: Headers }): Promise<Response>;
 }
 
 /** The session endpoint on the sign-in Worker, reached over a service binding. */
