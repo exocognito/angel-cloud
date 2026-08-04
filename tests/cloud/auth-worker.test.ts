@@ -1,6 +1,11 @@
 import { describe, expect, mock, test } from "bun:test";
 import { MAGIC_LINK_TTL_MS } from "../../src/magic-link";
 import { SESSION_TTL_MS } from "../../src/login-account";
+import {
+  MAX_LINKS_PER_EMAIL,
+  MAX_LINKS_PER_SOURCE,
+  THROTTLE_WINDOW_MS,
+} from "../../src/login-throttle";
 import { EmailSendError, type EmailSender, type OutboundEmail } from "../../src/email-sender";
 
 mock.module("cloudflare:workers", () => ({
@@ -18,6 +23,7 @@ const { handleAuthRequest } = await import("../../src/workers/auth");
 const { LoginAttempt } = await import("../../src/workers/login-attempt");
 const { LoginIdentity } = await import("../../src/workers/login-identity");
 const { LoginSession } = await import("../../src/workers/login-session");
+const { LoginThrottle } = await import("../../src/workers/login-throttle");
 
 const START = 1_700_000_000_000;
 
@@ -101,6 +107,78 @@ describe("asking for a sign-in link", () => {
     expect(link.pathname).toBe("/v1/auth/callback");
     expect(link.searchParams.get("token")).toMatch(/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/);
     expect(world.sent[0]!.text).not.toContain("acct_");
+  });
+});
+
+describe("caps on asking", () => {
+  test("a fourth link for one address is refused in silence, with no mail", async () => {
+    const world = makeWorld();
+
+    for (let attempt = 0; attempt < MAX_LINKS_PER_EMAIL; attempt += 1) {
+      expect((await world.requestLink("keen@example.test")).status).toBe(202);
+    }
+    const capped = await world.requestLink("keen@example.test");
+
+    expect(capped.status).toBe(202);
+    expect(await capped.json()).toEqual({ status: "accepted" });
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_EMAIL);
+  });
+
+  test("the cap is per address, so one greedy address cannot lock out another", async () => {
+    const world = makeWorld();
+    for (let attempt = 0; attempt <= MAX_LINKS_PER_EMAIL; attempt += 1) {
+      await world.requestLink("keen@example.test");
+    }
+
+    await world.requestLink("someone-else@example.test");
+
+    expect(world.sent.at(-1)!.to).toBe("someone-else@example.test");
+  });
+
+  test("the allowance comes back once the window passes", async () => {
+    const world = makeWorld();
+    for (let attempt = 0; attempt <= MAX_LINKS_PER_EMAIL; attempt += 1) {
+      await world.requestLink("keen@example.test");
+    }
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_EMAIL);
+
+    world.clock = START + THROTTLE_WINDOW_MS;
+    await world.requestLink("keen@example.test");
+
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_EMAIL + 1);
+  });
+
+  test("one source flooding many addresses is cut off, and told so", async () => {
+    const world = makeWorld();
+
+    for (let attempt = 0; attempt < MAX_LINKS_PER_SOURCE; attempt += 1) {
+      expect((await world.requestLink(`victim${attempt}@example.test`)).status).toBe(202);
+    }
+    const flood = await world.requestLink("victim-last@example.test");
+
+    // Refusing by source names no address, so it is allowed to say what it is.
+    expect(flood.status).toBe(429);
+    expect(await flood.json()).toEqual({ error: "too many sign-in requests" });
+    expect(world.sent).toHaveLength(MAX_LINKS_PER_SOURCE);
+  });
+
+  test("malformed requests spend the source allowance too", async () => {
+    const world = makeWorld();
+
+    for (let attempt = 0; attempt < MAX_LINKS_PER_SOURCE; attempt += 1) {
+      expect((await world.requestLink("junk")).status).toBe(400);
+    }
+
+    expect((await world.requestLink("real@example.test")).status).toBe(429);
+  });
+
+  test("a different source has its own allowance", async () => {
+    const world = makeWorld();
+    for (let attempt = 0; attempt <= MAX_LINKS_PER_SOURCE; attempt += 1) {
+      await world.requestLink(`victim${attempt}@example.test`);
+    }
+
+    expect((await world.requestLink("elsewhere@example.test", "203.0.113.9")).status).toBe(202);
   });
 });
 
@@ -272,10 +350,12 @@ function makeWorld() {
   const attempts = objectNamespace(LoginAttempt);
   const identities = objectNamespace(LoginIdentity);
   const sessions = objectNamespace(LoginSession);
+  const throttles = objectNamespace(LoginThrottle);
   const env = {
     LOGIN: attempts.namespace,
     IDENTITY: identities.namespace,
     SESSION: sessions.namespace,
+    THROTTLE: throttles.namespace,
     RESEND_API_KEY: "unused-in-tests",
     LOGIN_FROM_ADDRESS: "Angel <noreply@angel.test>",
     AUTH_BASE_URL: "https://auth.test",
@@ -292,9 +372,10 @@ function makeWorld() {
     call(request: Request) {
       return handleAuthRequest(request, env, { now: () => world.clock, sender });
     },
-    requestLink(email: unknown) {
+    requestLink(email: unknown, source = "198.51.100.7") {
       return world.call(new Request("https://auth.test/v1/auth/request-link", {
         method: "POST",
+        headers: { "cf-connecting-ip": source },
         body: JSON.stringify({ email }),
       }));
     },

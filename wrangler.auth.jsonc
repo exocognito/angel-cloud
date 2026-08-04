@@ -17,11 +17,13 @@
     "bindings": [
       { "name": "LOGIN", "class_name": "LoginAttempt" },
       { "name": "IDENTITY", "class_name": "LoginIdentity" },
-      { "name": "SESSION", "class_name": "LoginSession" }
+      { "name": "SESSION", "class_name": "LoginSession" },
+      { "name": "THROTTLE", "class_name": "LoginThrottle" }
     ]
   },
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["LoginAttempt", "LoginIdentity", "LoginSession"] }
+    { "tag": "v1", "new_sqlite_classes": ["LoginAttempt", "LoginIdentity", "LoginSession"] },
+    { "tag": "v2", "new_sqlite_classes": ["LoginThrottle"] }
   ],
   "observability": {
     "enabled": true,

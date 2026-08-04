@@ -1,9 +1,13 @@
+import { sha256Hex } from "@smcllns/angel-core";
 import {
+  hashLoginEmail,
   hashMagicLinkVerifier,
   mintMagicLink,
   normalizeLoginEmail,
   parseMagicLinkToken,
 } from "../magic-link";
+import { MAX_LINKS_PER_EMAIL, MAX_LINKS_PER_SOURCE } from "../login-throttle";
+import { LoginThrottle } from "./login-throttle";
 import {
   hashSessionToken,
   mintSessionToken,
@@ -14,7 +18,7 @@ import { LoginAttempt } from "./login-attempt";
 import { LoginIdentity } from "./login-identity";
 import { LoginSession } from "./login-session";
 
-export { LoginAttempt, LoginIdentity, LoginSession };
+export { LoginAttempt, LoginIdentity, LoginSession, LoginThrottle };
 
 /**
  * The public front door. It is a worker of its own precisely because it must
@@ -27,6 +31,7 @@ export interface AuthRequestEnv {
   LOGIN: DurableObjectNamespace<LoginAttempt>;
   IDENTITY: DurableObjectNamespace<LoginIdentity>;
   SESSION: DurableObjectNamespace<LoginSession>;
+  THROTTLE: DurableObjectNamespace<LoginThrottle>;
   RESEND_API_KEY: string;
   LOGIN_FROM_ADDRESS: string;
   AUTH_BASE_URL: string;
@@ -75,9 +80,26 @@ async function requestLink(
   now: number,
   sender: EmailSender | undefined,
 ): Promise<Response> {
+  // The source cap comes first, and counts malformed requests too: a flood is
+  // a flood. Refusing by source names no address, so it can say what it is.
+  const source = request.headers.get("cf-connecting-ip") ?? "unknown-source";
+  const sourceAllowance = await env.THROTTLE
+    .getByName(`source:${await sha256Hex(source)}`)
+    .spend(MAX_LINKS_PER_SOURCE, now);
+  if (!sourceAllowance) return json({ error: "too many sign-in requests" }, 429);
+
   const body: unknown = await request.json().catch(() => null);
   const email = normalizeLoginEmail((body as { email?: unknown } | null)?.email);
   if (email === null) return json({ error: "a single email address is required" }, 400);
+
+  // The address cap refuses in silence. Saying "that address has had enough
+  // links" would answer the question this endpoint must never answer, so a
+  // throttled address gets everyone's 202 and no mail.
+  const emailHash = await hashLoginEmail(email);
+  const emailAllowance = await env.THROTTLE
+    .getByName(`email:${emailHash}`)
+    .spend(MAX_LINKS_PER_EMAIL, now);
+  if (!emailAllowance) return json({ status: "accepted" }, 202);
 
   const minted = await mintMagicLink(email, now);
   await env.LOGIN.getByName(minted.selector).issue(minted.record);
