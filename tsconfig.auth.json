@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/email-sender.ts",
+    "src/login-account.ts",
+    "src/login-throttle.ts",
+    "src/magic-link.ts",
+    "src/workers/auth.ts",
+    "src/workers/login-attempt.ts",
+    "src/workers/login-identity.ts",
+    "src/workers/login-session.ts",
+    "src/workers/login-throttle.ts"
+  ]
+}

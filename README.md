@@ -5,8 +5,12 @@ variant testable. It has Accounts, immutable Angel Versions, explicit
 Connection bindings, stable Angel keys, and credential custody boundaries. It
 has no code-execution engine.
 
-The deployed shape is three Workers:
+The deployed shape is four Workers:
 
+- **Auth** is the public signup surface, deliberately outside the Cloudflare
+  Access application: it mails a one-time sign-in link and gives whoever clicks
+  it an empty Account. A dogfooding implementation; Better Auth is expected to
+  replace it.
 - **Control** owns one demo Account, the management API, immutable Versions,
   environment deployments, stable key hashes, and the private www read model.
 - **Gateway** exposes each Angel MCP endpoint and independently enforces its
@@ -219,9 +223,24 @@ Deploy in dependency order:
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
 bun run wrangler deploy --config wrangler.control.jsonc
+bun run wrangler deploy --config wrangler.auth.jsonc
 ```
 
-Required secrets:
+`angelmcp-auth-demo` binds to nothing and nothing binds to it, so its position
+in that list does not matter. It is deliberately outside the Cloudflare Access
+application that fronts Control — signup is the one surface a stranger has to
+reach — and it needs two secrets of its own, `RESEND_API_KEY` and
+`LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
+`wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
+rotatable in place: it keys the hash that names each identity's storage, so
+after a rotation the same address resolves to a fresh, empty identity and the
+next sign-in mints a **second** Account for someone who already has one.
+Sessions issued before the rotation keep working, because they carry the old
+hash — so the two Accounts coexist. Treat it as set-once until identity
+migration exists.
+
+Required secrets (Auth needs `RESEND_API_KEY` and `LOGIN_NAME_KEY`; the rest
+belong to the three older Workers):
 
 - Broker: `CONTROL_BROKER_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`, `CREDENTIAL_KEK`
 - Gateway: `CONTROL_GATEWAY_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`
@@ -268,7 +287,11 @@ refreshes the stored grant, and invokes only the pinned Gmail/Docs operations;
 unsupported operations and malformed provider results fail closed. Cloudflare
 Access protects Control and the browser custody flow.
 
-Public signup, multiple human Accounts, family membership, and production
-multi-tenant operation remain future work. The separate credentialed acceptance
+Public signup runs on a separate demo Worker, `angelmcp-auth-demo`: an email
+address gets a sign-in link good once for ten minutes, and the person who
+clicks it gets one empty Account. It is a dogfooding implementation that Better
+Auth is expected to replace, and the Account it creates is not yet the Control
+Account. Wiring the two together, multiple human Accounts, family membership,
+and production multi-tenant operation remain future work. The separate credentialed acceptance
 runner has exercised the real Google path locally without placing live provider
 credentials in deterministic CI.

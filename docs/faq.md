@@ -7,10 +7,11 @@ this file links to it rather than repeat it.
 
 [product-ledger-source]: https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html
 
-Present-tense statements describe the live Milestone 1 slice: three deployed
+Present-tense statements describe the live Milestone 1 slice: the deployed
 Workers, one pre-provisioned Account behind Cloudflare Access, and real Google
-calls for two pinned operations through bring-your-own OAuth custody. Where a
-limit bites, it is called out.
+calls for two pinned operations through bring-your-own OAuth custody. A separate
+demo Worker now offers signup, but the Account it creates reaches nothing here.
+Where a limit bites, it is called out.
 
 ## Choosing Angel Cloud
 
@@ -181,7 +182,7 @@ bindings, holds gate 1, custody, and the pinned provider calls
 credential-encryption key; the Gateway never holds provider credentials; and
 Control passes provider client material straight to Broker custody without
 persisting or custodying it. Each internal token belongs to exactly one
-caller/callee pair. And it is three Workers for the whole platform, not three
+caller/callee pair. And it is a fixed handful of Workers for the whole platform, not three
 per Angel — the deploy count stays constant as Angels multiply.
 
 ### Why install the Broker before the Gateway?
@@ -466,19 +467,26 @@ a stable pointer for old links.
 
 ### Can I sign up for Angel Cloud today?
 
-No. Control serves one pre-provisioned Account (`acct_m1`) behind Cloudflare
-Access; the interactive login is Cloudflare account login, not a one-time PIN.
-There is no signup, waitlist, Account switcher, billing, public catalog, SLA, or
-team membership. To use a second Account in this phase you sign out and
-authenticate to a separate deployment; the production multi-tenant model is
-future work.
+On the demo Worker, yes; on Control, no. `angelmcp-auth-demo` takes an email
+address, mails a sign-in link good once for ten minutes, and gives whoever
+clicks it one empty Account of their own. It is a dogfooding implementation and
+Better Auth is expected to replace it, so the Account it creates lives only in
+that Worker and grants nothing yet.
+
+Control itself still serves one pre-provisioned Account (`acct_m1`) behind
+Cloudflare Access, and its interactive login is Cloudflare account login, not a
+one-time PIN. There is still no waitlist, Account switcher, billing, public
+catalog, SLA, or team membership. To use a second Account on Control you sign
+out and authenticate to a separate deployment; the production multi-tenant
+model is future work.
 
 ## Roadmap
 
 ### What is not built yet?
 
-The deferred list, straight from the tracking notes: public signup, multiple
-Accounts in one deployment, membership, and team roles; a platform-owned
+The deferred list, straight from the tracking notes: signup wired into Control
+(it exists on the demo Worker only), multiple Accounts in one deployment,
+membership, and team roles; a platform-owned
 verified Google OAuth app; more Gmail operations and providers (Maps, X, Slack,
 WhatsApp, Telegram, iMessage); Provider App removal (the API returns `501`),
 rollback commands, and a global cross-environment Angel disable; activity

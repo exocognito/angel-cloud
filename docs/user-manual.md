@@ -15,17 +15,18 @@ person operating the platform itself ([Operate a deployment](#operate-a-deployme
 
 1. [What Angel Cloud is](#what-angel-cloud-is)
 2. [Milestone 1: what is live](#milestone-1-what-is-live)
-3. [Concepts](#concepts)
-4. [How a call flows](#how-a-call-flows)
-5. [Write an Angel](#write-an-angel)
-6. [Add Google custody](#add-google-custody)
-7. [Ship it](#ship-it)
-8. [Connect an agent](#connect-an-agent)
-9. [Use the dashboard](#use-the-dashboard)
-10. [Pause and resume](#pause-and-resume)
-11. [Errors](#errors)
-12. [Operate a deployment](#operate-a-deployment)
-13. [Prove it works](#prove-it-works)
+3. [Signing up](#signing-up)
+4. [Concepts](#concepts)
+5. [How a call flows](#how-a-call-flows)
+6. [Write an Angel](#write-an-angel)
+7. [Add Google custody](#add-google-custody)
+8. [Ship it](#ship-it)
+9. [Connect an agent](#connect-an-agent)
+10. [Use the dashboard](#use-the-dashboard)
+11. [Pause and resume](#pause-and-resume)
+12. [Errors](#errors)
+13. [Operate a deployment](#operate-a-deployment)
+14. [Prove it works](#prove-it-works)
 
 ## What Angel Cloud is
 
@@ -74,7 +75,38 @@ reads without returning the client secret.
 - A private dashboard for Angels, Versions, Connections, Provider Apps, keys,
   activity, and pause/resume.
 
-**Not built in this slice:** public signup, Account switching, teams, a
+## Signing up
+
+Signup runs on its own Worker, `angelmcp-auth-demo`, outside the Cloudflare
+Access application that fronts Control. It is a dogfooding implementation;
+Better Auth is expected to replace it.
+
+`POST /v1/auth/request-link` with `{"email": "you@example.com"}` answers `202
+{"status":"accepted"}` and mails a link. It answers the same way whatever the
+address is — new, known, capped, or undeliverable — so the endpoint cannot be
+asked whether somebody has an Account. It answers `400` only when the body is
+not one address, or when the request did not arrive through Cloudflare's edge,
+and `429` when one source has asked more than ten times in fifteen minutes. One
+address gets three links per fifteen minutes; past that the answer is unchanged
+and no mail is sent.
+
+`GET /v1/auth/callback?token=...` spends the link and answers `200` with the
+Account id, a session token, and whether that Account was created just now. It
+also sets an `angel_session` cookie. The link works once and dies ten minutes
+after it was issued, on the server's clock, with no grace. Every refusal —
+spent, expired, tampered, unknown, malformed — is the same `400 {"error":"this
+sign-in link is not valid"}`.
+
+`GET /v1/auth/session` with `Authorization: Bearer <session>` answers `200` with
+the Account id and the session's expiry, or `401 {"error":"sign in required"}`.
+Sessions last fourteen days.
+
+The Account this creates lives in that Worker's storage. Control still serves
+`acct_m1`, and does not yet know about it.
+
+**Not built in this slice:** signup wired into Control — it runs on the
+`angelmcp-auth-demo` Worker and the Account it creates is not yet Control's —
+Account switching, teams, a
 platform-owned Google OAuth app, provider operations outside the reviewed
 adapter registry, and production multi-tenancy. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
@@ -801,16 +833,31 @@ fixture response.
 ## Operate a deployment
 
 This section is for the person running the platform, and it does use this
-repository. Deploy the three Workers in dependency order, because each later
+repository. Deploy the Workers in dependency order, because each later
 Worker service-binds the earlier ones:
 
 ```sh
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
 bun run wrangler deploy --config wrangler.control.jsonc
+bun run wrangler deploy --config wrangler.auth.jsonc
 ```
 
-Required secrets:
+`angelmcp-auth-demo` binds to nothing and nothing binds to it, so its position
+in that list does not matter. It is deliberately outside the Cloudflare Access
+application that fronts Control — signup is the one surface a stranger has to
+reach — and it needs two secrets of its own, `RESEND_API_KEY` and
+`LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
+`wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
+rotatable in place: it keys the hash that names each identity's storage, so
+after a rotation the same address resolves to a fresh, empty identity and the
+next sign-in mints a **second** Account for someone who already has one.
+Sessions issued before the rotation keep working, because they carry the old
+hash — so the two Accounts coexist. Treat it as set-once until identity
+migration exists.
+
+Required secrets (Auth needs `RESEND_API_KEY` and `LOGIN_NAME_KEY`; the rest
+belong to the three older Workers):
 
 - Broker: `CONTROL_BROKER_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`, `CREDENTIAL_KEK`.
 - Gateway: `CONTROL_GATEWAY_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`.
