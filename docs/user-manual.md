@@ -77,36 +77,35 @@ reads without returning the client secret.
 
 ## Signing up
 
-Signup runs on its own Worker, `angelmcp-auth-demo`, outside the Cloudflare
-Access application that fronts Control. It is a dogfooding implementation;
-Better Auth is expected to replace it.
+Go to `https://dash.angelmcp.ai`. If you are not signed in you get the sign-in
+page; give it an email address and a link arrives.
 
-`POST /v1/auth/request-link` with `{"email": "you@example.com"}` answers `202
-{"status":"accepted"}` and mails a link. It answers the same way whatever the
-address is — new, known, capped, or undeliverable — so the endpoint cannot be
-asked whether somebody has an Account. It answers `400` only when the body is
-not one address, or when the request did not arrive through Cloudflare's edge,
-and `429` when one source has asked more than ten times in fifteen minutes. One
-address gets three links per fifteen minutes; past that the answer is unchanged
-and no mail is sent.
+Behind that page, `POST /api/sign-in` with `{"email": "you@example.com"}` is
+proxied to the sign-in Worker over a service binding, so the browser stays on
+one origin and no cross-origin grant exists. It answers the same way whatever
+the address is — new, known, capped, or undeliverable — so the endpoint cannot
+be asked whether somebody has an Account. It answers `400` when the body is not
+one address or did not arrive through Cloudflare's edge, and `429` when one
+source has asked more than ten times in fifteen minutes. One address gets three
+links per fifteen minutes; past that the answer is unchanged and no mail is
+sent.
 
-`GET /v1/auth/callback?token=...` spends the link and answers `200` with the
-Account id, a session token, and whether that Account was created just now. It
-also sets an `angel_session` cookie. The link works once and dies ten minutes
-after it was issued, on the server's clock, with no grace. Every refusal —
-spent, expired, tampered, unknown, malformed — is the same `400 {"error":"this
-sign-in link is not valid"}`.
+The link lands on `auth.angelmcp.ai/v1/auth/magic-link/verify`, which spends it
+and redirects to the dashboard with a session cookie. The cookie is stamped for
+`.angelmcp.ai` so both hosts can read it — that is why neither Worker can live
+on `workers.dev`, whose suffix is on the Public Suffix List. The link works once
+and dies ten minutes after it was issued, on the server's clock, with no grace.
 
-`GET /v1/auth/session` with `Authorization: Bearer <session>` answers `200` with
-the Account id and the session's expiry, or `401 {"error":"sign in required"}`.
-Sessions last fourteen days.
+A first successful sign-in mints one empty Account in the same insert that
+creates the person, so a session can never point at an Account whose write
+failed. Sessions last fourteen days.
 
-The Account this creates lives in that Worker's storage. Control still serves
-`acct_m1`, and does not yet know about it.
+Control asks the sign-in Worker who is calling on every guarded request and
+serves that person's Account. Another Account's resource answers `404
+{"error":"not found"}` — the same answer an Account that never existed gets.
 
-**Not built in this slice:** signup wired into Control — it runs on the
-`angelmcp-auth-demo` Worker and the Account it creates is not yet Control's —
-Account switching, teams, a
+**Not built:** recovery if you lose the address, self-service Account deletion,
+a way for the CLI to obtain a session, Account switching, teams, a
 platform-owned Google OAuth app, provider operations outside the reviewed
 adapter registry, and production multi-tenancy. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
@@ -321,7 +320,7 @@ Exactly four keys:
 
 ```json
 {
-  "target": "https://angelmcp-control-demo.sam-633.workers.dev",
+  "target": "https://dash.angelmcp.ai",
   "account": "acct_m1",
   "angel": "google-read-proof",
   "bindings": {
@@ -367,9 +366,8 @@ the deployed `/oauth/google/callback` URL on that Google OAuth client. A
 without them Angel Cloud requests the read-only default grant for identity,
 Gmail, and Docs ([which scopes](faq.md#which-google-scopes-are-requested)).
 The dashboard form has no scopes field and always registers the default set;
-a custom set means calling `POST /api/provider-apps` directly from the same
-Access-authenticated browser origin — for example, from the dashboard page's
-devtools console:
+a custom set means calling `POST /api/provider-apps` directly from the signed-in
+dashboard origin — for example, from the dashboard page's devtools console:
 
 ```js
 await fetch("/api/provider-apps", {
@@ -403,9 +401,9 @@ client secret write-only, and its safe summary reads without leaking it.
 ### Authorize a Connection
 
 Choose the Provider App, enter a private Connection nickname, and start
-authorization. Complete Google consent in the same Access-authenticated browser
-flow. The callback binds the grant to the Account, Access subject, Provider App,
-Connection, nickname, and fixed redirect URI. A healthy Connection shows its
+authorization. Complete Google consent in the same signed-in browser flow. The
+callback binds the grant to the Account, the session's subject, the Provider
+App, Connection, nickname, and fixed redirect URI. A healthy Connection shows its
 provider-derived identity label and granted scopes.
 
 A failed authorization — a consent screen approved with a scope unchecked, or
@@ -437,8 +435,10 @@ the API returns `501`.
 
 ### Provider management HTTP surface
 
-Control verifies Cloudflare Access before serving the www assets or provider
-routes. The browser uses these Account-scoped endpoints:
+Control serves the www shell to anybody — with Cloudflare Access gone, the
+sign-in page has to be reachable by somebody who is not signed in yet — and
+then requires a session on every provider route below. Each answers for
+whichever Account the session names:
 
 | Method and path | Purpose |
 | --- | --- |
@@ -500,14 +500,16 @@ pnpm exec angel deploy  <angel> --prod
 pnpm exec angel delete  <angel> [--confirm <slug>]
 ```
 
-Publish and deploy read two environment variables:
+Publish and deploy read one environment variable:
 
-- `ANGEL_MANAGEMENT_TOKEN` — the Control management bearer.
-- `ANGEL_ACCESS_TOKEN` — a Cloudflare Access service token, opaque JSON with
-  exactly `cf-access-client-id` and `cf-access-client-secret`. The CLI splits it
-  into the standard `CF-Access-Client-Id` / `CF-Access-Client-Secret` headers.
+- `ANGEL_MANAGEMENT_TOKEN` — a control-plane **session token**, presented as
+  `Authorization: Bearer`. The shared management secret this used to be was
+  removed with Cloudflare Access: it named no Account, and Control now takes
+  the Account from the session.
 
-Keep both out of source, `angel.json`, logs, and any artifact.
+No command mints a session for a terminal yet. Until the CLI login hand-off
+lands, these commands only work with a session lifted from a signed-in browser.
+Keep it out of source, `angel.json`, logs, and any artifact.
 
 ### Build locally
 
@@ -524,7 +526,6 @@ artifact) and `build/angel.version.sha256` (its digest). You never need to run
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
-ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 pnpm exec angel publish google-read-proof
 ```
 
@@ -557,7 +558,6 @@ This path is optional because bare `publish` now deploys straight to production.
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
-ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 pnpm exec angel deploy google-read-proof --prod
 ```
 
@@ -573,11 +573,10 @@ dashboard's promote button does the same thing, with a drift check on top
 
 ### Delete an Angel
 
-Use the same authentication variables as publish and deploy:
+Use the same session token as publish and deploy:
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
-ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 pnpm exec angel delete google-read-proof
 ```
 
@@ -843,10 +842,9 @@ bun run wrangler deploy --config wrangler.control.jsonc
 bun run wrangler deploy --config wrangler.auth.jsonc
 ```
 
-`angelmcp-auth-demo` binds to nothing and nothing binds to it, so its position
-in that list does not matter. It is deliberately outside the Cloudflare Access
-application that fronts Control — signup is the one surface a stranger has to
-reach — and it needs two secrets of its own, `RESEND_API_KEY` and
+`angelmcp-auth` binds to nothing, and Control reaches it over the `AUTH`
+service binding rather than its public host, so the session question never
+leaves Cloudflare's network. It needs two secrets of its own, `RESEND_API_KEY` and
 `LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
 `wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
 rotatable in place: it keys the hash that names each identity's storage, so
@@ -862,13 +860,14 @@ belong to the three older Workers):
 - Broker: `CONTROL_BROKER_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`, `CREDENTIAL_KEK`.
 - Gateway: `CONTROL_GATEWAY_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`.
 - Control: `CONTROL_GATEWAY_TOKEN`, `CONTROL_BROKER_TOKEN`,
-  `MANAGEMENT_API_TOKEN`, `CONTROL_RESPONSE_KEK`, `DEMO_ADMIN_TOKEN`.
+  `CONTROL_RESPONSE_KEK`, `DEMO_ADMIN_TOKEN`.
 
-Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
-`ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, and `GATEWAY_BASE_URL`. The internal tokens
-must be non-empty and pairwise distinct; every Worker fails closed otherwise.
-`ACCOUNT_ID` must carry the `acct_` prefix — Control refuses to serve with a
-handle-shaped id. The Broker has `workers_dev` disabled and no public route.
+Required Control variables are `CONTROL_BASE_URL` and `GATEWAY_BASE_URL`.
+Control also needs the `AUTH` service binding to the sign-in Worker, which is
+where it learns who is calling. The internal tokens must be non-empty and
+pairwise distinct; every Worker fails closed otherwise. The Account arrives
+from the session and must carry the `acct_` prefix — Control refuses to serve
+a handle-shaped id. The Broker has `workers_dev` disabled and no public route.
 
 ### Account handles
 

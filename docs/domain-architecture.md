@@ -86,7 +86,7 @@ Consequences:
 | `dash.angelmcp.ai` | Control dashboard for the logged-in Account | Control worker |
 | `mcp.angelmcp.ai` | MCP endpoint per Angel: `/@account/angel[@suffix]` | Gateway worker |
 | `api.angelmcp.ai` | Control-plane API (exists today behind Control; the CLI consumes it) and, later, per-Angel REST invocation at `/@account/angel[@suffix]` | Control worker; invocation surface TBD |
-| `auth.angelmcp.ai` | Upstream-provider OAuth callbacks; later, first-party session issuance if we outgrow Cloudflare Access | Control worker (or a small dedicated worker) |
+| `auth.angelmcp.ai` | First-party sign-in: emailed links, sessions, and the one authority on what a session is | Auth worker |
 
 `docs.angelmcp.ai` is the canonical docs host — it is the URL handed to agents,
 so it stays stable and needs no auth. It is a subdomain rather than an apex path
@@ -137,7 +137,7 @@ removes the collision by construction, and two further rules keep it safe:
    `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
 3. Update `CONTROL_BASE_URL` / `GATEWAY_BASE_URL` vars in
    `wrangler.control.jsonc` and redeploy.
-4. Update the Cloudflare Access application URL to `dash.angelmcp.ai`.
+4. Delete the Cloudflare Access application; the sign-in Worker holds the door.
 5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
    (operator-in-a-browser step in Google Cloud Console).
 6. Keep `workers.dev` URLs alive through the cutover, then disable.

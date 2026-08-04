@@ -58,24 +58,22 @@ monitoring yet.
    `production` maps.
    The real `angel.json` is ignored. `ANGEL.yaml` remains portable and
    target-neutral.
-5. **Local operator shell — publish preview.** With the operator's management
-   bearer and mandatory Access service token for the Access-protected M1
-   Control endpoint, run:
+5. **Local operator shell — publish preview.** With a control-plane session
+   token in `ANGEL_MANAGEMENT_TOKEN`, run:
 
    ```sh
-   ANGEL_MANAGEMENT_TOKEN=... ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' bun run angel publish google-read-proof --preview
+   ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview
    ```
 
    This builds the checked-in policy, publishes its immutable artifact, and
    installs the exact bindings in the preview environment. Verify the tool
    list contains only
    `gmail.users.messages.list` and `docs.documents.get`.
-6. **Local operator shell — deploy production.** With both the management
-   bearer and mandatory `ANGEL_ACCESS_TOKEN`, promote the exact preview
-   deployment:
+6. **Local operator shell — deploy production.** With the same session token,
+   promote the exact preview deployment:
 
    ```sh
-   ANGEL_MANAGEMENT_TOKEN=... ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' bun run angel deploy google-read-proof --prod
+   ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod
    ```
 
    The command does not rebuild or republish.
@@ -113,7 +111,7 @@ monitoring yet.
     more; both operations must pass again.
 
 Never give the scheduled runner a Google password, refresh token, OAuth client
-secret, Cloudflare Access credential, management token, or Cloudflare control
+secret, control-plane session, management token, or Cloudflare control
 credential. The Broker owns provider custody; CI owns only the opaque Angel key
 needed for the public production MCP endpoint.
 
