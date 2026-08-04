@@ -48,8 +48,16 @@ Three things Better Auth does not do stayed in the Worker:
 `POST /v1/auth/sign-in/magic-link {"email":"owner+ba-a@example.invalid"}`
 → `200 {"status":true}`
 
-The mail arrives from `noreply@angelicagents.com`, subject "Your Angel sign-in
+The mail arrives from `noreply@e4.angelmcp.ai`, subject "Your Angel sign-in
 link", carrying one URL to `/v1/auth/magic-link/verify`.
+
+Slice 1 sent from `angelicagents.com`, because the Resend account held only
+that one sending domain. `e4.angelmcp.ai` was verified on 2026-08-04 and the
+Worker moved to it the same day — confirmed by a live send that reached the
+inbox rather than spam. Resend holds a sending subdomain rather than the apex,
+which keeps the apex's own mail reputation separate from ours. A person signing
+up at `angelmcp.ai` now hears from a name they recognise, which
+`angelicagents.com` was not.
 
 `GET /v1/auth/magic-link/verify?token=…`
 → `302` to `/` with `__Secure-better-auth.session_token`, `HttpOnly`, `Secure`,

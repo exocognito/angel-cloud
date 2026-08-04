@@ -11,7 +11,11 @@
   // Control worker. Signup is the one surface a stranger has to reach.
   "vars": {
     "AUTH_BASE_URL": "https://angelmcp-auth.sam-633.workers.dev",
-    "LOGIN_FROM_ADDRESS": "Angel <noreply@angelicagents.com>"
+    // Resend holds the domain as `e4.angelmcp.ai`, not the apex — a sending
+    // subdomain keeps the apex's own mail reputation separate from ours. It
+    // is the brand a person signing up at angelmcp.ai expects to hear from,
+    // which `angelicagents.com` was not.
+    "LOGIN_FROM_ADDRESS": "Angel <noreply@e4.angelmcp.ai>"
   },
   // People, sessions and unspent links. Better Auth owns every table here and
   // generates their schema; nothing else writes to this database.
