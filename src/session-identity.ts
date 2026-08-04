@@ -14,9 +14,18 @@ export interface SessionIdentity {
 }
 
 export class SessionAuthenticationError extends Error {
-  constructor(message: string) {
+  /**
+   * `no-account` is the one refusal signing in again cannot fix: the session
+   * is real, it just names no Account. Without telling them apart the
+   * dashboard sends that person to the sign-in page, they sign in, and the
+   * same refusal comes back — a loop with no diagnostic in it.
+   */
+  readonly code: "sign-in-required" | "no-account";
+
+  constructor(message: string, code: "sign-in-required" | "no-account" = "sign-in-required") {
     super(message);
     this.name = "SessionAuthenticationError";
+    this.code = code;
   }
 }
 
@@ -81,7 +90,7 @@ export async function authenticateSessionRequest(
   // A signed-in person with no Account cannot be served as somebody: refuse
   // rather than fall back to a default, which is how one tenant reads another.
   if (typeof angelAccountId !== "string" || angelAccountId === "") {
-    throw new SessionAuthenticationError("session carries no Account");
+    throw new SessionAuthenticationError("session carries no Account", "no-account");
   }
   if (typeof id !== "string" || id === "") {
     throw new SessionAuthenticationError("session carries no subject");

@@ -131,3 +131,38 @@ describe("session identity", () => {
     await expect(authenticateSessionRequest(request(), unreachable)).rejects.not.toThrow(SessionAuthenticationError);
   });
 });
+
+describe("telling a refusal apart from one signing in again cannot fix", () => {
+  test("marks a session that carries no Account, so the dashboard stops looping", async () => {
+    const auth = authService(Response.json({ session: SESSION.session, user: { id: "user_1" } }));
+    const failure = await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", { headers: { cookie: "s=abc" } }),
+      auth,
+    ).catch((error: unknown) => error);
+
+    expect(failure).toBeInstanceOf(SessionAuthenticationError);
+    expect((failure as SessionAuthenticationError).code).toBe("no-account");
+  });
+
+  test("leaves an ordinary refusal unmarked", async () => {
+    const auth = authService(Response.json(null));
+    const failure = await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", { headers: { cookie: "s=stale" } }),
+      auth,
+    ).catch((error: unknown) => error);
+
+    expect((failure as SessionAuthenticationError).code).toBe("sign-in-required");
+  });
+
+  test("forwards the caller's address so the framework can bucket them apart", async () => {
+    const auth = authService(Response.json(SESSION));
+    await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", {
+        headers: { cookie: "s=abc", "cf-connecting-ip": "198.51.100.7" },
+      }),
+      auth,
+    );
+
+    expect(auth.seen[0]!.headers).toEqual({ cookie: "s=abc", "cf-connecting-ip": "198.51.100.7" });
+  });
+});

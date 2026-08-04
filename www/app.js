@@ -422,21 +422,40 @@ function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * Cloudflare Access used to turn a stranger away at the edge and show its own
+ * login page. Nothing does that now, so a refused request is where a person
+ * without a session gets sent somewhere they can sign in — and that has to
+ * hold for every guarded request, not just the first one on load. A session
+ * expiring mid-visit otherwise surfaces as a raw HTTP 401 on whichever
+ * request happened to be in flight.
+ *
+ * Never resolves when it redirects: the caller's `await` simply stops, which
+ * is what you want while the page is being replaced.
+ */
+async function guardedFetch(input, init) {
+  const response = await fetch(input, init);
+  if (response.status !== 401) return response;
+  // Signing in again cannot fix a session that names no Account, so send that
+  // person nowhere and let the caller show the message.
+  if (response.headers.get("x-angel-session") === "no-account") return response;
+  window.location.replace("/sign-in.html");
+  return new Promise(() => {});
+}
+
 async function loadState() {
   let response;
   try {
-    response = await fetch("/api/demo/state", {
+    response = await guardedFetch("/api/demo/state", {
       headers: { accept: "application/json" },
     });
   } catch (error) {
     throw new Error(`Demo state unavailable: network request failed (${errorMessage(error)}).`);
   }
-  // Cloudflare Access used to turn a stranger away at the edge and show its
-  // own login page. Nothing does that now, so the first refused request is
-  // where a person without a session gets sent somewhere they can sign in.
   if (response.status === 401) {
-    window.location.replace("/sign-in.html");
-    return new Promise(() => {});
+    throw new Error(
+      "This sign-in is not attached to an Account. Signing in again will not help — ask for support.",
+    );
   }
   if (!response.ok) {
     throw new Error(`Demo state unavailable: HTTP ${response.status}.`);
@@ -453,7 +472,7 @@ async function loadState() {
 async function fetchProvider(path, options = {}) {
   let response;
   try {
-    response = await fetch(path, {
+    response = await guardedFetch(path, {
       ...options,
       headers: {
         accept: "application/json",
@@ -724,7 +743,7 @@ async function runAction(action, environment, tool, connectionId) {
   };
   let response;
   try {
-    response = await fetch("/api/demo/action", {
+    response = await guardedFetch("/api/demo/action", {
       method: "POST",
       headers: {
         accept: "application/json",
@@ -2012,7 +2031,7 @@ async function requestKeyMutation(action, context, payload, idempotencyToken) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     let response;
     try {
-      response = await fetch("/api/demo/action", {
+      response = await guardedFetch("/api/demo/action", {
         method: "POST",
         headers: { accept: "application/json", "content-type": "application/json" },
         body: JSON.stringify(body),

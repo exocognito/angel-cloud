@@ -95,7 +95,13 @@ export async function handleControlRequest(
     sessionIdentity = await verifySession(request, env);
   } catch (error) {
     if (error instanceof SessionAuthenticationError) {
-      return Response.json({ error: "sign-in required" }, { status: 401 });
+      // Same status and same body whatever the reason, so nothing here tells a
+      // stranger which of their guesses was closer. The code rides in a header
+      // the dashboard reads, and only a real session can ever provoke it.
+      return Response.json({ error: "sign-in required" }, {
+        status: 401,
+        headers: { "x-angel-session": error.code },
+      });
     }
     return Response.json({ error: "session verifier failed" }, { status: 500 });
   }
