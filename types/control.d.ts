@@ -4,7 +4,6 @@ interface __BaseEnv_ControlEnv {
 	ASSETS: Fetcher;
 	CONTROL_BASE_URL: "https://dash.angelmcp.ai";
 	GATEWAY_BASE_URL: "https://angelmcp-gateway-demo.sam-633.workers.dev";
-	AUTH_BASE_URL: "https://auth.angelmcp.ai";
 	ACCOUNTS: DurableObjectNamespace<import("../src/workers/control").AccountRegistry>;
 	GATEWAY: Fetcher /* angelmcp-gateway-demo */;
 	BROKER: Fetcher /* angelmcp-broker-demo */;
@@ -22,5 +21,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "CONTROL_BASE_URL" | "GATEWAY_BASE_URL" | "AUTH_BASE_URL">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "CONTROL_BASE_URL" | "GATEWAY_BASE_URL">> {}
 }

@@ -8,8 +8,8 @@
   "routes": [{ "pattern": "auth.angelmcp.ai", "custom_domain": true }],
   // Secrets: RESEND_API_KEY, LOGIN_NAME_KEY, BETTER_AUTH_SECRET
   //
-  // Deliberately NOT behind the Cloudflare Access application that fronts the
-  // Control worker. Signup is the one surface a stranger has to reach.
+  // Control reaches this Worker over the AUTH service binding rather than the
+  // public host, so the session question never leaves Cloudflare's network.
   "vars": {
     "AUTH_BASE_URL": "https://auth.angelmcp.ai",
     // A spent link lands on the dashboard, not back here. Both hosts sit on

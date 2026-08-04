@@ -15,10 +15,7 @@
   // sign-in Worker holds the door instead.
   "vars": {
     "CONTROL_BASE_URL": "https://dash.angelmcp.ai",
-    "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev",
-    // Where the dashboard sends somebody who is not signed in. Same zone as
-    // this host, which is what lets the session cookie reach both.
-    "AUTH_BASE_URL": "https://auth.angelmcp.ai"
+    "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev"
   },
   "routes": [{ "pattern": "dash.angelmcp.ai", "custom_domain": true }],
   "durable_objects": {
