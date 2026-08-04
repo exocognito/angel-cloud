@@ -1,33 +1,44 @@
 # PD-01 slice 1 — a stranger signs up
 
-Run 2026-08-04 against `https://angelmcp-auth-demo.sam-633.workers.dev`, from
-outside the repo. Mail went to Gmail plus-aliases and the links were read out
-of the inbox, not out of the code.
+Run 2026-08-04 against the deployed demo Worker, from outside the repo. Mail
+went to the owner's plus-aliases and the links were read out of the inbox, not
+out of the code. Addresses and Account ids are redacted here; the run itself
+used real ones.
 
 ## What the slice claims
 
-A stranger asks for a link, clicks it once, and lands in an empty Account.
-No operator, no pre-provisioned Account, no shared credential.
+A stranger asks for a link, clicks it once, and lands in an empty Account of
+their own, with no operator and no shared credential.
+
+That Account lives only in this Worker's storage. Nothing binds
+`angelmcp-auth-demo` to Control, which still serves `acct_m1`, so the Account
+grants nothing anywhere yet. Signing up and *reaching* something is not this
+slice.
+
+This is a dogfooding implementation. The APRD's target-state spine names Better
+Auth on the Control Worker with D1 for auth storage; the owner chose on
+2026-08-04 to keep this hand-written magic-link path for dogfooding and switch
+to Better Auth later, leaving the spine as written.
 
 ## The loop
 
-`POST /v1/auth/request-link {"email":"oscollins+angel-fresh@gmail.com"}`
+`POST /v1/auth/request-link {"email":"owner+angel-fresh@example.invalid"}`
 → `202 {"status":"accepted"}`
 
 The mail arrives from `noreply@angelicagents.com`, subject "Your Angel
 sign-in link", carrying one URL back to `/v1/auth/callback`.
 
 `GET /v1/auth/callback?token=…`
-→ `200 {"accountId":"acct_53de6cdbdd1da1da2af112eeb82d7d21","accountCreated":true,"session":"…"}`
+→ `200 {"accountId":"acct_<redacted>","accountCreated":true,"session":"…"}`
 
 `GET /v1/auth/session` with that session as a bearer token
-→ `200 {"accountId":"acct_53de6cdbdd1da1da2af112eeb82d7d21","expiresAt":1787012876064}`
+→ `200 {"accountId":"acct_<redacted>","expiresAt":1787012876064}`
 
 ## What was checked, and what came back
 
 | Check | Result |
 |---|---|
-| A second stranger signs up | a different Account, `acct_a86edca3…`, and each session names only its own |
+| A second stranger signs up | a different Account, a second `acct_<redacted>`, and each session names only its own |
 | The same address signs in again | the same Account, `accountCreated:false` — one address never becomes two Accounts |
 | The link is clicked twice | `400 {"error":"this sign-in link is not valid"}` |
 | The verifier is tampered with | `400`, and the untouched link still worked afterwards |
@@ -38,8 +49,9 @@ sign-in link", carrying one URL back to `/v1/auth/callback`.
 | Eleven requests from one machine | the first ten answered, then `429 {"error":"too many sign-in requests"}` |
 | Five requests for one address | five identical `202`s, three mails delivered |
 | An address the sender refuses | `202`, the same answer every address gets |
-| The sender is down | `502` — true of every address at once, so it gives nothing away |
+| The sender is down | `202`, unchanged — see below |
 | The session is missing, unknown or expired | `401 {"error":"sign in required"}` |
+| A session whose Account write never landed | `401`, worded identically, and no Account exists |
 | Response headers on the callback | `referrer-policy: no-referrer`, `cache-control: no-store` |
 | The session cookie | `HttpOnly; Secure; SameSite=Lax; Max-Age=1209600` |
 
@@ -53,9 +65,13 @@ directly, so they never saw it.
 
 **A provider rejecting one address must not change the answer.** Resend
 refuses `example.com` outright. That surfaced as a `500` where every other
-address got a `202` — an enumeration oracle, exactly what O4 forbids. An
-address-level rejection is now logged and answered like everything else; only
-a broken sender, which is true of every address at once, is allowed to show.
+address got a `202` — an enumeration oracle, exactly what O4 forbids.
+
+The first fix was half a fix: address-level rejections were answered normally
+but a sender *outage* still returned `502`. Review caught that a capped address
+never reaches the sender at all, so the `502` said "this address was not
+capped" — the same oracle through a different door. Every send failure now
+answers `202` and goes loudly to the logs instead.
 
 ## Caps on asking
 
@@ -83,6 +99,32 @@ Refusing costs nothing: an over-limit request is not written back, so hammering
 the endpoint neither extends the caller's own lockout nor reaches anyone else,
 because the count is per source.
 
+## What review changed after the first run
+
+Two fresh reviewers, one Claude and one Codex, both returned NOT MERGEABLE on
+the first head. Three of their findings were real defects in what this document
+had already claimed:
+
+- **The Account was written before the session.** A session-write failure left
+  an Account nothing could reach, which is not "a failed login creates nothing".
+  The session now names the identity rather than the Account and is written
+  first, so a half-finished login leaves a session that resolves to nothing and
+  answers `401`.
+- **A sender outage answered `502` while a capped address answered `202`.** A
+  capped address never reaches the sender, so the `502` said "this address was
+  not capped" — the same oracle in different clothes. Every send failure now
+  answers `202`.
+- **The Worker logged the live token.** `head_sampling_rate: 1` writes request
+  URLs to Workers Logs, and the callback carries the verifier in its query
+  string, so a spendable token sat in a retained store for the ten minutes it
+  worked. Observability is off on this Worker, and the config says why.
+
+Two more were about naming: stored objects were named by unkeyed SHA-256 over
+an email address or an IP, both small enough to enumerate offline by anyone who
+could list object names. Names are now HMAC under a `LOGIN_NAME_KEY` secret. The
+verifier and session token keep bare digests — 256 random bits have no
+dictionary to run against.
+
 ## Why signup is its own Worker
 
 The Control Worker sits behind a Cloudflare Access application that turns away
@@ -92,8 +134,13 @@ login screen. That is right for the pilot Account and impossible for signup, so
 
 ## Not in this slice
 
-Newest-link-only invalidation, the allowlisted redirect, deletion and the
-handle tombstone, and the cutover to `api.angelmcp.ai`.
+Wiring this Account into Control, newest-link-only invalidation, the allowlisted
+redirect, deletion and the handle tombstone, and the cutover to
+`api.angelmcp.ai`.
+
+A source cap is per source address, and an IPv6 caller holds a whole /64, so it
+slows a flood rather than stopping one. The per-address cap is what actually
+protects a given mailbox from being mailed repeatedly.
 
 Sign-in mail comes from `angelicagents.com`, not `angelmcp.ai`: the Resend free
 plan holds one sending domain and that one already had it. Moving it is a

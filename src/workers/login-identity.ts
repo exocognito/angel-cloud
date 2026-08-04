@@ -28,4 +28,10 @@ export class LoginIdentity extends DurableObject<LoginIdentityEnv> {
     await this.ctx.storage.put(IDENTITY_KEY, identity);
     return { accountId: identity.accountId, created: true };
   }
+
+  /** Read-only: resolving a session must never bring an Account into being. */
+  async account(): Promise<string | null> {
+    const stored = await this.ctx.storage.get<AccountIdentity>(IDENTITY_KEY);
+    return stored?.accountId ?? null;
+  }
 }

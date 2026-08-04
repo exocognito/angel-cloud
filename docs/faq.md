@@ -466,19 +466,26 @@ a stable pointer for old links.
 
 ### Can I sign up for Angel Cloud today?
 
-No. Control serves one pre-provisioned Account (`acct_m1`) behind Cloudflare
-Access; the interactive login is Cloudflare account login, not a one-time PIN.
-There is no signup, waitlist, Account switcher, billing, public catalog, SLA, or
-team membership. To use a second Account in this phase you sign out and
-authenticate to a separate deployment; the production multi-tenant model is
-future work.
+On the demo Worker, yes; on Control, no. `angelmcp-auth-demo` takes an email
+address, mails a sign-in link good once for ten minutes, and gives whoever
+clicks it one empty Account of their own. It is a dogfooding implementation and
+Better Auth is expected to replace it, so the Account it creates lives only in
+that Worker and grants nothing yet.
+
+Control itself still serves one pre-provisioned Account (`acct_m1`) behind
+Cloudflare Access, and its interactive login is Cloudflare account login, not a
+one-time PIN. There is still no waitlist, Account switcher, billing, public
+catalog, SLA, or team membership. To use a second Account on Control you sign
+out and authenticate to a separate deployment; the production multi-tenant
+model is future work.
 
 ## Roadmap
 
 ### What is not built yet?
 
-The deferred list, straight from the tracking notes: public signup, multiple
-Accounts in one deployment, membership, and team roles; a platform-owned
+The deferred list, straight from the tracking notes: signup wired into Control
+(it exists on the demo Worker only), multiple Accounts in one deployment,
+membership, and team roles; a platform-owned
 verified Google OAuth app; more Gmail operations and providers (Maps, X, Slack,
 WhatsApp, Telegram, iMessage); Provider App removal (the API returns `501`),
 rollback commands, and a global cross-environment Angel disable; activity

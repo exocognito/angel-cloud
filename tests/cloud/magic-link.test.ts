@@ -23,6 +23,8 @@ mock.module("cloudflare:workers", () => ({
 
 const { LoginAttempt, LOGIN_ATTEMPT_SWEEP_MS } = await import("../../src/workers/login-attempt");
 
+const KEY = "test-name-key";
+
 describe("login email normalization", () => {
   test("folds case but keeps everything that identifies a mailbox", () => {
     expect(normalizeLoginEmail("  Sam@Example.TEST ")).toBe("sam@example.test");
@@ -48,7 +50,7 @@ describe("login email normalization", () => {
 
 describe("magic link minting", () => {
   test("expires exactly ten minutes after issue, on the clock it was given", async () => {
-    const minted = await mintMagicLink("sam@example.test", 1_000);
+    const minted = await mintMagicLink(KEY, "sam@example.test", 1_000);
 
     expect(minted.record.issuedAt).toBe(1_000);
     expect(minted.record.expiresAt).toBe(1_000 + MAGIC_LINK_TTL_MS);
@@ -57,7 +59,7 @@ describe("magic link minting", () => {
   });
 
   test("stores no part of the token, so reading storage cannot log you in", async () => {
-    const minted = await mintMagicLink("sam@example.test", 1_000);
+    const minted = await mintMagicLink(KEY, "sam@example.test", 1_000);
     const [, verifier] = minted.token.split(".") as [string, string];
     const stored = JSON.stringify(minted.record);
 
@@ -67,15 +69,15 @@ describe("magic link minting", () => {
   });
 
   test("the token is the selector that names storage plus a verifier", async () => {
-    const minted = await mintMagicLink("sam@example.test", 1_000);
+    const minted = await mintMagicLink(KEY, "sam@example.test", 1_000);
 
     expect(minted.token).toBe(`${minted.selector}.${minted.token.split(".")[1]}`);
     expect(parseMagicLinkToken(minted.token)?.selector).toBe(minted.selector);
   });
 
   test("two links for one address share nothing", async () => {
-    const first = await mintMagicLink("sam@example.test", 1_000);
-    const second = await mintMagicLink("sam@example.test", 1_000);
+    const first = await mintMagicLink(KEY, "sam@example.test", 1_000);
+    const second = await mintMagicLink(KEY, "sam@example.test", 1_000);
 
     expect(first.selector).not.toBe(second.selector);
     expect(first.token).not.toBe(second.token);

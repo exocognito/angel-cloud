@@ -1,5 +1,5 @@
-import { sha256Hex } from "@smcllns/angel-core";
 import {
+  deriveLoginName,
   hashLoginEmail,
   hashMagicLinkVerifier,
   mintMagicLink,
@@ -33,6 +33,7 @@ export interface AuthRequestEnv {
   SESSION: DurableObjectNamespace<LoginSession>;
   THROTTLE: DurableObjectNamespace<LoginThrottle>;
   RESEND_API_KEY: string;
+  LOGIN_NAME_KEY: string;
   LOGIN_FROM_ADDRESS: string;
   AUTH_BASE_URL: string;
 }
@@ -63,7 +64,13 @@ export async function handleAuthRequest(
     return json({ error: "not found" }, 404);
   } catch (error) {
     if (error instanceof EmailSendError) {
-      return json({ error: "sign-in mail is not being delivered right now" }, 502);
+      // Reaching here means the send failed on a path the caller can see.
+      // Every such failure answers `202`, because a capped address never
+      // reaches the sender at all — so any other status here would say "that
+      // address was not capped", which is the oracle O4 forbids. The failure
+      // is loud in the logs instead, where it costs nobody their privacy.
+      console.error(`sign-in mail failed: ${error.failure}: ${error.message}`);
+      return json({ status: "accepted" }, 202);
     }
     throw error;
   }
@@ -82,9 +89,14 @@ async function requestLink(
 ): Promise<Response> {
   // The source cap comes first, and counts malformed requests too: a flood is
   // a flood. Refusing by source names no address, so it can say what it is.
-  const source = request.headers.get("cf-connecting-ip") ?? "unknown-source";
+  //
+  // Cloudflare always sets this header. If it is missing the request did not
+  // come through the edge, and sharing one bucket between every such caller
+  // would make the cap a global ten-per-window for the whole service.
+  const source = request.headers.get("cf-connecting-ip");
+  if (source === null) return json({ error: "no source address" }, 400);
   const sourceAllowance = await env.THROTTLE
-    .getByName(`source:${await sha256Hex(source)}`)
+    .getByName(`source:${await deriveLoginName(env.LOGIN_NAME_KEY, "source", source)}`)
     .spend(MAX_LINKS_PER_SOURCE, now);
   if (!sourceAllowance) return json({ error: "too many sign-in requests" }, 429);
 
@@ -95,13 +107,13 @@ async function requestLink(
   // The address cap refuses in silence. Saying "that address has had enough
   // links" would answer the question this endpoint must never answer, so a
   // throttled address gets everyone's 202 and no mail.
-  const emailHash = await hashLoginEmail(email);
+  const emailHash = await hashLoginEmail(env.LOGIN_NAME_KEY, email);
   const emailAllowance = await env.THROTTLE
     .getByName(`email:${emailHash}`)
     .spend(MAX_LINKS_PER_EMAIL, now);
   if (!emailAllowance) return json({ status: "accepted" }, 202);
 
-  const minted = await mintMagicLink(email, now);
+  const minted = await mintMagicLink(env.LOGIN_NAME_KEY, email, now);
   await env.LOGIN.getByName(minted.selector).issue(minted.record);
 
   const link = new URL("/v1/auth/callback", env.AUTH_BASE_URL);
@@ -134,10 +146,15 @@ async function callback(url: URL, env: AuthRequestEnv, now: number): Promise<Res
     .consume(await hashMagicLinkVerifier(token.verifier), now);
   if (!spent.ok) return refuseLink();
 
-  const account = await env.IDENTITY.getByName(spent.emailHash).accountFor(now);
+  // The session names the identity, not the Account, and is written before the
+  // Account exists. That ordering is what makes a half-finished login safe: if
+  // the Account write below fails, the session resolves to nothing and answers
+  // 401, and no Account has been created that nothing can reach. The reverse
+  // order cannot say that.
   const sessionToken = mintSessionToken();
-  const record = newSession(account.accountId, now);
+  const record = newSession(spent.emailHash, now);
   await env.SESSION.getByName(await hashSessionToken(sessionToken)).open(record);
+  const account = await env.IDENTITY.getByName(spent.emailHash).accountFor(now);
 
   return json(
     { accountId: account.accountId, session: sessionToken, accountCreated: account.created },
@@ -160,7 +177,15 @@ async function session(request: Request, env: AuthRequestEnv, now: number): Prom
 
   const record = await env.SESSION.getByName(await hashSessionToken(presented)).resolve(now);
   if (record === null) return json({ error: "sign in required" }, 401);
-  return json({ accountId: record.accountId, expiresAt: record.expiresAt });
+
+  // A session written by a login whose Account write then failed resolves to
+  // nothing, and is refused exactly like an unknown one.
+  // Anything falsy means no Account, `undefined` included: a rolling deploy
+  // can put an older object on the other side of this call, and `=== null`
+  // would let that answer 200 with no Account named.
+  const accountId = await env.IDENTITY.getByName(record.emailHash).account();
+  if (!accountId) return json({ error: "sign in required" }, 401);
+  return json({ accountId, expiresAt: record.expiresAt });
 }
 
 function refuseLink(): Response {

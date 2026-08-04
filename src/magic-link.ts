@@ -63,15 +63,49 @@ export function normalizeLoginEmail(raw: unknown): string | null {
   return trimmed.toLowerCase();
 }
 
-export async function hashLoginEmail(normalizedEmail: string): Promise<string> {
-  return sha256Hex(`angel.login.email.v1:${normalizedEmail}`);
+/**
+ * Names the identity's storage. Keyed, not a bare digest: an email address is
+ * dictionary-sized, so an unkeyed hash would let anyone who can list stored
+ * object names — a dashboard, an export, a point-in-time restore — recover
+ * exactly which addresses hold Accounts. That is the enumeration O4 forbids,
+ * reached through a different door.
+ */
+export async function hashLoginEmail(key: string, normalizedEmail: string): Promise<string> {
+  return deriveLoginName(key, "email", normalizedEmail);
 }
 
+/** Same reasoning for every other low-entropy value we name storage after. */
+export async function deriveLoginName(
+  key: string,
+  kind: string,
+  value: string,
+): Promise<string> {
+  if (key === "") throw new Error("LOGIN_NAME_KEY must be set");
+  const mac = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const digest = await crypto.subtle.sign(
+    "HMAC",
+    mac,
+    new TextEncoder().encode(`angel.login.${kind}.v1:${value}`),
+  );
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+/**
+ * The verifier is 256 random bits, so a bare digest is enough — there is no
+ * dictionary to run against it. Same for the session token.
+ */
 export async function hashMagicLinkVerifier(verifier: string): Promise<string> {
   return sha256Hex(`angel.login.verifier.v1:${verifier}`);
 }
 
 export async function mintMagicLink(
+  key: string,
   normalizedEmail: string,
   now: number,
   randomBytes: (length: number) => Uint8Array = defaultRandomBytes,
@@ -79,7 +113,7 @@ export async function mintMagicLink(
   const selector = base64Url(randomBytes(SELECTOR_BYTES));
   const verifier = base64Url(randomBytes(VERIFIER_BYTES));
   const [emailHash, verifierHash] = await Promise.all([
-    hashLoginEmail(normalizedEmail),
+    hashLoginEmail(key, normalizedEmail),
     hashMagicLinkVerifier(verifier),
   ]);
   return {

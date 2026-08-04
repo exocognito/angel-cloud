@@ -74,7 +74,38 @@ reads without returning the client secret.
 - A private dashboard for Angels, Versions, Connections, Provider Apps, keys,
   activity, and pause/resume.
 
-**Not built in this slice:** public signup, Account switching, teams, a
+## Signing up
+
+Signup runs on its own Worker, `angelmcp-auth-demo`, outside the Cloudflare
+Access application that fronts Control. It is a dogfooding implementation;
+Better Auth is expected to replace it.
+
+`POST /v1/auth/request-link` with `{"email": "you@example.com"}` answers `202
+{"status":"accepted"}` and mails a link. It answers the same way whatever the
+address is — new, known, capped, or undeliverable — so the endpoint cannot be
+asked whether somebody has an Account. It answers `400` only when the body is
+not one address, or when the request did not arrive through Cloudflare's edge,
+and `429` when one source has asked more than ten times in fifteen minutes. One
+address gets three links per fifteen minutes; past that the answer is unchanged
+and no mail is sent.
+
+`GET /v1/auth/callback?token=...` spends the link and answers `200` with the
+Account id, a session token, and whether that Account was created just now. It
+also sets an `angel_session` cookie. The link works once and dies ten minutes
+after it was issued, on the server's clock, with no grace. Every refusal —
+spent, expired, tampered, unknown, malformed — is the same `400 {"error":"this
+sign-in link is not valid"}`.
+
+`GET /v1/auth/session` with `Authorization: Bearer <session>` answers `200` with
+the Account id and the session's expiry, or `401 {"error":"sign in required"}`.
+Sessions last fourteen days.
+
+The Account this creates lives in that Worker's storage. Control still serves
+`acct_m1`, and does not yet know about it.
+
+**Not built in this slice:** signup wired into Control — it runs on the
+`angelmcp-auth-demo` Worker and the Account it creates is not yet Control's —
+Account switching, teams, a
 platform-owned Google OAuth app, provider operations outside the reviewed
 adapter registry, and production multi-tenancy. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
@@ -801,14 +832,24 @@ fixture response.
 ## Operate a deployment
 
 This section is for the person running the platform, and it does use this
-repository. Deploy the three Workers in dependency order, because each later
+repository. Deploy the Workers in dependency order, because each later
 Worker service-binds the earlier ones:
 
 ```sh
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
 bun run wrangler deploy --config wrangler.control.jsonc
+bun run wrangler deploy --config wrangler.auth.jsonc
 ```
+
+`angelmcp-auth-demo` binds to nothing and nothing binds to it, so its position
+in that list does not matter. It is deliberately outside the Cloudflare Access
+application that fronts Control — signup is the one surface a stranger has to
+reach — and it needs two secrets of its own, `RESEND_API_KEY` and
+`LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
+`wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string; it keys the
+hashes that name stored objects, so changing it orphans every existing session
+and identity.
 
 Required secrets:
 

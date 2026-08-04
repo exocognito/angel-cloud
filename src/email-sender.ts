@@ -36,19 +36,31 @@ export function resendSender(input: {
   const fetcher = input.fetcher ?? fetch;
   return {
     async send(message) {
-      const response = await fetcher("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          authorization: `Bearer ${input.apiKey}`,
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          from: input.from,
-          to: [message.to],
-          subject: message.subject,
-          text: message.text,
-        }),
-      });
+      let response: Response;
+      try {
+        response = await fetcher("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            authorization: `Bearer ${input.apiKey}`,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            from: input.from,
+            to: [message.to],
+            subject: message.subject,
+            text: message.text,
+          }),
+        });
+      } catch (cause) {
+        // A refused connection or a DNS failure is our sender being down, and
+        // must arrive as the same kind of failure as a 500 from Resend — an
+        // unwrapped rejection would escape as an unhandled error and answer
+        // the caller differently from a capped address.
+        throw new EmailSendError(
+          "service",
+          `sending failed before a reply: ${cause instanceof Error ? cause.message : String(cause)}`,
+        );
+      }
       if (!response.ok) {
         // Fail loudly either way. A swallowed send looks identical to a link
         // the owner never clicked, and we would debug the wrong end of it.

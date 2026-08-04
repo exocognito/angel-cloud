@@ -15,8 +15,14 @@ export interface AccountIdentity {
   createdAt: number;
 }
 
+/**
+ * A session names the identity that opened it, not the Account. The Account is
+ * looked up through that identity on every use, so a session can be written
+ * before the Account exists — which is what lets a login that half-fails leave
+ * nothing behind.
+ */
 export interface SessionRecord {
-  accountId: string;
+  emailHash: string;
   issuedAt: number;
   expiresAt: number;
 }
@@ -37,8 +43,8 @@ export async function hashSessionToken(token: string): Promise<string> {
   return sha256Hex(`angel.login.session.v1:${token}`);
 }
 
-export function newSession(accountId: string, now: number): SessionRecord {
-  return { accountId, issuedAt: now, expiresAt: now + SESSION_TTL_MS };
+export function newSession(emailHash: string, now: number): SessionRecord {
+  return { emailHash, issuedAt: now, expiresAt: now + SESSION_TTL_MS };
 }
 
 /** Same no-grace rule as the link itself: at expiry the session is over. */

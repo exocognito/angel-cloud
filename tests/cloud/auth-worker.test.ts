@@ -85,16 +85,43 @@ describe("asking for a sign-in link", () => {
     expect(await rejected.json()).toEqual(await ordinary.json());
   });
 
-  test("a sender that is down says so, because that is true of every address", async () => {
+  test("a sender that is down answers exactly like everything else", async () => {
+    // A capped address never reaches the sender, so it cannot see an outage.
+    // Any status here other than the ordinary one would therefore say "that
+    // address was not capped".
     const world = makeWorld();
     world.rejectSendWith = new EmailSendError("service", "resend is unreachable");
 
-    const response = await world.requestLink("stranger@example.test");
+    const down = await world.requestLink("stranger@example.test");
+    world.rejectSendWith = null;
+    const ordinary = await world.requestLink("fine@example.test");
 
-    expect(response.status).toBe(502);
-    expect(await response.json()).toEqual({
-      error: "sign-in mail is not being delivered right now",
-    });
+    expect(down.status).toBe(ordinary.status);
+    expect(await down.json()).toEqual(await ordinary.json());
+  });
+
+  test("a capped address and an outage are the same answer, in either order", async () => {
+    const world = makeWorld();
+    for (let attempt = 0; attempt <= MAX_LINKS_PER_EMAIL; attempt += 1) {
+      await world.requestLink("keen@example.test");
+    }
+    const capped = await world.requestLink("keen@example.test");
+
+    world.rejectSendWith = new EmailSendError("service", "resend is unreachable");
+    const uncappedButDown = await world.requestLink("other@example.test");
+
+    expect(capped.status).toBe(uncappedButDown.status);
+    expect(await capped.json()).toEqual(await uncappedButDown.json());
+  });
+
+  test("a request that did not come through the edge is refused", async () => {
+    const world = makeWorld();
+
+    const response = await world.requestLink("stranger@example.test", null);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "no source address" });
+    expect(world.sent).toHaveLength(0);
   });
 
   test("the mail carries a link back to this service and nothing else secret", async () => {
@@ -296,6 +323,33 @@ describe("clicking the link", () => {
   });
 });
 
+describe("a login that half-fails", () => {
+  test("leaves no Account when the Account write fails, and the session it opened is refused", async () => {
+    const world = makeWorld();
+    await world.requestLink("stranger@example.test");
+    const token = new URL(world.linkFrom(world.sent[0]!)).searchParams.get("token")!;
+    world.breakAccountWrite = true;
+
+    const failed = await world.click(token).then((r) => r, (error: unknown) => error);
+
+    // Nothing was created that nothing can reach.
+    expect(world.identities.size).toBe(0);
+    expect(failed).toBeInstanceOf(Error);
+  });
+
+  test("a session whose Account never landed is refused like an unknown one", async () => {
+    const world = makeWorld();
+    const signedUp = await world.signUp("stranger@example.test");
+    // Wipe the identity the way a failed write would have left it.
+    world.identities.clear();
+
+    const response = await world.session(signedUp.session);
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "sign in required" });
+  });
+});
+
 describe("using the session", () => {
   test("names the Account it belongs to", async () => {
     const world = makeWorld();
@@ -348,7 +402,9 @@ function makeWorld() {
     },
   };
   const attempts = objectNamespace(LoginAttempt);
-  const identities = objectNamespace(LoginIdentity);
+  const identities = objectNamespace(LoginIdentity, () => {
+    if (world.breakAccountWrite) throw new Error("identity storage is unavailable");
+  });
   const sessions = objectNamespace(LoginSession);
   const throttles = objectNamespace(LoginThrottle);
   const env = {
@@ -357,6 +413,7 @@ function makeWorld() {
     SESSION: sessions.namespace,
     THROTTLE: throttles.namespace,
     RESEND_API_KEY: "unused-in-tests",
+    LOGIN_NAME_KEY: "test-name-key",
     LOGIN_FROM_ADDRESS: "Angel <noreply@angel.test>",
     AUTH_BASE_URL: "https://auth.test",
   } as never;
@@ -364,6 +421,7 @@ function makeWorld() {
   const world = {
     clock: START,
     rejectSendWith: null as EmailSendError | null,
+    breakAccountWrite: false,
     sent,
     attempts: attempts.instances,
     identities: identities.instances,
@@ -372,10 +430,10 @@ function makeWorld() {
     call(request: Request) {
       return handleAuthRequest(request, env, { now: () => world.clock, sender });
     },
-    requestLink(email: unknown, source = "198.51.100.7") {
+    requestLink(email: unknown, source: string | null = "198.51.100.7") {
       return world.call(new Request("https://auth.test/v1/auth/request-link", {
         method: "POST",
-        headers: { "cf-connecting-ip": source },
+        headers: source === null ? {} : { "cf-connecting-ip": source },
         body: JSON.stringify({ email }),
       }));
     },
@@ -407,12 +465,13 @@ function makeWorld() {
 }
 
 /** A Durable Object namespace over in-memory instances, one per name. */
-function objectNamespace<T>(Class: new (ctx: never, env: never) => T) {
+function objectNamespace<T>(Class: new (ctx: never, env: never) => T, onGet?: () => void) {
   const instances = new Map<string, T & { dump(): unknown }>();
   return {
     instances,
     namespace: {
       getByName(name: string) {
+        if (onGet !== undefined) onGet();
         const existing = instances.get(name);
         if (existing !== undefined) return existing;
         const map = new Map<string, unknown>();

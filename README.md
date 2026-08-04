@@ -219,7 +219,17 @@ Deploy in dependency order:
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
 bun run wrangler deploy --config wrangler.control.jsonc
+bun run wrangler deploy --config wrangler.auth.jsonc
 ```
+
+`angelmcp-auth-demo` binds to nothing and nothing binds to it, so its position
+in that list does not matter. It is deliberately outside the Cloudflare Access
+application that fronts Control — signup is the one surface a stranger has to
+reach — and it needs two secrets of its own, `RESEND_API_KEY` and
+`LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
+`wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string; it keys the
+hashes that name stored objects, so changing it orphans every existing session
+and identity.
 
 Required secrets:
 
@@ -268,7 +278,11 @@ refreshes the stored grant, and invokes only the pinned Gmail/Docs operations;
 unsupported operations and malformed provider results fail closed. Cloudflare
 Access protects Control and the browser custody flow.
 
-Public signup, multiple human Accounts, family membership, and production
-multi-tenant operation remain future work. The separate credentialed acceptance
+Public signup runs on a separate demo Worker, `angelmcp-auth-demo`: an email
+address gets a sign-in link good once for ten minutes, and the person who
+clicks it gets one empty Account. It is a dogfooding implementation that Better
+Auth is expected to replace, and the Account it creates is not yet the Control
+Account. Wiring the two together, multiple human Accounts, family membership,
+and production multi-tenant operation remain future work. The separate credentialed acceptance
 runner has exercised the real Google path locally without placing live provider
 credentials in deterministic CI.

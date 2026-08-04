@@ -5,7 +5,7 @@
   "main": "src/workers/auth.ts",
   "compatibility_date": "2026-07-18",
   "compatibility_flags": ["nodejs_compat"],
-  // Secrets: RESEND_API_KEY
+  // Secrets: RESEND_API_KEY, LOGIN_NAME_KEY
   //
   // Deliberately NOT behind the Cloudflare Access application that fronts the
   // Control worker. Signup is the one surface a stranger has to reach.
@@ -25,8 +25,12 @@
     { "tag": "v1", "new_sqlite_classes": ["LoginAttempt", "LoginIdentity", "LoginSession"] },
     { "tag": "v2", "new_sqlite_classes": ["LoginThrottle"] }
   ],
+  // Off, unlike the other Workers. The callback carries the live verifier in
+  // its query string, and Workers Logs record request URLs — so leaving this
+  // on would write spendable tokens in the clear to a retained store for the
+  // ten minutes they work. Whatever we need to see, we log ourselves, without
+  // the token in it.
   "observability": {
-    "enabled": true,
-    "head_sampling_rate": 1
+    "enabled": false
   }
 }
