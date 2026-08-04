@@ -143,7 +143,11 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     );
     expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
     expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
-    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
+    // Exactly one deliverable may be in flight at a time, and it is named
+    // here so the state cannot drift onto others unnoticed. PD-01 went ACTIVE
+    // on 2026-08-04 when sign-up shipped to the demo Worker.
+    expect(values(/data-deliverable-key="([^"]+)"[^>]+data-deliverable-plan="(?:ACTIVE|NEXT)"/g))
+      .toEqual(["PD-01"]);
     expect(ledger).toMatch(
       /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="COMPLETE"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
     );

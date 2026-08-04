@@ -500,10 +500,14 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toMatch(/data-index-key="WS2"[^>]+data-index-last-verified="2026-08-03 · WS2 CLI install proof"/);
     for (const key of [
       "ID-05", "ID-06", "ID-07", "ID-08", "ID-10",
-      "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
+      "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
     ]) expect(ledger).toMatch(new RegExp(
       `data-deliverable-key="${key}"[^>]+data-deliverable-last-verified="2026-08-03 · Sam owner decision"`,
     ));
+    // PD-01 was re-verified by its own slice 1 run, not by the owner decision.
+    expect(ledger).toMatch(
+      /data-deliverable-key="PD-01"[^>]+data-deliverable-last-verified="2026-08-04 · PD-01 slice 1 live run"/,
+    );
     // ID-09 was re-verified by the WS2 install proof, not by the owner decision.
     expect(ledger).toMatch(/data-deliverable-key="ID-09"[^>]+data-deliverable-last-verified="2026-08-03 · WS2 CLI install proof"/);
     // O10 approved the named WS2 and M-DF2 increments, so approval reaches them.
