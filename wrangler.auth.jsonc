@@ -5,12 +5,18 @@
   "main": "src/workers/auth.ts",
   "compatibility_date": "2026-07-18",
   "compatibility_flags": ["nodejs_compat"],
+  "routes": [{ "pattern": "auth.angelmcp.ai", "custom_domain": true }],
   // Secrets: RESEND_API_KEY, LOGIN_NAME_KEY, BETTER_AUTH_SECRET
   //
   // Deliberately NOT behind the Cloudflare Access application that fronts the
   // Control worker. Signup is the one surface a stranger has to reach.
   "vars": {
-    "AUTH_BASE_URL": "https://angelmcp-auth.sam-633.workers.dev",
+    "AUTH_BASE_URL": "https://auth.angelmcp.ai",
+    // A spent link lands on the dashboard, not back here. Both hosts sit on
+    // `angelmcp.ai` so one session cookie reaches both; on workers.dev it
+    // could not, because that suffix is on the Public Suffix List.
+    "DASHBOARD_BASE_URL": "https://dash.angelmcp.ai",
+    "SESSION_COOKIE_DOMAIN": ".angelmcp.ai",
     // Resend holds the domain as `e4.angelmcp.ai`, not the apex — a sending
     // subdomain keeps the apex's own mail reputation separate from ours. It
     // is the brand a person signing up at angelmcp.ai expects to hear from,

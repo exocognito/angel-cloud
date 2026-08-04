@@ -21,6 +21,10 @@ export interface AuthConfigEnv {
   BETTER_AUTH_SECRET: string;
   LOGIN_FROM_ADDRESS: string;
   AUTH_BASE_URL: string;
+  /** Where a spent link lands: the dashboard, on the same zone as this Worker. */
+  DASHBOARD_BASE_URL: string;
+  /** The zone both hosts sit on, so one cookie reaches both. */
+  SESSION_COOKIE_DOMAIN: string;
 }
 
 export interface AuthConfigDependencies {
@@ -48,9 +52,19 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
     baseURL: env.AUTH_BASE_URL,
     basePath: "/v1/auth",
     secret: env.BETTER_AUTH_SECRET,
-    // O4 clause 8. Nothing may redirect a spent link off this origin.
-    trustedOrigins: [env.AUTH_BASE_URL],
+    // O4 clause 8, widened by exactly one host. A spent link has to land on
+    // the dashboard, which is a different origin from this Worker, so that
+    // origin is named here and nothing else is.
+    trustedOrigins: [env.AUTH_BASE_URL, env.DASHBOARD_BASE_URL],
     session: { expiresIn: SESSION_TTL_SECONDS },
+    // The dashboard is a different host on the same zone, and it cannot read a
+    // cookie pinned to this one. Verified against the framework: this stamps
+    // `domain` on the session cookie. It is why both hosts had to leave
+    // workers.dev — that suffix is on the Public Suffix List, so no cookie can
+    // ever span two Workers there.
+    advanced: {
+      crossSubDomainCookies: { enabled: true, domain: env.SESSION_COOKIE_DOMAIN },
+    },
     // In-memory limits are decorative on Workers: an isolate is per-request
     // and per-colo, so nothing accumulates. This is the framework's own
     // per-IP limit, kept for the endpoints the Worker does not guard itself.

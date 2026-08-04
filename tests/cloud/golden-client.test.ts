@@ -268,8 +268,9 @@ function runtimeNamespace() {
   };
 }
 
-function storageContext(storage: Map<string, unknown>) {
+function storageContext(storage: Map<string, unknown>, name = "acct_demo") {
   return {
+    id: { name },
     storage: {
       get: async (key: string) => structuredClone(storage.get(key)),
       put: async (key: string, value: unknown) => {

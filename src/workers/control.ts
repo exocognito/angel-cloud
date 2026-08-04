@@ -23,7 +23,11 @@ import {
   requireBearerToken,
   requireDistinctRoleCredentials,
 } from "./protocol";
-import { AccessAuthenticationError, authenticateAccessRequest, type AccessIdentity } from "../access";
+import {
+  SessionAuthenticationError,
+  authenticateSessionRequest,
+  type SessionIdentity,
+} from "../session-identity";
 import { DEFAULT_GOOGLE_PROVIDER_SCOPES, parseProviderScopes } from "../google-oauth";
 import { issueOAuthState, type OAuthStateRecord } from "../oauth-state";
 import {
@@ -43,39 +47,51 @@ export interface ControlRequestEnv {
   CONTROL_BROKER_TOKEN: string;
   CONTROL_GATEWAY_TOKEN: string;
   CONTROL_RESPONSE_KEK: string;
-  ACCOUNT_ID: string;
   DEMO_ADMIN_TOKEN: string;
   MANAGEMENT_API_TOKEN: string;
   GATEWAY_BASE_URL: string;
   ACCOUNTS: { getByName(name: string): RegistryStub };
   ASSETS: { fetch(request: Request): Promise<Response> };
-  ACCESS_TEAM_DOMAIN: string;
-  ACCESS_AUDIENCE: string;
+  // The sign-in Worker, reached over a service binding. It owns sessions;
+  // Control only asks it who is calling.
+  AUTH: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
   CONTROL_BASE_URL: string;
   BROKER: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
   GATEWAY: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> };
 }
 
-export type AccessVerifier = (request: Request, env: ControlRequestEnv) => Promise<import("../access").AccessIdentity>;
+export type SessionVerifier = (request: Request, env: ControlRequestEnv) => Promise<SessionIdentity>;
 
 export async function handleControlRequest(
   request: Request,
   env: ControlRequestEnv,
-  verifyAccess: AccessVerifier = defaultAccessVerifier,
+  verifySession: SessionVerifier = defaultSessionVerifier,
 ): Promise<Response> {
   const url = new URL(request.url);
-  let accessIdentity: AccessIdentity;
-  try {
-    accessIdentity = await verifyAccess(request, env);
-  } catch (error) {
-    if (error instanceof AccessAuthenticationError) {
-      return Response.json({ error: "Access authentication required" }, { status: 401 });
-    }
-    return Response.json({ error: "Access authentication verifier failed" }, { status: 500 });
-  }
   const isProviderPath = isProviderApiPath(url.pathname) || url.pathname === "/oauth/google/callback";
+  // The shell is public. Cloudflare Access used to hold the door and show its
+  // own login page; with Access gone, something has to be servable to somebody
+  // who is not signed in yet, and that is the sign-in page. These files carry
+  // no Account data — every byte of that arrives through the guarded paths
+  // below, so the shell can load and then ask who it is talking to.
   if (!url.pathname.startsWith("/api/") && !url.pathname.startsWith("/v1/") && !isProviderPath) {
     return env.ASSETS.fetch(request);
+  }
+  // Asking for a sign-in link is the one thing a stranger must be able to do.
+  // It is proxied rather than posted straight at the sign-in Worker so the
+  // browser stays on one origin and no CORS grant has to exist at all.
+  if (url.pathname === "/api/sign-in" && request.method === "POST") {
+    return requestSignInLink(request, env);
+  }
+
+  let sessionIdentity: SessionIdentity;
+  try {
+    sessionIdentity = await verifySession(request, env);
+  } catch (error) {
+    if (error instanceof SessionAuthenticationError) {
+      return Response.json({ error: "sign-in required" }, { status: 401 });
+    }
+    return Response.json({ error: "session verifier failed" }, { status: 500 });
   }
 
   try {
@@ -93,28 +109,29 @@ export async function handleControlRequest(
       throw new HttpError(500, "Control response replay key must be non-empty");
     }
     // The handle/id split relies on internal ids carrying the `acct_` prefix,
-    // which the handle grammar cannot express. A handle-shaped ACCOUNT_ID
-    // would silently 404 every resolution, so refuse to serve with one.
-    if (typeof env.ACCOUNT_ID !== "string" || !isInternalAccountId(env.ACCOUNT_ID)) {
-      throw new HttpError(500, "ACCOUNT_ID must be an internal acct_* identifier");
+    // which the handle grammar cannot express. A handle-shaped id would
+    // silently 404 every resolution, and it now arrives from the session
+    // rather than from configuration, so check what the session actually said.
+    if (!isInternalAccountId(sessionIdentity.accountId)) {
+      throw new HttpError(500, "session Account must be an internal acct_* identifier");
     }
     if (isProviderPath) {
-      return await providerRequest(request, env, accessIdentity);
+      return await providerRequest(request, env, sessionIdentity);
     }
     if (url.pathname.startsWith("/v1/")) {
       await requireBearer(request, env.MANAGEMENT_API_TOKEN, "management authorization required");
-      const handled = await handleRoutes(request, url, env, accessIdentity);
+      const handled = await handleRoutes(request, url, env, sessionIdentity);
       if (handled !== null) return handled;
       const routed = await managementCommand(
         request,
         await withCanonicalAccountSegment(url, env),
-        accessIdentity.accountId,
+        sessionIdentity.accountId,
       );
       const registry = env.ACCOUNTS.getByName(routed.accountId);
       return registryResponse(await registry.dispatchJson(routed.command), routed.translate);
     }
 
-    const registry = env.ACCOUNTS.getByName(accessIdentity.accountId);
+    const registry = env.ACCOUNTS.getByName(sessionIdentity.accountId);
     let command: AccountRegistryCommand;
     if (url.pathname === "/api/demo/state" && request.method === "GET") {
       command = { operation: "state" };
@@ -149,7 +166,7 @@ async function handleRoutes(
   request: Request,
   url: URL,
   env: ControlRequestEnv,
-  identity: AccessIdentity,
+  identity: SessionIdentity,
 ): Promise<Response | null> {
   const set = matchPath(url.pathname, /^\/v1\/accounts\/([^/]+)\/handle$/);
   if (set !== null && request.method === "GET") {
@@ -283,7 +300,7 @@ function isProviderApiPath(pathname: string): boolean {
 async function providerRequest(
   request: Request,
   env: ControlRequestEnv,
-  identity: AccessIdentity,
+  identity: SessionIdentity,
 ): Promise<Response> {
   const url = new URL(request.url);
   const accountId = identity.accountId;
@@ -379,7 +396,7 @@ async function providerRequest(
 async function startGoogleAuthorization(
   env: ControlRequestEnv,
   registry: RegistryStub,
-  identity: AccessIdentity,
+  identity: SessionIdentity,
   input: { providerAppId: string; connectionId: string; nickname: string; flow: "create" | "reauth" },
 ): Promise<Response> {
   const issued = await issueOAuthState({
@@ -604,11 +621,24 @@ function controlErrorResponse(error: unknown): Response {
   return Response.json({ error: error instanceof Error ? error.message : "control request failed" }, { status: 500 });
 }
 
-async function defaultAccessVerifier(request: Request, env: ControlRequestEnv): Promise<AccessIdentity> {
-  return authenticateAccessRequest(request, {
-    teamDomain: env.ACCESS_TEAM_DOMAIN,
-    audience: env.ACCESS_AUDIENCE,
-    accountId: env.ACCOUNT_ID,
+async function defaultSessionVerifier(request: Request, env: ControlRequestEnv): Promise<SessionIdentity> {
+  return authenticateSessionRequest(request, env.AUTH);
+}
+
+/**
+ * Hand a sign-in request to the Worker that owns sign-in, and give back
+ * whatever it says. The caps O4 requires live there and still apply: the
+ * per-source one keys on `cf-connecting-ip`, so the caller's own address has
+ * to travel or every stranger would arrive looking like this Worker.
+ */
+async function requestSignInLink(request: Request, env: ControlRequestEnv): Promise<Response> {
+  const headers = new Headers({ "content-type": "application/json" });
+  const source = request.headers.get("cf-connecting-ip");
+  if (source !== null) headers.set("cf-connecting-ip", source);
+  return env.AUTH.fetch("https://auth.internal/v1/auth/sign-in/magic-link", {
+    method: "POST",
+    headers,
+    body: await request.text(),
   });
 }
 

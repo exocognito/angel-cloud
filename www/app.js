@@ -431,6 +431,13 @@ async function loadState() {
   } catch (error) {
     throw new Error(`Demo state unavailable: network request failed (${errorMessage(error)}).`);
   }
+  // Cloudflare Access used to turn a stranger away at the edge and show its
+  // own login page. Nothing does that now, so the first refused request is
+  // where a person without a session gets sent somewhere they can sign in.
+  if (response.status === 401) {
+    window.location.replace("/sign-in.html");
+    return new Promise(() => {});
+  }
   if (!response.ok) {
     throw new Error(`Demo state unavailable: HTTP ${response.status}.`);
   }

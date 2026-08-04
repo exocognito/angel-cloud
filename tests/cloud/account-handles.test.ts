@@ -110,6 +110,7 @@ describe("account handle grammar", () => {
 function directoryRegistry() {
   const storage = new Map<string, unknown>();
   const registry = new AccountRegistry({
+    id: { name: "acct_demo" },
     storage: {
       get: async (key: string) => storage.get(key),
       put: async (key: string | Record<string, unknown>, value?: unknown) => {
@@ -213,6 +214,7 @@ describe("handle directory policy (PD 0004)", () => {
       if (key.length > 2048) throw new Error("over-long Durable Object storage key");
     };
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => { guard(key); return storage.get(key); },
         put: async (key: string | Record<string, unknown>, value?: unknown) => {

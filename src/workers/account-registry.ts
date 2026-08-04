@@ -92,6 +92,21 @@ type RegistryResult =
 export class AccountRegistry extends DurableObject<ControlEnv> {
   private tail: Promise<void> = Promise.resolve();
 
+  /**
+   * The Account this instance serves, taken from its own name. Control reaches
+   * every registry through `ACCOUNTS.getByName(accountId)`, so the name is the
+   * Account — reading it from configuration instead is what pinned the whole
+   * Worker to a single tenant. An instance reached by raw id has no name and
+   * cannot answer for anybody, so say so rather than serve the wrong Account.
+   */
+  private get accountId(): string {
+    const name = this.ctx.id.name;
+    if (name === undefined || name === "") {
+      throw new RegistryError(500, "account registry was reached without a name");
+    }
+    return name;
+  }
+
   async dispatchJson(command: AccountRegistryCommand): Promise<string> {
     return this.exclusive(async () => JSON.stringify(await this.dispatch(command)));
   }
@@ -369,7 +384,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
 
   /** Store the display copy of a claimed handle on the management state. */
   private async recordHandle(accountId: string, handle: string): Promise<{ handle: string }> {
-    if (accountId !== this.env.ACCOUNT_ID) throw new RegistryError(404, "not found");
+    if (accountId !== this.accountId) throw new RegistryError(404, "not found");
     const control = await this.management();
     const state = control.exportState();
     if (state.account.handle !== handle) {
@@ -411,8 +426,8 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
       }
     }
     const state = createManagementState({
-      account: { ...DEMO_ACCOUNT, id: this.env.ACCOUNT_ID },
-      connections: managementConnections(this.env.ACCOUNT_ID),
+      account: { ...DEMO_ACCOUNT, id: this.accountId },
+      connections: managementConnections(this.accountId),
     });
     // The handle claim is permanent directory state, not demo state: a reset
     // must not un-display it.
@@ -427,7 +442,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
 
   private async action(command: Extract<AccountRegistryCommand, { operation: "action" }>): Promise<DemoView> {
     const control = await this.management();
-    const angel = control.getAngelBySlug(this.env.ACCOUNT_ID, command.angelId);
+    const angel = control.getAngelBySlug(this.accountId, command.angelId);
     if (command.action === "promote") {
       await this.promote(control, angel.id, command);
     } else {
@@ -474,7 +489,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     command: Extract<AccountRegistryCommand, { operation: "key_action" }>,
   ): Promise<unknown> {
     const control = await this.management();
-    const angel = control.getAngelBySlug(this.env.ACCOUNT_ID, command.angelId);
+    const angel = control.getAngelBySlug(this.accountId, command.angelId);
     // Bind the resolved angel + environment into BOTH the derived idempotency key
     // AND the mutation body (which feeds the replay fingerprint), so the same
     // token+payload replayed against a different angel/environment is NOT treated
@@ -590,14 +605,14 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
     const referenced = new Set(
       current.deployments.flatMap((deployment) => Object.values(deployment.bindings).flat()),
     );
-    const nextConnections = reconcileManagementConnections(this.env.ACCOUNT_ID, current.connections, connections, referenced);
+    const nextConnections = reconcileManagementConnections(this.accountId, current.connections, connections, referenced);
     control.reconcileConnections(nextConnections);
     await this.ctx.storage.put("management", control.exportState());
   }
 
   private async reconcileFromBroker(): Promise<void> {
     const response = await this.env.BROKER.fetch(new Request(
-      `https://broker.internal/internal/connections?accountId=${encodeURIComponent(this.env.ACCOUNT_ID)}`,
+      `https://broker.internal/internal/connections?accountId=${encodeURIComponent(this.accountId)}`,
       { headers: { authorization: `Bearer ${this.env.CONTROL_BROKER_TOKEN}` } },
     ));
     if (!response.ok) throw new Error("Broker Connection reconciliation failed");
@@ -614,7 +629,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   }
 
   private assertProviderAccount(accountId: string, summaryAccountId: string): void {
-    if (accountId !== summaryAccountId || accountId !== this.env.ACCOUNT_ID) {
+    if (accountId !== summaryAccountId || accountId !== this.accountId) {
       throw new RegistryError(404, "not found");
     }
   }
@@ -622,9 +637,9 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   private async management(): Promise<ManagementControl> {
     const existing = await this.ctx.storage.get<ManagementState>("management");
     const state = existing ?? createManagementState({
-      account: { ...DEMO_ACCOUNT, id: this.env.ACCOUNT_ID },
+      account: { ...DEMO_ACCOUNT, id: this.accountId },
       connections: managementConnectionsFromProviderSummaries(
-        this.env.ACCOUNT_ID,
+        this.accountId,
         (await this.providerState()).connections,
       ),
     });
@@ -644,7 +659,7 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
 
   private managementFleet(angelId: string): ServiceGateFleet {
     return new ServiceGateFleet({
-      accountId: this.env.ACCOUNT_ID,
+      accountId: this.accountId,
       angelId,
       gatewayControlToken: this.env.CONTROL_GATEWAY_TOKEN,
       brokerControlToken: this.env.CONTROL_BROKER_TOKEN,

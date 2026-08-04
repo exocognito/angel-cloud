@@ -7,13 +7,18 @@
   "compatibility_flags": ["nodejs_compat"],
   // Secrets: MANAGEMENT_API_TOKEN, CONTROL_RESPONSE_KEK, CONTROL_GATEWAY_TOKEN,
   // CONTROL_BROKER_TOKEN, DEMO_ADMIN_TOKEN
+  // No ACCOUNT_ID: the Account now arrives from the session, so naming one here
+  // is what made this Worker serve a single tenant. No ACCESS_* either — the
+  // Cloudflare Access application in front of this Worker is gone, and the
+  // sign-in Worker holds the door instead.
   "vars": {
-    "ACCOUNT_ID": "acct_m1",
-    "ACCESS_TEAM_DOMAIN": "https://angel-cloud.cloudflareaccess.com",
-    "ACCESS_AUDIENCE": "4848f84b13d92d4c9a219e35662c5ca84cd9b6188b5e556df801e34fb7bf1da7",
-    "CONTROL_BASE_URL": "https://angelmcp-control-demo.sam-633.workers.dev",
-    "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev"
+    "CONTROL_BASE_URL": "https://dash.angelmcp.ai",
+    "GATEWAY_BASE_URL": "https://angelmcp-gateway-demo.sam-633.workers.dev",
+    // Where the dashboard sends somebody who is not signed in. Same zone as
+    // this host, which is what lets the session cookie reach both.
+    "AUTH_BASE_URL": "https://auth.angelmcp.ai"
   },
+  "routes": [{ "pattern": "dash.angelmcp.ai", "custom_domain": true }],
   "durable_objects": {
     "bindings": [
       { "name": "ACCOUNTS", "class_name": "AccountRegistry" }
@@ -24,7 +29,10 @@
   ],
   "services": [
     { "binding": "GATEWAY", "service": "angelmcp-gateway-demo" },
-    { "binding": "BROKER", "service": "angelmcp-broker-demo" }
+    { "binding": "BROKER", "service": "angelmcp-broker-demo" },
+    // Control asks this Worker who is calling, forwarding the caller's own
+    // credential. It never reads the session tables itself.
+    { "binding": "AUTH", "service": "angelmcp-auth" }
   ],
   "assets": {
     "directory": "./www",

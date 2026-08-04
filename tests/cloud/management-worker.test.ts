@@ -504,6 +504,7 @@ describe("AccountRegistry management persistence", () => {
       },
     };
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -542,6 +543,7 @@ describe("AccountRegistry management persistence", () => {
       },
     };
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -565,6 +567,7 @@ describe("AccountRegistry management persistence", () => {
   test("a state read of an uninitialized demo Account stays a 409 and writes nothing", async () => {
     const storage = new Map<string, unknown>();
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -580,6 +583,7 @@ describe("AccountRegistry management persistence", () => {
   test("persists encrypted ensure replay state and dispatches resource reads", async () => {
     const storage = new Map<string, unknown>();
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -631,6 +635,7 @@ describe("AccountRegistry management persistence", () => {
     const gateway = recordingGateService("gateway", runtimeIds);
     const broker = recordingGateService("broker", runtimeIds);
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -689,6 +694,7 @@ describe("AccountRegistry management persistence", () => {
     const storage = new Map<string, unknown>();
     const runtimeIds: string[] = [];
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
