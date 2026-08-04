@@ -137,6 +137,22 @@ External pages were fetched directly with `curl -L`; relevant statements were me
 8. Redirect targets are fixed/allowlisted; the redemption response uses `Referrer-Policy: no-referrer` and loads no third-party content before the token leaves the URL.
 9. No SMS, phone number, SMS recovery contact, or telephony dependency is part of Round 2.
 
+#### O4 full record: Amendment, 2026-08-04 — clause 2 grants one millisecond
+
+Clause 2 above stands as written except at the deadline itself. Better Auth,
+which now owns redemption, refuses on `expiresAt < now`, so a link spent at
+exactly `expiresAt` is accepted rather than refused. The owner accepted the
+millisecond on 2026-08-04 rather than wrapping the framework's endpoint in
+code we would then have to own and review.
+
+Read clause 2 as: redemption is valid while `serverNow <= expiresAt`, and no
+grace beyond that instant. Everything else in the clause is unchanged — the
+clock is still the server's, and no client timestamp affects validity.
+
+`tests/cloud/auth-worker.test.ts` pins the behaviour both ways, so an upgrade
+that moves the comparison fails a test instead of shifting the contract
+quietly.
+
 #### O4 full record: Product implication
 
 Replace every “days-long” target statement with “single-use, 10 minutes.” Login copy must show the expiry and a clear resend path. Round-2 acceptance must test exact-time expiry, concurrent replay, newest-link-only behavior, wrong login transaction, delayed email/resend, generic unknown-email response, and no management/provider mutation on failure.

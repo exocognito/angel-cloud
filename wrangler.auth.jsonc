@@ -1,35 +1,40 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "angelmcp-auth-demo",
+  "name": "angelmcp-auth",
   "account_id": "6334e1f9af90be70f091a0116425606a",
   "main": "src/workers/auth.ts",
   "compatibility_date": "2026-07-18",
   "compatibility_flags": ["nodejs_compat"],
-  // Secrets: RESEND_API_KEY, LOGIN_NAME_KEY
+  // Secrets: RESEND_API_KEY, LOGIN_NAME_KEY, BETTER_AUTH_SECRET
   //
   // Deliberately NOT behind the Cloudflare Access application that fronts the
   // Control worker. Signup is the one surface a stranger has to reach.
   "vars": {
-    "AUTH_BASE_URL": "https://angelmcp-auth-demo.sam-633.workers.dev",
+    "AUTH_BASE_URL": "https://angelmcp-auth.sam-633.workers.dev",
     "LOGIN_FROM_ADDRESS": "Angel <noreply@angelicagents.com>"
   },
-  "durable_objects": {
-    "bindings": [
-      { "name": "LOGIN", "class_name": "LoginAttempt" },
-      { "name": "IDENTITY", "class_name": "LoginIdentity" },
-      { "name": "SESSION", "class_name": "LoginSession" },
-      { "name": "THROTTLE", "class_name": "LoginThrottle" }
-    ]
-  },
-  "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["LoginAttempt", "LoginIdentity", "LoginSession"] },
-    { "tag": "v2", "new_sqlite_classes": ["LoginThrottle"] }
+  // People, sessions and unspent links. Better Auth owns every table here and
+  // generates their schema; nothing else writes to this database.
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "angelmcp-auth",
+      "database_id": "cd6a7d28-fce3-4a9d-8a69-6ccb05bc941a"
+    }
   ],
-  // Logging stays on, because the send now happens off the response path and
-  // its only record is what this Worker logs itself. What is off is the
-  // automatic per-request log: it carries the request URL, and the callback
-  // URL carries a live verifier, so leaving it on would write spendable tokens
-  // in the clear to a retained store for the ten minutes they work.
+  // The one Durable Object that survives the cutover. Counting requests per
+  // address needs a read-modify-write that two simultaneous callers cannot
+  // both win, and that is what a Durable Object is for. Better Auth's own
+  // limiter keys on IP, which is a different question.
+  "durable_objects": {
+    "bindings": [{ "name": "THROTTLE", "class_name": "LoginThrottle" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["LoginThrottle"] }],
+  // Logging stays on, because the send happens off the response path and its
+  // only record is what this Worker logs itself. What is off is the automatic
+  // per-request log: it carries the request URL, and the verify URL carries a
+  // live token, so leaving it on would write spendable tokens in the clear to
+  // a retained store for the ten minutes they work.
   "observability": {
     "enabled": true,
     "logs": {

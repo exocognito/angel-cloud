@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@smcllns/angel-core": "workspace:0.3.0",
+    "better-auth": "^1.6.25",
     "yaml": "^2.4.5"
   },
   "devDependencies": {
