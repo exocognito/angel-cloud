@@ -128,6 +128,42 @@ describe("Control serves whoever signed in", () => {
     expect(viewTwo.account.id).toBe("acct_two");
   });
 
+  test("decides where a spent link lands, whatever the caller asked for", async () => {
+    // A relative callbackURL resolves against the sign-in Worker's own origin,
+    // so the live run stranded people on a Worker that serves nothing. O4
+    // clause 8 wants an allowlisted redirect; the narrowest allowlist is one
+    // entry nobody outside can name.
+    const { env } = twoTenantEnv();
+    const sent: Array<{ url: string; body: unknown }> = [];
+    const withAuth = {
+      ...env,
+      CONTROL_BASE_URL: "https://dash.test",
+      AUTH: {
+        async fetch(input: string | URL | Request, init?: RequestInit) {
+          sent.push({ url: String(input), body: JSON.parse(String(init?.body)) });
+          return Response.json({ status: true });
+        },
+      },
+    };
+
+    const response = await handleControlRequest(
+      new Request("https://dash.test/api/sign-in", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email: "stranger@example.invalid", callbackURL: "https://evil.test/" }),
+      }),
+      withAuth as never,
+      signedInAs("acct_one"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(sent).toHaveLength(1);
+    expect(sent[0]!.body).toEqual({
+      email: "stranger@example.invalid",
+      callbackURL: "https://dash.test",
+    });
+  });
+
   test("refuses a session whose Account is not an internal id", async () => {
     const { env, reached } = twoTenantEnv();
     // A handle where an id belongs would 404 every resolution downstream.

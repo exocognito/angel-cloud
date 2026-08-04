@@ -101,7 +101,7 @@
           fetch("/api/sign-in", {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify({ email: email, callbackURL: "/" }),
+            body: JSON.stringify({ email: email }),
           }).then(function (response) {
             // The answer is the same whether or not the address has an
             // Account: saying otherwise would tell a stranger who is signed up.

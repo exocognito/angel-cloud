@@ -637,10 +637,22 @@ async function requestSignInLink(request: Request, env: ControlRequestEnv): Prom
   const headers = new Headers({ "content-type": "application/json" });
   const source = request.headers.get("cf-connecting-ip");
   if (source !== null) headers.set("cf-connecting-ip", source);
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw new RequestError(400, "request body must be valid JSON");
+  }
+  const email = (body as { email?: unknown })?.email;
+  // Where a spent link lands is decided here, not by whoever asked for it.
+  // O4 clause 8 wants an allowlisted redirect, and the narrowest allowlist is
+  // one entry the caller cannot name. A relative callbackURL would resolve
+  // against the sign-in Worker's own origin and strand people there.
   return env.AUTH.fetch("https://auth.internal/v1/auth/sign-in/magic-link", {
     method: "POST",
     headers,
-    body: await request.text(),
+    body: JSON.stringify({ email, callbackURL: env.CONTROL_BASE_URL }),
   });
 }
 
