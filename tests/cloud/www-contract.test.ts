@@ -1242,18 +1242,20 @@ describe("Angel Cloud deployable demo UI contract", () => {
       expect(Array.isArray(step.commands)).toBe(true);
     }
     const commands = steps.flatMap((step) => step.commands);
-    // The COMPLETE command strings, EXACTLY as docs/google-read-proof-manual-journey.md
-    // shows them — asserted whole (not by substring) so an extra/altered flag,
-    // a stray argument, or a fabricated literal secret value fails here. The
-    // credential value stays as the doc's `...` placeholder; the guide must
+    // The COMPLETE command strings, EXACTLY as the served docs-site/public/SKILL.md
+    // teaches them — the published @angelmcp/cli in the user's own directory, never
+    // `bun run angel` or an examples/ path from a clone of this repo, which SKILL.md
+    // names as the wrong path. Asserted whole (not by substring) so an extra/altered
+    // flag, a stray argument, or a fabricated literal secret value fails here. The
+    // credential value stays as SKILL.md's `...` placeholder; the guide must
     // never invent a real session-token literal.
     const DOC_COMMANDS = [
-      // Doc step 4 — copy the safe example config.
-      "cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json",
-      // Doc step 5 — publish to preview with a control-plane session token.
-      "ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview",
-      // Doc step 6 — promote the exact staged deploy to production.
-      "ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod",
+      // SKILL.md step 1 — install the CLI, no repo clone.
+      "pnpm add @angelmcp/cli",
+      // SKILL.md step 6 — publish to preview with a control-plane session token.
+      "ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel publish google-read-proof --preview",
+      // SKILL.md step 7 — promote the exact previewed deployment to production.
+      "ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel deploy google-read-proof --prod",
     ];
     // The guide renders EXACTLY these commands, in this order — nothing more.
     expect(commands).toEqual(DOC_COMMANDS);
@@ -1264,10 +1266,24 @@ describe("Angel Cloud deployable demo UI contract", () => {
       expect(command).not.toMatch(/cf-access-client-id":"(?!\.\.\.)/);
       expect(command).not.toMatch(/cf-access-client-secret":"(?!\.\.\.)/);
       expect(command).not.toMatch(/ANGEL_MANAGEMENT_TOKEN=(?!\.\.\.)\S/);
+      // Nothing that only works inside a clone of this repo: `bun run angel` is
+      // the repo package script, and examples/ is a directory only the clone has.
+      expect(command).not.toMatch(/bun run angel\b/);
+      expect(command).not.toMatch(/examples\//);
+      // The CLI is a local dependency, so every invocation is `pnpm exec angel`,
+      // never a bare `angel build`.
+      for (const match of command.matchAll(/angel (?:build|publish|deploy|delete)\b/g)) {
+        expect(command.slice(0, match.index)).toMatch(/(?:^|\s)pnpm exec $/);
+      }
     }
-    // The shown-once production key is described, never fabricated.
+    // The shown-once production key is described, never fabricated — and it goes
+    // to the user's OWN secret store. GOLDEN_ANGEL_KEY is the maintainer's CI
+    // secret for the acceptance runner, which SKILL.md puts outside the user path.
     const detail = steps.map((step) => step.detail).join(" ");
-    expect(detail).toContain("GOLDEN_ANGEL_KEY");
+    expect(detail).toContain(
+      "Save the production Angel key printed by the initial publish/ensure response into your own secret store",
+    );
+    expect(detail).not.toContain("GOLDEN_ANGEL_KEY");
 
     // renderHome's zero-Angel branch renders the guide (and preserves the
     // existing empty-state copy the pre-first-Angel test pins).

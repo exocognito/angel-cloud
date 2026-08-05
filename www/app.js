@@ -1098,16 +1098,18 @@ function renderHomeAngelList(angel) {
 
 // ---------------------------------------------------------------------------
 // WP4: zero-Angel getting-started guide + ANGEL.yaml groups explainer.
-// The guide teaches the REAL operator journey documented in
-// docs/google-read-proof-manual-journey.md; the explainer reuses WP1's
+// The guide teaches the published-CLI journey documented in the served
+// docs-site/public/SKILL.md; the explainer reuses WP1's
 // groupToolsByApp / isReadOnlyTool / toolGuardCopy so its app → group folders
 // are the SAME projection as the live Allowed Tools pane, never a parallel copy.
 // ---------------------------------------------------------------------------
 
-// Pure data: the real first-Angel journey. Browser vs. operator-shell steps
-// mirror the doc's "Sam in a browser" / "Local operator shell" split. Every
-// command is copied verbatim from the doc — no invented flags, no fabricated
-// token values (credentials stay as the doc's `...` placeholders).
+// Pure data: the first-Angel journey a signed-up user can actually run. Browser
+// steps use the signed-in control site; shell steps run in the user's own
+// project directory against the published @angelmcp/cli — never a clone of this
+// repository, which SKILL.md names as the wrong path. Every command is copied
+// verbatim from SKILL.md — no invented flags, no fabricated token values
+// (credentials stay as SKILL.md's `...` placeholders).
 function newAngelGuideSteps() {
   return [
     {
@@ -1119,7 +1121,7 @@ function newAngelGuideSteps() {
     {
       where: "browser",
       title: "Add your BYO Google client",
-      detail: "In Google Cloud Console select the OAuth client with the deployed callback URI and the read-only Gmail and Docs APIs, then add its client ID and secret as a Provider App on Connections. The secret is entered into the protected form only, never into this repository.",
+      detail: "In Google Cloud Console select the OAuth client with the deployed callback URI and the read-only Gmail and Docs APIs, then add its client ID and secret as a Provider App on Connections. The secret is entered into the protected form only, never into a file you keep.",
       commands: [],
     },
     {
@@ -1130,26 +1132,26 @@ function newAngelGuideSteps() {
     },
     {
       where: "shell",
-      title: "Copy the deployment config",
-      detail: "Copy the safe example and edit only local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. The real angel.json is git-ignored; ANGEL.yaml stays portable.",
-      commands: ["cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json"],
+      title: "Install the CLI and write the Angel",
+      detail: "In your own project directory, add the published CLI (it runs under Bun) and invoke it as pnpm exec angel. Then write angels/google-read-proof/ANGEL.yaml, the portable policy, and alongside it angel.json for local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. Keep the real angel.json untracked; ANGEL.yaml stays portable.",
+      commands: ["pnpm add @angelmcp/cli"],
     },
     {
       where: "shell",
       title: "Publish to preview",
-      detail: "With a control-plane session token in ANGEL_MANAGEMENT_TOKEN, build the checked-in policy, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
-      commands: ["ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview"],
+      detail: "With a control-plane session token in ANGEL_MANAGEMENT_TOKEN, build your ANGEL.yaml, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
+      commands: ["ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel publish google-read-proof --preview"],
     },
     {
       where: "shell",
       title: "Promote the exact staged deploy to production",
       detail: "With the same session token, promote the exact staged deployment. The command does not rebuild or republish.",
-      commands: ["ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod"],
+      commands: ["ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel deploy google-read-proof --prod"],
     },
     {
       where: "shell",
       title: "Capture the shown-once production key",
-      detail: "Save the production Angel key printed by the initial publish/ensure response into the GitHub Actions secret GOLDEN_ANGEL_KEY. Never paste it into a file, command transcript, issue, report, or chat.",
+      detail: "Save the production Angel key printed by the initial publish/ensure response into your own secret store — later reads expose only fingerprints. Never paste it into a file, command transcript, issue, report, or chat.",
       commands: [],
     },
   ];
@@ -1190,8 +1192,8 @@ function renderNewAngelGuide() {
   const head = element("div", "wp4-panel-head");
   head.append(element("span", "eyebrow", "Getting started"));
   head.append(element("b", "", "Publish your first Angel from the CLI"));
-  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof operator journey: sign in, add your BYO Google client, authorize a Connection, edit local config, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run from your local operator checkout. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
-  head.append(element("small", "wp4-guide-more", "From here, docs/google-read-proof-manual-journey.md continues with wiring the GitHub Actions secret and repository variables, running the acceptance journey, and proving the revoke/failure and reauthorization path."));
+  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof journey: sign in, add your BYO Google client, authorize a Connection, install the CLI and write your Angel, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run in your own project directory. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
+  head.append(element("small", "wp4-guide-more", "From here, docs.angelmcp.ai/operator-journey.md is a maintainer's worked run of this same lifecycle, including revoking a Connection to prove loud failure and reauthorizing to prove recovery."));
   panel.append(head);
   const list = element("ol", "wp4-steps");
   newAngelGuideSteps().forEach((step, index) => {
@@ -1199,7 +1201,7 @@ function renderNewAngelGuide() {
     item.append(element("span", "wp4-step-index", String(index + 1)));
     const body = element("div", "wp4-step-body");
     const titleLine = element("span", "wp4-step-title-line");
-    titleLine.append(element("span", `wp4-step-where wp4-where-${step.where}`, step.where === "browser" ? "In a browser" : "Operator shell"));
+    titleLine.append(element("span", `wp4-step-where wp4-where-${step.where}`, step.where === "browser" ? "In a browser" : "In your terminal"));
     titleLine.append(element("b", "", step.title));
     body.append(titleLine);
     body.append(element("small", "", step.detail));
