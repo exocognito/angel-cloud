@@ -51,9 +51,10 @@ invitation and no waiting list.
   account, from `main`. `dash.angelmcp.ai` and `auth.angelmcp.ai` are bound;
   the docs site and Gateway still answer on `*.sam-633.workers.dev`.
 - **Cloudflare Access is gone.** The Control root answers `200` to anyone and
-  serves the app shell; an unauthenticated management or `/api` call answers
-  `401 sign-in required`, and the shell sends that caller to `/sign-in.html`,
-  which redirects to the sign-in page.
+  serves the app shell; an unauthenticated management (`/v1/...`) or Account
+  (`/api/demo/...`) call answers `401 sign-in required`, and the shell sends
+  that caller to `/sign-in.html`, which redirects to the sign-in page. The
+  sign-in route itself is public, as it has to be.
 - Sign-in is an emailed one-time link that lasts ten minutes, issued by the
   Auth Worker over Better Auth on D1.
 - Public `@angelmcp/cli@0.1.0` is the published command-line tool — this is what
@@ -103,7 +104,7 @@ bun run angel deploy golden-assistant --prod
 ```
 
 Those are the in-repo forms, for work inside this repository. Anyone who
-installed `@angelmcp/cli` instead invokes it as `angel build …` — see
+installed `@angelmcp/cli` instead invokes it as `pnpm exec angel build …` — see
 [SKILL.md](docs-site/public/SKILL.md), which is the journey for people who
 never clone this repository.
 

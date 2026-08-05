@@ -13,8 +13,9 @@ control site or Google Cloud/Google consent screens.
 
 Sign up at https://dash.angelmcp.ai: enter an email address and click the
 one-time link it sends. The Control root answers `200` to anyone and serves the
-app shell; an unauthenticated management or `/api` call answers
-`401 sign-in required`. **Cloudflare Access is gone** — the sentences below
+app shell; an unauthenticated management (`/v1/...`) or Account
+(`/api/demo/...`) call answers `401 sign-in required`, while the sign-in route
+itself is public. **Cloudflare Access is gone** — the sentences below
 that mention it describe how this journey was run in July, not how you run it
 now.
 
