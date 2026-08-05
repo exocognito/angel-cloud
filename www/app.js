@@ -1109,12 +1109,11 @@ function renderHomeAngelList(angel) {
 // command is copied verbatim from the doc — no invented flags, no fabricated
 // token values (credentials stay as the doc's `...` placeholders).
 function newAngelGuideSteps() {
-  const accessToken = "ANGEL_ACCESS_TOKEN='{\"cf-access-client-id\":\"...\",\"cf-access-client-secret\":\"...\"}'";
   return [
     {
       where: "browser",
-      title: "Sign in through Cloudflare Access",
-      detail: "Open the Access-protected control site and complete Cloudflare Access login for the M1 Account. Keep the browser session open for the custody screens and provider callback.",
+      title: "Sign in with an emailed link",
+      detail: "Open the control site, enter your email, and follow the link we send. It works once and lasts ten minutes. Keep the browser session open for the custody screens and provider callback.",
       commands: [],
     },
     {
@@ -1138,14 +1137,14 @@ function newAngelGuideSteps() {
     {
       where: "shell",
       title: "Publish to preview",
-      detail: "With the operator's management bearer and the mandatory Cloudflare Access service token for the Access-protected M1 Control endpoint, build the checked-in policy, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
-      commands: [`ANGEL_MANAGEMENT_TOKEN=... ${accessToken} bun run angel publish google-read-proof --preview`],
+      detail: "With a control-plane session token in ANGEL_MANAGEMENT_TOKEN, build the checked-in policy, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
+      commands: ["ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview"],
     },
     {
       where: "shell",
       title: "Promote the exact staged deploy to production",
-      detail: "With the same management bearer and mandatory ANGEL_ACCESS_TOKEN, promote the exact staged deployment. The command does not rebuild or republish.",
-      commands: [`ANGEL_MANAGEMENT_TOKEN=... ${accessToken} bun run angel deploy google-read-proof --prod`],
+      detail: "With the same session token, promote the exact staged deployment. The command does not rebuild or republish.",
+      commands: ["ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod"],
     },
     {
       where: "shell",
@@ -1191,7 +1190,7 @@ function renderNewAngelGuide() {
   const head = element("div", "wp4-panel-head");
   head.append(element("span", "eyebrow", "Getting started"));
   head.append(element("b", "", "Publish your first Angel from the CLI"));
-  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof operator journey: sign in, add your BYO Google client, authorize a Connection, edit local config, publish to preview, promote to production, and capture the shown-once key. Browser steps use the Access-protected control site; shell steps run from your local operator checkout. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
+  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof operator journey: sign in, add your BYO Google client, authorize a Connection, edit local config, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run from your local operator checkout. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
   head.append(element("small", "wp4-guide-more", "From here, docs/google-read-proof-manual-journey.md continues with wiring the GitHub Actions secret and repository variables, running the acceptance journey, and proving the revoke/failure and reauthorization path."));
   panel.append(head);
   const list = element("ol", "wp4-steps");

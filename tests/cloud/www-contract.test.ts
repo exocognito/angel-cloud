@@ -161,7 +161,7 @@ describe("Angel Cloud deployable demo UI contract", () => {
     for (const excluded of ["Pricing", "Catalog", "New angel", "Policy editor", "Account switcher"]) {
       expect(html).not.toContain(excluded);
     }
-    expect(html).toContain("Access protected");
+    expect(html).toContain("Signed in");
     expect(html).not.toContain("public demo");
   });
 
@@ -324,7 +324,23 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).toContain('control.disabled = busy || availabilityBlocked');
   });
 
-  test("provides Access-authenticated Provider custody controls without browser bearer tokens", () => {
+  test("stops redirecting when the refusal says the session names no Account", () => {
+    // The Control half of this contract is pinned in control-multi-tenant.test.ts.
+    // Signing in again cannot fix a session that carries no Account, so sending
+    // that person to /sign-in.html returns them to the same refusal for ever.
+    // Both sides key off these two literals and nothing but the strings joins
+    // them, so each side asserts the other's.
+    const js = source("app.js");
+    expect(js).toContain('response.headers.get("x-angel-session") === "no-account"');
+    // The guard reads the header BEFORE the redirect, or the loop survives the
+    // check that was meant to end it.
+    const guard = js.indexOf('response.headers.get("x-angel-session") === "no-account"');
+    const redirect = js.indexOf('window.location.replace("/sign-in.html")');
+    expect(guard).toBeGreaterThan(-1);
+    expect(guard).toBeLessThan(redirect);
+  });
+
+  test("provides session-authenticated Provider custody controls without browser bearer tokens", () => {
     const html = source("index.html");
     const js = source("app.js");
     for (const marker of ["provider-app-form", "connection-authorize-form", "provider-app-list", "provider-connection-list", "Reauthorize", "Revoke", "Remove"]) {
@@ -1229,17 +1245,15 @@ describe("Angel Cloud deployable demo UI contract", () => {
     // The COMPLETE command strings, EXACTLY as docs/google-read-proof-manual-journey.md
     // shows them — asserted whole (not by substring) so an extra/altered flag,
     // a stray argument, or a fabricated literal secret value fails here. The
-    // credential values stay as the doc's `...` placeholders; the guide must
-    // never invent real cf-access-client-id / cf-access-client-secret literals.
-    const ACCESS_TOKEN =
-      "ANGEL_ACCESS_TOKEN='{\"cf-access-client-id\":\"...\",\"cf-access-client-secret\":\"...\"}'";
+    // credential value stays as the doc's `...` placeholder; the guide must
+    // never invent a real session-token literal.
     const DOC_COMMANDS = [
       // Doc step 4 — copy the safe example config.
       "cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json",
-      // Doc step 5 — publish to preview with management + Access tokens.
-      `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel publish google-read-proof --preview`,
+      // Doc step 5 — publish to preview with a control-plane session token.
+      "ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview",
       // Doc step 6 — promote the exact staged deploy to production.
-      `ANGEL_MANAGEMENT_TOKEN=... ${ACCESS_TOKEN} bun run angel deploy google-read-proof --prod`,
+      "ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod",
     ];
     // The guide renders EXACTLY these commands, in this order — nothing more.
     expect(commands).toEqual(DOC_COMMANDS);

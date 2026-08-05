@@ -3,11 +3,11 @@
 This is the setup and lifecycle exercise for the real `google-read-proof`
 deployment. It is separate from the scheduled acceptance workflow. The
 scheduled runner receives only `GOLDEN_GATEWAY_URL`, `GOLDEN_ANGEL_KEY`,
-`GOLDEN_GMAIL_QUERY`, and `GOLDEN_DOC_ID`; it does not receive Cloudflare
-Access, management, Google, or OAuth credentials.
+`GOLDEN_GMAIL_QUERY`, and `GOLDEN_DOC_ID`; it does not receive session,
+management, Google, or OAuth credentials.
 
-Steps marked **Sam in a browser** require the operator to use the Cloudflare
-Access-protected control site or Google Cloud/Google consent screens.
+Steps marked **Sam in a browser** require the operator to use the signed-in
+control site or Google Cloud/Google consent screens.
 
 ## Verified outcome — 2026-07-22
 
@@ -28,10 +28,9 @@ file on the default branch. The OAuth app is in External Testing, so the
 refresh token expires after seven days; do not claim durable scheduled
 monitoring yet.
 
-1. **Sam in a browser — Access login.** Open the control/www URL and complete
-   **Cloudflare account login** for the M1 Account. The configured interactive
-   identity provider is not one-time PIN. Keep the browser session open for the
-   custody screens and provider callback.
+1. **Sam in a browser — sign in.** Open the control/www URL, enter your email,
+   and follow the link it sends. The link works once and lasts ten minutes.
+   Keep the browser session open for the custody screens and provider callback.
 2. **Sam in a browser — verify the BYO Google client.** Provider App
    `google-primary` is already stored. Confirm its safe summary on the
    Connections page's Google custody panel; the client secret must not be
