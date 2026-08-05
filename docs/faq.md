@@ -435,7 +435,7 @@ was exercised — the separate credentialed acceptance does that.
 ### How is the real Google path proven?
 
 A separate `google-read-proof` acceptance calls the production MCP endpoint with
-only an Angel key, a Gmail query, and a Docs ID — no Access, management, Google
+only an Angel key, a Gmail query, and a Docs ID — no session, management, Google
 password, refresh token, or operator credential
 ([real Google acceptance](user-manual.md#real-google-acceptance)). It has passed
 locally with live secrets: Gmail and Docs read, revocation failed loudly,
