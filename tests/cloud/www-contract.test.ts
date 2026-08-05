@@ -1250,6 +1250,8 @@ describe("Angel Cloud deployable demo UI contract", () => {
     // flag, a stray argument, or a fabricated literal secret value fails here. The
     // credential value stays as SKILL.md's `...` placeholder; the guide must
     // never invent a real session-token literal.
+    // Length pinned so emptying the list cannot make the SKILL.md cross-check
+    // below pass by having nothing left to check.
     const DOC_COMMANDS = [
       // SKILL.md step 1 — install the CLI, no repo clone.
       "pnpm add @angelmcp/cli",
@@ -1259,18 +1261,27 @@ describe("Angel Cloud deployable demo UI contract", () => {
       "ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel deploy google-read-proof --prod",
     ];
     // The guide renders EXACTLY these commands, in this order — nothing more.
+    expect(DOC_COMMANDS).toHaveLength(3);
     expect(commands).toEqual(DOC_COMMANDS);
     // And SKILL.md really teaches them. Issue #41 was the dashboard and the
     // served docs contradicting each other, so pinning a hand-copied list here
     // would leave the drift free to happen again in the other direction: this
     // reads the shipped document. SKILL.md wraps its long commands over a
     // trailing backslash, so join those lines before looking.
+    // Matched WHOLE against the document's own shell lines, not by substring:
+    // SKILL.md growing `--prod --some-new-flag` has to fail here, because the
+    // guide would then be teaching a command the docs no longer teach.
     const skill = readFileSync(join(www, "../docs-site/public/SKILL.md"), "utf8").replace(
       /\\\n/g,
       "",
     );
+    const skillCommands = [...skill.matchAll(/```sh\n([\s\S]*?)```/g)]
+      .flatMap((block) => block[1]!.split("\n"))
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    expect(skillCommands.length).toBeGreaterThan(0);
     for (const command of DOC_COMMANDS) {
-      expect(skill).toContain(command);
+      expect(skillCommands).toContain(command);
     }
     // And each rendered command equals the doc string character-for-character.
     for (const command of commands) {
@@ -1307,6 +1318,18 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(detail).toContain("bun.sh");
     expect(detail).toContain("pnpm.io");
     expect(detail).toContain("the session token from your own signed-in browser");
+    // Step 4 has to stand on its own. It used to defer the policy's shape to a
+    // panel rendering a DIFFERENT Angel, so pin the parts that make it
+    // sufficient: where the files go, the name the build requires, the two
+    // tools this journey deploys, and angel.json's exact four keys.
+    const install = steps[3]!;
+    expect(install.detail).toContain("angels/google-read-proof/ANGEL.yaml");
+    expect(install.detail).toContain("name: google-read-proof");
+    expect(install.detail).toContain("gmail.users.messages.list");
+    expect(install.detail).toContain("docs.documents.get");
+    for (const key of ["target", "account", "angel", "bindings"]) {
+      expect(install.detail).toContain(key);
+    }
 
     // The shown-once production key is described, never fabricated — and it goes
     // to the user's OWN secret store. GOLDEN_ANGEL_KEY is the maintainer's CI
@@ -1336,9 +1359,14 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(guide).not.toMatch(/operator checkout|Operator shell/);
     // Issue #39: a document pointer is a URL the reader can click, not a name
     // to guess. Sam guessed two hosts in the first dogfooding run and both 404'd.
-    expect(guide).toContain('docsLink("SKILL.md"');
-    expect(guide).toContain('docsLink("operator-journey.md"');
-    expect(js).toMatch(/const DOCS_BASE_URL = "https:\/\/\S+";/);
+    // The rendered routes a person can read, not the raw markdown the docs
+    // worker serves as text/markdown for agents.
+    expect(guide).toContain('docsLink("#/skill"');
+    expect(guide).toContain('docsLink("#/operator-journey"');
+    // Pinned to the host that serves them today. docs.angelmcp.ai has no DNS
+    // yet; when it binds, the migration checklist in docs/domain-architecture.md
+    // step 2 says to flip this and the constant together.
+    expect(js).toContain('const DOCS_BASE_URL = "https://angelmcp-docs-demo.sam-633.workers.dev";');
     // The pointer names a real served host, never the one with no DNS.
     expect(js).not.toContain("docs.angelmcp.ai");
     // Step 4 needs angel.json's `account`, and the id is the one value a reader
