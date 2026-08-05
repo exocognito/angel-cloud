@@ -437,7 +437,7 @@
           "status": "in-progress",
           "description": "Every live Angel exposes a secret-free trust page and capability-only review summary, never credentials or Connection identity. Current evidence: the basic page is live and secret-free; the reduced capability-only summary is not built. Verified 2026-08-01 from WS-E evidence. Truth state under the retired contract: PARTIAL.",
           "eval": "Load an Angel's public page with no session, cookie, key or credential: it renders charter and tools and reveals no credential or Connection identity.",
-          "limit": "Owner-authored charter text and guard literals are public by O7 and O10, with a documented boundary — so the page is secret-free but not private. Only the owner can check the artifact behind it. The reduced capability-only summary makes no claim yet.",
+          "limit": "Owner-authored charter text, guard literals and the raw policy digest are public by O7 and O10, with a documented boundary, so the page is secret-free but not private. Only the owner can check the artifact behind it, and the reduced capability-only summary makes no claim yet. The digest is the consequential one: a Version is permanently non-hiding once its raw digest has been public, so every Angel published so far is already ineligible for the summary this law promises at WS2.",
           "notYet": {
             "claim": "Every live Angel also exposes a reduced, capability-only public review summary that never discloses owner-authored text.",
             "declaredIn": "O7, closed 2026-08-03",
@@ -954,7 +954,7 @@
           "title": "Owners control the full lifecycle",
           "class": "entrenched",
           "status": "in-progress",
-          "description": "Keys are shown once and recoverable by safe rotation; pause only removes; deletion is deliberate, total, and self-service. Current evidence: Angel keys, pause and Angel deletion work; a stranger can sign up and land in their own Account, proved 2026-08-04. Account deletion is unbuilt. Truth state under the retired contract: PARTIAL.",
+          "description": "Keys are shown once and recoverable by safe rotation; pause only removes; deletion is deliberate, total, and self-service. Current evidence: Angel keys, pause and Angel deletion work. A stranger can sign up, and the 2026-08-04 multi-tenant run (docs/evidence/pd-01/03-multi-tenant-control.md) proved sign-up and isolation — but it also showed two of three new Accounts hitting a dead end, because only an operator reset behind DEMO_ADMIN_TOKEN made one usable. The first read that now creates an Account's own state landed after that run and is pinned by tests (tests/cloud/management-worker.test.ts:587), not re-run live. Account deletion is unbuilt. Truth state under the retired contract: PARTIAL.",
           "eval": "From a blank identity: sign up, land in an Account only you can see, rotate a lost Angel key, pause authority, and delete the whole Account — with no operator step at any point.",
           "limit": "No Account-deletion path is implemented; O6 settled the contract, not the code. Local files and tokens stay independent of cloud deletion. Recovery is not yet proved from a blank machine.",
           "notYet": {
@@ -1170,7 +1170,7 @@
               "title": "Read-only www for Round 2",
               "status": "pending",
               "check": { "kind": "dogfood" },
-              "description": "Show Angel state, endpoint, policy, proof, activity, health and recovery without source authoring in Round 2. Current evidence: a freshly signed-up owner does reach a dashboard of their own — proved 2026-08-04, when a first read began creating and persisting the Account's own empty state. What that owner cannot yet see is the Round-2 inspection surface: the built read views and write actions still run against the private M1 Account's state. Truth state under the retired contract: PARTIAL; plan state BLOCKED behind PD-03.",
+              "description": "Show Angel state, endpoint, policy, proof, activity, health and recovery without source authoring in Round 2. Current evidence: a freshly signed-up owner reaches a dashboard of their own. The 2026-08-04 run (docs/evidence/pd-01/03-multi-tenant-control.md) proved the shell and the isolation; the first read that creates that owner's state landed after it and is pinned by tests, not yet by a live run. What that owner cannot yet see is the Round-2 inspection surface: the built read views and write actions still run against the private M1 Account's state. Truth state under the retired contract: PARTIAL; plan state BLOCKED behind PD-03.",
               "exhibit": "Parity handoff; current UI screenshots",
               "servesLaw": "G12",
               "voices": {
@@ -1235,7 +1235,7 @@
               "voices": {
                 "engineer": {
                   "title": "The missing pieces are consent and serve",
-                  "description": "Install and build are reachable today through the published @angelmcp/cli@0.1.0. Local consent storage — which O2 settled for headless Linux — and a local serve process are the two unbuilt halves."
+                  "description": "The packed tarball installs globally and exposes bare angel; the registry install command is recorded and has not been run. Build is reachable today. Local consent storage — which O2 settled for headless Linux — and a local serve process are the two unbuilt halves."
                 },
                 "designer": {
                   "title": "Try it before you sign up for anything",
@@ -1480,7 +1480,7 @@
           "title": "Round-2 reconciliation",
           "status": "pending",
           "check": { "kind": "smoke" },
-          "description": "Give every new finding a destination before Round-3 scope exists. Current evidence: no Round-2 findings exist yet. Blocked on ID-09, PD-06 and conditionally PD-07. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
+          "description": "Give every new finding a destination before Round-3 scope exists. Current evidence: no M-DF2 dogfood findings exist yet, because the round has not run. The four open findings on GATE-WS2 are build-gate findings from WS2, not round output, and are reconciled there. Blocked on ID-09, PD-06 and conditionally PD-07. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
           "exhibit": "The zero-orphan rule, as applied at GATE-M-DF1",
           "serves": "Round-2 gate proof",
           "voices": {
