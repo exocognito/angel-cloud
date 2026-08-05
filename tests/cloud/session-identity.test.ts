@@ -110,6 +110,20 @@ describe("session identity", () => {
     expect(auth.seen[0]!.headers).toEqual({ authorization: "Bearer real-session" });
   });
 
+  test("classifies a subject-less session as terminal, not as sign in again", async () => {
+    // Unreachable while Better Auth always returns user.id, which is why it is
+    // worth pinning: a refusal signing in cannot fix must never send the person
+    // back to the sign-in page, or the loop CL10 removed comes back.
+    const auth = authService(Response.json({ user: { angelAccountId: "acct_one", id: "" } }));
+    const refusal = await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", { headers: { authorization: "Bearer t" } }),
+      auth,
+    ).then(() => null, (error: unknown) => error);
+
+    expect(refusal).toBeInstanceOf(SessionAuthenticationError);
+    expect((refusal as SessionAuthenticationError).code).toBe("no-account");
+  });
+
   test("refuses a lookalike cookie name invented by a sibling host", async () => {
     // Any host on the zone can set a cookie the browser will send here. A
     // suffix test would accept `evil-better-auth.session_token` and let that

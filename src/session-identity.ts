@@ -127,7 +127,12 @@ export async function authenticateSessionRequest(
     throw new SessionAuthenticationError("session carries no Account", "no-account");
   }
   if (typeof id !== "string" || id === "") {
-    throw new SessionAuthenticationError("session carries no subject");
+    // `no-account` for the same reason as the Account check above: signing in
+    // again cannot add a subject to a session that has none, so sending this
+    // person to the sign-in page rebuilds the loop CL10 removed. Better Auth
+    // always returns `user.id`, so this is unreachable today — which is exactly
+    // why it must not be the one refusal classified against its own rule.
+    throw new SessionAuthenticationError("session carries no subject", "no-account");
   }
   return {
     accountId: angelAccountId,
