@@ -567,13 +567,20 @@ export class AccountRegistry extends DurableObject<ControlEnv> {
   private async view(state?: ManagementState): Promise<DemoView> {
     let managementState = state;
     if (managementState === undefined) {
-      if (await this.ctx.storage.get<ManagementState>("management") === undefined) {
-        throw new RegistryError(409, "demo Account is not initialized");
-      }
+      const stored = await this.ctx.storage.get<ManagementState>("management");
       // Route the raw read through ManagementControl so both restore repairs —
       // pre-fix dangling availability (issue #1) and the staging→preview
       // rename migration — apply to this projection like every other read path.
       managementState = (await this.management()).exportState();
+      // An Account with no stored state used to answer 409, because the only
+      // way to get one was an operator running reset. Signup inverted that:
+      // every new tenant starts here, so 409 became the first thing a stranger
+      // saw — and a dead end, because the dashboard hides its own shell on any
+      // non-401 failure, leaving no nav to reach a page that would have
+      // written the state. The Account now exists from its owner's first read.
+      // `management()` already built the empty state; persisting it is what
+      // makes the Account real.
+      if (stored === undefined) await this.ctx.storage.put("management", managementState);
     }
     return buildDemoView(
       managementState,

@@ -237,6 +237,29 @@ describe("Control serves whoever signed in", () => {
     expect(noSession.headers.get("x-angel-session")).toBe("sign-in-required");
   });
 
+  test("gives a brand-new signup a usable dashboard without an operator", async () => {
+    // The goal of this whole change, stated as a test: a stranger signs up and
+    // works in their own Account with nobody helping. Every other test here
+    // resets with the admin bearer first, which is an operator step, and that
+    // is exactly why this went unnoticed — the reset both seeded the Account
+    // and hid that nothing else would.
+    const { env, reached } = twoTenantEnv();
+
+    const state = await handleControlRequest(
+      new Request("https://dash.test/api/demo/state"),
+      env as never,
+      signedInAs("acct_stranger"),
+    );
+
+    expect(state.status).toBe(200);
+    const view = await state.json() as { account: { id: string; handle: string | null }; angels: unknown[] };
+    // Their own Account, empty — not a 409, and not somebody else's data.
+    expect(view.account.id).toBe("acct_stranger");
+    expect(view.account.handle).toBeNull();
+    expect(view.angels).toEqual([]);
+    expect(reached).toEqual(["acct_stranger"]);
+  });
+
   test("sends an expired Google callback to sign-in rather than JSON in the address bar", async () => {
     const { env } = twoTenantEnv();
     const callback = (code: "sign-in-required" | "no-account") =>
