@@ -3,11 +3,13 @@
 - Status: Agreed
 - Date: 2026-08-01
 - Implemented: No — the current public page still implements [PD 0002](0002-public-angel-page.md)
-- Tracked: [WS-E PR #46](https://github.com/exocognito/angelmcp/pull/46), Product Ledger O7
+- Tracked: [WS-E PR #46](https://github.com/exocognito/angelmcp/pull/46), and the Ledger's
+  commitment G11, whose `notYet` records this decision as the widening it claims at WS2
+  (`datarooms/angel-cloud.json`)
 
 ## Decision
 
-The reduced public-summary decision (Product Ledger O7) makes
+The reduced public-summary decision (decision O7, closed 2026-08-03) makes
 `angel.public-review.v1` a capability-only summary when it ships. Its strict payload contains:
 
 - `schema: "angel.public-review.v1"`;
@@ -58,7 +60,8 @@ the current trust page until this decision passes its release proof.
   narrowing the fields or moving them to a separate opt-in surface. Owners must
   keep private content out of `charter` and `argGuards`. See
   [the current public boundary](../faq.md#why-is-enforcement-not-done-by-the-model-or-a-prompt)
-  and the canonical `docs/product-ledger.html` records O7, SI5, and O10.
+  and the Ledger's commitment G11, which carries this boundary as its `limit`
+  and this decision as its `notYet`.
 
 ## What is not decided
 

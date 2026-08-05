@@ -1,8 +1,9 @@
 # Roadmap
 
-The canonical product goal, roadmap, next-milestone proposal, learning
-reconciliation, and build-approval status live in the
-[Angel Product Ledger](docs/product-ledger.html).
+The canonical product goal, roadmap order and status, the commitments each epic
+keeps, and build-approval status live in the
+[Angel Product Ledger](docs/product-ledger.html), generated from
+`datarooms/angel-cloud.json`.
 
 This file remains as a stable pointer for old links. The Product Ledger
 supersedes the milestone list that used to live here. Git history preserves
@@ -10,8 +11,12 @@ that list and its completed M0/M1 record.
 
 ## Document ownership
 
-- **Product Ledger:** final goal, roadmap order and status, learning disposition,
-  open contradictions, and milestone approval.
+- **Product Ledger:** final goal, roadmap order and status, the commitments each
+  epic keeps, and milestone approval. It no longer carries a learning-disposition
+  table or an open-contradictions register: `ledger-roadmap/v0` has no surface for
+  either. A finding that is still open is recorded on the gate it blocks; the
+  round records themselves are in [dogfooding](docs/dogfooding/README.md) and
+  [evidence](docs/evidence/).
 - **Architecture decisions:** settled system boundaries and implementation
   choices in [docs/adrs](docs/adrs/README.md).
 - **Product decisions:** settled user-facing choices in
@@ -19,6 +24,27 @@ that list and its completed M0/M1 record.
 - **APRD:** the build contract for an approved next milestone. It derives from
   the Product Ledger and never owns the long-term roadmap.
 - **Issues and plans:** implementation work below an approved milestone.
+
+## Reading documents written before 2026-08-05
+
+The Ledger became a generated artifact on 2026-08-05: `datarooms/angel-cloud.json`
+is the source and `docs/product-ledger.html` is rendered from it. Documents dated
+before that — the WS-E evidence briefs especially — cite Ledger record ids in their
+"sources read" lists. Those lists are a dated record of what was consulted, so they
+are left as written. Where each id went:
+
+- **Epics** (M0, M1, WS0, M-DF1, WS1, WS-E, WS2, M-DF2, WS3, WS4) and **deliverables**
+  (ID-01 to ID-10, PD-00A, PD-00B, PD-01 to PD-07) keep their ids.
+- **Guarantees G01 to G14** keep their ids and are now commitments.
+- **Decisions O1 to O10** are retired as Ledger rows. The decisions themselves live in
+  [product decisions](docs/product-decisions/README.md) and [ADRs](docs/adrs/README.md);
+  a commitment cites the one that widened it in its `notYet.declaredIn`.
+- **Contradictions C1 to C16** are retired. The one still open, C16, is a finding on
+  the WS2 gate.
+- **Scenarios S1 to S3**, **Experience EW1 to EW6**, **Machinery MW1 to MW9**,
+  **interfaces SI1 to SI6**, **commands C01 to C13** and the **113 learnings**
+  (DF, LR, FB) have no surface in `ledger-roadmap/v0`. Their product truth was folded
+  into the commitment or work row it belonged to; the rest is in git history.
 
 ## Current gate
 
