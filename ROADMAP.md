@@ -36,9 +36,14 @@ are left as written. Where each id went:
 - **Epics** (M0, M1, WS0, M-DF1, WS1, WS-E, WS2, M-DF2, WS3, WS4) and **deliverables**
   (ID-01 to ID-10, PD-00A, PD-00B, PD-01 to PD-07) keep their ids.
 - **Guarantees G01 to G14** keep their ids and are now commitments.
-- **Decisions O1 to O10** are retired as Ledger rows. The decisions themselves live in
-  [product decisions](docs/product-decisions/README.md) and [ADRs](docs/adrs/README.md);
-  a commitment cites the one that widened it in its `notYet.declaredIn`.
+- **Decisions O1 to O10** are retired as Ledger rows, and they do not all live in one
+  place. O1 to O7 and O9 were each decided from one [WS-E evidence
+  brief](docs/evidence/ws-e/), which records the ruling under `Decision: O#`. O7 also has
+  a product decision, [PD 0007](docs/product-decisions/0007-capability-only-public-review.md).
+  O8 and O10 are owner approvals with no brief: O8 is recorded on
+  [PR #43](https://github.com/exocognito/angelmcp/pull/43#issuecomment-5152622328), and
+  O10 in this file and in PD 0007. Where a decision widened a commitment, that commitment
+  names it in `notYet.declaredIn`.
 - **Contradictions C1 to C16** are retired. The one still open, C16, is a finding on
   the WS2 gate.
 - **Scenarios S1 to S3**, **Experience EW1 to EW6**, **Machinery MW1 to MW9**,

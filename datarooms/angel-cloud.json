@@ -960,7 +960,7 @@
           "notYet": {
             "claim": "An owner deletes their whole Account themselves, and a deleted handle becomes a permanent non-resolving tombstone while re-signup takes a new handle.",
             "declaredIn": "O6, closed 2026-08-03; the tombstone choice attached to O10",
-            "bindsDesign": "The deletion cascade and the never-released handle rule already bind the handle registry and Account model today — a handle is never freed, so deletion cannot recycle one.",
+            "bindsDesign": "The never-released handle rule is built and binds the handle registry today (PD 0004): a handle is never freed, so no deletion path may ever recycle one. The deletion cascade itself is target design, not code — nothing implements it yet.",
             "claimsAt": "WS2"
           },
           "voices": {
