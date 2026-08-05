@@ -1298,6 +1298,16 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).toContain("No Angels are deployed yet");
     expect(js).toContain("function renderNewAngelGuide()");
     expect(js).toContain("function renderZeroAngelGuide()");
+    // The head copy around the steps is pinned too. The commands were only ever
+    // half the defect: prose that frames this as a run from the operator's own
+    // checkout sends the same wrong message to someone who has no checkout.
+    const guide = js.slice(
+      js.indexOf("function renderNewAngelGuide()"),
+      js.indexOf("function renderZeroAngelGuide()"),
+    );
+    expect(guide).toContain("shell steps run in your own project directory");
+    expect(guide).toContain("In your terminal");
+    expect(guide).not.toMatch(/operator checkout|Operator shell/);
   });
 
   test("WP4: the ANGEL.yaml explainer REUSES WP1's group renderer, not a copy", () => {
