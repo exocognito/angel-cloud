@@ -193,10 +193,7 @@ function controlHarness(options: {
   };
   const env = {
     ACCOUNT_ID: options.accountId ?? "acct_m1",
-    ACCESS_TEAM_DOMAIN: "https://team.cloudflareaccess.com",
-    ACCESS_AUDIENCE: "audience",
     CONTROL_BASE_URL: "https://control.test",
-    MANAGEMENT_API_TOKEN: "management",
     CONTROL_RESPONSE_KEK: "response-kek",
     CONTROL_GATEWAY_TOKEN: "gateway-token",
     CONTROL_BROKER_TOKEN: "control-broker",

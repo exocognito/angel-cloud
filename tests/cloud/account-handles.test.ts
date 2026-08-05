@@ -265,7 +265,6 @@ function controlHarness() {
   const gatewayPushes: Array<{ path: string; authorization: string | null; body: unknown }> = [];
   const env = {
     ACCOUNT_ID: "acct_demo",
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",

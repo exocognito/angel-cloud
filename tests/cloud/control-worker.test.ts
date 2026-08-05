@@ -770,7 +770,6 @@ describe("control Worker routing", () => {
   test("serves non-API paths from the static asset binding", async () => {
     const env = controlEnv({ ok: true, value: {} });
     env.DEMO_ADMIN_TOKEN = "";
-    env.MANAGEMENT_API_TOKEN = "";
     env.CONTROL_GATEWAY_TOKEN = "";
     env.CONTROL_BROKER_TOKEN = "";
     env.CONTROL_RESPONSE_KEK = "";
@@ -1049,7 +1048,6 @@ function controlEnv(result: unknown) {
   const calls: unknown[] = [];
   return {
     ACCOUNT_ID: "acct_demo",
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",

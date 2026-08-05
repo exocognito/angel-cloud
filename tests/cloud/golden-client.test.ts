@@ -132,6 +132,20 @@ describe("canonical deterministic hosted golden journey", () => {
     expect(resetCall).toBeDefined();
     expect(resetCall?.authorization).toBe("Bearer admin-secret");
     expect(resetCall?.cookie).toBe("__Secure-better-auth.session_token=session-token");
+    // GOLDEN_SESSION_TOKEN reaches both paths as the SAME bytes: bearer on the
+    // management API, cookie here. That is why the operator must supply the
+    // signed cookie value rather than a bare token — Better Auth reads the
+    // cookie with `getSignedCookie` and rejects an unsigned one, while its
+    // bearer plugin accepts either, signing a bare token itself. A bare token
+    // would pass /v1 and fail reset with 401, which is the confusing half.
+    // README.md and docs/user-manual.md say so; this pins the shared value.
+    const managementCall = harness.topLevelRequests.find(
+      ({ pathname }) => pathname === "/v1/accounts/acct_demo/connections",
+    );
+    expect(managementCall?.authorization).toBe("Bearer session-token");
+    expect(resetCall?.cookie).toBe(
+      `__Secure-better-auth.session_token=${managementCall?.authorization?.slice("Bearer ".length)}`,
+    );
     const ownerCalls = harness.topLevelRequests.filter(({ pathname }) =>
       !pathname.startsWith("/v1/a/") && !pathname.startsWith("/@"));
     expect(ownerCalls.length).toBeGreaterThan(0);
@@ -228,7 +242,6 @@ function workerHarness() {
   const registry = new AccountRegistry(storageContext(accountStorage) as never, registryEnv as never);
   const controlEnv = {
     ...registryEnv,
-    MANAGEMENT_API_TOKEN: "management-secret",
     DEMO_ADMIN_TOKEN: "admin-secret",
     GATEWAY_BASE_URL: "https://gateway.golden.test",
     ACCOUNTS: {

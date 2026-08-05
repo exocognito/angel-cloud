@@ -872,7 +872,6 @@ function managementEnv() {
   const registryNames: string[] = [];
   return {
     ACCOUNT_ID: "acct_personal",
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",

@@ -237,7 +237,6 @@ async function harness() {
   };
   const controlEnv = {
     ...registryEnv,
-    MANAGEMENT_API_TOKEN: "management-secret",
     DEMO_ADMIN_TOKEN: "admin-secret",
     ACCOUNTS: {
       getByName(name: string) {
