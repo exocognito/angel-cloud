@@ -8,7 +8,7 @@ description: >-
   management calls, author the Angel, add a Google Connection, build, publish to
   preview, promote the exact previewed deployment, mint a key, and connect over
   MCP. Everything runs through the management API and the published
-  @smcllns/angel-core CLI — do NOT clone the exocognito/angelmcp repository.
+  @angelmcp/cli — do NOT clone the exocognito/angelmcp repository.
 ---
 
 # Create, publish, and operate an Angel
@@ -16,7 +16,7 @@ description: >-
 ## The one rule that trips agents up
 
 **Do not clone `exocognito/angelmcp`.** The tooling is a published npm
-package (`@smcllns/angel-core`), and every deployment step is an HTTP call to
+package (`@angelmcp/cli`), and every deployment step is an HTTP call to
 the management API. The source tree is the operator's, not the user's. If you
 find yourself running `git clone` or `bun run angel` *inside the product repo*,
 stop — you have taken the wrong path. Work in the user's own empty directory.
@@ -58,12 +58,13 @@ and completes the browser OAuth. Everything else you can drive directly.
 
 ## Step 1 — Install the CLI (no repo clone)
 
-The CLI ships as `@smcllns/angel-core` and runs under **Bun** (its entrypoint
-has a `#!/usr/bin/env bun` shebang). Install Bun if it is missing
-(https://bun.sh), then, in the user's project directory:
+The CLI ships as `@angelmcp/cli` and runs under **Bun** (its entrypoint has a
+`#!/usr/bin/env bun` shebang, and the package declares `engines.bun >= 1.3.0`).
+Install Bun if it is missing (https://bun.sh), then, in the user's project
+directory:
 
 ```sh
-pnpm add @smcllns/angel-core
+pnpm add @angelmcp/cli
 ```
 
 Invoke it with `pnpm exec angel <command>`. The CLI accepts four subcommands —

@@ -7,7 +7,7 @@ yet built, see the [FAQ](faq.md) — each fact lives in one document only, so
 follow the links.
 
 You do not clone this repository to use Angel Cloud. You author an Angel in your
-own directory, drive it with the published `@smcllns/angel-core` CLI, and reach
+own directory, drive it with the published `@angelmcp/cli` CLI, and reach
 the running Angel over one MCP endpoint. The repository matters only to the
 person operating the platform itself ([Operate a deployment](#operate-a-deployment)).
 
@@ -483,13 +483,17 @@ flowchart LR
 
 ### Install the CLI
 
-The CLI ships as the published npm package `@smcllns/angel-core` (bin `angel`),
-and runs under [Bun](https://bun.sh). In your own project directory — **not** a
+The CLI ships as the published npm package `@angelmcp/cli` (bin `angel`), and
+runs under [Bun](https://bun.sh). In your own project directory — **not** a
 clone of this repository — install it and invoke it with `pnpm exec angel`:
 
 ```sh
-pnpm add @smcllns/angel-core
+pnpm add @angelmcp/cli
 ```
+
+`@smcllns/angel-core` is the library this repository builds and pins; it is not
+what you install. Both expose the same `angel` command, which is why the two
+were easy to confuse.
 
 It has four subcommands:
 
