@@ -5,8 +5,10 @@ the Gateway as of 2026-07-28 (issue #3). The host move is **partly done** as of
 2026-08-04: the zone is in the dedicated Cloudflare account, and `dash.` and
 `auth.` are bound to Control and the sign-in Worker — a prerequisite for
 sign-in, not a polish, because `workers.dev` is on the Public Suffix List and
-no cookie can span two Workers there. Gateway, Broker and the docs site still
-answer on `workers.dev`. This document exists so the URL scheme is settled
+no cookie can span two Workers there. Gateway and the docs site still
+answer on `workers.dev`; the Broker has `workers_dev` disabled and no route,
+so it is reachable only over service bindings. This document exists so the URL
+scheme is settled
 before anything public depends on it.
 
 This is reference — what the addresses are. Why they are shaped this way, and
@@ -138,10 +140,17 @@ person meets the constraint rather than discovering it.
 
 ## Why `auth.` is its own host
 
-Google OAuth clients pin exact redirect URIs, and changing them means touching
-the Google client config (and, for a verified production OAuth app,
-re-review). The callback lives on a small, stable host that never serves user
-content and never changes, regardless of what `dash.` becomes.
+`auth.` owns sign-in: the emailed link lands on its
+`/v1/auth/magic-link/verify`, and it is the one authority on what a session is.
+Keeping that on a small host that never serves user content means the session
+authority does not move when `dash.` changes.
+
+It does **not** own the Google OAuth callback. That is
+`dash.angelmcp.ai/oauth/google/callback`, built from `CONTROL_BASE_URL`,
+because Control holds the PKCE state the callback has to be matched against.
+Google clients pin exact redirect URIs and changing one means touching the
+Google client config — and, for a verified production app, re-review — so this
+is worth being precise about.
 
 ## Apex rules
 
@@ -176,8 +185,11 @@ Steps 1 and 4 are done, and 2, 3 and 5 are done for `dash.` and `auth.` only.
    `wrangler.control.jsonc` and redeploy. Done for Control.
 4. ~~Delete the Cloudflare Access application; the sign-in Worker holds the
    door.~~ Done 2026-08-04.
-5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
-   (operator-in-a-browser step in Google Cloud Console). Done.
+5. Add `https://dash.angelmcp.ai/oauth/google/callback` to the Google OAuth
+   client's authorized redirect URIs (operator-in-a-browser step in Google
+   Cloud Console). Done. **Not `auth.`** — Control builds this URI from
+   `CONTROL_BASE_URL` (`src/workers/control.ts`), so `dash.` is the only host
+   Google is ever sent back to.
 6. Keep `workers.dev` URLs alive through the cutover, then disable. Note that
    binding a custom domain **disables that Worker's `workers.dev` URL** —
    Control's and the sign-in Worker's old addresses now 404.

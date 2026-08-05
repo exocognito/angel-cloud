@@ -120,7 +120,7 @@
   "workerNormalizedJsSha256": {
     "broker": "78f989e9b778e45718dbb13244594eca5892bbb7eb921d2120723b08de6fb62e",
     "gateway": "26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7",
-    "control": "0a1d4126f3a59d9d9b664aa75f5fcc2d4c809540930b4d751e5668c845658015",
+    "control": "27c8f8acf6dab74ed2e15fba38a4b8193f41d266aaa9ad363fe1c119404693ef",
     "auth": "066ec8569ef8cdca0dd3dbf57c3c2f0dc7d2c97ac8e3e90f3d4f7e19b0e2718d"
   },
   "registryIntegrity": "sha512-taID3iPF89XFzjyZnEi+ZF6rA3GlvzlNH8F/UOBY4mSvQBHPW7dQqGmQz4a2PhzHgzbmYt/rkn4cKcfK5rvcXg=="

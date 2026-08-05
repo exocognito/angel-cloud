@@ -108,6 +108,26 @@ Both are pinned by tests that fail with the fix reverted.
 
 ## What review found that the live run had not
 
+**A brand-new signup could not use the dashboard at all.** The worst of the
+findings, and the one the live run walked straight past. An Account with no
+stored management state answered `409 "demo Account is not initialized"`, which
+was right while the only way to get an Account was an operator running reset.
+Signup inverted that: every new tenant starts with no stored state, so the very
+first call the dashboard makes answered 409 — and `www/app.js` hides its own
+shell on any non-401 failure, leaving a dead end reading "Demo state
+unavailable: HTTP 409." with no nav to reach any page that would have fixed it.
+
+The row above recording that "the other two stay uninitialized" is what this
+looked like from the outside. It was read as proof of isolation, which it was,
+and not as proof that neither of those two people had a usable product, which it
+also was. The one Account that worked had been initialized through
+`POST /api/demo/reset` — an operator step behind `DEMO_ADMIN_TOKEN`, which is
+exactly what PD-01 says must not be needed.
+
+A first read now creates and persists the Account's own empty state, so it
+exists from its owner's first page load. Pinned twice: at the registry, and end
+to end through `handleControlRequest` with a session and no admin token.
+
 **One rate-limit bucket for the whole platform.** Better Auth reads
 `x-forwarded-for` to identify a caller, which is absent behind Cloudflare. It
 then resolves no address and — in its own logged warning — falls back to "a
@@ -221,7 +241,7 @@ then apply the `normalizedWorkerSha256` replacement in
   — unchanged
 - `gateway` `26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7`
   — unchanged
-- `control` `0a1d4126f3a59d9d9b664aa75f5fcc2d4c809540930b4d751e5668c845658015`
+- `control` `27c8f8acf6dab74ed2e15fba38a4b8193f41d266aaa9ad363fe1c119404693ef`
   — moved with its source
 - `auth` `066ec8569ef8cdca0dd3dbf57c3c2f0dc7d2c97ac8e3e90f3d4f7e19b0e2718d`
   — first entry
