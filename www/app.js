@@ -1193,7 +1193,7 @@ function renderNewAngelGuide() {
   head.append(element("span", "eyebrow", "Getting started"));
   head.append(element("b", "", "Publish your first Angel from the CLI"));
   head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof journey: sign in, add your BYO Google client, authorize a Connection, install the CLI and write your Angel, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run in your own project directory. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
-  head.append(element("small", "wp4-guide-more", "From here, docs.angelmcp.ai/operator-journey.md is a maintainer's worked run of this same lifecycle, including revoking a Connection to prove loud failure and reauthorizing to prove recovery."));
+  head.append(element("small", "wp4-guide-more", "From here, the create-publish-operate-an-angel skill in the Angel Cloud docs carries the full journey, and the operator journey beside it is a maintainer's worked run of the same lifecycle — revoking a Connection to prove loud failure, then reauthorizing to prove recovery."));
   panel.append(head);
   const list = element("ol", "wp4-steps");
   newAngelGuideSteps().forEach((step, index) => {
