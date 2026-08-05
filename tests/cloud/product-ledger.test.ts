@@ -1,4 +1,8 @@
-import { readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
+import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
 
 /*
@@ -39,8 +43,14 @@ import { describe, expect, test } from "bun:test";
  *         "A useful multi-App assistant"). v0 has no golden-scenario surface.
  *         S1 survives only as an `exhibit` string on PD-06.
  *     R6  the three Product Anatomy windows — Experience (EW1–EW6 with six
- *         embedded base64 screenshots), Machinery (MW1–MW9), and Surface
- *         (C01–C13 commands with side effect and human handoff). No home in v0.
+ *         embedded base64 screenshots), Machinery (MW1–MW9), and Surface, which
+ *         held both the interfaces SI1–SI6 (private www dashboard, Control
+ *         browser API, Control /v1 management API, public MCP coordinate, public
+ *         Angel page, public docs and agent files) and the commands C01–C13 with
+ *         their side effect and human handoff. No home in v0. Two SI rows carried
+ *         truth that had to survive: SI3's PARTIAL is now stated on PD-03 (the
+ *         management surface issues no credential a terminal can hold) and SI6's
+ *         BROKEN is stated on ID-06 (the published path failed its only real run).
  *     R7  the learning reconciliation surface: 113 learnings (DF-001–068,
  *         LR-001–028, FB-001–017), dispositions INCLUDED/PROPOSED/DEFERRED/
  *         UNRESOLVED with counts 35/49/29/0, and data-orphan-count="0".
@@ -66,6 +76,13 @@ import { describe, expect, test } from "bun:test";
  *         fallback. Replaced below with an exact-allowlist assertion.
  *     R14 `prefers-reduced-motion`. The toolkit stylesheet has no such rule.
  *         Asserted below as a known gap so a fix flips the test, not the truth.
+ *     R15 the `#sources` "Source register" and the status footer. The register
+ *         listed what the Ledger reconciled — contract v0.1, dotfiles PR #307,
+ *         the owner approval record, 62 committed www screenshots and manual
+ *         images, and briefs 1–7 — under a "113 unique learnings · 0 orphans"
+ *         footer. v0 has no register and no footer. The 113/0 half survives on
+ *         GATE-M-DF1 and is asserted below; the source list does not, because v0
+ *         records provenance per row (`exhibit`, `source`) rather than centrally.
  */
 
 const root = new URL("../../", import.meta.url);
@@ -112,6 +129,32 @@ describe("Angel Product Ledger — dataroom is the source of truth", () => {
     )?.[1];
     expect(inlined).toBeDefined();
     expect(JSON.parse(inlined ?? "")).toEqual(dataroom);
+  });
+
+  test("re-rendering reproduces the committed page byte for byte", () => {
+    // The check above only covers the inlined JSON: a hand edit to the markup,
+    // the stylesheet or the renderer would survive it. This one re-runs the
+    // generator and compares the whole file.
+    //
+    // The toolkit is a local clone with no remote (an open owner decision), so
+    // on a machine without it this degrades to a skip with a stated reason
+    // rather than a false pass or a false failure.
+    const toolkit = process.env.PRODUCT_LEDGER_TOOLKIT
+      ?? join(homedir(), "Projects/product-ledger");
+    const renderer = join(toolkit, "bin/ledger-render");
+    if (!existsSync(renderer)) {
+      console.warn(
+        `product-ledger toolkit not found at ${toolkit} — byte-for-byte render check skipped. `
+        + "Set PRODUCT_LEDGER_TOOLKIT to enable it.",
+      );
+      return;
+    }
+    const out = join(mkdtempSync(join(tmpdir(), "ledger-render-")), "product-ledger.html");
+    const run = spawnSync(renderer, [fileURLToPath(new URL("datarooms/angel-cloud.json", root)), "-o", out], {
+      encoding: "utf8",
+    });
+    expect(run.status, `ledger-render failed: ${run.stderr}`).toBe(0);
+    expect(readFileSync(out, "utf8")).toBe(ledger);
   });
 
   test("keeps the epic order and identity the repository already cites", () => {
@@ -377,11 +420,19 @@ describe("Angel Product Ledger — the generated page", () => {
     // rather than when the gap silently closes.
     expect(ledger.match(/<a\s[^>]*href=/g), "R12: v0 gained links — record evidence links again").toBeNull();
     expect(ledger.includes("prefers-reduced-motion"), "R14: v0 gained reduced-motion support").toBe(false);
-    // `terms` is authored and validated, and never drawn.
+    // `terms` is authored and validated, and never drawn. Asserting the absence
+    // of specific markup would never flip, because the renderer would not emit
+    // that markup under any implementation — so this checks that no term's
+    // entity text reaches the page outside the inlined JSON.
     expect(Array.isArray(dataroom.terms)).toBe(true);
     expect(dataroom.terms.length).toBeGreaterThan(0);
-    for (const t of dataroom.terms as { term: string }[]) {
-      expect(ledger).not.toContain(`<dt>term</dt><dd>${t.term}`);
+    const outsideJson = ledger.replace(
+      /<script id="ledger" type="application\/json">[\s\S]*?<\/script>/,
+      "",
+    );
+    for (const t of dataroom.terms as { term: string; entity: string }[]) {
+      expect(outsideJson, `R? v0 started drawing terms — ${t.term} is rendered`)
+        .not.toContain(t.entity);
     }
   });
 });
