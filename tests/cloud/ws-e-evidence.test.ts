@@ -500,7 +500,7 @@ describe("WS-E evidence-only decision closure", () => {
     expect(ledger).toMatch(/data-index-key="WS2"[^>]+data-index-last-verified="2026-08-03 · WS2 CLI install proof"/);
     for (const key of [
       "ID-05", "ID-06", "ID-07", "ID-08", "ID-10",
-      "PD-01", "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
+      "PD-02", "PD-03", "PD-04", "PD-05", "PD-06", "PD-07",
     ]) expect(ledger).toMatch(new RegExp(
       `data-deliverable-key="${key}"[^>]+data-deliverable-last-verified="2026-08-03 · Sam owner decision"`,
     ));
@@ -521,16 +521,30 @@ describe("WS-E evidence-only decision closure", () => {
     const restamped = {
       index: [],
       experience: ["EW3"],
-      command: ["C02", "C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
+      command: ["C03", "C04", "C05", "C06", "C07", "C09", "C10", "C11", "C13"],
       guarantee: ["G08", "G10", "G11", "G13"],
       deliverable: [],
       interface: ["SI5"],
     } as const;
+    // Eight rows described a world with Cloudflare Access in it and one
+    // pre-provisioned Account behind it. The multi-tenant live run on
+    // 2026-08-04 falsified all eight at once, so they restamp together.
+    const multiTenantRun = "2026-08-04 · PD-01 multi-tenant live run";
+    for (const [kind, key] of [
+      ["deliverable", "PD-01"], ["guarantee", "G07"],
+      ["interface", "SI1"], ["interface", "SI2"], ["interface", "SI3"],
+      ["machinery", "MW1"], ["machinery", "MW6"], ["command", "C02"],
+    ] as const) expect(ledger).toMatch(new RegExp(
+      `data-${kind}-key="${key}"[^>]+data-${kind}-last-verified="${multiTenantRun}"`,
+    ));
+    // SI3 lost its shared service token with the Access cutover and no CLI can
+    // hold a session yet, so the "and services" half of its claim regressed.
+    expect(ledger).toMatch(/data-interface-key="SI3" data-interface-truth="PARTIAL"/);
     expect(ledger).toMatch(/data-guarantee-key="G14"[^>]+data-guarantee-last-verified="2026-08-03 · WS1 release proof \+ WS-E evidence \+ WS2 CLI install proof"/);
-    for (const key of ["SI1", "SI2", "SI3", "SI4", "SI6"]) expect(ledger).toMatch(new RegExp(
+    for (const key of ["SI4", "SI6"]) expect(ledger).toMatch(new RegExp(
       `data-interface-key="${key}"[^>]+data-interface-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
     ));
-    for (const key of ["MW1", "MW2", "MW3", "MW4", "MW5", "MW6", "MW7", "MW9"]) expect(ledger).toMatch(new RegExp(
+    for (const key of ["MW2", "MW3", "MW4", "MW5", "MW7", "MW9"]) expect(ledger).toMatch(new RegExp(
       `data-machinery-key="${key}"[^>]+data-machinery-last-verified="2026-08-01 · repository proof \\+ WS-E review"`,
     ));
     expect(ledger).toMatch(/data-deliverable-key="PD-00B"[^>]+data-deliverable-last-verified="2026-08-01 · WS0 page proof \+ WS-E privacy review"/);

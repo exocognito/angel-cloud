@@ -143,7 +143,12 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     );
     expectAllAllowed(values(/data-deliverable-truth="([^"]+)"/g), truthStates);
     expectAllAllowed(values(/data-deliverable-plan="([^"]+)"/g), planStates);
-    expect(values(/data-deliverable-plan="(ACTIVE|NEXT)"/g)).toEqual([]);
+    // Exactly one deliverable may be in flight at a time, and it is named here
+    // so the state cannot drift onto others unnoticed. PD-01 went ACTIVE on
+    // 2026-08-04 when a stranger could sign up and land in an Account of
+    // their own.
+    expect(values(/data-deliverable-key="([^"]+)"[^>]+data-deliverable-plan="(?:ACTIVE|NEXT)"/g))
+      .toEqual(["PD-01"]);
     expect(ledger).toMatch(
       /data-deliverable-key="ID-05"[^>]+data-deliverable-plan="COMPLETE"[^>]+data-deliverable-approval="APPROVED"[^>]+data-deliverable-parent="WS-E"/,
     );
@@ -207,7 +212,12 @@ describe("Angel Product Ledger contract v0.1 application", () => {
     expect(ledger).toContain("G14 · Source and deploy topology stay bounded");
     const g07 = recordBlocks("article", "data-guarantee-key")
       .find((block) => block.includes('data-guarantee-key="G07"')) ?? "";
-    expect(g07).toContain("second real identity waits for M-DF2");
+    // G07 stopped waiting on 2026-08-04: the second-identity proof M-DF2 was
+    // named as its blocker exists, so the row must cite it rather than promise it.
+    expect(g07).toContain('data-guarantee-truth="LIVE"');
+    expect(g07).toContain("Three real identities signed up on 2026-08-04");
+    expect(g07).toContain("evidence/pd-01/03-multi-tenant-control.md");
+    expect(g07).not.toContain("second real identity waits for M-DF2");
     expect(g07).not.toContain("waits for M2");
   });
 
