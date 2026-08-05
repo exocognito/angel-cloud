@@ -110,6 +110,24 @@ describe("session identity", () => {
     expect(auth.seen[0]!.headers).toEqual({ authorization: "Bearer real-session" });
   });
 
+  test("refuses a lookalike cookie name invented by a sibling host", async () => {
+    // Any host on the zone can set a cookie the browser will send here. A
+    // suffix test would accept `evil-better-auth.session_token` and let that
+    // host suppress a real bearer, so the two legitimate names are an exact set.
+    const auth = authService(Response.json(SESSION));
+    await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", {
+        headers: {
+          cookie: "evil-better-auth.session_token=forged",
+          authorization: "Bearer real-session",
+        },
+      }),
+      auth,
+    );
+
+    expect(auth.seen[0]!.headers).toEqual({ authorization: "Bearer real-session" });
+  });
+
   test("accepts the unprefixed cookie name, which is what a non-https base URL gets", async () => {
     const auth = authService(Response.json(SESSION));
     const cookie = "better-auth.session_token=abc.sig";

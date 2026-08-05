@@ -44,13 +44,26 @@ const SESSION_URL = "https://auth.internal/v1/auth/get-session";
 /**
  * Better Auth names its cookie `better-auth.session_token`, prefixed
  * `__Secure-` whenever the base URL is https — which ours always is in
- * production. Match either spelling, and match by name rather than by
- * substring so a cookie that merely mentions the string cannot pass for one.
+ * production. `__Secure-` is the only prefix it applies
+ * (`better-auth/dist/cookies/cookie-utils.mjs`), so these two names are the
+ * whole set.
+ *
+ * An exact set rather than a suffix test: `endsWith("-better-auth.session_token")`
+ * would also accept `evil-better-auth.session_token`, letting any host on the
+ * zone suppress a caller's bearer with a cookie it invented. Matched on the
+ * name rather than the pair so a cookie whose *value* mentions the string
+ * cannot pass for one either.
  */
+const SESSION_COOKIE_NAMES = new Set([
+  "better-auth.session_token",
+  "__Secure-better-auth.session_token",
+]);
+
 function carriesSessionCookie(cookie: string): boolean {
   return cookie.split(";").some((pair) => {
-    const name = pair.slice(0, pair.indexOf("=")).trim();
-    return name === "better-auth.session_token" || name.endsWith("-better-auth.session_token");
+    const separator = pair.indexOf("=");
+    if (separator === -1) return false;
+    return SESSION_COOKIE_NAMES.has(pair.slice(0, separator).trim());
   });
 }
 
