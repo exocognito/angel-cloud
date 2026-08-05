@@ -43,7 +43,7 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | Step | How | Credentials |
 | --- | --- | --- |
 | 1. Install the CLI | `pnpm` + `bun` | No credentials (needs the npm registry) |
-| 2. Get the management credential | From the Angel Cloud owner | Owner-provisioned |
+| 2. Sign up, then get the management credential | Browser signup at https://dash.angelmcp.ai | Your own session token |
 | 3. Add a Google Connection | Browser (emailed sign-in link + Google consent) | Interactive login — no headless path |
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
@@ -51,8 +51,8 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | 7. Promote to production | `angel deploy --prod` / API | Management bearer |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
-Steps 2 and 3 cannot be done from a shell — a person provisions the credentials
-and completes the browser OAuth. Everything else you can drive directly.
+Steps 2 and 3 need a browser — signing yourself up, and completing Google
+consent. Everything else you can drive from a shell.
 
 ---
 
