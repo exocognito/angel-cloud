@@ -149,8 +149,8 @@
   }
 
   // Say what this is, in the page. Without it the shell reads as a real signed-in
-  // Account — it even carries the dashboard's own "ACCESS PROTECTED" label, which
-  // is true of the product and false of this page. The banner is added to the DOM
+  // Account — it even carries the dashboard's own "Signed in" label, which is
+  // true of the product and false of this page. The banner is added to the DOM
   // rather than written into the shell so www/index.html stays unforked.
   //
   // It scrolls away rather than sticking: app.css pins .topbar at top:0, and a

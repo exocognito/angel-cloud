@@ -217,7 +217,7 @@ matters more than hosted operation.
 ### What is the public demo at `/demo/`, and what can it reach?
 
 It is the dashboard itself — the same `index.html`, `app.js` and `app.css` the
-Access-gated Control worker serves, copied verbatim at build time so the demo
+signed-in Control worker serves, copied verbatim at build time so the demo
 cannot drift from the product. What it is not is an account. The Angels,
 Connections and receipts on it come from a fixture generated at build time by
 running the real projection code over the checked-in Angel artifacts.
@@ -445,7 +445,7 @@ refresh token at seven days, so this is not yet a durable monitor.
 
 A separate operator-only comparison journey exercises the mutating path —
 multiple Connection choices, pause/resume, a v2 Version, stable keys, matching
-receipts, and isolation — using dedicated Access, management, and reset
+receipts, and isolation — using dedicated session and reset
 credentials ([comparison journey](user-manual.md#full-deployed-comparison-journey)).
 
 ### Is Milestone 1 complete?
@@ -484,9 +484,8 @@ work in another you sign out and sign in as somebody else.
 
 ### What is not built yet?
 
-The deferred list, straight from the tracking notes: signup wired into Control
-(it exists on the demo Worker only), multiple Accounts in one deployment,
-membership, and team roles; a platform-owned
+The deferred list, straight from the tracking notes: self-service Account
+deletion and recovery, membership, and team roles; a platform-owned
 verified Google OAuth app; more Gmail operations and providers (Maps, X, Slack,
 WhatsApp, Telegram, iMessage); Provider App removal (the API returns `501`),
 rollback commands, and a global cross-environment Angel disable; activity

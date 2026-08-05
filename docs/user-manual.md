@@ -50,8 +50,8 @@ this project explores for the same idea; to weigh it against the others, see
 
 ## Milestone 1: what is live
 
-Milestone 1 runs a single pre-provisioned Account, `acct_m1`, behind Cloudflare
-Access. As of 2026-07-22 the Broker, Gateway, and Control Workers are deployed
+Anyone can sign up, and Control serves whichever Account the caller's session
+names. As of 2026-07-22 the Broker, Gateway, and Control Workers are deployed
 in the dedicated Cloudflare account. Public `@smcllns/angel-core@0.3.0` is
 published. Canonical source is workspace-linked at `packages/core` under one
 workspace lockfile, and the WS1 check compares its packed runtime with npm. Provider App
@@ -351,9 +351,8 @@ key in any `angel.json` created for core 0.2.0. The server still accepts
 
 Before you can bind an Angel, the Account needs a healthy Google Connection.
 Custody is set up once, in the browser: open the deployed Control www URL and
-complete **Cloudflare account login** (the interactive identity provider is not
-one-time PIN). The browser uses its Access session; no management bearer belongs
-in the page. There is no headless API for this step.
+sign in with the emailed link. The browser uses its session cookie; no
+management bearer belongs in the page. There is no headless API for this step.
 
 ![The Connections page: Google custody with the Provider App and Connection forms, stored Provider App rows, and Connection rows with health pills, scope chips, and row actions](manual-images/connections-google-custody.png)
 
@@ -839,12 +838,13 @@ Worker service-binds the earlier ones:
 ```sh
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
-bun run wrangler deploy --config wrangler.control.jsonc
 bun run wrangler deploy --config wrangler.auth.jsonc
+bun run wrangler deploy --config wrangler.control.jsonc
 ```
 
-`angelmcp-auth` binds to nothing, and Control reaches it over the `AUTH`
-service binding rather than its public host, so the session question never
+`angelmcp-auth` binds to nothing itself, but Control binds to it over the
+`AUTH` service binding, so deploy it before Control. Control reaches it over
+that binding rather than its public host, so the session question never
 leaves Cloudflare's network. It needs two secrets of its own, `RESEND_API_KEY` and
 `LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
 `wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
@@ -920,8 +920,12 @@ compares its packed runtime with npm.
 
 The operator-only `bun run test:golden` journey mutates deployed comparison
 Angels and needs `GOLDEN_CONTROL_URL`, `GOLDEN_GATEWAY_URL`,
-`GOLDEN_SESSION_TOKEN`, and `GOLDEN_ADMIN_TOKEN`. The session token is a
-control-plane session; the admin token is reset-only.
+`GOLDEN_SESSION_TOKEN`, and `GOLDEN_ADMIN_TOKEN`. The admin token is
+reset-only. The session token must be the **signed** cookie value —
+`__Secure-better-auth.session_token` copied from a signed-in browser, the
+`<token>.<signature>` pair — because the runner sends the one value both as a
+bearer and as the cookie, and only the signed form satisfies both. A bare token
+passes `/v1` and fails reset with `401`.
 
 ### Real Google acceptance
 

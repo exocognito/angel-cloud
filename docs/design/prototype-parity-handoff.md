@@ -127,7 +127,7 @@ None change behavior; all are candidates for a mockup pass.
   treatment is canonical.
 - **Identity chip vs avatar.** The prototype's top-right is a round avatar
   ("S"). The product shows a static two-line identity/context cluster
-  ("Personal / ACCESS PROTECTED") plus a light/dark theme toggle, and no
+  ("Personal / Signed in") plus a light/dark theme toggle, and no
   avatar; the Connections screen adds its own separate "Owner view" pill.
 - **Primary nav bar.** The product has a real top-level nav (Home · Angels ·
   Connections) that the single-page prototype lacks (the prototype's bottom

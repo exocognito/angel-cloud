@@ -278,7 +278,7 @@ shown-once Angel keys; retry with the same key instead.
 
 The build step (`ANGEL.yaml` → artifact + digest) has **no** server endpoint;
 compile it locally with `angel build` and send the resulting artifact to
-`POST .../versions`. Provider-App and Connection setup use the Access-session
+`POST .../versions`. Provider-App and Connection setup use the signed-in
 `/api/...` and `/oauth/...` routes and end in an interactive browser redirect —
 they are not scriptable end to end.
 
