@@ -1098,16 +1098,18 @@ function renderHomeAngelList(angel) {
 
 // ---------------------------------------------------------------------------
 // WP4: zero-Angel getting-started guide + ANGEL.yaml groups explainer.
-// The guide teaches the REAL operator journey documented in
-// docs/google-read-proof-manual-journey.md; the explainer reuses WP1's
+// The guide teaches the published-CLI journey documented in the served
+// docs-site/public/SKILL.md; the explainer reuses WP1's
 // groupToolsByApp / isReadOnlyTool / toolGuardCopy so its app → group folders
 // are the SAME projection as the live Allowed Tools pane, never a parallel copy.
 // ---------------------------------------------------------------------------
 
-// Pure data: the real first-Angel journey. Browser vs. operator-shell steps
-// mirror the doc's "Sam in a browser" / "Local operator shell" split. Every
-// command is copied verbatim from the doc — no invented flags, no fabricated
-// token values (credentials stay as the doc's `...` placeholders).
+// Pure data: the first-Angel journey a signed-up user can actually run. Browser
+// steps use the signed-in control site; shell steps run in the user's own
+// project directory against the published @angelmcp/cli — never a clone of this
+// repository, which SKILL.md names as the wrong path. Every command is copied
+// verbatim from SKILL.md — no invented flags, no fabricated token values
+// (credentials stay as SKILL.md's `...` placeholders).
 function newAngelGuideSteps() {
   return [
     {
@@ -1119,7 +1121,7 @@ function newAngelGuideSteps() {
     {
       where: "browser",
       title: "Add your BYO Google client",
-      detail: "In Google Cloud Console select the OAuth client with the deployed callback URI and the read-only Gmail and Docs APIs, then add its client ID and secret as a Provider App on Connections. The secret is entered into the protected form only, never into this repository.",
+      detail: "In Google Cloud Console select the OAuth client with the deployed callback URI and the read-only Gmail and Docs APIs, then add its client ID and secret as a Provider App on Connections. The secret is entered into the protected form only, never into a file you keep.",
       commands: [],
     },
     {
@@ -1130,26 +1132,26 @@ function newAngelGuideSteps() {
     },
     {
       where: "shell",
-      title: "Copy the deployment config",
-      detail: "Copy the safe example and edit only local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. The real angel.json is git-ignored; ANGEL.yaml stays portable.",
-      commands: ["cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json"],
+      title: "Install the CLI and write the Angel",
+      detail: "You need pnpm (pnpm.io) and Bun (bun.sh) — the CLI runs under Bun. In your own project directory, add the published CLI and invoke it as pnpm exec angel. Write angels/google-read-proof/ANGEL.yaml under name: google-read-proof, matching the directory, naming exactly the two tools this journey uses, gmail.users.messages.list and docs.documents.get, and alongside it angel.json, which takes exactly four keys: target (this control site), account, angel (the slug), and bindings, holding preview and production, each mapping gmail and docs to your healthy Connection nickname. Keep the real angel.json untracked; ANGEL.yaml stays portable.",
+      commands: ["pnpm add @angelmcp/cli"],
     },
     {
       where: "shell",
       title: "Publish to preview",
-      detail: "With a control-plane session token in ANGEL_MANAGEMENT_TOKEN, build the checked-in policy, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
-      commands: ["ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview"],
+      detail: "ANGEL_MANAGEMENT_TOKEN is the session token from your own signed-in browser — no command mints one yet. With it set, build your ANGEL.yaml, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
+      commands: ["ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel publish google-read-proof --preview"],
     },
     {
       where: "shell",
-      title: "Promote the exact staged deploy to production",
-      detail: "With the same session token, promote the exact staged deployment. The command does not rebuild or republish.",
-      commands: ["ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod"],
+      title: "Promote the exact previewed deployment to production",
+      detail: "With the same session token, promote the exact previewed deployment. The command does not rebuild or republish.",
+      commands: ["ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel deploy google-read-proof --prod"],
     },
     {
       where: "shell",
       title: "Capture the shown-once production key",
-      detail: "Save the production Angel key printed by the initial publish/ensure response into the GitHub Actions secret GOLDEN_ANGEL_KEY. Never paste it into a file, command transcript, issue, report, or chat.",
+      detail: "Save the production Angel key printed by the initial publish/ensure response into your own secret store — later reads expose only fingerprints. Never paste it into a file, command transcript, issue, report, or chat.",
       commands: [],
     },
   ];
@@ -1185,13 +1187,40 @@ function angelYamlExampleTools() {
   ];
 }
 
-function renderNewAngelGuide() {
+// Issue #39: a reader pointed at a document gets a URL they can click, not a
+// name to guess. The docs live on their own worker, so this is a full absolute
+// URL, and until the zone move in #6 lands that host is the interim workers.dev
+// one — which is exactly why it is written out. www/ is not in
+// docs-site/build.sh's rewrite list, so nothing rewrites this for us.
+const DOCS_BASE_URL = "https://angelmcp-docs-demo.sam-633.workers.dev";
+
+function docsLink(path, text) {
+  const link = element("a", "wp4-guide-link", text);
+  link.href = `${DOCS_BASE_URL}/${path}`;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  return link;
+}
+
+// `accountId` is the one value step 4 asks for that a reader cannot work out
+// or look up: the CLI requires angel.json's `account`, and the page has always
+// parsed the id off the state it fetched without ever showing it. Printing it
+// here is what makes the steps below completable without leaving the page.
+function renderNewAngelGuide(accountId) {
   const panel = element("section", "panel wp4-guide");
   const head = element("div", "wp4-panel-head");
   head.append(element("span", "eyebrow", "Getting started"));
   head.append(element("b", "", "Publish your first Angel from the CLI"));
-  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof operator journey: sign in, add your BYO Google client, authorize a Connection, edit local config, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run from your local operator checkout. Publish installs preview; deploy --prod promotes the exact staged build to production without rebuilding."));
-  head.append(element("small", "wp4-guide-more", "From here, docs/google-read-proof-manual-journey.md continues with wiring the GitHub Actions secret and repository variables, running the acceptance journey, and proving the revoke/failure and reauthorization path."));
+  head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof journey: sign in, add your BYO Google client, authorize a Connection, install the CLI and write your Angel, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run in your own project directory. Publish installs preview; deploy --prod promotes the exact previewed build to production without rebuilding."));
+  const more = element("small", "wp4-guide-more", "From here, ");
+  more.append(docsLink("#/skill", "the full journey this panel summarizes"));
+  more.append(document.createTextNode(", and "));
+  more.append(docsLink("#/operator-journey", "a maintainer's worked run of the same lifecycle"));
+  more.append(document.createTextNode(" — revoking a Connection to prove loud failure, then reauthorizing to prove recovery."));
+  head.append(more);
+  const account = element("small", "wp4-guide-account", "Your Account, for angel.json's account key: ");
+  account.append(element("code", "", accountId));
+  head.append(account);
   panel.append(head);
   const list = element("ol", "wp4-steps");
   newAngelGuideSteps().forEach((step, index) => {
@@ -1199,7 +1228,7 @@ function renderNewAngelGuide() {
     item.append(element("span", "wp4-step-index", String(index + 1)));
     const body = element("div", "wp4-step-body");
     const titleLine = element("span", "wp4-step-title-line");
-    titleLine.append(element("span", `wp4-step-where wp4-where-${step.where}`, step.where === "browser" ? "In a browser" : "Operator shell"));
+    titleLine.append(element("span", `wp4-step-where wp4-where-${step.where}`, step.where === "browser" ? "In a browser" : "In your terminal"));
     titleLine.append(element("b", "", step.title));
     body.append(titleLine);
     body.append(element("small", "", step.detail));
@@ -1247,7 +1276,7 @@ function renderZeroAngelGuide() {
   const intro = element("section", "panel empty-state wp4-empty-intro");
   intro.append(element("b", "", "No Angels are deployed yet"));
   intro.append(element("small", "", "Publish one from the CLI when its Connections are ready. The steps below get your first Angel live in production, following the real google-read-proof journey."));
-  return [intro, renderNewAngelGuide(), renderAngelYamlExplainer()];
+  return [intro, renderNewAngelGuide(demoState.account.id), renderAngelYamlExplainer()];
 }
 
 function renderHome() {

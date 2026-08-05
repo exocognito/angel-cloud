@@ -1234,7 +1234,8 @@ describe("Angel Cloud deployable demo UI contract", () => {
     };
     const steps = newAngelGuideSteps();
     expect(steps.length).toBeGreaterThanOrEqual(6);
-    // Every step is a browser or operator-shell step (mirrors the doc's split).
+    // Every step is a browser or shell step (mirrors SKILL.md's split between
+    // the two steps that need a browser and the rest you drive from a shell).
     for (const step of steps) {
       expect(["browser", "shell"]).toContain(step.where);
       expect(typeof step.title).toBe("string");
@@ -1242,21 +1243,46 @@ describe("Angel Cloud deployable demo UI contract", () => {
       expect(Array.isArray(step.commands)).toBe(true);
     }
     const commands = steps.flatMap((step) => step.commands);
-    // The COMPLETE command strings, EXACTLY as docs/google-read-proof-manual-journey.md
-    // shows them — asserted whole (not by substring) so an extra/altered flag,
-    // a stray argument, or a fabricated literal secret value fails here. The
-    // credential value stays as the doc's `...` placeholder; the guide must
+    // The COMPLETE command strings, EXACTLY as the served docs-site/public/SKILL.md
+    // teaches them — the published @angelmcp/cli in the user's own directory, never
+    // `bun run angel` or an examples/ path from a clone of this repo, which SKILL.md
+    // names as the wrong path. Asserted whole (not by substring) so an extra/altered
+    // flag, a stray argument, or a fabricated literal secret value fails here. The
+    // credential value stays as SKILL.md's `...` placeholder; the guide must
     // never invent a real session-token literal.
+    // Length pinned so emptying the list cannot make the SKILL.md cross-check
+    // below pass by having nothing left to check.
     const DOC_COMMANDS = [
-      // Doc step 4 — copy the safe example config.
-      "cp examples/angels/google-read-proof/angel.example.json examples/angels/google-read-proof/angel.json",
-      // Doc step 5 — publish to preview with a control-plane session token.
-      "ANGEL_MANAGEMENT_TOKEN=... bun run angel publish google-read-proof --preview",
-      // Doc step 6 — promote the exact staged deploy to production.
-      "ANGEL_MANAGEMENT_TOKEN=... bun run angel deploy google-read-proof --prod",
+      // SKILL.md step 1 — install the CLI, no repo clone.
+      "pnpm add @angelmcp/cli",
+      // SKILL.md step 6 — publish to preview with a control-plane session token.
+      "ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel publish google-read-proof --preview",
+      // SKILL.md step 7 — promote the exact previewed deployment to production.
+      "ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel deploy google-read-proof --prod",
     ];
     // The guide renders EXACTLY these commands, in this order — nothing more.
+    expect(DOC_COMMANDS).toHaveLength(3);
     expect(commands).toEqual(DOC_COMMANDS);
+    // And SKILL.md really teaches them. Issue #41 was the dashboard and the
+    // served docs contradicting each other, so pinning a hand-copied list here
+    // would leave the drift free to happen again in the other direction: this
+    // reads the shipped document. SKILL.md wraps its long commands over a
+    // trailing backslash, so join those lines before looking.
+    // Matched WHOLE against the document's own shell lines, not by substring:
+    // SKILL.md growing `--prod --some-new-flag` has to fail here, because the
+    // guide would then be teaching a command the docs no longer teach.
+    const skill = readFileSync(join(www, "../docs-site/public/SKILL.md"), "utf8").replace(
+      /\\\n/g,
+      "",
+    );
+    const skillCommands = [...skill.matchAll(/```sh\n([\s\S]*?)```/g)]
+      .flatMap((block) => block[1]!.split("\n"))
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+    expect(skillCommands.length).toBeGreaterThan(0);
+    for (const command of DOC_COMMANDS) {
+      expect(skillCommands).toContain(command);
+    }
     // And each rendered command equals the doc string character-for-character.
     for (const command of commands) {
       expect(DOC_COMMANDS).toContain(command);
@@ -1264,10 +1290,54 @@ describe("Angel Cloud deployable demo UI contract", () => {
       expect(command).not.toMatch(/cf-access-client-id":"(?!\.\.\.)/);
       expect(command).not.toMatch(/cf-access-client-secret":"(?!\.\.\.)/);
       expect(command).not.toMatch(/ANGEL_MANAGEMENT_TOKEN=(?!\.\.\.)\S/);
+      // Nothing that only works inside a clone of this repo: `bun run angel` is
+      // the repo package script, examples/ is a directory only the clone has,
+      // and cloning is the headline thing SKILL.md tells readers not to do.
+      // `examples` is matched bare, not as `examples/`, because the package
+      // script itself is `cd examples && pnpm exec angel` — the likeliest way
+      // the clone-only path comes back wearing the right CLI invocation.
+      expect(command).not.toMatch(/bun run angel\b/);
+      expect(command).not.toMatch(/\bexamples\b/);
+      expect(command).not.toMatch(/git clone/);
+      // The CLI is a local dependency, so every invocation is `pnpm exec angel`,
+      // never a bare `angel build`.
+      for (const match of command.matchAll(/angel (?:build|publish|deploy|delete)\b/g)) {
+        expect(command.slice(0, match.index)).toMatch(/(?:^|\s)pnpm exec $/);
+      }
     }
-    // The shown-once production key is described, never fabricated.
+    // The step prose gets the same clone-only guards as the commands. The
+    // commands were only ever half of issue #41: detail text that tells a
+    // tenant to copy from examples/ or work inside this repository sends the
+    // same wrong message, and nothing here was pinning it.
     const detail = steps.map((step) => step.detail).join(" ");
-    expect(detail).toContain("GOLDEN_ANGEL_KEY");
+    expect(detail).not.toMatch(/\bexamples\b/);
+    expect(detail).not.toMatch(/bun run angel\b/);
+    expect(detail).not.toMatch(/git clone/);
+    expect(detail).not.toMatch(/this repository/);
+    // The two prerequisites a reader cannot start without, and cannot infer.
+    expect(detail).toContain("bun.sh");
+    expect(detail).toContain("pnpm.io");
+    expect(detail).toContain("the session token from your own signed-in browser");
+    // Step 4 has to stand on its own. It used to defer the policy's shape to a
+    // panel rendering a DIFFERENT Angel, so pin the parts that make it
+    // sufficient: where the files go, the name the build requires, the two
+    // tools this journey deploys, and angel.json's exact four keys.
+    const install = steps[3]!;
+    expect(install.detail).toContain("angels/google-read-proof/ANGEL.yaml");
+    expect(install.detail).toContain("name: google-read-proof");
+    expect(install.detail).toContain("gmail.users.messages.list");
+    expect(install.detail).toContain("docs.documents.get");
+    for (const key of ["target", "account", "angel", "bindings"]) {
+      expect(install.detail).toContain(key);
+    }
+
+    // The shown-once production key is described, never fabricated — and it goes
+    // to the user's OWN secret store. GOLDEN_ANGEL_KEY is the maintainer's CI
+    // secret for the acceptance runner, which SKILL.md puts outside the user path.
+    expect(detail).toContain(
+      "Save the production Angel key printed by the initial publish/ensure response into your own secret store",
+    );
+    expect(detail).not.toContain("GOLDEN_ANGEL_KEY");
 
     // renderHome's zero-Angel branch renders the guide (and preserves the
     // existing empty-state copy the pre-first-Angel test pins).
@@ -1275,8 +1345,37 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(home).toContain("renderZeroAngelGuide()");
     // The honest empty-state copy is preserved (the pre-first-Angel test pins it).
     expect(js).toContain("No Angels are deployed yet");
-    expect(js).toContain("function renderNewAngelGuide()");
+    expect(js).toContain("function renderNewAngelGuide(");
     expect(js).toContain("function renderZeroAngelGuide()");
+    // The head copy around the steps is pinned too. The commands were only ever
+    // half the defect: prose that frames this as a run from the operator's own
+    // checkout sends the same wrong message to someone who has no checkout.
+    const guide = js.slice(
+      js.indexOf("function renderNewAngelGuide("),
+      js.indexOf("function renderZeroAngelGuide()"),
+    );
+    expect(guide).toContain("shell steps run in your own project directory");
+    expect(guide).toContain("In your terminal");
+    expect(guide).not.toMatch(/operator checkout|Operator shell/);
+    // Issue #39: a document pointer is a URL the reader can click, not a name
+    // to guess. Sam guessed two hosts in the first dogfooding run and both 404'd.
+    // The rendered routes a person can read, not the raw markdown the docs
+    // worker serves as text/markdown for agents.
+    expect(guide).toContain('docsLink("#/skill"');
+    expect(guide).toContain('docsLink("#/operator-journey"');
+    // Pinned to the host that serves them today. docs.angelmcp.ai has no DNS
+    // yet; when it binds, the migration checklist in docs/domain-architecture.md
+    // step 2 says to flip this and the constant together.
+    expect(js).toContain('const DOCS_BASE_URL = "https://angelmcp-docs-demo.sam-633.workers.dev";');
+    // The pointer names a real served host, never the one with no DNS.
+    expect(js).not.toContain("docs.angelmcp.ai");
+    // Step 4 needs angel.json's `account`, and the id is the one value a reader
+    // can neither guess nor look up — the page parsed it and never showed it,
+    // so the journey it teaches could not be finished. It is printed now.
+    expect(guide).toContain("angel.json's account key");
+    expect(guide).toContain("element(\"code\", \"\", accountId)");
+    const zero = js.slice(js.indexOf("function renderZeroAngelGuide()"), js.indexOf("function renderHome()"));
+    expect(zero).toContain("renderNewAngelGuide(demoState.account.id)");
   });
 
   test("WP4: the ANGEL.yaml explainer REUSES WP1's group renderer, not a copy", () => {
