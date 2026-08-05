@@ -1234,7 +1234,8 @@ describe("Angel Cloud deployable demo UI contract", () => {
     };
     const steps = newAngelGuideSteps();
     expect(steps.length).toBeGreaterThanOrEqual(6);
-    // Every step is a browser or operator-shell step (mirrors the doc's split).
+    // Every step is a browser or shell step (mirrors SKILL.md's split between
+    // the two steps that need a browser and the rest you drive from a shell).
     for (const step of steps) {
       expect(["browser", "shell"]).toContain(step.where);
       expect(typeof step.title).toBe("string");
@@ -1259,6 +1260,18 @@ describe("Angel Cloud deployable demo UI contract", () => {
     ];
     // The guide renders EXACTLY these commands, in this order — nothing more.
     expect(commands).toEqual(DOC_COMMANDS);
+    // And SKILL.md really teaches them. Issue #41 was the dashboard and the
+    // served docs contradicting each other, so pinning a hand-copied list here
+    // would leave the drift free to happen again in the other direction: this
+    // reads the shipped document. SKILL.md wraps its long commands over a
+    // trailing backslash, so join those lines before looking.
+    const skill = readFileSync(join(www, "../docs-site/public/SKILL.md"), "utf8").replace(
+      /\\\n/g,
+      "",
+    );
+    for (const command of DOC_COMMANDS) {
+      expect(skill).toContain(command);
+    }
     // And each rendered command equals the doc string character-for-character.
     for (const command of commands) {
       expect(DOC_COMMANDS).toContain(command);
@@ -1281,10 +1294,23 @@ describe("Angel Cloud deployable demo UI contract", () => {
         expect(command.slice(0, match.index)).toMatch(/(?:^|\s)pnpm exec $/);
       }
     }
+    // The step prose gets the same clone-only guards as the commands. The
+    // commands were only ever half of issue #41: detail text that tells a
+    // tenant to copy from examples/ or work inside this repository sends the
+    // same wrong message, and nothing here was pinning it.
+    const detail = steps.map((step) => step.detail).join(" ");
+    expect(detail).not.toMatch(/\bexamples\b/);
+    expect(detail).not.toMatch(/bun run angel\b/);
+    expect(detail).not.toMatch(/git clone/);
+    expect(detail).not.toMatch(/this repository/);
+    // The two prerequisites a reader cannot start without, and cannot infer.
+    expect(detail).toContain("bun.sh");
+    expect(detail).toContain("pnpm.io");
+    expect(detail).toContain("the session token from your own signed-in browser");
+
     // The shown-once production key is described, never fabricated — and it goes
     // to the user's OWN secret store. GOLDEN_ANGEL_KEY is the maintainer's CI
     // secret for the acceptance runner, which SKILL.md puts outside the user path.
-    const detail = steps.map((step) => step.detail).join(" ");
     expect(detail).toContain(
       "Save the production Angel key printed by the initial publish/ensure response into your own secret store",
     );
@@ -1308,6 +1334,13 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(guide).toContain("shell steps run in your own project directory");
     expect(guide).toContain("In your terminal");
     expect(guide).not.toMatch(/operator checkout|Operator shell/);
+    // Issue #39: a document pointer is a URL the reader can click, not a name
+    // to guess. Sam guessed two hosts in the first dogfooding run and both 404'd.
+    expect(guide).toContain('docsLink("SKILL.md"');
+    expect(guide).toContain('docsLink("operator-journey.md"');
+    expect(js).toMatch(/const DOCS_BASE_URL = "https:\/\/\S+";/);
+    // The pointer names a real served host, never the one with no DNS.
+    expect(js).not.toContain("docs.angelmcp.ai");
   });
 
   test("WP4: the ANGEL.yaml explainer REUSES WP1's group renderer, not a copy", () => {
