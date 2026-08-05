@@ -14,7 +14,9 @@ operator's, not the user's.
 
 Anyone can sign up at `https://dash.angelmcp.ai` — an email address and a
 one-time link, no invitation and no waiting list. That sign-in is where the
-control-plane session token every `/v1/...` route wants comes from.
+control-plane session token every `/v1/...` route wants comes from. No command
+mints one yet, so today you copy the session token out of your signed-in
+browser.
 
 If you only read one file, read [SKILL.md](https://docs.angelmcp.ai/SKILL.md):
 it is the whole journey as procedural instructions.
