@@ -186,12 +186,13 @@ describe("spending a sign-in link", () => {
 });
 
 describe("verifying a session", () => {
-  test("is never rate-limited, because Control asks once per request it serves", async () => {
+  test("survives far more traffic than the framework's default allows", async () => {
     // The framework's default is 100 per 10 seconds, and with no resolvable
     // client IP it puts every caller in one bucket — its own warning calls it
     // "a single shared per-path bucket". Control asks this question on every
     // authenticated request, so that cap is a cap on the product: past it,
-    // everyone signed in gets 500 "session verifier failed" at once.
+    // everyone signed in gets 500 "session verifier failed" at once. The rule
+    // is 1000 per 10 seconds per IP, so 150 in a row must all pass.
     const world = makeWorld();
     const owner = await world.signUp("owner@example.test");
 
@@ -227,7 +228,9 @@ describe("verifying a session", () => {
     } }).options;
 
     expect(options.advanced?.ipAddress?.ipAddressHeaders?.[0]).toBe("cf-connecting-ip");
-    expect(options.rateLimit?.customRules?.["/get-session"]).toBe(false);
+    // Generous, but a cap: `false` would remove it, which on a publicly routed
+    // Worker leaves an unauthenticated loop of invalid bearers unbounded.
+    expect(options.rateLimit?.customRules?.["/get-session"]).toEqual({ window: 10, max: 1000 });
   });
 });
 

@@ -67,6 +67,10 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
       // Without this the framework reads `x-forwarded-for` only, finds nothing
       // behind Cloudflare, and — by its own warning — falls back to "a single
       // shared per-path bucket". Every caller would then share one allowance.
+      // `x-forwarded-for` is unreachable in production and kept only for local
+      // runs off Cloudflare: the edge always sets `cf-connecting-ip`, and on
+      // the two service-binding paths Control builds fresh headers that carry
+      // the credential and the address and nothing else.
       ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"] },
     },
     // In-memory limits are decorative on Workers: an isolate is per-request
@@ -75,12 +79,13 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
     rateLimit: {
       enabled: true,
       storage: "database",
-      // Control asks this once for every authenticated request it serves, so a
-      // limit here is a cap on the product rather than on an attacker. The
-      // question it answers cannot be brute-forced — a session token is either
-      // one that was issued or it is not — so the cap buys nothing and would
-      // lock out everyone who is signed in.
-      customRules: { "/get-session": false },
+      // Control asks this once for every authenticated request it serves, so
+      // the default 100-per-10s would cap the product rather than an attacker.
+      // It stays capped, just generously: now that `cf-connecting-ip` is named
+      // above, the bucket is per-IP, so a limit no real user can reach still
+      // bounds a stranger looping invalid bearers — one D1 read each — against
+      // a publicly routed Worker.
+      customRules: { "/get-session": { window: 10, max: 1000 } },
     },
     user: {
       additionalFields: {
