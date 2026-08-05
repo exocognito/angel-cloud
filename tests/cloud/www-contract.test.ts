@@ -1322,13 +1322,13 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(home).toContain("renderZeroAngelGuide()");
     // The honest empty-state copy is preserved (the pre-first-Angel test pins it).
     expect(js).toContain("No Angels are deployed yet");
-    expect(js).toContain("function renderNewAngelGuide()");
+    expect(js).toContain("function renderNewAngelGuide(");
     expect(js).toContain("function renderZeroAngelGuide()");
     // The head copy around the steps is pinned too. The commands were only ever
     // half the defect: prose that frames this as a run from the operator's own
     // checkout sends the same wrong message to someone who has no checkout.
     const guide = js.slice(
-      js.indexOf("function renderNewAngelGuide()"),
+      js.indexOf("function renderNewAngelGuide("),
       js.indexOf("function renderZeroAngelGuide()"),
     );
     expect(guide).toContain("shell steps run in your own project directory");
@@ -1341,6 +1341,13 @@ describe("Angel Cloud deployable demo UI contract", () => {
     expect(js).toMatch(/const DOCS_BASE_URL = "https:\/\/\S+";/);
     // The pointer names a real served host, never the one with no DNS.
     expect(js).not.toContain("docs.angelmcp.ai");
+    // Step 4 needs angel.json's `account`, and the id is the one value a reader
+    // can neither guess nor look up — the page parsed it and never showed it,
+    // so the journey it teaches could not be finished. It is printed now.
+    expect(guide).toContain("angel.json's account key");
+    expect(guide).toContain("element(\"code\", \"\", accountId)");
+    const zero = js.slice(js.indexOf("function renderZeroAngelGuide()"), js.indexOf("function renderHome()"));
+    expect(zero).toContain("renderNewAngelGuide(demoState.account.id)");
   });
 
   test("WP4: the ANGEL.yaml explainer REUSES WP1's group renderer, not a copy", () => {

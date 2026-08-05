@@ -583,6 +583,8 @@ button.rail-item { -webkit-appearance: none; appearance: none; width: 100%; text
 .wp4-panel-head small { color: var(--ink-3); line-height: 1.5; }
 .wp4-guide-more { border-left: 2px solid var(--line-2); font-style: italic; margin-top: 4px; padding-left: 10px; }
 .wp4-guide-link { color: var(--link); text-decoration: underline; }
+.wp4-guide-account { margin-top: 8px; }
+.wp4-guide-account code { background: var(--card-2); border: 1px solid var(--line-2); border-radius: 4px; padding: 1px 6px; user-select: all; }
 
 .wp4-steps { display: flex; flex-direction: column; list-style: none; margin: 0; padding: 0; }
 .wp4-step { border-top: 1px solid var(--line); display: grid; gap: 12px; grid-template-columns: auto 1fr; padding: 15px 16px; }

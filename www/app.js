@@ -1202,7 +1202,11 @@ function docsLink(path, text) {
   return link;
 }
 
-function renderNewAngelGuide() {
+// `accountId` is the one value step 4 asks for that a reader cannot work out
+// or look up: the CLI requires angel.json's `account`, and the page has always
+// parsed the id off the state it fetched without ever showing it. Printing it
+// here is what makes the steps below completable without leaving the page.
+function renderNewAngelGuide(accountId) {
   const panel = element("section", "panel wp4-guide");
   const head = element("div", "wp4-panel-head");
   head.append(element("span", "eyebrow", "Getting started"));
@@ -1214,6 +1218,9 @@ function renderNewAngelGuide() {
   more.append(docsLink("operator-journey.md", "a maintainer's worked run of the same lifecycle"));
   more.append(document.createTextNode(" — revoking a Connection to prove loud failure, then reauthorizing to prove recovery."));
   head.append(more);
+  const account = element("small", "wp4-guide-account", "Your Account, for angel.json's account key: ");
+  account.append(element("code", "", accountId));
+  head.append(account);
   panel.append(head);
   const list = element("ol", "wp4-steps");
   newAngelGuideSteps().forEach((step, index) => {
@@ -1269,7 +1276,7 @@ function renderZeroAngelGuide() {
   const intro = element("section", "panel empty-state wp4-empty-intro");
   intro.append(element("b", "", "No Angels are deployed yet"));
   intro.append(element("small", "", "Publish one from the CLI when its Connections are ready. The steps below get your first Angel live in production, following the real google-read-proof journey."));
-  return [intro, renderNewAngelGuide(), renderAngelYamlExplainer()];
+  return [intro, renderNewAngelGuide(demoState.account.id), renderAngelYamlExplainer()];
 }
 
 function renderHome() {
