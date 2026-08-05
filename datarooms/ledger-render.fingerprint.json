@@ -1,0 +1,7 @@
+{
+  "$comment": "sha256 of the three parts ledger-render inlines, so a hand edit to the generated page fails even on a machine without the toolkit. Regenerate with scripts/ledger-fingerprint.ts after a deliberate toolkit upgrade.",
+  "toolkitCommit": "cf234cd",
+  "css": "26f7146dbf2753800446a7750fb85c71e9fb278ec7a95db3aaa503ab1cbcd10c",
+  "renderer": "ddf54e1b15cc43642ec6fb5835cdf4237a162a841eb0f0f58719c605721a0c8a",
+  "shell": "4bcfd92c24bb20a911b50121f8fb67917a5db8de992b663c0c44616b9555c564"
+}

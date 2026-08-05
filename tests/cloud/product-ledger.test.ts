@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { describe, expect, test } from "bun:test";
+import { parts } from "../../scripts/ledger-fingerprint";
 
 /*
  * The Angel Product Ledger is generated. `datarooms/angel-cloud.json` is the
@@ -131,21 +132,31 @@ describe("Angel Product Ledger — dataroom is the source of truth", () => {
     expect(JSON.parse(inlined ?? "")).toEqual(dataroom);
   });
 
+  test("pins the stylesheet, renderer and shell the generator inlined", () => {
+    // The JSON check above cannot see a hand edit to the markup, the stylesheet
+    // or the renderer. The toolkit that generates the page has no remote (an
+    // open owner decision), so a machine without it cannot re-render to
+    // compare — which means a toolkit-dependent check would pass silently in CI
+    // and protect nothing. These fingerprints run everywhere instead.
+    const recorded = JSON.parse(read("datarooms/ledger-render.fingerprint.json"));
+    const actual = parts(ledger);
+    expect(actual.css, "the Card stylesheet changed without a recorded toolkit upgrade").toBe(recorded.css);
+    expect(actual.renderer, "the renderer changed without a recorded toolkit upgrade").toBe(recorded.renderer);
+    expect(actual.shell, "the page shell changed without a recorded toolkit upgrade").toBe(recorded.shell);
+    expect(recorded.toolkitCommit).toBeTruthy();
+  });
+
   test("re-rendering reproduces the committed page byte for byte", () => {
-    // The check above only covers the inlined JSON: a hand edit to the markup,
-    // the stylesheet or the renderer would survive it. This one re-runs the
-    // generator and compares the whole file.
-    //
-    // The toolkit is a local clone with no remote (an open owner decision), so
-    // on a machine without it this degrades to a skip with a stated reason
-    // rather than a false pass or a false failure.
+    // The strongest form of the check above, and the one that also proves the
+    // fingerprints are honest. Only runs where the toolkit exists; the
+    // fingerprint test is what holds the line when it does not.
     const toolkit = process.env.PRODUCT_LEDGER_TOOLKIT
       ?? join(homedir(), "Projects/product-ledger");
     const renderer = join(toolkit, "bin/ledger-render");
     if (!existsSync(renderer)) {
       console.warn(
-        `product-ledger toolkit not found at ${toolkit} — byte-for-byte render check skipped. `
-        + "Set PRODUCT_LEDGER_TOOLKIT to enable it.",
+        `product-ledger toolkit not found at ${toolkit} — byte-for-byte re-render skipped; `
+        + "the render fingerprints above still ran. Set PRODUCT_LEDGER_TOOLKIT to enable it.",
       );
       return;
     }
