@@ -459,7 +459,7 @@ Live reset and state reads pass. Public
 `@smcllns/angel-core@0.3.0` is published. Canonical source is workspace-linked
 at `packages/core` under one workspace lockfile, and the release check compares
 its packed runtime with npm
-([status](user-manual.md#milestone-1-what-is-live)). Cloudflare account login,
+([status](user-manual.md#milestone-1-what-is-live)). Signing in,
 Google consent, publish/deploy, seeded Gmail and Docs reads, loud revoke
 failure, row-level reauthorization on the same Connection, and the final pass
 are all verified. The acceptance workflow reached the default branch with the

@@ -77,15 +77,17 @@ The one step with **no** server endpoint is the build (step 5): the artifact is
 compiled locally by the package. That is the only reason tooling is in the loop
 at all — it still does **not** require cloning the product repo.
 
-## Step 2 — Get the management credential
+## Step 2 — Sign up, then get the management credential
 
-It comes from the person who owns the Angel Cloud account; there is no
-self-service token endpoint.
+Sign up at **https://dash.angelmcp.ai**. Enter an email address, click the link
+it sends — it works once and lasts ten minutes — and you land in an empty
+Account only you can see. Nobody has to invite you.
 
 - `ANGEL_MANAGEMENT_TOKEN` — a control-plane session token, sent as
   `Authorization: Bearer <token>`. Angel Cloud resolves it as the session of
   whoever signed in, and answers for that person's Account and no other. No
-  command mints one for a terminal yet; ask the owner.
+  command mints one for a terminal yet, so today this is the session token from
+  your own signed-in browser.
 
 Never write it into source, `angel.json`, logs, a command transcript, or an
 Angel artifact. Pass it as an environment variable only.
@@ -93,10 +95,9 @@ Angel artifact. Pass it as an environment variable only.
 ## Step 3 — Add a Google Connection (browser, one time)
 
 Provider custody requires an interactive browser flow — there is no headless
-API to mint a Google Connection. Ask the owner to, in the signed-in
-dashboard:
+API to mint a Google Connection. In your own signed-in dashboard:
 
-1. Save a Provider App (their own Google OAuth client; the secret is stored
+1. Save a Provider App (your own Google OAuth client; the secret is stored
    write-only).
 2. Authorize a Connection through Google's consent screen and give it a
    **nickname** — you will reference that nickname in `angel.json`.
