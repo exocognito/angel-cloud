@@ -41,6 +41,19 @@ export interface SessionFetcher {
 /** The session endpoint on the sign-in Worker, reached over a service binding. */
 const SESSION_URL = "https://auth.internal/v1/auth/get-session";
 
+/**
+ * Better Auth names its cookie `better-auth.session_token`, prefixed
+ * `__Secure-` whenever the base URL is https — which ours always is in
+ * production. Match either spelling, and match by name rather than by
+ * substring so a cookie that merely mentions the string cannot pass for one.
+ */
+function carriesSessionCookie(cookie: string): boolean {
+  return cookie.split(";").some((pair) => {
+    const name = pair.slice(0, pair.indexOf("=")).trim();
+    return name === "better-auth.session_token" || name.endsWith("-better-auth.session_token");
+  });
+}
+
 export async function authenticateSessionRequest(
   request: Request,
   auth: SessionFetcher,
@@ -50,16 +63,23 @@ export async function authenticateSessionRequest(
   // bearer token. Forward whichever arrived and nothing else — passing the
   // whole request would hand the session Worker an unrelated method and body.
   //
-  // The cookie wins when both are present, and that is not a preference. A
-  // request can carry an `Authorization` header meant for something else
-  // entirely — the golden runner's reset sends the admin token there while the
-  // session rides as a cookie — and Better Auth's bearer plugin would read that
-  // admin token as the session, fail to resolve it, and refuse a caller who is
-  // properly signed in.
+  // A cookie that carries a session wins over a bearer, and that is not a
+  // preference. A request can carry an `Authorization` header meant for
+  // something else entirely — the golden runner's reset sends the admin token
+  // there while the session rides as a cookie — and Better Auth's bearer plugin
+  // would read that admin token as the session, fail to resolve it, and refuse
+  // a caller who is properly signed in.
+  //
+  // It has to be that narrow rather than "any cookie wins". The session cookie
+  // is scoped to `.angelmcp.ai`, so the browser attaches every cookie any host
+  // on the zone has set; a caller holding an unrelated zone cookie plus a real
+  // bearer would otherwise have its bearer suppressed by a cookie jar that
+  // never contained a session at all.
   const cookie = request.headers.get("cookie");
   const authorization = request.headers.get("authorization");
-  if (cookie !== null) headers.set("cookie", cookie);
+  if (cookie !== null && carriesSessionCookie(cookie)) headers.set("cookie", cookie);
   else if (authorization !== null) headers.set("authorization", authorization);
+  else if (cookie !== null) headers.set("cookie", cookie);
   else throw new SessionAuthenticationError("sign-in required");
   // The caller's address travels too, and only that. Without it the framework
   // resolves no IP and rate-limits every tenant out of one shared bucket, so

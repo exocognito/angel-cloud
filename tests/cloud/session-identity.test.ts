@@ -66,15 +66,61 @@ describe("session identity", () => {
     // session, fail, and refuse a caller who is signed in — which is how the
     // live run found this: reset answered 401 to a valid session.
     const auth = authService(Response.json(SESSION));
+    const cookie = "__Secure-better-auth.session_token=abc.sig";
     await authenticateSessionRequest(
       new Request("https://dash.test/api/demo/reset", {
         method: "POST",
-        headers: { cookie: "s=abc", authorization: "Bearer admin-token-not-a-session" },
+        headers: { cookie, authorization: "Bearer admin-token-not-a-session" },
       }),
       auth,
     );
 
-    expect(auth.seen[0]!.headers).toEqual({ cookie: "s=abc" });
+    expect(auth.seen[0]!.headers).toEqual({ cookie });
+  });
+
+  test("keeps the bearer when the cookie jar carries no session", async () => {
+    // The session cookie is scoped to `.angelmcp.ai`, so the browser attaches
+    // whatever any host on the zone has set. If ANY cookie beat a bearer, one
+    // unrelated zone cookie would suppress a real credential and refuse a
+    // caller who is properly authenticated.
+    const auth = authService(Response.json(SESSION));
+    await authenticateSessionRequest(
+      new Request("https://dash.test/v1/accounts/acct_one/angels", {
+        headers: { cookie: "docs_theme=dark; ab_test=7", authorization: "Bearer real-session" },
+      }),
+      auth,
+    );
+
+    expect(auth.seen[0]!.headers).toEqual({ authorization: "Bearer real-session" });
+  });
+
+  test("matches the session cookie by name, not by a substring of some other value", async () => {
+    // A cookie whose VALUE mentions the name must not pass for the cookie.
+    const auth = authService(Response.json(SESSION));
+    await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", {
+        headers: {
+          cookie: "decoy=__Secure-better-auth.session_token",
+          authorization: "Bearer real-session",
+        },
+      }),
+      auth,
+    );
+
+    expect(auth.seen[0]!.headers).toEqual({ authorization: "Bearer real-session" });
+  });
+
+  test("accepts the unprefixed cookie name, which is what a non-https base URL gets", async () => {
+    const auth = authService(Response.json(SESSION));
+    const cookie = "better-auth.session_token=abc.sig";
+    await authenticateSessionRequest(
+      new Request("https://dash.test/api/demo/state", {
+        headers: { cookie, authorization: "Bearer not-a-session" },
+      }),
+      auth,
+    );
+
+    expect(auth.seen[0]!.headers).toEqual({ cookie });
   });
 
   test("carries a bearer token through, which is all the CLI will have", async () => {
