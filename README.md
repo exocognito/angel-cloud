@@ -140,6 +140,13 @@ so it receives dedicated session and reset credentials. `GOLDEN_SESSION_TOKEN`
 rides as a bearer on the management API and as the session cookie on the
 dashboard's own routes, where the reset admin token needs the `Authorization`
 header to itself.
+
+Give it the **signed** cookie value — copy `__Secure-better-auth.session_token`
+out of a signed-in browser, the `<token>.<signature>` pair, not a bare token.
+One value has to satisfy both paths and only the signed form does: Better Auth
+reads the cookie with `getSignedCookie` and rejects an unsigned value, while
+its bearer plugin accepts either (it signs a bare token itself). A bare token
+therefore passes `/v1` and fails reset with `401`.
 This runner is distinct from the narrower real Google read acceptance below.
 
 ## Local browser proof (mocked)
@@ -224,13 +231,14 @@ Deploy in dependency order:
 ```text
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
-bun run wrangler deploy --config wrangler.control.jsonc
 bun run wrangler deploy --config wrangler.auth.jsonc
+bun run wrangler deploy --config wrangler.control.jsonc
 ```
 
-`angelmcp-auth` binds to nothing and nothing binds to it, so its position
-in that list does not matter. Control reaches it over the `AUTH` service
-binding rather than its public host, so the session question never leaves
+`angelmcp-auth` binds to nothing itself, but **Control binds to it** over the
+`AUTH` service binding, so it must exist first — on a first deploy in the old
+order Control bound a service that was not there yet. Control reaches it over
+that binding rather than its public host, so the session question never leaves
 Cloudflare's network. It needs two secrets of its own, `RESEND_API_KEY` and
 `LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
 `wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
