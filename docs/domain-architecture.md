@@ -102,6 +102,35 @@ Deliberate absences:
 - **No `cli.angelmcp.ai`.** The CLI is a client, not a server. At most the
   name becomes an install-script redirect one day; it is not infrastructure.
 
+## The cookie's blast radius
+
+Control and the sign-in Worker are different hosts, and a cookie pinned to one
+cannot be read by the other. So `SESSION_COOKIE_DOMAIN` is `.angelmcp.ai`
+(`wrangler.auth.jsonc`, applied at `src/auth-config.ts`), and the browser sends
+the session cookie to **every host on the zone**, current and future — including
+the public `docs.angelmcp.ai`, which needs no auth and should never see it.
+
+Today that exposure is latent rather than live: `docs.` is still on
+`workers.dev` and its Worker is assets-only — no `main`, so no code runs and
+nothing can read a header. The risk arrives with the host binding in migration
+step 2, or with the first sibling Worker that executes code.
+
+Two consequences follow, and they bind anything added to this zone:
+
+- **No sibling host may log, store, or forward the `Cookie` header.** A docs
+  worker that echoed request headers into an access log would be writing live
+  sessions to disk. This is a rule about every Worker on the zone, not only the
+  two that own sessions.
+- **The `__Host-` prefix is foreclosed.** It requires a host-only cookie, so the
+  browser cannot enforce host scoping for us. Any subdomain able to set cookies
+  on the zone can shadow a live session.
+
+The alternative is a host-only dashboard session minted by a one-time hand-off
+from `auth.` to `dash.` after verification, which costs a redirect and a
+single-use token exchange and buys back `__Host-`. That is a design change, not
+a documentation fix, and it is **not decided** — recorded here so the next
+person meets the constraint rather than discovering it.
+
 ## Why `auth.` is its own host
 
 Google OAuth clients pin exact redirect URIs, and changing them means touching
@@ -124,8 +153,9 @@ removes the collision by construction, and two further rules keep it safe:
 - `angelmcp.ai/docs` and `angelmcp.ai/llms.txt` redirect to `docs.angelmcp.ai`
   and `docs.angelmcp.ai/llms.txt` — the docs host is canonical, and the apex
   paths exist only so the reserved words resolve to one place.
-- No auth cookie is ever scoped to `.angelmcp.ai`. Angel www pages are
-  user-shaped content; session cookies stay host-only on `dash.` / `auth.`.
+- The session cookie **is** scoped to `.angelmcp.ai` today, and this rule used
+  to say the opposite. See "The cookie's blast radius" below before adding a
+  host or serving user-shaped content on one.
 
 ## Migration checklist (when this becomes real)
 

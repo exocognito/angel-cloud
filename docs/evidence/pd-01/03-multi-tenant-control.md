@@ -59,14 +59,35 @@ resources are indistinguishable from absent ones. Nothing in the response tells
 the caller whether the Account they named exists, because
 `requireAuthenticatedAccount` refuses before anything is looked up.
 
+**One named exception, and it is not covered by the above.**
+`PUT /v1/accounts/{a}/handle` answers `409 "handle is taken, and handles are
+never released"` when the name belongs to another Account, and `200` when it
+does not (`src/handles.ts:138`). That is a cross-Account resource plainly
+distinguishable from an absent one. It is reachable by anyone who signs up,
+where before the shared token bounded it to the operator.
+
+A claim endpoint cannot hide availability by construction — answering the same
+thing whether or not a name is free would make claiming impossible — so this is
+a product question rather than a defect to fix here: is the handle namespace
+public, as it is on every signup form that says a username is taken?
+
+`docs/product-decisions/0004-account-handles.md` defers its naming-policy
+questions to public signup, but this one is not among them: its **Open** list
+covers retired-handle visibility and confirmable lookalikes
+([#8](https://github.com/exocognito/angelmcp/issues/8)), not whether existence
+is observable. It has been added there by this work. Signup is now live, so it
+is due. Until it is answered, read G07 as holding for reads and not yet for the
+claim path, rather than as holding outright.
+
 ## What the live run found that the tests had not
 
-**An unrelated bearer token destroyed a valid session.** The dashboard's reset
-button sends the admin token in `Authorization` while the browser attaches the
-session cookie. Control forwarded both, Better Auth's bearer plugin read the
-admin token as the session, failed to resolve it, and refused somebody who was
-properly signed in — `401` to a live session. The cookie now wins whenever both
-are present. A bearer alone still works, which is what the CLI will have.
+**An unrelated bearer token destroyed a valid session.** The golden runner's
+reset sends the admin token in `Authorization` while the session rides as a
+cookie, exactly as a browser sends it. Control forwarded both, Better Auth's
+bearer plugin read the admin token as the session, failed to resolve it, and
+refused a caller who was properly signed in — `401` to a live session. The
+cookie now wins whenever both are present. A bearer alone still works, which is
+what the CLI will have.
 
 **A spent link stranded people on the wrong Worker.** `callbackURL` was
 relative, so it resolved against the sign-in Worker's own origin and the
@@ -89,8 +110,12 @@ signed in gets `500 session verifier failed` at once, and any one caller
 looping a request locks out everybody.
 
 Three things were wrong together and all three are fixed: the address header is
-named, `authenticateSessionRequest` forwards it, and `/get-session` is exempt.
-A session token cannot be brute-forced, so a cap there bought nothing.
+named, `authenticateSessionRequest` forwards it, and `/get-session` carries a
+custom rule of 1000 per 10 seconds instead of the default 100. Because the
+address header now resolves, that allowance is per-IP: far above anything a
+signed-in person can reach, and still a bound on a stranger looping invalid
+bearer tokens at a publicly routed Worker, one D1 read each. Removing the cap
+outright would have left that loop unbounded.
 
 Read against the framework source rather than taken on trust —
 `better-auth/dist/api/rate-limiter/index.mjs` builds the key from
@@ -166,17 +191,32 @@ attaches service-token headers no application reads any more. Harmless — the
 headers are ignored — but it is one more reason the CLI login hand-off is the
 real fix rather than a tidy-up.
 
-One gap worth naming rather than leaving to be discovered: `angelmcp-auth` has
-no baseline entry at all. The guard pins Broker, Gateway and Control, and this
-work made a fourth Worker load-bearing for tenant isolation without bringing it
-under the pin. Adding it while PD-01 is actively moving would turn the entry
-into a changelog rather than a guard, so it is left for when sign-in settles.
+`angelmcp-auth` is now pinned too, as a fourth entry. Review argued for leaving
+it out while PD-01 is actively moving, on the grounds that a Worker under change
+turns its baseline entry into a changelog. That is true, and it is equally true
+of Control, which has always been pinned — so the argument proved too much.
+Auth now decides which Account every request is served, which is exactly the
+kind of code a guard against unexplained bundle movement should cover.
 
 The script refuses to run on anything but Node v26, so the hashes here were
 reproduced independently: the same `wrangler deploy --dry-run` bundles, the
 same source-path normalisation, hashed in Python. Broker and Gateway came out
-byte-identical to the recorded values, which is what makes the Control number
-credible rather than merely asserted.
+byte-identical to the recorded values, which is what makes the Control and Auth
+numbers credible rather than merely asserted.
+
+Recorded 2026-08-04, and reproducible without the script — for each Worker,
+`pnpm exec wrangler deploy --dry-run --config wrangler.<w>.jsonc --outdir <d>`,
+then apply the `normalizedWorkerSha256` replacement in
+`scripts/ws1-release-integrity.ts:55-61` to `<d>/<w>.js` and sha256 the result:
+
+- `broker` `78f989e9b778e45718dbb13244594eca5892bbb7eb921d2120723b08de6fb62e`
+  — unchanged
+- `gateway` `26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7`
+  — unchanged
+- `control` `e28fb579a7db51ccb061a6959bd6feeb35e66067dbfb13e505d24e5c575f6eb4`
+  — moved with its source
+- `auth` `066ec8569ef8cdca0dd3dbf57c3c2f0dc7d2c97ac8e3e90f3d4f7e19b0e2718d`
+  — first entry
 
 ## Not in this run
 
