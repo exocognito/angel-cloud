@@ -5,8 +5,8 @@
 ## What is normative
 
 The [Angel Product Ledger](../product-ledger.html) owns the final goal, roadmap,
-learning disposition, and build-approval status. An APRD owns only the build
-contract for the next milestone after that milestone is approved.
+the commitments each epic keeps, and build-approval status. An APRD owns only the
+build contract for the next milestone after that milestone is approved.
 
 WS-E reconciled O2–O7 into this draft without approving implementation. It is
 **not approved for implementation**. On 2026-08-03 O10 approved WS2 and M-DF2 as

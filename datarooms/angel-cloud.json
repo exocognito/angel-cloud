@@ -1,129 +1,3 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Angel Cloud — Product Ledger</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Newsreader:ital,opsz@1,6..72&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-/* Product Ledger — Card skin. Zero-dependency static CSS.
-   Pairs with components/render.js. Fonts load from Google (graceful fallback to
-   system fonts); everything else is self-contained. */
-
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%}
-body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
-  font-family:Inter,system-ui,-apple-system,sans-serif;
-  -webkit-font-smoothing:antialiased}
-
-/* generic collapse (measured height) */
-.det{height:0;overflow:hidden;transition:height .28s cubic-bezier(.4,0,.2,1)}
-.det>.det-in{overflow:hidden}
-
-.brow{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap}
-.brow .kicker{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;letter-spacing:.22em;text-transform:uppercase}
-
-/* voice toggle */
-.ctlbar{display:flex;justify-content:space-between;align-items:center;gap:.7rem 1.4rem;flex-wrap:wrap;margin-bottom:.35rem}
-.aud{display:inline-flex;align-items:center;gap:.35rem;flex-wrap:wrap}
-.audlabel{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.58rem;letter-spacing:.14em;text-transform:uppercase;opacity:.55;margin-right:.1rem}
-.audbtn{font-family:inherit;font-size:.68rem;letter-spacing:.02em;padding:.2rem .55rem;border-radius:999px;border:1px solid rgba(125,125,125,.32);background:transparent;color:inherit;opacity:.5;cursor:pointer;transition:opacity .15s,border-color .15s,background .15s}
-.audbtn:hover{opacity:.85}
-.audbtn.on{opacity:1;border-color:currentColor;color:#1c6b58;background:#fff;border-color:#bcd9cf}
-.vtext{transition:opacity .12s}
-.vtext.vabsent{opacity:.62;font-style:italic}
-
-/* ---------- Card skin ---------- */
-.v-card{background:#e7e9ec;color:#1b1e22}
-.inner{max-width:60rem;margin:0 auto;padding:clamp(2.2rem,5vw,3.6rem) clamp(1.1rem,4vw,2.4rem) 5rem}
-.v-card .kicker{color:#2b6a58}
-.v-card .folio{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;letter-spacing:.13em;text-transform:uppercase;color:#8a9097}
-.v-card h1{font-family:"Fraunces",Georgia,serif;font-weight:500;font-size:clamp(2.2rem,6vw,3.1rem);line-height:1;letter-spacing:-.015em;margin:1.3rem 0 .2rem}
-.v-card .sub{font-size:.95rem;color:#63696f;margin:0 0 1.6rem}
-.v-card .ctl{display:flex;align-items:center;gap:.5rem;margin:0 0 1.1rem}
-.v-card .ctlbtn{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.68rem;letter-spacing:.05em;color:#5c626a;background:none;border:0;cursor:pointer;padding:.25rem .1rem}
-.v-card .ctlbtn:hover{color:#1b1e22;text-decoration:underline}
-.v-card .sep{color:#b9bfc6}
-
-/* epic = outer container */
-.v-card .ecard{background:#f4f5f7;border:1px solid #dde1e6;border-radius:18px;padding:.5rem;margin:0 0 1.15rem;box-shadow:0 1px 1px rgba(20,24,28,.03)}
-.v-card .ehead{display:flex;align-items:center;gap:.85rem;padding:.85rem 1rem .8rem;cursor:pointer;border-radius:14px}
-.v-card .ehead:hover{background:#eceef1}
-.v-card .ebadge{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;font-weight:500;color:#1b1e22;background:#e3e6ea;border-radius:6px;padding:.2rem .45rem;flex:none}
-.v-card .etitle{font-family:"Fraunces",Georgia,serif;font-size:1.42rem;font-weight:500;line-height:1.1;color:#1b1e22}
-.v-card .etitle .ver{color:#8a9097;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.9rem;font-weight:400;margin-right:.15rem}
-.v-card .grow{flex:1}
-.v-card .caret{flex:none;width:.75rem;font-size:.62rem;color:#aab0b7;transition:transform .25s;align-self:center}
-.v-card .ehead.open .caret,.v-card .chead.open .caret,.v-card .fitem.open .caret,.v-card .gfoot.open .caret{transform:rotate(90deg)}
-
-/* status pill */
-.v-card .pill{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.62rem;letter-spacing:.04em;font-weight:500;border-radius:999px;padding:.22rem .6rem;flex:none;white-space:nowrap;display:inline-flex;align-items:center;gap:.35rem}
-.v-card .pill .pip{width:6px;height:6px;border-radius:50%;flex:none}
-
-/* commitment = white card */
-.v-card .ccard{background:#fff;border:1px solid #e9ebef;border-radius:12px;margin:.3rem .3rem;box-shadow:0 1px 2px rgba(20,24,28,.05)}
-.v-card .chead{display:flex;align-items:center;gap:.7rem;padding:.7rem .9rem;cursor:pointer;border-radius:12px}
-.v-card .chead:hover{background:#f8f9fb}
-.v-card .cid{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.68rem;color:#969ca3;flex:none}
-.v-card .ctitle{font-family:"Fraunces",Georgia,serif;font-size:1.05rem;font-weight:500;line-height:1.2;color:#1b1e22}
-.v-card .tag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;border:1px solid #d5d9de;border-radius:3px;padding:.1rem .36rem;color:#8a9097;flex:none;align-self:center}
-.v-card .tag.ent{color:#2b6a58;border-color:#bcd9cf}
-.v-card .tag.amd{color:#9a7d1a;border-color:#e0d3a6}
-
-/* commitment law detail */
-.v-card .claw{padding:.1rem .95rem .3rem;border-top:1px solid #f0f1f4}
-.v-card .dsc{font-size:.92rem;line-height:1.55;color:#3c4147;margin:.6rem 0 .55rem;max-width:42rem}
-.v-card dl{display:grid;grid-template-columns:auto 1fr;gap:.26rem 1.1rem;margin:0 0 .5rem;font-size:.84rem;max-width:44rem}
-.v-card dt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:#a08a3c;padding-top:.16rem}
-.v-card dd{margin:0;color:#4a4f56;line-height:1.5}
-
-/* checklist of features */
-.v-card .checklist{padding:.15rem .3rem .5rem;border-top:1px solid #f0f1f4;margin-top:.1rem}
-.v-card .fitem{display:flex;align-items:center;gap:.6rem;padding:.4rem .6rem;cursor:pointer;border-radius:8px}
-.v-card .fitem:hover{background:#f6f7f9}
-.v-card .cbx{flex:none;width:17px;height:17px}
-.v-card .fid{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.64rem;color:#a7adb4;flex:none;width:2.4rem}
-.v-card .ftitle{font-size:.9rem;color:#33383e}
-.v-card .fitem.done .ftitle{color:#7f858c}
-.v-card .fstat{margin-left:auto;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.6rem;letter-spacing:.03em;flex:none}
-.v-card .fdet .det-in{padding:.1rem 0 .55rem 3.6rem}
-.v-card .fdet .scope{border-left:2px solid #e6e8ec;padding-left:.9rem}
-.v-card .scope .dsc{font-size:.86rem;margin:.2rem 0 .4rem}
-.v-card .scope dl{font-size:.8rem}
-
-/* unattached work */
-.v-card .loose{margin:.15rem .6rem .3rem;padding:.25rem .3rem}
-.v-card .loose .llabel{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.58rem;letter-spacing:.09em;text-transform:uppercase;color:#a08a3c;padding:.1rem .3rem .2rem}
-
-/* gate = footer / finish line */
-.v-card .gate{margin:.35rem .3rem .1rem;border-top:1.5px dashed #cdd2d8;position:relative}
-.v-card .gate::before,.v-card .gate::after{content:"";position:absolute;top:-7px;width:13px;height:13px;border-radius:50%;background:#e7e9ec}
-.v-card .gate::before{left:-7px}.v-card .gate::after{right:-7px}
-.v-card .gfoot{display:flex;align-items:center;gap:.7rem;padding:.7rem .65rem .55rem;cursor:pointer}
-.v-card .gfoot:hover{background:#eceef1;border-radius:9px}
-.v-card .gid{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.66rem;letter-spacing:.03em;flex:none}
-.v-card .gproof{font-family:"Newsreader",Georgia,serif;font-style:italic;font-size:.98rem;color:#5c626a}
-.v-card .gflag{flex:none;font-size:.8rem}
-.v-card .gdet .det-in{padding:.1rem .65rem .7rem 2.6rem}
-
-/* tones */
-.v-card .t-green{color:#1c6b58}.v-card .t-green .pip{background:#1c6b58}.v-card .pill.t-green{background:#e4efe9}
-.v-card .t-blue{color:#2b5fa8}.v-card .t-blue .pip{background:#2b5fa8}.v-card .pill.t-blue{background:#e5edf7}
-.v-card .t-amber{color:#9a7d1a}.v-card .t-amber .pip{background:#9a7d1a}.v-card .pill.t-amber{background:#f3edda}
-.v-card .t-grey{color:#828890}.v-card .t-grey .pip{background:#b3b8bf}.v-card .pill.t-grey{background:#eceef1}
-
-/* Keyboard operability: every expandable row is reachable and its focus visible.
-   :focus-visible only, so a mouse click does not leave a ring behind. */
-.v-card [data-x]:focus-visible{outline:2px solid #2b5fa8;outline-offset:2px;border-radius:8px}
-.v-card .audbtn:focus-visible,.v-card .ctlbtn:focus-visible{outline:2px solid #2b5fa8;outline-offset:2px}
-
-</style>
-</head>
-<body>
-<div id="ledger-root"></div>
-<script id="ledger" type="application/json">
 {
   "$schema": "ledger-roadmap/v0",
   "product": "Angel Cloud",
@@ -135,56 +9,16 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
     "sourceOfTruth": "docs/product-ledger.html is generated from this file by ~/Projects/product-ledger/bin/ledger-render. Never hand-edit the HTML."
   },
   "terms": [
-    {
-      "term": "Account",
-      "entity": "One paying identity's tenancy. Owns handles, Angels, Connections and custody state.",
-      "shape": "acct_* opaque id, one handle at a time, at most two handles ever",
-      "seam": true
-    },
-    {
-      "term": "Angel",
-      "entity": "A published toolbox an agent calls over MCP. Never an actor: it has no loop, intent, scheduler or mailbox.",
-      "shape": "@handle/angel coordinate"
-    },
-    {
-      "term": "Charter and policy",
-      "entity": "The portable, readable part of an Angel: what it may do and under what guards.",
-      "shape": "ANGEL.yaml",
-      "seam": true
-    },
-    {
-      "term": "Deployment",
-      "entity": "Where an Angel runs. Deliberately separate from policy so the same policy redeploys elsewhere.",
-      "shape": "angel.json",
-      "seam": true
-    },
-    {
-      "term": "Connection",
-      "entity": "A bound provider credential held by the Broker on an Account's behalf. Chosen by opaque selector, never by provider identity.",
-      "seam": true
-    },
-    {
-      "term": "Version",
-      "entity": "One immutable compiled bundle. Promotion moves exact bytes and never rebuilds.",
-      "shape": "bundle digest + engine pin"
-    },
-    {
-      "term": "Angel key",
-      "entity": "The credential an agent presents to call an Angel. Shown once, recoverable only by rotation."
-    },
-    {
-      "term": "Gate receipt",
-      "entity": "The record of what the Gateway and Broker each decided about one call."
-    },
-    {
-      "term": "Handle",
-      "entity": "An Account's public name. Unique platform-wide, never released, renameable once.",
-      "seam": true
-    },
-    {
-      "term": "Gate",
-      "entity": "In this Ledger, the owner's advance/repair/accept decision that closes an epic. Distinct from the Gateway and Broker gates, which are runtime authority checks."
-    }
+    { "term": "Account", "entity": "One paying identity's tenancy. Owns handles, Angels, Connections and custody state.", "shape": "acct_* opaque id, one handle at a time, at most two handles ever", "seam": true },
+    { "term": "Angel", "entity": "A published toolbox an agent calls over MCP. Never an actor: it has no loop, intent, scheduler or mailbox.", "shape": "@handle/angel coordinate" },
+    { "term": "Charter and policy", "entity": "The portable, readable part of an Angel: what it may do and under what guards.", "shape": "ANGEL.yaml", "seam": true },
+    { "term": "Deployment", "entity": "Where an Angel runs. Deliberately separate from policy so the same policy redeploys elsewhere.", "shape": "angel.json", "seam": true },
+    { "term": "Connection", "entity": "A bound provider credential held by the Broker on an Account's behalf. Chosen by opaque selector, never by provider identity.", "seam": true },
+    { "term": "Version", "entity": "One immutable compiled bundle. Promotion moves exact bytes and never rebuilds.", "shape": "bundle digest + engine pin" },
+    { "term": "Angel key", "entity": "The credential an agent presents to call an Angel. Shown once, recoverable only by rotation." },
+    { "term": "Gate receipt", "entity": "The record of what the Gateway and Broker each decided about one call." },
+    { "term": "Handle", "entity": "An Account's public name. Unique platform-wide, never released, renameable once.", "seam": true },
+    { "term": "Gate", "entity": "In this Ledger, the owner's advance/repair/accept decision that closes an epic. Distinct from the Gateway and Broker gates, which are runtime authority checks." }
   ],
   "releases": [
     {
@@ -288,10 +122,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "The foundation was published but nothing addressed it at a stable public name yet.",
-            "disposition": {
-              "kind": "adoption-evidence",
-              "admits": "WS0"
-            }
+            "disposition": { "kind": "adoption-evidence", "admits": "WS0" }
           }
         ],
         "voices": {
@@ -303,10 +134,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "A readable file, and a thing that runs from it",
             "description": "The check was that the file a person approves and the artifact that runs are connected by a step the person can perform themselves."
           },
-          "marketing": {
-            "absent": true,
-            "reason": "M0 was foundation work with no public audience; nothing shipped here was announced."
-          },
+          "marketing": { "absent": true, "reason": "M0 was foundation work with no public audience; nothing shipped here was announced." },
           "product": {
             "title": "The trust primitives exist",
             "description": "This gate bought the two primitives everything later depends on — a readable policy and a reproducible artifact. It bought no user journey, and the next epic had to make the result addressable."
@@ -483,10 +311,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "The mechanisms were proved by tests, but no real person had used the product end to end.",
-            "disposition": {
-              "kind": "adoption-evidence",
-              "admits": "M-DF1"
-            }
+            "disposition": { "kind": "adoption-evidence", "admits": "M-DF1" }
           }
         ],
         "voices": {
@@ -498,10 +323,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "The real thing worked, and the stop worked",
             "description": "The gate was not 'it runs'. It was that the refusal behaves as designed, because a safety story only counts once someone has watched it refuse."
           },
-          "marketing": {
-            "absent": true,
-            "reason": "Proof milestone against internal tests; there was no release to announce."
-          },
+          "marketing": { "absent": true, "reason": "Proof milestone against internal tests; there was no release to announce." },
           "product": {
             "title": "Capability proved, adoption not",
             "description": "This gate established that the machinery works. It deliberately admitted the next round rather than claiming readiness, because nothing here showed a real person could get through it."
@@ -564,10 +386,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "One step to go live, and preview is a choice",
               "description": "A first publish is one clear command with no mode to learn. Asking for preview is a visibly different action, so nobody reaches production thinking they were rehearsing, or the reverse."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Amendable: release defaults are tunable and make no public-format promise, so there is nothing here to claim publicly."
-            },
+            "marketing": { "absent": true, "reason": "Amendable: release defaults are tunable and make no public-format promise, so there is nothing here to claim publicly." },
             "product": {
               "title": "Cheap first success, explicit second gear",
               "description": "The job on day one is getting something live without learning a release model. Deferring preview to an explicit opt-in keeps that first step short, and PD 0003 accepted the cost that experienced users type more."
@@ -583,9 +402,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Public Account and Angel coordinate",
               "status": "done",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Address production Angels at a stable bare @handle/angel coordinate. Current evidence: handle registry, production-default route, preview suffix and legacy cutover tests all pass, verified 2026-07-31. The coordinate answers on the current workers.dev host; the final mcp.angelmcp.ai host is not wired, so the name is stable in shape but not yet at its final address.",
               "exhibit": "Handle registry and coordinate tests; PD 0001",
               "note": "The zone move that wires mcp.angelmcp.ai is tracked as issue #6 and is still open. docs/domain-architecture.md names mcp.angelmcp.ai as the Gateway host.",
@@ -600,10 +417,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "A short address that keeps working",
                   "description": "The coordinate is short enough to paste into an MCP client config and stable enough to leave there. Renaming does not break what someone already configured."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Routing detail under an amendable law; the public claim is the address itself, made at the WS0 epic level."
-                },
+                "marketing": { "absent": true, "reason": "Routing detail under an amendable law; the public claim is the address itself, made at the WS0 epic level." },
                 "product": {
                   "title": "A coordinate people can commit to",
                   "description": "Agent configs are written once and rarely re-read. Resolving retired handles rather than redirecting means a name in a config can never quietly start pointing somewhere else."
@@ -639,10 +453,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Look before you connect — but the charter is visible",
               "description": "Anyone can see what an Angel exposes and whether it is guarded, before connecting. What they also see today is the owner's own charter wording and guard values, so an owner should write that text as public copy."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "The law does not hold yet: the capability-only summary is unbuilt, so no public claim about reduced disclosure can be made."
-            },
+            "marketing": { "absent": true, "reason": "The law does not hold yet: the capability-only summary is unbuilt, so no public claim about reduced disclosure can be made." },
             "product": {
               "title": "Evaluable by a stranger, at a cost",
               "description": "The job is letting someone assess an Angel before trusting it. Today that works by showing everything non-secret, which O10 accepted with a documented boundary; the capability-only summary is what will let an owner be evaluable without publishing their own prose."
@@ -658,9 +469,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Basic public Angel trust page",
               "status": "done",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Show charter and tools without login, key, cookies, credentials or Connection identity. Current evidence: the basic page is live and passes its tests, verified 2026-08-01. Under the retired contract its truth state was PARTIAL, because the O7 capability-only summary is absent and owner-authored charter text and guard literals are public.",
               "exhibit": "Current page tests; PD 0002; PD 0007; WS-E public-boundary brief",
               "note": "O10 settled the privacy treatment on 2026-08-03: charter text and guard literals stay public with a documented boundary. The reduced capability summary remains a WS2 build.",
@@ -675,10 +484,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "A page a stranger can read",
                   "description": "Someone deciding whether to connect sees the operations and their guards. They cannot see who owns the accounts behind it, and they cannot check the artifact — that stays with the owner."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Shipped partial: the reduced disclosure the public claim would rest on is unbuilt."
-                },
+                "marketing": { "absent": true, "reason": "Shipped partial: the reduced disclosure the public claim would rest on is unbuilt." },
                 "product": {
                   "title": "Enough to evaluate, not yet enough to protect",
                   "description": "This gives a stranger the information they need to judge an Angel. It does not yet give the owner control over how much of their own writing that costs them."
@@ -700,17 +506,11 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "The public page shows owner-authored charter text and guard literals, which the dogfood report treated as core evidence but which no decision had yet made deliberately public.",
-            "disposition": {
-              "kind": "task",
-              "note": "escalated to O7, closed 2026-08-03; recorded as a limit on G11"
-            }
+            "disposition": { "kind": "task", "note": "escalated to O7, closed 2026-08-03; recorded as a limit on G11" }
           },
           {
             "text": "The capability-only review summary that would let an owner be evaluable without publishing their own prose does not exist.",
-            "disposition": {
-              "kind": "task",
-              "note": "recorded as G11's notYet, claiming at WS2"
-            }
+            "disposition": { "kind": "task", "note": "recorded as G11's notYet, claiming at WS2" }
           }
         ],
         "voices": {
@@ -722,10 +522,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "Someone outside can find it and read it",
             "description": "The test was whether a person with no account could reach an Angel and understand what it does. They can — and in doing so they also read the owner's own wording, which this gate flagged rather than accepted quietly."
           },
-          "marketing": {
-            "absent": true,
-            "reason": "Infrastructure gate; the shareable claim depends on the unbuilt capability summary."
-          },
+          "marketing": { "absent": true, "reason": "Infrastructure gate; the shareable claim depends on the unbuilt capability summary." },
           "product": {
             "title": "Addressable and legible, with a disclosure debt",
             "description": "The epic delivered what a stranger needs. It also created a real cost for owners, which this gate escalated to a decision rather than leaving as a surprise."
@@ -751,10 +548,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "title": "The author used it as a stranger, and got stuck",
           "description": "The run stopped short: Sam never held an Angel key and never called a deployed Angel over MCP. What that produced was not a demo but a list of the places the product assumed knowledge only its author had."
         },
-        "marketing": {
-          "absent": true,
-          "reason": "An internal dogfood round with a curated findings record; nothing here is a public claim."
-        },
+        "marketing": { "absent": true, "reason": "An internal dogfood round with a curated findings record; nothing here is a public claim." },
         "product": {
           "title": "Buy the truth before buying the roadmap",
           "description": "This round exists to stop scope being chosen from intuition. Requiring every finding to have a destination before Round-2 scope existed is what makes the later epics answerable to evidence."
@@ -773,17 +567,11 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "113 findings reconciled: 35 included, 49 proposed for later scope, 29 deferred, 0 unresolved. Under the retired contract these dispositions were a first-class surface; ledger-roadmap/v0 has no vocabulary for them, so the counts are recorded here.",
-            "disposition": {
-              "kind": "task",
-              "note": "reconciliation surface has no home in v0 — filed as a toolkit gap"
-            }
+            "disposition": { "kind": "task", "note": "reconciliation surface has no home in v0 — filed as a toolkit gap" }
           },
           {
             "text": "The run never reached an Angel key or a deployed MCP call, so nothing in it evidences the managed journey end to end.",
-            "disposition": {
-              "kind": "adoption-evidence",
-              "admits": "WS1"
-            }
+            "disposition": { "kind": "adoption-evidence", "admits": "WS1" }
           }
         ],
         "voices": {
@@ -795,10 +583,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "An unfinished run still closed the gate",
             "description": "The honest outcome was that the product could not be completed by its own author from a user's position. Recording that, rather than retrying until it worked, is what the gate bought."
           },
-          "marketing": {
-            "absent": true,
-            "reason": "The gate records a failed journey; there is no public claim in it."
-          },
+          "marketing": { "absent": true, "reason": "The gate records a failed journey; there is no public claim in it." },
           "product": {
             "title": "Evidence gate, not a success gate",
             "description": "Advancing on reconciliation rather than on completion keeps a failed round useful. The 49 proposed findings became the raw material for WS2's scope instead of being lost."
@@ -824,10 +609,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "title": "One place to look",
           "description": "Contributors and agents stopped having to reconcile a roadmap file, a milestones file and a ledger that disagreed. The rename changed no runtime behavior anyone could observe."
         },
-        "marketing": {
-          "absent": true,
-          "reason": "Internal housekeeping under an amendable law; nothing user-facing changed by design."
-        },
+        "marketing": { "absent": true, "reason": "Internal housekeeping under an amendable law; nothing user-facing changed by design." },
         "product": {
           "title": "Stop paying the drift tax",
           "description": "Two plans in one repository is how one of them goes quietly wrong. Collapsing to a single canonical Ledger and one source history was the precondition for trusting any later status claim."
@@ -865,10 +647,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Nothing an operator touches got merged",
               "description": "Sharing a repository did not merge the things that fail separately — deploys, accounts, bindings and secrets each still stand alone, so a mistake in one does not reach the others."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Amendable repository-topology law with no user-facing surface; ADR 0004's ownership rule was already superseded by 0007, which is why this stays amendable."
-            },
+            "marketing": { "absent": true, "reason": "Amendable repository-topology law with no user-facing surface; ADR 0004's ownership rule was already superseded by 0007, which is why this stays amendable." },
             "product": {
               "title": "Coherent change without merged blast radius",
               "description": "Agents need one repo to change the product coherently. Keeping the deploy and secret boundaries separate is what stops that convenience from becoming a single failure domain."
@@ -884,9 +663,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "task",
               "title": "Behavior-neutral monorepo migration",
               "status": "done",
-              "check": {
-                "kind": "smoke"
-              },
+              "check": { "kind": "smoke" },
               "description": "Rename angel-cloud to angelmcp and import core history without changing runtime, auth, routes, policy or product flow. Current evidence: the repository is renamed in place, 31 rewritten commits live at packages/core, inherited history scans clean, and package runtime bytes and normalized Worker bundles matched their pre-migration baselines. Blocking evals all passed: rewritten core path history and a zero-match secret audit; one workspace and lockfile; package runtime-byte and contract parity; a packed clean consumer; a merged public-starter build with a fresh merged-main external attestation; and byte-identical normalized Broker, Gateway and Control bundles. Verified 2026-08-01.",
               "exhibit": "History proof; ADR 0007",
               "note": "Merge prerequisite satisfied: exocognito/angels#1 merged as 2a635bf before this PR. ADR 0007 requires a merge commit — squash and rebase merges discard the imported ancestry.",
@@ -897,14 +674,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "Hashes matched before and after",
                   "description": "The migration was proved neutral by comparing normalized Worker bundles and package runtime bytes across the rename, not by reading the diff. History was rewritten into packages/core and scanned for inherited secrets."
                 },
-                "designer": {
-                  "absent": true,
-                  "reason": "A migration whose success condition was that nobody could observe it."
-                },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Internal repository work with no user-facing change."
-                },
+                "designer": { "absent": true, "reason": "A migration whose success condition was that nobody could observe it." },
+                "marketing": { "absent": true, "reason": "Internal repository work with no user-facing change." },
                 "product": {
                   "title": "Bought coherence, spent no behavior",
                   "description": "Proving neutrality mechanically is what let a large structural change happen without opening a question about whether the product still worked."
@@ -920,9 +691,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "task",
               "title": "Canonical source and release housekeeping",
               "status": "done",
-              "check": {
-                "kind": "smoke"
-              },
+              "check": { "kind": "smoke" },
               "description": "Use one lockfile, docs tree and examples source while preserving package provenance and external-consumer proof. Current evidence: one pinned pnpm workspace links core 0.3.0; the release check downloads and SRI-verifies the registry tarball, compares the manifest and runtime contract, and installs a clean candidate tarball. Verified 2026-08-01.",
               "exhibit": "Registry baseline; starter proof",
               "note": "WS1 housekeeping is complete; later package changes are outside this deliverable. WS1 delivered registry SRI verification and runtime-byte parity with the published 0.3.0 tarball, plus CI's network-verified last-registry-tarball parity proof. No npm provenance attestation exists for @smcllns/angel-core 0.3.0 — provenance was required only for the new @angelmcp/cli package, which WS2 published with it.",
@@ -932,14 +701,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "One pnpm workspace, tarball verified against the registry",
                   "description": "A single pinned pnpm workspace links @smcllns/angel-core 0.3.0. The release check downloads the published tarball, SRI-verifies it, diffs the manifest and runtime contract, and installs a candidate in a clean consumer."
                 },
-                "designer": {
-                  "absent": true,
-                  "reason": "Build-system housekeeping with no surface a person meets."
-                },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Internal release plumbing."
-                },
+                "designer": { "absent": true, "reason": "Build-system housekeeping with no surface a person meets." },
+                "marketing": { "absent": true, "reason": "Internal release plumbing." },
                 "product": {
                   "title": "Provenance that outlives the workspace",
                   "description": "Checking the published tarball rather than the local build is what makes a claim about what an outside consumer actually receives, which is the only version of that claim worth having."
@@ -959,9 +722,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "task",
           "title": "Contract-conformant Product Ledger",
           "status": "done",
-          "check": {
-            "kind": "smoke"
-          },
+          "check": { "kind": "smoke" },
           "description": "Maintain Angel's canonical Product Ledger under the approved contract. Current evidence: contract PR #307 and Ledger PR #43 merged, and the canonical artifact passed its tests. Verified 2026-08-01. Superseded in form on 2026-08-05: the Ledger is now generated from this dataroom by ledger-roadmap/v0, and the retired contract v0.1 is no longer the governing shape.",
           "exhibit": "Merged Ledger PR #43",
           "serves": "product control",
@@ -974,10 +735,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "One artifact the owner reads",
               "description": "A single page that states where the product actually is, expandable row by row, readable on a phone. Its job is that nobody has to reconcile repos to answer a status question."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal product-control artifact."
-            },
+            "marketing": { "absent": true, "reason": "Internal product-control artifact." },
             "product": {
               "title": "The control surface itself",
               "description": "This serves no product law — it is how the laws get stated and checked. Filed as unattached deliberately rather than invented a law to hang it under."
@@ -993,9 +751,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "task",
           "title": "Product-control and issue-promotion rules",
           "status": "done",
-          "check": {
-            "kind": "smoke"
-          },
+          "check": { "kind": "smoke" },
           "description": "Keep the Ledger as product truth while Issues own durable execution and repo docs own exact build contracts. Current evidence: the approved contract, merged Ledger governance, same-PR promotion tests and zero-orphan checks enforce the split. Verified 2026-08-01.",
           "exhibit": "Contract governance; merged contract PR",
           "serves": "product control",
@@ -1004,14 +760,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Same-PR promotion, checked",
               "description": "Product truth and the Ledger change in one PR when they live in one repo. Tests enforce that an Issue cannot accumulate roadmap state and that no learning is left without a destination."
             },
-            "designer": {
-              "absent": true,
-              "reason": "A governance rule between maintainers; no user meets it."
-            },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal process."
-            },
+            "designer": { "absent": true, "reason": "A governance rule between maintainers; no user meets it." },
+            "marketing": { "absent": true, "reason": "Internal process." },
             "product": {
               "title": "Stop the second roadmap forming",
               "description": "Every drifting plan starts as a convenient place to write something down. Naming one owner per kind of fact is cheaper than reconciling later, which NEXT.md proved on 2026-08-05 by having gone stale exactly that way."
@@ -1031,10 +781,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "Approval covered product control and WS1 only. The Round-2 build questions — package identity, Linux storage, local/cloud syntax, auth expiry, replay, deletion, public review — were open and could not be answered from intuition.",
-            "disposition": {
-              "kind": "adoption-evidence",
-              "admits": "WS-E"
-            }
+            "disposition": { "kind": "adoption-evidence", "admits": "WS-E" }
           }
         ],
         "voices": {
@@ -1042,14 +789,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "Scope-limited approval, recorded",
             "description": "The approval is a durable record naming exactly WS1. Nothing in it authorized WS2 implementation, and the Ledger tests pinned that boundary so it could not drift."
           },
-          "designer": {
-            "absent": true,
-            "reason": "An owner approval decision with no user-facing surface."
-          },
-          "marketing": {
-            "absent": true,
-            "reason": "Internal approval."
-          },
+          "designer": { "absent": true, "reason": "An owner approval decision with no user-facing surface." },
+          "marketing": { "absent": true, "reason": "Internal approval." },
           "product": {
             "title": "Approve the smallest true thing",
             "description": "Approving product control without approving the next build kept the sequence honest: it let organisation land while the questions the next build depended on were still genuinely open."
@@ -1071,14 +812,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "title": "Seven briefs, seven decisions, no behavior change",
           "description": "Each brief investigated one open question against real artifacts and recommended an answer. WS-E corrected docs and recorded PD 0007 but shipped no product code, which is why its approval was evidence-only."
         },
-        "designer": {
-          "absent": true,
-          "reason": "An evidence epic; nothing a user meets changed."
-        },
-        "marketing": {
-          "absent": true,
-          "reason": "Internal research with no shippable claim."
-        },
+        "designer": { "absent": true, "reason": "An evidence epic; nothing a user meets changed." },
+        "marketing": { "absent": true, "reason": "Internal research with no shippable claim." },
         "product": {
           "title": "Pay for answers before paying for code",
           "description": "Seven open questions each had a cheap wrong answer available. Buying evidence first is what let O10 approve a whole workstream in one decision rather than discovering the questions mid-build."
@@ -1095,9 +830,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "task",
           "title": "Seven evidence briefs",
           "status": "done",
-          "check": {
-            "kind": "smoke"
-          },
+          "check": { "kind": "smoke" },
           "description": "Replace intuition with evidence for package identity, Linux OAuth and storage, local/cloud syntax, auth expiry, replay, deletion and the public review summary. Current evidence: seven saved briefs exist and seven decisions closed from them; brief 1 recommended @angelmcp/cli@0.1.0 with a Bun-global install proved against the registry tarball. Verified 2026-08-03 by owner decision.",
           "exhibit": "docs/evidence/ws-e/01–07",
           "serves": "decision evidence",
@@ -1106,14 +839,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Each brief tested against a real artifact",
               "description": "Brief 1 proved the install against the current published tarball rather than a local build. The others read framework source, provider behavior and existing code rather than reasoning from the APRD."
             },
-            "designer": {
-              "absent": true,
-              "reason": "Research output; no interface was designed or changed."
-            },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal research."
-            },
+            "designer": { "absent": true, "reason": "Research output; no interface was designed or changed." },
+            "marketing": { "absent": true, "reason": "Internal research." },
             "product": {
               "title": "Seven decisions for one round of work",
               "description": "The briefs converted seven open questions into closed decisions in a single pass, which is what made O10 possible as one approval rather than seven mid-build interruptions."
@@ -1133,24 +860,15 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "Seven decisions closed across six briefs. O1 fixed the public package as @angelmcp/cli@0.1.0, and WS2 published it on 2026-08-03 from a cli-v0.1.0 tag through npm trusted publishing with provenance.",
-            "disposition": {
-              "kind": "adoption-evidence",
-              "admits": "WS2"
-            }
+            "disposition": { "kind": "adoption-evidence", "admits": "WS2" }
           },
           {
             "text": "The APRD reconciled here remains unapproved for implementation. Its terminology, commitments, commands and evals are target intent, not contract, until a WS2 build contract derives from the approved Ledger.",
-            "disposition": {
-              "kind": "task",
-              "note": "recorded as a standing boundary in docs/aprd/README.md; not tracker work"
-            }
+            "disposition": { "kind": "task", "note": "recorded as a standing boundary in docs/aprd/README.md; not tracker work" }
           },
           {
             "text": "C16 stayed open: the APRD assumes one OAuth client can serve both hosted and headless consent, and no provider-valid callback and client-type journey proves that boundary.",
-            "disposition": {
-              "kind": "task",
-              "note": "unresolved — carried into WS2 as an open contradiction, not closed here"
-            }
+            "disposition": { "kind": "task", "note": "unresolved — carried into WS2 as an open contradiction, not closed here" }
           }
         ],
         "voices": {
@@ -1158,14 +876,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "Closed on saved briefs and closed decisions",
             "description": "The condition was mechanical: seven briefs saved, every decision they fed closed. One contradiction — C16, the OAuth client-type boundary — was explicitly left open rather than argued shut."
           },
-          "designer": {
-            "absent": true,
-            "reason": "No interface decision was taken at this gate."
-          },
-          "marketing": {
-            "absent": true,
-            "reason": "Evidence-only approval with nothing to announce."
-          },
+          "designer": { "absent": true, "reason": "No interface decision was taken at this gate." },
+          "marketing": { "absent": true, "reason": "Evidence-only approval with nothing to announce." },
           "product": {
             "title": "Bought a whole workstream's certainty",
             "description": "Closing seven decisions at once is what let the next approval be a single yes. Leaving C16 open in the same breath is what keeps the record honest about what was not bought."
@@ -1191,10 +903,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "title": "A stranger gets in, and gets a product",
           "description": "Someone who has never seen the repo asks for a link, spends it once, and lands in an empty Account that is theirs. What they cannot yet do is work offline, check what they published, or delete the account again."
         },
-        "marketing": {
-          "absent": true,
-          "reason": "In flight: most of what would be claimed publicly is unbuilt, and the round it serves has not run."
-        },
+        "marketing": { "absent": true, "reason": "In flight: most of what would be claimed publicly is unbuilt, and the round it serves has not run." },
         "product": {
           "title": "Close the gap Round 1 exposed",
           "description": "Round 1 failed because the product needed knowledge only its author had. This epic buys the parts a stranger needs — an account they own, a local path with no signup, and evidence they can check themselves."
@@ -1228,10 +937,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Other people's accounts are simply not there",
               "description": "Asking for someone else's Account looks exactly like asking for one that was never created. There is one place that leaks: trying to claim a handle tells you whether the name is taken, the way every signup form does."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "The law is narrowed and one path is unresolved; a tenancy-isolation claim would overstate what 2026-08-04 proved."
-            },
+            "marketing": { "absent": true, "reason": "The law is narrowed and one path is unresolved; a tenancy-isolation claim would overstate what 2026-08-04 proved." },
             "product": {
               "title": "Isolation people can rely on, minus one question",
               "description": "Owners need to know a stranger cannot enumerate them. That holds for reads. Whether a handle namespace should be publicly probeable is a real product choice — most products say yes — and it is now due because signup is live."
@@ -1266,10 +972,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Sign up and the product is yours",
               "description": "A stranger asks for a link at dash.angelmcp.ai, spends it once within ten minutes, and lands in an empty Account only they can see. What they still cannot do is delete it again without asking a person."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Self-service deletion is the part that would be claimed, and it is unbuilt."
-            },
+            "marketing": { "absent": true, "reason": "Self-service deletion is the part that would be claimed, and it is unbuilt." },
             "product": {
               "title": "Leaving easily is what makes trying cheap",
               "description": "The job is trying a platform without a conversation and leaving without one either. Sign-up is done; the exit is not, and until it is, every dogfood round needs an operator to reset state."
@@ -1285,9 +988,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Fresh Account lifecycle",
               "status": "in-progress",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Let a new owner sign up, enter an empty Account, recover, and fully delete or reset without an operator. Current evidence: sign-up and the Account behind it are built and proved from outside the repo on 2026-08-04; three people signed up and each saw only their own. Recovery and the O6 deletion cascade remain unbuilt. Truth state under the retired contract: PARTIAL.",
               "exhibit": "docs/evidence/pd-01/03-multi-tenant-control.md",
               "note": "The run also proved this work turns G07's eval as well as G10's. v0 nests work under one commitment, so it is filed under G10 and cited from G07.",
@@ -1302,10 +1003,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "A link in a real inbox, and then your own dashboard",
                   "description": "Mail arrives, the link is spent once, and the dashboard is there. Review caught that a brand-new signup previously hit a dead end reading 'Demo state unavailable: HTTP 409' with no navigation out of it."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "In flight, and the lifecycle it names is not complete — deletion and recovery are unbuilt."
-                },
+                "marketing": { "absent": true, "reason": "In flight, and the lifecycle it names is not complete — deletion and recovery are unbuilt." },
                 "product": {
                   "title": "The first real strangers got in",
                   "description": "This is the first evidence that anyone but the author can obtain an Account. The live run read 'the other two stay uninitialized' as proof of isolation, which it was — and missed that it was also proof neither of them had a usable product."
@@ -1335,10 +1033,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "You cannot yet check what you published",
               "description": "An owner has no way to hold their local artifact against the running one, or to read back what the gates decided about a call. The law describes the intended experience, not one anyone can have."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Not built: no public claim exists to make about verification or replay."
-            },
+            "marketing": { "absent": true, "reason": "Not built: no public claim exists to make about verification or replay." },
             "product": {
               "title": "Where trust becomes checkable",
               "description": "Everything before this asks an owner to trust the platform's word. Verify and replay are what convert that into something they can check themselves — which is why the law also insists on naming where proof ends."
@@ -1354,9 +1049,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Managed Angel",
               "status": "pending",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete or reset. Current evidence: managed publish and call work through private M1 credentials; public auth, verify, replay, the public review summary and Account reset do not. Blocked behind PD-01 and the CLI login hand-off. Truth state under the retired contract: PARTIAL; plan state BLOCKED, which v0 renders as pending.",
               "exhibit": "Current ship flow; target managed flow",
               "note": "Blocked, not merely pending: the management surface dropped its shared token on 2026-08-04, so nothing issues a credential to a terminal today.",
@@ -1371,10 +1064,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "The managed path exists but not for a stranger",
                   "description": "Publishing and calling work when the credentials were arranged privately. Someone arriving with the published CLI has no way to authenticate it, which is the gap between this and a journey."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Blocked with no public entry path; a managed-hosting claim would not survive contact."
-                },
+                "marketing": { "absent": true, "reason": "Blocked with no public entry path; a managed-hosting claim would not survive contact." },
                 "product": {
                   "title": "The CLI login hand-off is the real fix",
                   "description": "Removing a shared secret that bounded nothing was right. The honest cost is that the terminal now has no credential at all, and a fourteen-day session is not the shape a CLI wants."
@@ -1404,10 +1094,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Same Angel whichever way you arrive",
               "description": "Typing commands, asking an agent, or opening www should show one product and one set of evidence. In Round 2 www shows and does not author, which is a deliberate narrowing rather than a gap."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Amendable, and the parity claim it would rest on failed its only real test."
-            },
+            "marketing": { "absent": true, "reason": "Amendable, and the parity claim it would rest on failed its only real test." },
             "product": {
               "title": "Public docs are the product for an agent",
               "description": "An agent cannot ask a maintainer. Whether the published surface is sufficient is therefore not a docs question but the product question, and Round 1 answered it no."
@@ -1423,9 +1110,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Ideal public docs and API contract",
               "status": "pending",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Publish exact install, CLI, max-agent, outputs, side effects, failures, handoffs and tested examples. Current evidence: the current manual documents M1, and the first public-doc journey failed. O1–O7 and O9 settled the guide's syntax and package choices, but the guide stays unapproved as an implementation contract and none of it is proved. Truth state under the retired contract: BROKEN — the published path actively misled a reader — and plan state BLOCKED, neither of which v0 can render.",
               "exhibit": "docs/user-manual.md (current, M1); docs/aprd/v2.1-cli-user-guide.md (target, unapproved)",
               "note": "Broken rather than merely absent: a reader following the published path in Round 1 failed at its own URL.",
@@ -1439,10 +1124,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "The published path did not work",
                   "description": "This is not missing documentation. Someone followed what was published and it failed, which is worse than an empty page because it costs the reader their trust before it costs them their time."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Broken: the public surface would be the marketing surface, and it does not work."
-                },
+                "marketing": { "absent": true, "reason": "Broken: the public surface would be the marketing surface, and it does not work." },
                 "product": {
                   "title": "Docs are the whole product for a stranger",
                   "description": "For an agent and for a first-time human, the published surface is all there is. Fixing it is not a documentation task under the build — it is the build."
@@ -1458,9 +1140,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Max-agent journey",
               "status": "pending",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "A fresh agent uses public docs and interfaces; the human only authenticates, consents and inspects. Current evidence: Round 1 required private knowledge and failed the public-doc path. Truth state under the retired contract: BROKEN; plan state BLOCKED.",
               "exhibit": "Public agent docs; Round-1 reconciliation",
               "servesLaw": "G12",
@@ -1473,10 +1153,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "The human's part is only consent",
                   "description": "The shape being tested is an agent doing the work while a person authenticates, consents and inspects. Anything the agent cannot do from published material is the finding."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Unproved journey; nothing to claim."
-                },
+                "marketing": { "absent": true, "reason": "Unproved journey; nothing to claim." },
                 "product": {
                   "title": "The sharpest measure the product has",
                   "description": "An agent with no private context is the strictest reader of the published surface. Its failures are the same failures a first human hits, discovered faster and without politeness."
@@ -1492,9 +1169,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Read-only www for Round 2",
               "status": "pending",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Show Angel state, endpoint, policy, proof, activity, health and recovery without source authoring in Round 2. Current evidence: a freshly signed-up owner reaches a dashboard of their own. The 2026-08-04 run (docs/evidence/pd-01/03-multi-tenant-control.md) proved the shell and the isolation; the first read that creates that owner's state landed after it and is pinned by tests, not yet by a live run. What that owner cannot yet see is the Round-2 inspection surface: the built read views and write actions still run against the private M1 Account's state. Truth state under the retired contract: PARTIAL; plan state BLOCKED behind PD-03.",
               "exhibit": "Parity handoff; current UI screenshots",
               "servesLaw": "G12",
@@ -1507,10 +1182,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "Look, do not author",
                   "description": "Round 2 www is deliberately a window: state, endpoint, policy, proof, activity, health and recovery, with authoring left to the CLI. Narrowing the surface is what makes it finishable."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Amendable law, incomplete surface, and no fresh-owner path to reach it."
-                },
+                "marketing": { "absent": true, "reason": "Amendable law, incomplete surface, and no fresh-owner path to reach it." },
                 "product": {
                   "title": "The inspection surface",
                   "description": "The job www does in Round 2 is letting an owner confirm what their Angel is doing without learning a command. Deferring authoring keeps that job small enough to actually finish."
@@ -1540,10 +1212,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "No signup should be the first step",
               "description": "The intended shape is that someone tries the product on their own machine and chooses hosting later, as a separate consent. Today the first step is still an account."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Not built: the local-first claim is precisely what has no evidence."
-            },
+            "marketing": { "absent": true, "reason": "Not built: the local-first claim is precisely what has no evidence." },
             "product": {
               "title": "Optional hosting is the adoption story",
               "description": "Requiring an account before anything works is the largest single barrier to trying this. Making local use complete is what turns hosting into a choice rather than a toll."
@@ -1559,9 +1228,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "feature",
               "title": "Local First Angel",
               "status": "pending",
-              "check": {
-                "kind": "dogfood"
-              },
+              "check": { "kind": "dogfood" },
               "description": "Install, create, build, consent locally, serve, and call a real restricted Angel with no cloud Account. Current evidence: build exists; local consent, serve and clean-room proof do not. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
               "exhibit": "Target local journey; current manual",
               "servesLaw": "G13",
@@ -1574,10 +1241,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "Try it before you sign up for anything",
                   "description": "The journey being bought is: install, describe an Angel, approve it locally, run it, and have your own agent call it — without an account existing anywhere."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "Unbuilt; this is the claim that would matter most and it has no evidence behind it."
-                },
+                "marketing": { "absent": true, "reason": "Unbuilt; this is the claim that would matter most and it has no evidence behind it." },
                 "product": {
                   "title": "The cheapest possible first success",
                   "description": "A local run costs a stranger nothing and no trust. It is the shortest path from curiosity to a working thing, and it is the one path Round 1 never offered."
@@ -1593,9 +1257,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "type": "task",
               "title": "Self-hosting status note",
               "status": "pending",
-              "check": {
-                "kind": "smoke"
-              },
+              "check": { "kind": "smoke" },
               "description": "State what is portable, unproved and unsupported without publishing fake setup instructions. Current evidence: the architecture is portable in parts; no clean-room supported deployment exists. Target intent, settled by O9. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
               "exhibit": "ADR 0001; O9",
               "source": "O9 — how Round 2 treats self-hosting",
@@ -1609,10 +1271,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
                   "title": "Say plainly what is not supported",
                   "description": "Someone evaluating this needs to know self-hosting is not available, in a sentence, rather than infer it from an absence or discover it three steps in."
                 },
-                "marketing": {
-                  "absent": true,
-                  "reason": "The deliverable is an explicit statement of what does not exist."
-                },
+                "marketing": { "absent": true, "reason": "The deliverable is an explicit statement of what does not exist." },
                 "product": {
                   "title": "Refusing a claim is a deliverable",
                   "description": "Publishing plausible setup instructions for an unproved path would buy a little credibility now and spend much more later. Saying so is the cheaper honest option."
@@ -1632,9 +1291,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "task",
           "title": "Dogfood guide and evidence package",
           "status": "pending",
-          "check": {
-            "kind": "smoke"
-          },
+          "check": { "kind": "smoke" },
           "description": "Define the exact start state, side-door bans, generated cases, cleanup, evidence capture and expectation checks for Round 2. Current evidence: Round-1 artifacts exist; the Round-2 package is not assembled. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
           "exhibit": "docs/aprd/v2.1-generative-evals.md (draft, unapproved)",
           "serves": "Round-2 proof",
@@ -1647,10 +1304,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Make the run repeatable",
               "description": "Without a defined start state and cleanup, two rounds are not comparable and a fix cannot be shown to have worked."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal test harness — the normal case for an absent marketing voice."
-            },
+            "marketing": { "absent": true, "reason": "Internal test harness — the normal case for an absent marketing voice." },
             "product": {
               "title": "The instrument, not the product",
               "description": "This serves no law directly; it is how the laws get tested. Filed as unattached with a stated purpose rather than hung under a commitment it does not keep green."
@@ -1670,31 +1324,19 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "findings": [
           {
             "text": "The handle claim path distinguishes a taken name from a free one, so G07 holds for reads and not outright. Whether the handle namespace is publicly probeable is a product question, now due because signup is live.",
-            "disposition": {
-              "kind": "task",
-              "note": "unresolved owner decision — added to PD 0004's Open list; recorded as a limit and an amendment on G07, not as tracker work alone"
-            }
+            "disposition": { "kind": "task", "note": "unresolved owner decision — added to PD 0004's Open list; recorded as a limit and an amendment on G07, not as tracker work alone" }
           },
           {
             "text": "The management surface dropped MANAGEMENT_API_TOKEN on 2026-08-04 because it named no Account and bounded nothing. Nothing now issues a credential a terminal can hold, so the CLI cannot reach the surface at all.",
-            "disposition": {
-              "kind": "task",
-              "note": "blocks PD-03; the CLI login hand-off is the fix, and a fourteen-day session is not the shape a CLI wants"
-            }
+            "disposition": { "kind": "task", "note": "blocks PD-03; the CLI login hand-off is the fix, and a fourteen-day session is not the shape a CLI wants" }
           },
           {
             "text": "The published @smcllns/angel-core 0.3.0 still contains Cloudflare Access client code that no application reads, because the Access application was deleted on 2026-08-04.",
-            "disposition": {
-              "kind": "task",
-              "note": "harmless — the headers are ignored; recorded rather than hot-fixed"
-            }
+            "disposition": { "kind": "task", "note": "harmless — the headers are ignored; recorded rather than hot-fixed" }
           },
           {
             "text": "C16 remains open: the APRD assumes one OAuth client can serve both hosted and headless consent, and no provider-valid callback and client-type journey proves that boundary.",
-            "disposition": {
-              "kind": "task",
-              "note": "unresolved — blocks the local consent path under G13"
-            }
+            "disposition": { "kind": "task", "note": "unresolved — blocks the local consent path under G13" }
           }
         ],
         "voices": {
@@ -1706,10 +1348,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "Nobody helps them",
             "description": "The test is whether a person who cannot ask a maintainer gets through. Every place they have to guess is the finding, and Round 1 showed there were many."
           },
-          "marketing": {
-            "absent": true,
-            "reason": "Pending gate on an unfinished workstream; there is nothing proved to announce."
-          },
+          "marketing": { "absent": true, "reason": "Pending gate on an unfinished workstream; there is nothing proved to announce." },
           "product": {
             "title": "Approval bought scope, not evidence",
             "description": "O10 settled what to build. This gate is the separate question of whether it works for someone who is not us, and four findings are already open against it."
@@ -1735,10 +1374,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "title": "Blank machine, blank identity",
           "description": "The people in this round have nothing set up and nothing explained to them. What they hit is the product as it actually is, not as its authors remember it."
         },
-        "marketing": {
-          "absent": true,
-          "reason": "Internal proof round; participants are the owner and two friends."
-        },
+        "marketing": { "absent": true, "reason": "Internal proof round; participants are the owner and two friends." },
         "product": {
           "title": "Ordered so a failure costs one person",
           "description": "The agent preflight is cheap and goes first, the owner is next, and friends are invited only after he accepts. That order means a broken journey is discovered before anyone is asked to spend their goodwill on it."
@@ -1755,9 +1391,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "task",
           "title": "Fresh-agent preflight",
           "status": "pending",
-          "check": {
-            "kind": "dogfood"
-          },
+          "check": { "kind": "dogfood" },
           "description": "Have a clean agent run only the published guide before Sam starts. Current evidence: an unapproved target CLI guide and eval draft exist, and the CLI is published so a clean agent can obtain it — but no approved or published Round-2 guide exists for it to follow. Verified 2026-08-03 by the WS2 CLI install proof. Truth state under the retired contract: NOT BUILT; plan state BLOCKED on WS2 and ID-08.",
           "exhibit": "docs/evidence/ws2-cli-install-proof.json",
           "note": "The WS2 CLI install proof tests the packed tarball in an isolated consumer outside the workspace.",
@@ -1771,10 +1405,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "An agent reads what we published, and only that",
               "description": "The preflight measures whether the published material is sufficient on its own. Anything the agent has to infer is a defect in the surface, not in the agent."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal harness step."
-            },
+            "marketing": { "absent": true, "reason": "Internal harness step." },
             "product": {
               "title": "Cheapest failure first",
               "description": "Running an agent before a person costs nothing when it fails and catches most of what a person would have hit. It goes first for exactly that reason."
@@ -1790,9 +1421,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "feature",
           "title": "Sam fresh-user dogfood",
           "status": "pending",
-          "check": {
-            "kind": "dogfood"
-          },
+          "check": { "kind": "dogfood" },
           "description": "Sam completes the local and managed journeys from a blank identity and machine, and judges confidence. Current evidence: not started. Blocked on ID-09 passing. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
           "exhibit": "Owner scenario S1 — the fresh first Angel",
           "serves": "Round-2 gate proof",
@@ -1805,10 +1434,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "The author, with nothing set up",
               "description": "Sam uses the product as someone who has never configured it. His judgment of confidence at the end is the output, not a pass or fail count."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal round."
-            },
+            "marketing": { "absent": true, "reason": "Internal round." },
             "product": {
               "title": "Confidence is the deliverable",
               "description": "The question is not whether the steps complete but whether the owner would put this in front of someone he knows. That judgment is what gates the friend runs."
@@ -1824,9 +1450,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "feature",
           "title": "Two close-friend dogfoods",
           "status": "planned",
-          "check": {
-            "kind": "dogfood"
-          },
+          "check": { "kind": "dogfood" },
           "description": "Two friends repeat the journey, only after Sam accepts it. Current evidence: conditional; no participant is invited. Proposed work, gated on PD-06 acceptance. Truth state under the retired contract: NOT BUILT; plan state LATER.",
           "exhibit": "M-DF2 proof",
           "serves": "Round-2 gate proof",
@@ -1839,10 +1463,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Two people who are not us",
               "description": "The first users with no stake in the product working. What they find is the first evidence that is not self-reported."
             },
-            "marketing": {
-              "absent": true,
-              "reason": "Two invited friends; not a launch."
-            },
+            "marketing": { "absent": true, "reason": "Two invited friends; not a launch." },
             "product": {
               "title": "Where self-report stops",
               "description": "Everything before this is the authors judging their own work. Two outsiders are the smallest sample that can contradict them."
@@ -1858,9 +1479,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
           "type": "task",
           "title": "Round-2 reconciliation",
           "status": "pending",
-          "check": {
-            "kind": "smoke"
-          },
+          "check": { "kind": "smoke" },
           "description": "Give every new finding a destination before Round-3 scope exists. Current evidence: no M-DF2 dogfood findings exist yet, because the round has not run. The four open findings on GATE-WS2 are build-gate findings from WS2, not round output, and are reconciled there. Blocked on ID-09, PD-06 and conditionally PD-07. Truth state under the retired contract: NOT BUILT; plan state BLOCKED.",
           "exhibit": "The zero-orphan rule, as applied at GATE-M-DF1",
           "serves": "Round-2 gate proof",
@@ -1869,14 +1488,8 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
               "title": "Zero orphans, again",
               "description": "Every finding carries a disposition and a destination before any Round-3 scope may be written. This is the same mechanical condition that closed M-DF1."
             },
-            "designer": {
-              "absent": true,
-              "reason": "A reconciliation step with no interface."
-            },
-            "marketing": {
-              "absent": true,
-              "reason": "Internal process step."
-            },
+            "designer": { "absent": true, "reason": "A reconciliation step with no interface." },
+            "marketing": { "absent": true, "reason": "Internal process step." },
             "product": {
               "title": "Scope comes from findings, not appetite",
               "description": "Requiring reconciliation before Round-3 scope exists is what stops the next epic being chosen from whatever felt most urgent that week."
@@ -1903,10 +1516,7 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
             "title": "Did it work for someone starting from nothing",
             "description": "The whole round asks one question. Round 1 answered it no and stopped before an Angel key existed."
           },
-          "marketing": {
-            "absent": true,
-            "reason": "Internal proof round with no announcement attached."
-          },
+          "marketing": { "absent": true, "reason": "Internal proof round with no announcement attached." },
           "product": {
             "title": "The owner's accept decision",
             "description": "This gate is where Sam decides whether the product is good enough to show people he knows. Nothing in this Ledger may record that decision on his behalf."
@@ -1924,18 +1534,9 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
       "status": "planned",
       "outcome": "Scope chosen from Round-2 evidence. Nothing here is approved or specified: the epic exists as the standing promise that Round-2 findings get a destination rather than a backlog.",
       "voices": {
-        "engineer": {
-          "absent": true,
-          "reason": "No scope exists; there is nothing built or specified to describe."
-        },
-        "designer": {
-          "absent": true,
-          "reason": "No scope exists to design against."
-        },
-        "marketing": {
-          "absent": true,
-          "reason": "Proposed only, and unapproved."
-        },
+        "engineer": { "absent": true, "reason": "No scope exists; there is nothing built or specified to describe." },
+        "designer": { "absent": true, "reason": "No scope exists to design against." },
+        "marketing": { "absent": true, "reason": "Proposed only, and unapproved." },
         "product": {
           "title": "A placeholder with a rule attached",
           "description": "The row exists so that Round-2 findings have somewhere to land that is not a backlog. Its content is deliberately empty until ID-10 closes."
@@ -1953,18 +1554,9 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "description": "Proposed work. The gate condition is that every commitment in WS3 traces to a reconciled Round-2 finding. Unresolved: no scope exists and the owner has approved none.",
         "findings": [],
         "voices": {
-          "engineer": {
-            "absent": true,
-            "reason": "No scope exists to state a condition against beyond its traceability rule."
-          },
-          "designer": {
-            "absent": true,
-            "reason": "Nothing designed."
-          },
-          "marketing": {
-            "absent": true,
-            "reason": "The workstream is unapproved and unscoped, so there is nothing to announce."
-          },
+          "engineer": { "absent": true, "reason": "No scope exists to state a condition against beyond its traceability rule." },
+          "designer": { "absent": true, "reason": "Nothing designed." },
+          "marketing": { "absent": true, "reason": "The workstream is unapproved and unscoped, so there is nothing to announce." },
           "product": {
             "title": "Traceability is the whole condition",
             "description": "Stating the rule now, while the scope is empty, is what makes it enforceable later when there is pressure to add something that felt important."
@@ -1982,18 +1574,9 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
       "status": "planned",
       "outcome": "The product beyond proof. Future workstreams require owner approval and none is proposed in detail; the row holds the place so that long-term work is never mistaken for approved work.",
       "voices": {
-        "engineer": {
-          "absent": true,
-          "reason": "No scope exists."
-        },
-        "designer": {
-          "absent": true,
-          "reason": "No scope exists."
-        },
-        "marketing": {
-          "absent": true,
-          "reason": "Proposed only, and unapproved."
-        },
+        "engineer": { "absent": true, "reason": "No scope exists." },
+        "designer": { "absent": true, "reason": "No scope exists." },
+        "marketing": { "absent": true, "reason": "Proposed only, and unapproved." },
         "product": {
           "title": "Named so it cannot be assumed",
           "description": "Long-term intent tends to get quoted as plan. Keeping an explicitly unapproved row is cheaper than repeatedly correcting the assumption."
@@ -2011,18 +1594,9 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
         "description": "Proposed work. Unresolved: nothing is scoped and no owner approval exists. This gate cannot be prepared until a workstream is proposed.",
         "findings": [],
         "voices": {
-          "engineer": {
-            "absent": true,
-            "reason": "Nothing to state a condition against."
-          },
-          "designer": {
-            "absent": true,
-            "reason": "Nothing designed."
-          },
-          "marketing": {
-            "absent": true,
-            "reason": "The workstream is unapproved and unscoped, so there is nothing to announce."
-          },
+          "engineer": { "absent": true, "reason": "Nothing to state a condition against." },
+          "designer": { "absent": true, "reason": "Nothing designed." },
+          "marketing": { "absent": true, "reason": "The workstream is unapproved and unscoped, so there is nothing to announce." },
           "product": {
             "title": "Approval is the condition",
             "description": "There is no proof condition to state yet, because there is nothing proposed. The only gate is the owner deciding a long-term workstream is worth starting."
@@ -2036,221 +1610,3 @@ body{margin:0;min-height:100vh;background:#e7e9ec;color:#1b1e22;
     }
   ]
 }
-</script>
-<script>
-/* Product Ledger — Card renderer (zero dependency).
-   Auto-renders the JSON in <script id="ledger"> into #ledger-root (or <body>).
-   Also exposes window.renderRoadmap(data, mountEl) for the hand-HTML path.
-
-   Voice cascade: Owner = ★ canonical (base fields; epics use firstSentence(outcome),
-   gates use proof/description). Engineer + designer are the ground truths; every
-   other voice narrows, never contradicts. Epics, commitments, features/tasks AND
-   gates each carry per-voice {title, description}; a voice may be `absent` + reason. */
-(function () {
-  "use strict";
-
-  var AUDS = ["owner", "engineer", "designer", "marketing", "product", "llm"];
-  var AUDL = { owner: "Owner \u2605", engineer: "Engineer", designer: "Designer", marketing: "Marketing", product: "Product", llm: "LLM" };
-  // Every expandable row is a real control: reachable by Tab, operable by Enter
-  // or Space, and its state announced. `data-x` stays the wiring hook.
-  var ROW = 'data-x tabindex="0" role="button" aria-expanded="false"';
-  var TONE = { shipped: "green", passed: "green", live: "green", done: "green", active: "blue", "in-progress": "blue", pending: "amber", planned: "grey" };
-
-  var esc = function (s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); };
-  var label = function (s) { return s.replace(/-/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); }); };
-  function firstSentence(s) { var m = s.match(/^(.*?\.)\s/); return m ? m[1].replace(/\.$/, "") : s; }
-  var checkStr = function (c) { return c ? (c.minutes ? c.kind + " \u00b7 " + c.minutes + " min" : c.kind) : ""; };
-  var notYetStr = function (n) { return n.claim + " \u2014 binds design now (" + n.bindsDesign + "); claims at " + n.claimsAt; };
-  var dispoStr = function (d) {
-    return d.kind === "adoption-evidence" ? "adoption evidence \u2192 admits " + d.admits
-      : label(d.kind) + (d.note ? " (" + d.note + ")" : "");
-  };
-  var boxState = function (t) { return t === "green" ? "done" : t === "blue" ? "wip" : "todo"; };
-
-  function commitmentFields(c) {
-    var f = [["eval", c.eval], ["limit", c.limit]];
-    if (c.notYet) f.push(["not yet", notYetStr(c.notYet)]);
-    (c.amendments || []).forEach(function (a) { f.push(["amends", a.in + " \u2014 " + a.change]); });
-    return f;
-  }
-  function workFields(w) {
-    var f = [["type", w.type], ["check", checkStr(w.check)]];
-    if (w.exhibit) f.push(["exhibit", w.exhibit]);
-    if (w.note) f.push(["note", w.note]);
-    if (w.source) f.push(["source", w.source]);
-    if (w.serves) f.push(["serves", w.serves + " (no governing law)"]);
-    return f;
-  }
-  function cbxSvg(state) {
-    var c = state === "done" ? "#1c6b58" : state === "wip" ? "#2b5fa8" : "#c2c7cd";
-    var box = '<rect x="1" y="1" width="15" height="15" rx="4.5" fill="' + (state === "done" ? c : "none") + '" stroke="' + c + '" stroke-width="1.5"/>';
-    var mark = state === "done"
-      ? '<path d="M4.7 8.6 7.2 11 12 5.6" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>'
-      : state === "wip" ? '<path d="M4.6 8.5 H11.4" stroke="' + c + '" stroke-width="1.7" stroke-linecap="round"/>' : "";
-    return '<svg class="cbx" viewBox="0 0 17 17" aria-hidden="true">' + box + mark + "</svg>";
-  }
-
-  // Each mount gets its own state so multiple ledgers can coexist on a page.
-  function mount(root, RAW) {
-    var VOICE = {};
-    var AUDIENCE = "owner";
-    var ITEMS = [];
-
-    function regVoice(id, ownerTitle, ownerDesc, voices) {
-      var m = { owner: { title: ownerTitle, description: ownerDesc } };
-      if (voices) for (var a in voices) m[a] = voices[a];
-      VOICE[id] = m;
-    }
-    RAW.releases.forEach(function (e) {
-      regVoice(e.id, firstSentence(e.outcome), e.outcome, e.voices);
-      if (e.gate) regVoice(e.gate.id, e.gate.proof, e.gate.description || e.gate.proof, e.gate.voices);
-      (e.commitments || []).forEach(function (c) {
-        regVoice(c.id, c.title, c.description, c.voices);
-        (c.work || []).forEach(function (w) { regVoice(w.id, w.title, w.description, w.voices); });
-      });
-      (e.unattachedWork || []).forEach(function (w) { regVoice(w.id, w.title, w.description, w.voices); });
-    });
-
-    var vtitle = function (id) { return '<span class="vtitle" data-vt="' + id + '">' + esc(VOICE[id].owner.title) + "</span>"; };
-    var vdesc = function (id) { return '<span class="vtext" data-vd="' + id + '">' + esc(VOICE[id].owner.description) + "</span>"; };
-    var asOf = function () { var a = RAW.releases.find(function (r) { return r.status === "active"; }); return (a || RAW.releases[RAW.releases.length - 1]).id; };
-    var totalC = function () { return RAW.releases.reduce(function (n, e) { return n + (e.commitments || []).length; }, 0); };
-
-    function audHtml() {
-      return '<div class="aud"><span class="audlabel">Voice</span>' +
-        AUDS.map(function (a) { return '<button class="audbtn' + (a === AUDIENCE ? " on" : "") + '" data-aud="' + a + '">' + AUDL[a] + "</button>"; }).join("") + "</div>";
-    }
-    function detailDL(leadHtml, fields) {
-      var h = leadHtml ? '<p class="dsc">' + leadHtml + "</p>" : "";
-      h += "<dl>";
-      fields.forEach(function (f) { h += "<dt>" + esc(f[0]) + "</dt><dd>" + esc(f[1]) + "</dd>"; });
-      return h + "</dl>";
-    }
-    function gateDL(g) {
-      var h = '<p class="dsc">' + vdesc(g.id) + "</p><dl><dt>proof</dt><dd>" + esc(g.proof) + "</dd>";
-      (g.findings || []).forEach(function (f) { h += "<dt>finding</dt><dd>" + esc(f.text) + " \u2192 <em>" + esc(dispoStr(f.disposition)) + "</em></dd>"; });
-      return h + "</dl>";
-    }
-    function cardItem(w) {
-      var t = TONE[w.status] || "grey", st = boxState(t), done = st === "done";
-      var stat = done ? "" : '<span class="fstat t-' + t + '">' + label(w.status) + "</span>";
-      return '<div class="fitem ' + (done ? "done" : "") + '" ' + ROW + '>' +
-        cbxSvg(st) + '<span class="fid">' + w.id + "</span>" +
-        '<span class="ftitle">' + vtitle(w.id) + "</span>" + stat + '<span class="caret">\u25b8</span>' +
-        '</div><div class="det fdet"><div class="det-in"><div class="scope">' + detailDL(vdesc(w.id), workFields(w)) + "</div></div></div>";
-    }
-
-    function render() {
-      var h = '<div class="inner">' +
-        '<div class="brow"><span class="kicker">Roadmap</span><span class="folio">As of ' + asOf() + " \u00b7 " + totalC() + " commitments</span></div>" +
-        "<h1>Product Ledger</h1>" +
-        '<p class="sub">' + esc(RAW.product) + ' \u2014 each epic a container, each commitment a card, each feature a checklist item.</p>' +
-        '<div class="ctlbar"><div class="ctl"><button class="ctlbtn" data-all>Expand all</button><span class="sep">\u00b7</span><button class="ctlbtn" data-none>Collapse all</button></div>' + audHtml() + "</div>";
-      RAW.releases.forEach(function (e) {
-        var et = TONE[e.status] || "grey";
-        h += '<div class="ecard"><div class="ehead" ' + ROW + '>' +
-          '<span class="ebadge">' + e.id + "</span>" +
-          '<span class="etitle"><span class="ver">' + esc(e.version) + "</span> " + vtitle(e.id) + "</span>" +
-          '<span class="grow"></span><span class="pill t-' + et + '"><span class="pip"></span>' + label(e.status) + "</span>" +
-          '<span class="caret">\u25b8</span></div>' +
-          '<div class="det"><div class="det-in"><p class="dsc" style="padding:0 1rem">' + vdesc(e.id) + "</p></div></div>";
-        (e.commitments || []).forEach(function (c) {
-          var ct = TONE[c.status] || "grey";
-          h += '<div class="ccard"><div class="chead" ' + ROW + '>' +
-            '<span class="cid">' + c.id + "</span>" +
-            '<span class="ctitle">' + vtitle(c.id) + "</span>" +
-            '<span class="tag ' + (c.class === "entrenched" ? "ent" : "amd") + '">' + c.class + "</span>" +
-            '<span class="grow"></span><span class="pill t-' + ct + '"><span class="pip"></span>' + label(c.status) + "</span>" +
-            '<span class="caret">\u25b8</span></div>' +
-            '<div class="det"><div class="det-in"><div class="claw">' + detailDL(vdesc(c.id), commitmentFields(c)) + "</div></div></div>" +
-            '<div class="checklist">';
-          (c.work || []).forEach(function (w) { h += cardItem(w); });
-          h += "</div></div>";
-        });
-        var loose = e.unattachedWork || [];
-        if (loose.length) {
-          var serves = loose.map(function (w) { return w.serves; }).filter(Boolean).filter(function (v, i, a) { return a.indexOf(v) === i; });
-          h += '<div class="loose"><div class="llabel">' + esc("Unattached" + (serves.length ? " \u00b7 serves " + serves.join(", ") : "")) + "</div>";
-          loose.forEach(function (w) { h += cardItem(w); });
-          h += "</div>";
-        }
-        if (e.gate) {
-          var gt = TONE[e.gate.status] || "grey";
-          h += '<div class="gate"><div class="gfoot" ' + ROW + '>' +
-            '<span class="gflag">\ud83c\udfc1</span><span class="gid t-' + gt + '">' + e.gate.id + "</span>" +
-            '<span class="gproof">\u201c' + vtitle(e.gate.id) + "\u201d</span>" +
-            '<span class="grow"></span><span class="pill t-' + gt + '"><span class="pip"></span>' + label(e.gate.status) + "</span>" +
-            '<span class="caret">\u25b8</span></div>' +
-            '<div class="det gdet"><div class="det-in">' + gateDL(e.gate) + "</div></div></div>";
-        }
-        h += "</div>"; // ecard
-      });
-      h += "</div>";
-
-      var wrap = document.createElement("div");
-      wrap.className = "v-card";
-      wrap.innerHTML = h;
-      root.innerHTML = "";
-      root.appendChild(wrap);
-      wireRows(wrap);
-      wireVoice(wrap);
-    }
-
-    function setOpen(item, open) {
-      if (open) { item.det.style.height = item.det.firstElementChild.offsetHeight + "px"; item.row.classList.add("open"); }
-      else { item.det.style.height = "0px"; item.row.classList.remove("open"); }
-      item.row.setAttribute("aria-expanded", open ? "true" : "false");
-      item.open = open;
-    }
-    function wireRows(wrap) {
-      ITEMS = [];
-      wrap.querySelectorAll("[data-x]").forEach(function (row) {
-        var item = { row: row, det: row.nextElementSibling, open: false };
-        var toggle = function (e) { e.stopPropagation(); setOpen(item, !item.open); };
-        row.addEventListener("click", toggle);
-        row.addEventListener("keydown", function (e) {
-          // Space scrolls the page by default on a div; Enter and Space both act.
-          if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); toggle(e); }
-        });
-        ITEMS.push(item);
-      });
-      wrap.querySelector("[data-all]").addEventListener("click", function () { ITEMS.forEach(function (i) { setOpen(i, true); }); });
-      wrap.querySelector("[data-none]").addEventListener("click", function () { ITEMS.forEach(function (i) { setOpen(i, false); }); });
-    }
-    function setAudience(a) {
-      AUDIENCE = a;
-      document.querySelectorAll(".audbtn").forEach(function (b) { b.classList.toggle("on", b.dataset.aud === a); });
-      root.querySelectorAll(".vtitle").forEach(function (s) {
-        var v = VOICE[s.dataset.vt]; if (!v) return;
-        var cell = v[a];
-        s.textContent = (cell && !cell.absent && cell.title != null) ? cell.title : v.owner.title;
-      });
-      root.querySelectorAll(".vtext").forEach(function (s) {
-        var v = VOICE[s.dataset.vd]; if (!v) return;
-        var cell = v[a];
-        if (cell && cell.absent) { s.classList.add("vabsent"); s.textContent = cell.reason; }
-        else { s.classList.remove("vabsent"); s.textContent = (cell && cell.description != null) ? cell.description : v.owner.description; }
-      });
-      ITEMS.forEach(function (i) { if (i.open) i.det.style.height = i.det.firstElementChild.offsetHeight + "px"; });
-    }
-    function wireVoice(wrap) {
-      wrap.querySelectorAll(".audbtn").forEach(function (b) {
-        b.addEventListener("click", function (e) { e.stopPropagation(); setAudience(b.dataset.aud); });
-      });
-    }
-
-    render();
-  }
-
-  window.renderRoadmap = function (RAW, mountEl) { mount(mountEl || document.body, RAW); };
-
-  var dataEl = document.getElementById("ledger");
-  if (dataEl) {
-    var RAW = JSON.parse(dataEl.textContent);
-    mount(document.getElementById("ledger-root") || document.body, RAW);
-  }
-})();
-
-</script>
-</body>
-</html>
