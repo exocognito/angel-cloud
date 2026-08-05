@@ -95,6 +95,14 @@ export async function handleControlRequest(
     sessionIdentity = await verifySession(request, env);
   } catch (error) {
     if (error instanceof SessionAuthenticationError) {
+      // Google returns from consent as a top-level navigation, not a `fetch`,
+      // so `guardedFetch` never sees it and a 401 body would render as raw JSON
+      // in the address bar. Access used to intercept that navigation. Send the
+      // person somewhere they can sign in instead — but only when signing in
+      // could help, which `no-account` is precisely the case where it cannot.
+      if (url.pathname === "/oauth/google/callback" && error.code === "sign-in-required") {
+        return Response.redirect(new URL("/sign-in.html", url).toString(), 302);
+      }
       // Same status and same body whatever the reason, so nothing here tells a
       // stranger which of their guesses was closer. The code rides in a header
       // the dashboard reads, and only a real session can ever provoke it.

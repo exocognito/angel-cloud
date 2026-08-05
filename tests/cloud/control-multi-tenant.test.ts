@@ -208,4 +208,56 @@ describe("Control serves whoever signed in", () => {
     expect(response.status).toBe(500);
     expect(reached).toEqual([]);
   });
+
+  // The dashboard's half of this contract is pinned in www-contract.test.ts.
+  // Both sides key off the same two literals; delete either and the redirect
+  // loop CL10 fixed comes back silently, because the behaviour is carried by a
+  // string rather than by a type.
+  test("names the refusal in x-angel-session so the dashboard can tell them apart", async () => {
+    const { env } = twoTenantEnv();
+    const refuse = (code: "sign-in-required" | "no-account") =>
+      handleControlRequest(
+        new Request("https://dash.test/api/demo/state"),
+        env as never,
+        async () => {
+          throw new SessionAuthenticationError("refused", code);
+        },
+      );
+
+    const noAccount = await refuse("no-account");
+    const noSession = await refuse("sign-in-required");
+
+    // Same status and same body either way — only the header differs, so
+    // nothing here tells a stranger which of their guesses was closer.
+    expect(noAccount.status).toBe(401);
+    expect(noSession.status).toBe(401);
+    expect(await noAccount.json()).toEqual({ error: "sign-in required" });
+    expect(await noSession.json()).toEqual({ error: "sign-in required" });
+    expect(noAccount.headers.get("x-angel-session")).toBe("no-account");
+    expect(noSession.headers.get("x-angel-session")).toBe("sign-in-required");
+  });
+
+  test("sends an expired Google callback to sign-in rather than JSON in the address bar", async () => {
+    const { env } = twoTenantEnv();
+    const callback = (code: "sign-in-required" | "no-account") =>
+      handleControlRequest(
+        new Request("https://dash.test/oauth/google/callback?code=abc&state=xyz"),
+        env as never,
+        async () => {
+          throw new SessionAuthenticationError("refused", code);
+        },
+      );
+
+    // Google returns from consent as a top-level navigation, so this response
+    // is what the person sees, not something a fetch handler can rescue.
+    const expired = await callback("sign-in-required");
+    expect(expired.status).toBe(302);
+    expect(expired.headers.get("location")).toBe("https://dash.test/sign-in.html");
+
+    // Signing in again cannot attach an Account, so redirecting there would
+    // only rebuild the loop CL10 removed. This one stays a refusal.
+    const noAccount = await callback("no-account");
+    expect(noAccount.status).toBe(401);
+    expect(noAccount.headers.get("x-angel-session")).toBe("no-account");
+  });
 });
