@@ -127,7 +127,7 @@ describe("WS-E evidence-only decision closure", () => {
     // in the test above; the matching public-boundary warning is pinned on the
     // file that has to carry it.
     expect(readFileSync(join(root, "docs-site/public/SKILL.md"), "utf8"))
-      .toContain("charter");
+      .toContain("The public Angel page renders the charter verbatim and the guard field names and");
     const readme = readFileSync(join(root, "README.md"), "utf8");
     const next = readFileSync(join(root, "NEXT.md"), "utf8");
     for (const document of [readme, next]) {
@@ -258,15 +258,10 @@ describe("WS-E evidence-only decision closure", () => {
     expect(faq.replace(/\s+/g, " ")).toContain("`ROADMAP.md` remains a stable pointer for old links");
     expect(faq).toContain("github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html");
     expect(faq).not.toContain("plan-of-record `ROADMAP.md`");
-    for (const [key, evidence] of [
-      ["LR-011", "APRD and target CLI auth text now state the 600-second single-use rule"],
-      ["LR-012", "The target CLI guide names @angelmcp/cli@0.1.0 and that command is normative"],
-      ["LR-013", "target CLI guide now requires exactly one of <code>--local</code> or <code>--cloud</code>"],
-      ["LR-016", "Target generative evals now separate an internal fixture-aware grader from a no-repo outside candidate"],
-      ["LR-017", "APRD §8.1 and the target CLI guide now put the fresh local-independence journey before managed login"],
-      ["LR-018", "APRD, target CLI, and eval replay text now agree on top-level <code>angel replay</code>"],
-    ] as const) {
-    }
+    // LR-011 to LR-018 were Ledger learning rows, retired under R7. The strip
+    // left their loop behind with an empty body, which read as coverage while
+    // asserting nothing; the guide-side facts they described are pinned in
+    // aprd-v2.test.ts.
     for (const file of ["02-linux-oauth-storage.md", "03-local-cloud-syntax.md", "04-auth-expiry.md", "05-replay-syntax.md"]) {
       expect(readFileSync(join(root, "docs/evidence/ws-e", file), "utf8"))
         .toContain("At `6cc2ed5`, before the WS-E reconciliation");
