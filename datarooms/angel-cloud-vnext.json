@@ -315,25 +315,25 @@
           "key": "G02",
           "title": "Policy stays portable and readable",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "ANGEL.yaml contains charter and policy, never target, Account, Connection, or credential identity.",
+          "limit": "Private deployment choices stay in separate config and custody state.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0001-portable-angel-source-and-deployment-separation.md",
+            "label": "ADR 0001"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G03",
           "title": "Builds are deterministic and secret-free",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "The client compiles canonical immutable bytes; no server builds user source.",
+          "limit": "A browser compiler may run on my device; Control may store owner-only drafts but never compiles them.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0005-spec-derived-execution-closure.md",
+            "label": "ADR 0005"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         }
       ],
       "work": [],
@@ -341,10 +341,10 @@
         "key": "GATE-M0",
         "proof": "Historical proof passed; no new dogfood is due.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md",
+          "label": "Current user manual"
         },
-        "accepted": false
+        "accepted": true
       }
     },
     {
@@ -363,49 +363,49 @@
           "key": "G01",
           "title": "Angel is a toolbox, never an actor",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Only the user’s agent initiates an MCP call; Angel has no loop, intent, scheduler, or mailbox.",
+          "limit": "Angel does not supply the agent or decide what task to attempt.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#how-a-call-flows",
+            "label": "Call flow"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G04",
           "title": "Authority is explicit",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Absent tools do not exist; guards bind arguments; anything unexecutable cannot publish.",
+          "limit": "The platform proves fidelity to policy; it does not judge whether I chose a wise policy.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#angelyaml",
+            "label": "Policy manual"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G05",
           "title": "Two gates fail closed",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Gateway and Broker decide independently; disagreement or partial install produces no provider call and no fallback.",
+          "limit": "Availability may fail during disagreement; the system never recovers by using older authority.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/tests/cloud/gate-workers.test.ts",
+            "label": "Gate tests"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G06",
           "title": "Credentials go in and never come out",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Only the unaddressable Broker can lease provider credentials; APIs return safe summaries only.",
+          "limit": "Provider identity labels may be shown where I or my agent must choose an account; credentials never are.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/tests/cloud/custody.test.ts",
+            "label": "Custody tests"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         }
       ],
       "work": [],
@@ -413,10 +413,10 @@
         "key": "GATE-M1",
         "proof": "Historical Google dogfood and gate proof passed.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#milestone-1-what-is-live",
+          "label": "M1 manual record"
         },
-        "accepted": false
+        "accepted": true
       }
     },
     {
@@ -435,25 +435,26 @@
           "key": "G09",
           "title": "Release defaults stay simple and safe",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Bare publish means production; preview is explicit, isolated, and exact-byte promotion never rebuilds.",
+          "limit": "Preview remains an advanced option with separate bindings or an explicit credential-share choice.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-decisions/0003-preview-is-opt-in.md",
+            "label": "PD 0003"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS1 surface sweep"
         },
         {
           "key": "G11",
           "title": "Trust evidence is public without private identity",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Every live Angel exposes a secret-free trust page and capability-only review summary, never credentials or Connection identity.",
+          "limit": "The unbuilt angel.public-review.v1 summary has a hiding commitment only for an eligible Version whose canonical bytes and raw digest have never been public. A cached digest keeps a historically exposed Version permanently non-hiding; the renderer must refuse the hiding schema, show a legacy warning, and require replacement bytes. The eligible Version's nonce, raw digest, exact source, guards, identity, and deployment evidence remain owner-only within the summary contract. Any owner-opted-in public-source disclosure is separate from the summary, and intentionally published fields are not owner-only. Today’s basic page still exposes the raw policy digest, charter, and guard literals; see PD-00B and SI5.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "evidence/ws-e/07-public-review-and-self-hosting.md",
+            "label": "WS-E public-boundary brief"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence",
+          "currentCorrection": "Existing public raw digests make all currently published Versions ineligible for the hiding summary."
         }
       ],
       "work": [],
@@ -461,10 +462,10 @@
         "key": "GATE-WS0",
         "proof": "Historical addressability proof passed with named limits.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/domain-architecture.md",
+          "label": "Domain architecture"
         },
-        "accepted": false
+        "accepted": true
       }
     },
     {
@@ -484,10 +485,10 @@
         "key": "GATE-M-DF1",
         "proof": "Round-1 dogfood reconciliation passed.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "https://github.com/exocognito/angelmcp/pull/43",
+          "label": "Angel Product Ledger PR"
         },
-        "accepted": false
+        "accepted": true
       }
     },
     {
@@ -506,13 +507,13 @@
           "key": "G14",
           "title": "Source and deploy topology stay bounded",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "One repo may hold many packages/apps, but core/CLI packages, deployables, Cloudflare accounts, bindings, and secrets remain separate.",
+          "limit": "Monorepo means one source history, not one Worker, Cloudflare account, binding set, or secret store.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "evidence/round2-cli-release.json",
+            "label": "Round-2 CLI release record"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-03 · WS1 release proof + WS-E evidence + WS2 CLI install proof"
         }
       ],
       "work": [],
@@ -520,10 +521,10 @@
         "key": "GATE-WS1",
         "proof": "WS1 evidence and owner approval passed.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0007-monorepo-source-and-release-integrity.md",
+          "label": "ADR 0007"
         },
-        "accepted": false
+        "accepted": true
       }
     },
     {
@@ -543,10 +544,10 @@
         "key": "GATE-WS-E",
         "proof": "Evidence-only gate passed; it approved no product proof.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "evidence/ws-e/01-package-install-identity.md",
+          "label": "Brief 1 · package/install"
         },
-        "accepted": false
+        "accepted": true
       }
     },
     {
@@ -566,37 +567,38 @@
           "key": "G07",
           "title": "Other tenants do not exist",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "Reads are isolated; the handle claim path remains publicly probeable.",
+          "eval": "Cross-Account resources are indistinguishable from absent ones; selectors choose one Connection and omission never fans out.",
+          "limit": "Multi-account choice requires an explicit opaque selector; multiplayer comes later.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/evidence/pd-01/03-multi-tenant-control.md",
+            "label": "Multi-tenant live run"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-04 · PD-01 multi-tenant live run",
+          "currentCorrection": "Reads are isolated; the handle claim path still reveals taken versus absent."
         },
         {
           "key": "G10",
           "title": "Owners control the full lifecycle",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Keys are shown once and recoverable by safe rotation; pause only removes; deletion is deliberate, total, and self-service.",
+          "limit": "O6 settled the deletion-cascade and non-resolving-handle-tombstone contract; no Account-deletion path is implemented. Local files/tokens stay independent from cloud deletion.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#pause-and-resume",
+            "label": "Lifecycle manual"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence"
         },
         {
           "key": "G12",
           "title": "One product spans CLI, browser, and agent",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "The surfaces share one policy, compiler, artifact, and job model; public docs suffice and human auth/consent remain human.",
+          "limit": "Round 2 intentionally keeps www read-only; full browser/mobile authoring is later.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/design/prototype-parity-handoff.md",
+            "label": "Parity handoff"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         }
       ],
       "work": [
@@ -610,14 +612,14 @@
           "mapsTo": [
             "PD-01"
           ],
-          "claim": "Request one single-use link and land in one empty Account.",
+          "claim": "Let a new owner sign up, enter an empty Account, recover, and fully delete/reset without an operator.",
           "proof": "Feature dogfood · fresh identity · 15 minutes",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/pull/51"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/evidence/pd-01/01-signup-loop.md",
+            "label": "Sign-up live run"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O10 approved WS2 on 2026-08-03. Recovery and the O6 deletion cascade remain.",
+          "verified": "2026-08-04 · PD-01 multi-tenant live run"
         },
         {
           "key": "PD-01.2",
@@ -629,17 +631,17 @@
           "mapsTo": [
             "PD-01"
           ],
-          "claim": "Return and recover",
+          "claim": "Let a new owner sign up, enter an empty Account, recover, and fully delete/reset without an operator.",
           "proof": "Feature dogfood · expire, replace, resume, and sign out",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/evidence/pd-01/01-signup-loop.md",
+            "label": "Sign-up live run"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O10 approved WS2 on 2026-08-03. Recovery and the O6 deletion cascade remain.",
+          "verified": "2026-08-04 · PD-01 multi-tenant live run"
         },
         {
-          "key": "ID-01.1",
+          "key": "PD-01.4",
           "kind": "Task",
           "title": "Prove abuse and privacy bounds",
           "truth": "PARTIAL",
@@ -648,14 +650,14 @@
           "mapsTo": [
             "PD-01"
           ],
-          "claim": "Prove abuse and privacy bounds",
+          "claim": "Let a new owner sign up, enter an empty Account, recover, and fully delete/reset without an operator.",
           "proof": "Task smoke · enumeration, address cap, source cap, failed-session cleanup",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/evidence/pd-01/01-signup-loop.md",
+            "label": "Sign-up live run"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O10 approved WS2 on 2026-08-03. Recovery and the O6 deletion cascade remain.",
+          "verified": "2026-08-04 · PD-01 multi-tenant live run"
         },
         {
           "key": "PD-01.3",
@@ -667,22 +669,22 @@
           "mapsTo": [
             "PD-01"
           ],
-          "claim": "Delete and re-sign up",
+          "claim": "Let a new owner sign up, enter an empty Account, recover, and fully delete/reset without an operator.",
           "proof": "Feature dogfood · delete, tombstone, and create a new handle",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/evidence/pd-01/01-signup-loop.md",
+            "label": "Sign-up live run"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O10 approved WS2 on 2026-08-03. Recovery and the O6 deletion cascade remain.",
+          "verified": "2026-08-04 · PD-01 multi-tenant live run"
         }
       ],
       "gate": {
         "key": "GATE-WS2.1",
         "proof": "Epic dogfood · use a fresh Account for 24 hours, return, delete it, prove the old handle stays absent, and start again.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "evidence/ws2-cli-install-proof.json",
+          "label": "WS2 CLI install proof"
         },
         "accepted": false
       }
@@ -705,61 +707,61 @@
           "key": "G02",
           "title": "Policy stays portable and readable",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "ANGEL.yaml contains charter and policy, never target, Account, Connection, or credential identity.",
+          "limit": "Private deployment choices stay in separate config and custody state.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0001-portable-angel-source-and-deployment-separation.md",
+            "label": "ADR 0001"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G03",
           "title": "Builds are deterministic and secret-free",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "The client compiles canonical immutable bytes; no server builds user source.",
+          "limit": "A browser compiler may run on my device; Control may store owner-only drafts but never compiles them.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0005-spec-derived-execution-closure.md",
+            "label": "ADR 0005"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G04",
           "title": "Authority is explicit",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Absent tools do not exist; guards bind arguments; anything unexecutable cannot publish.",
+          "limit": "The platform proves fidelity to policy; it does not judge whether I chose a wise policy.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#angelyaml",
+            "label": "Policy manual"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G08",
           "title": "The same trust object runs locally and remotely",
           "truth": "NOT BUILT",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Bundle digest and engine pin travel through publish, verify, receipts, and replay; the product states where proof ends.",
+          "limit": "Artifact identity is client-checkable. Remote execution remains trusted and bounded by receipts/replay, not fully proved.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-verify",
+            "label": "Target verify"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence"
         },
         {
           "key": "G13",
           "title": "Local use is independent; hosting is optional",
           "truth": "NOT BUILT",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Local create/build/connect/serve needs no Angel Cloud account; managed and self-hosted custody stay separate.",
+          "limit": "Round 2 publishes status only: supported self-hosting is not shipped, licensed, or clean-room proved. Local use is not self-hosting.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0001-portable-angel-source-and-deployment-separation.md",
+            "label": "ADR 0001"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence"
         }
       ],
       "work": [
@@ -773,14 +775,14 @@
           "mapsTo": [
             "PD-02"
           ],
-          "claim": "Install and create",
+          "claim": "Install, create, build, consent locally, serve, and call a real restricted Angel with no cloud Account.",
           "proof": "Feature dogfood · install the registry package and create readable source",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-serve",
+            "label": "Target local journey"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-02.2",
@@ -792,14 +794,14 @@
           "mapsTo": [
             "PD-02"
           ],
-          "claim": "Build and inspect",
+          "claim": "Install, create, build, consent locally, serve, and call a real restricted Angel with no cloud Account.",
           "proof": "Feature dogfood · inspect exact tools, guards, and absent actions",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-serve",
+            "label": "Target local journey"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-02.3",
@@ -811,14 +813,14 @@
           "mapsTo": [
             "PD-02"
           ],
-          "claim": "Local App consent",
+          "claim": "Install, create, build, consent locally, serve, and call a real restricted Angel with no cloud Account.",
           "proof": "Feature dogfood · human OAuth and local custody",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-serve",
+            "label": "Target local journey"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-02.4",
@@ -830,22 +832,41 @@
           "mapsTo": [
             "PD-02"
           ],
-          "claim": "Serve and call",
+          "claim": "Install, create, build, consent locally, serve, and call a real restricted Angel with no cloud Account.",
           "proof": "Feature dogfood · create a real draft while send and delete stay absent",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-serve",
+            "label": "Target local journey"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
+        },
+        {
+          "key": "ID-07.1",
+          "kind": "Task",
+          "title": "State the self-hosting boundary",
+          "truth": "NOT BUILT",
+          "plan": "BLOCKED",
+          "approval": "APPROVED",
+          "claim": "State what is portable, unproved, and unsupported without publishing fake setup instructions.",
+          "proof": "Task smoke · public docs state managed versus self-hosted support without implying a proved path",
+          "mapsTo": [
+            "ID-07"
+          ],
+          "blockers": "N/A — O9 closed and O10 approved WS2 on 2026-08-03.",
+          "evidence": {
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/adrs/0001-portable-angel-source-and-deployment-separation.md",
+            "label": "ADR 0001"
+          },
+          "verified": "2026-08-03 · Sam owner decision"
         }
       ],
       "gate": {
         "key": "GATE-WS2.2",
         "proof": "Epic dogfood · use one draft-only Gmail Angel locally for a day with no Angel Cloud Account.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "evidence/ws2-cli-install-proof.json",
+          "label": "WS2 CLI install proof"
         },
         "accepted": false
       }
@@ -867,73 +888,73 @@
           "key": "G04",
           "title": "Authority is explicit",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Absent tools do not exist; guards bind arguments; anything unexecutable cannot publish.",
+          "limit": "The platform proves fidelity to policy; it does not judge whether I chose a wise policy.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#angelyaml",
+            "label": "Policy manual"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G05",
           "title": "Two gates fail closed",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Gateway and Broker decide independently; disagreement or partial install produces no provider call and no fallback.",
+          "limit": "Availability may fail during disagreement; the system never recovers by using older authority.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/tests/cloud/gate-workers.test.ts",
+            "label": "Gate tests"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G06",
           "title": "Credentials go in and never come out",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Only the unaddressable Broker can lease provider credentials; APIs return safe summaries only.",
+          "limit": "Provider identity labels may be shown where I or my agent must choose an account; credentials never are.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/tests/cloud/custody.test.ts",
+            "label": "Custody tests"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G08",
           "title": "The same trust object runs locally and remotely",
           "truth": "NOT BUILT",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Bundle digest and engine pin travel through publish, verify, receipts, and replay; the product states where proof ends.",
+          "limit": "Artifact identity is client-checkable. Remote execution remains trusted and bounded by receipts/replay, not fully proved.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-verify",
+            "label": "Target verify"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence"
         },
         {
           "key": "G09",
           "title": "Release defaults stay simple and safe",
           "truth": "LIVE",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Bare publish means production; preview is explicit, isolated, and exact-byte promotion never rebuilds.",
+          "limit": "Preview remains an advanced option with separate bindings or an explicit credential-share choice.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-decisions/0003-preview-is-opt-in.md",
+            "label": "PD 0003"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS1 surface sweep"
         },
         {
           "key": "G10",
           "title": "Owners control the full lifecycle",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Keys are shown once and recoverable by safe rotation; pause only removes; deletion is deliberate, total, and self-service.",
+          "limit": "O6 settled the deletion-cascade and non-resolving-handle-tombstone contract; no Account-deletion path is implemented. Local files/tokens stay independent from cloud deletion.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#pause-and-resume",
+            "label": "Lifecycle manual"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence"
         }
       ],
       "work": [
@@ -947,14 +968,14 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Managed App consent",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · separate cloud consent and selected identity",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-03.2",
@@ -966,14 +987,14 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Production-default publish",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · publish exact bytes to the stable coordinate",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-03.3",
@@ -985,14 +1006,14 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Two-gate managed call",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · allow, revoke, refuse, and reauthorize with no fallback",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-03.4",
@@ -1004,22 +1025,22 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Managed lifecycle",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · rotate, pause, delete the Angel, and delete the Account",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         }
       ],
       "gate": {
         "key": "GATE-WS2.3",
         "proof": "Epic dogfood · use one managed draft-only Angel for 48 hours, revoke and recover it, then delete and restart.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "evidence/ws2-cli-install-proof.json",
+          "label": "WS2 CLI install proof"
         },
         "accepted": false
       }
@@ -1043,37 +1064,38 @@
           "key": "G08",
           "title": "The same trust object runs locally and remotely",
           "truth": "NOT BUILT",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Bundle digest and engine pin travel through publish, verify, receipts, and replay; the product states where proof ends.",
+          "limit": "Artifact identity is client-checkable. Remote execution remains trusted and bounded by receipts/replay, not fully proved.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-cli-user-guide.md#angel-verify",
+            "label": "Target verify"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence"
         },
         {
           "key": "G11",
           "title": "Trust evidence is public without private identity",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Every live Angel exposes a secret-free trust page and capability-only review summary, never credentials or Connection identity.",
+          "limit": "The unbuilt angel.public-review.v1 summary has a hiding commitment only for an eligible Version whose canonical bytes and raw digest have never been public. A cached digest keeps a historically exposed Version permanently non-hiding; the renderer must refuse the hiding schema, show a legacy warning, and require replacement bytes. The eligible Version's nonce, raw digest, exact source, guards, identity, and deployment evidence remain owner-only within the summary contract. Any owner-opted-in public-source disclosure is separate from the summary, and intentionally published fields are not owner-only. Today’s basic page still exposes the raw policy digest, charter, and guard literals; see PD-00B and SI5.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "evidence/ws-e/07-public-review-and-self-hosting.md",
+            "label": "WS-E public-boundary brief"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-01 · WS-E evidence",
+          "currentCorrection": "Existing public raw digests make all currently published Versions ineligible for the hiding summary."
         },
         {
           "key": "G12",
           "title": "One product spans CLI, browser, and agent",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "The surfaces share one policy, compiler, artifact, and job model; public docs suffice and human auth/consent remain human.",
+          "limit": "Round 2 intentionally keeps www read-only; full browser/mobile authoring is later.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/design/prototype-parity-handoff.md",
+            "label": "Parity handoff"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         }
       ],
       "work": [
@@ -1087,14 +1109,14 @@
           "mapsTo": [
             "PD-05"
           ],
-          "claim": "Read-only www",
+          "claim": "Show Angel state, endpoint, policy, proof, activity, health, and recovery without source authoring in Round 2.",
           "proof": "Feature dogfood · inspect state, endpoint, policy, activity, health, and recovery",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/design/prototype-parity-handoff.md",
+            "label": "Parity handoff"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O10 approved WS2 on 2026-08-03; PD-01 and PD-03 remain execution gates.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-03.5",
@@ -1106,14 +1128,14 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Verify the trust object",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · compare digest and engine pin",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-03.6",
@@ -1125,14 +1147,14 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Pull gate receipts",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · inspect one allowed and one refused call",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-03.7",
@@ -1144,14 +1166,14 @@
           "mapsTo": [
             "PD-03"
           ],
-          "claim": "Replay a decision",
+          "claim": "Use separate cloud consent to publish, verify, call, inspect receipts, replay, and delete/reset.",
           "proof": "Feature dogfood · replay locally and state where proof ends",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md#ship-it",
+            "label": "Current ship flow"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-00B.1",
@@ -1163,22 +1185,22 @@
           "mapsTo": [
             "PD-00B"
           ],
-          "claim": "Public capability review",
+          "claim": "Show charter and tools without login, key, cookies, credentials, or Connection identity.",
           "proof": "Feature dogfood · fresh browser or agent reads the capability-only summary",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-decisions/0002-public-angel-page.md",
+            "label": "PD 0002"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O10 settled the privacy treatment on 2026-08-03: charter text and guard literals stay public with a documented boundary. The reduced capability summary remains a WS2 build.",
+          "verified": "2026-08-01 · WS0 page proof + WS-E privacy review"
         }
       ],
       "gate": {
         "key": "GATE-WS2.4",
         "proof": "Epic dogfood · inspect two real calls and one refusal over 48 hours, including receipts, replay, and public review.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "evidence/ws2-cli-install-proof.json",
+          "label": "WS2 CLI install proof"
         },
         "accepted": false
       }
@@ -1202,37 +1224,38 @@
           "key": "G07",
           "title": "Other tenants do not exist",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "Cross-Account resources are indistinguishable from absent ones; selectors choose one Connection and omission never fans out.",
+          "limit": "Multi-account choice requires an explicit opaque selector; multiplayer comes later.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/evidence/pd-01/03-multi-tenant-control.md",
+            "label": "Multi-tenant live run"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-04 · PD-01 multi-tenant live run",
+          "currentCorrection": "Reads are isolated; the handle claim path still reveals taken versus absent."
         },
         {
           "key": "G12",
           "title": "One product spans CLI, browser, and agent",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "The surfaces share one policy, compiler, artifact, and job model; public docs suffice and human auth/consent remain human.",
+          "limit": "Round 2 intentionally keeps www read-only; full browser/mobile authoring is later.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/design/prototype-parity-handoff.md",
+            "label": "Parity handoff"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-07-31 · Pi from repository evidence"
         },
         {
           "key": "G14",
           "title": "Source and deploy topology stay bounded",
           "truth": "PARTIAL",
-          "eval": "The named proof passes.",
-          "limit": "No broader claim follows.",
+          "eval": "One repo may hold many packages/apps, but core/CLI packages, deployables, Cloudflare accounts, bindings, and secrets remain separate.",
+          "limit": "Monorepo means one source history, not one Worker, Cloudflare account, binding set, or secret store.",
           "evidence": {
-            "label": "Ledger evidence",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "evidence/round2-cli-release.json",
+            "label": "Round-2 CLI release record"
           },
-          "verified": "2026-08-05 · migration review"
+          "verified": "2026-08-03 · WS1 release proof + WS-E evidence + WS2 CLI install proof"
         }
       ],
       "work": [
@@ -1246,14 +1269,14 @@
           "mapsTo": [
             "ID-06"
           ],
-          "claim": "Make one accurate public path",
+          "claim": "Publish exact install, CLI, max-agent, outputs, side effects, failures, handoffs, and tested examples.",
           "proof": "Task smoke · docs, Skill, CLI help, and www agree",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/user-manual.md",
+            "label": "Current manual"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "ID-08.1",
@@ -1265,14 +1288,14 @@
           "mapsTo": [
             "ID-08"
           ],
-          "claim": "Run outside-candidate preflight",
+          "claim": "Define exact start state, side-door bans, generated cases, cleanup, evidence capture, and expectation checks.",
           "proof": "Task smoke · no repo, fixtures, old credentials, hidden endpoints, or admin paths",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/aprd/v2.1-generative-evals.md",
+            "label": "Generative eval draft"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-04.1",
@@ -1284,41 +1307,22 @@
           "mapsTo": [
             "PD-04"
           ],
-          "claim": "Keep human trust handoffs human",
+          "claim": "A fresh agent uses public docs and interfaces; the human only authenticates, consents, and inspects.",
           "proof": "Feature dogfood · agent pauses for authentication, consent, and final inspection",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "https://github.com/exocognito/angelmcp/blob/main/docs-site/public/llms.txt",
+            "label": "Public agent docs"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
-        },
-        {
-          "key": "ID-10.1",
-          "kind": "Task",
-          "title": "Reconcile the run the same day",
-          "truth": "NOT BUILT",
-          "plan": "BLOCKED",
-          "approval": "APPROVED",
-          "mapsTo": [
-            "ID-10"
-          ],
-          "claim": "Reconcile the run the same day",
-          "proof": "Task smoke · every finding lands in truth, work, a decision, defer, or stop",
-          "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
-          },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "N/A — O1 and O10 closed on 2026-08-03; the package is @angelmcp/cli and WS2 is approved.",
+          "verified": "2026-08-03 · Sam owner decision"
         }
       ],
       "gate": {
         "key": "GATE-WS2.5",
         "proof": "Epic dogfood · a fresh agent completes the whole path from a blank machine and new identity; Sam performs only trust steps.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "evidence/ws2-cli-install-proof.json",
+          "label": "WS2 CLI install proof"
         },
         "accepted": false
       }
@@ -1350,14 +1354,14 @@
           "mapsTo": [
             "PD-06"
           ],
-          "claim": "Sam fresh-user integration run",
+          "claim": "Sam completes local and managed journeys from a blank identity/machine and judges confidence.",
           "proof": "Feature dogfood · one complete clean-room run",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "#scenario-S1",
+            "label": "Owner scenario S1"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "ID-09 must pass first.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "PD-07",
@@ -1369,14 +1373,14 @@
           "mapsTo": [
             "PD-07"
           ],
-          "claim": "Two close-friend runs",
+          "claim": "Two friends repeat the journey only after Sam accepts it.",
           "proof": "Feature dogfood · only after Sam accepts the integration",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "#index-M-DF2",
+            "label": "M-DF2 proof"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "PD-06 owner acceptance.",
+          "verified": "2026-08-03 · Sam owner decision"
         },
         {
           "key": "ID-09",
@@ -1388,14 +1392,14 @@
           "mapsTo": [
             "ID-09"
           ],
-          "claim": "Fresh-agent preflight",
+          "claim": "Have a clean agent run only the published guide before Sam starts.",
           "proof": "Task smoke · registry install and public path from outside the repo",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "evidence/round2-cli-release.json",
+            "label": "Round-2 CLI release record"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "WS2 and ID-08.",
+          "verified": "2026-08-03 · WS2 CLI install proof"
         },
         {
           "key": "ID-10",
@@ -1407,22 +1411,22 @@
           "mapsTo": [
             "ID-10"
           ],
-          "claim": "Round-2 reconciliation",
+          "claim": "Disposition every new finding before Round-3 scope exists.",
           "proof": "Task smoke · zero orphan findings",
           "evidence": {
-            "label": "Proof source",
-            "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+            "href": "#reconciliation",
+            "label": "Zero-orphan rule"
           },
-          "blockers": "Named by the owning Epic gate.",
-          "verified": "2026-08-05 · proposed sequence"
+          "blockers": "ID-09, PD-06, and conditional PD-07.",
+          "verified": "2026-08-03 · Sam owner decision"
         }
       ],
       "gate": {
         "key": "GATE-M-DF2",
         "proof": "Integration dogfood · complete, inspect, delete, reconcile, then choose keep, repair, expand, or stop.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "#scenarios",
+          "label": "Owner scenario S1"
         },
         "accepted": false
       }
@@ -1444,8 +1448,8 @@
         "key": "GATE-WS3",
         "proof": "Future dogfood gate · owner approves one evidence-backed next bet.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "#reconciliation",
+          "label": "Learning reconciliation"
         },
         "accepted": false
       }
@@ -1467,8 +1471,8 @@
         "key": "GATE-WS4",
         "proof": "Future owner gate · no scope without evidence and explicit approval.",
         "evidence": {
-          "label": "Gate contract",
-          "href": "https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html"
+          "href": "https://github.com/exocognito/angelmcp/blob/main/ROADMAP.md",
+          "label": "Current roadmap pointer"
         },
         "accepted": false
       }
