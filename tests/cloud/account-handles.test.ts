@@ -530,9 +530,11 @@ describe("Control handle routes", () => {
     expect(response.status).toBe(404);
   });
 
-  test("refuses to start with a handle-shaped ACCOUNT_ID", async () => {
+  test("refuses a session whose Account is handle-shaped", async () => {
+    // The Account arrives from the verifier below, not from configuration, so
+    // the old ACCOUNT_ID mutation here drove nothing once Control stopped
+    // reading it.
     const harness = controlHarness();
-    (harness.env as { ACCOUNT_ID: string }).ACCOUNT_ID = "m1";
     const response = await handleControlRequestReal(new Request(
       "https://control.test/v1/handles/smcllns",
       { headers: managementHeaders },

@@ -321,7 +321,7 @@ Exactly four keys:
 ```json
 {
   "target": "https://dash.angelmcp.ai",
-  "account": "acct_m1",
+  "account": "acct_...",
   "angel": "google-read-proof",
   "bindings": {
     "preview":    { "gmail": "proof-google", "docs": "proof-google" },

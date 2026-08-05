@@ -76,9 +76,9 @@ The one step with **no** server endpoint is the build (step 5): the artifact is
 compiled locally by the package. That is the only reason tooling is in the loop
 at all — it still does **not** require cloning the product repo.
 
-## Step 2 — Get the two management credentials
+## Step 2 — Get the management credential
 
-Both come from the person who owns the Angel Cloud account; there is no
+It comes from the person who owns the Angel Cloud account; there is no
 self-service token endpoint.
 
 - `ANGEL_MANAGEMENT_TOKEN` — a control-plane session token, sent as
@@ -87,7 +87,7 @@ self-service token endpoint.
   command mints one for a terminal yet; ask the owner.
 
 Never write it into source, `angel.json`, logs, a command transcript, or an
-Angel artifact. Pass them as environment variables only.
+Angel artifact. Pass it as an environment variable only.
 
 ## Step 3 — Add a Google Connection (browser, one time)
 

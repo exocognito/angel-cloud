@@ -452,8 +452,9 @@ credentials ([comparison journey](user-manual.md#full-deployed-comparison-journe
 
 Yes. It merged to main on 2026-07-23 (PR #1), and Broker, Gateway, and Control
 are deployed and live in the dedicated Cloudflare account: an unauthenticated
-Control root request redirects to Access (`302`), a valid service token reaches
-the app (`200`), and live reset and state reads pass. Public
+Control root request serves the public shell (`200`) and every Account route
+answers `401 {"error":"sign-in required"}` until a session says who is asking.
+Live reset and state reads pass. Public
 `@smcllns/angel-core@0.3.0` is published. Canonical source is workspace-linked
 at `packages/core` under one workspace lockfile, and the release check compares
 its packed runtime with npm
