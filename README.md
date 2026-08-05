@@ -7,11 +7,11 @@ has no code-execution engine.
 
 The deployed shape is four Workers:
 
-- **Auth** is the public signup surface, deliberately outside the Cloudflare
-  Access application: it mails a one-time sign-in link and gives whoever clicks
-  it an empty Account. A dogfooding implementation; Better Auth is expected to
-  replace it.
-- **Control** owns one demo Account, the management API, immutable Versions,
+- **Auth** is the public signup surface and the only authority on what a
+  session is: it mails a one-time sign-in link and gives whoever clicks it an
+  empty Account. Built on Better Auth over D1.
+- **Control** serves whichever Account the caller's session names, plus the
+  management API, immutable Versions,
   environment deployments, stable key hashes, and the private www read model.
 - **Gateway** exposes each Angel MCP endpoint and independently enforces its
   deployed allowlist, argument guards, key, Connection selector, and
@@ -127,10 +127,9 @@ matches both gate receipts, and proves an outside Account receives only `404`.
 ## Full deployed comparison golden (operator-only)
 
 ```text
-GOLDEN_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 GOLDEN_CONTROL_URL=https://<control> \
 GOLDEN_GATEWAY_URL=https://<gateway> \
-GOLDEN_MANAGEMENT_TOKEN=<management-token> \
+GOLDEN_SESSION_TOKEN=<session-token> \
 GOLDEN_ADMIN_TOKEN=<reset-token> \
 bun run test:golden
 ```
@@ -213,10 +212,9 @@ durable monitoring.
 ## Deploy
 
 Deployment requires an operator API token scoped to the target Cloudflare
-Account with Workers Scripts Edit, Access: Apps and Policies Edit, and Access:
-Service Tokens Edit. This token configures infrastructure and is never
-available to Worker code. The Access service token is a separate runtime/client
-credential.
+Account with Workers Scripts Edit, plus D1 Edit for the sign-in Worker's
+database and its migrations. This token configures infrastructure and is never
+available to Worker code.
 
 The dedicated Cloudflare account is the M1 target. Broker, Gateway, and Control
 are deployed there from the hosted repository.

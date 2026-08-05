@@ -48,7 +48,7 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
 | 6. Publish to preview (opt in) | `angel publish --preview` / API | Management bearer |
-| 7. Promote to production | `angel deploy --prod` / API | Management bearer + Access token |
+| 7. Promote to production | `angel deploy --prod` / API | Management bearer |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
 Steps 2 and 3 cannot be done from a shell — a person provisions the credentials
@@ -92,8 +92,8 @@ Angel artifact. Pass them as environment variables only.
 ## Step 3 — Add a Google Connection (browser, one time)
 
 Provider custody requires an interactive browser flow — there is no headless
-API to mint a Google Connection. Ask the owner to, in the Cloudflare
-Access-protected dashboard:
+API to mint a Google Connection. Ask the owner to, in the signed-in
+dashboard:
 
 1. Save a Provider App (their own Google OAuth client; the secret is stored
    write-only).

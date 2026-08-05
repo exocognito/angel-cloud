@@ -453,12 +453,13 @@ whichever Account the session names:
 | `DELETE /api/connections/:id` | Revoke if needed, then remove it. |
 | `GET /oauth/google/callback` | Finish the bound PKCE flow. |
 
-The CLI's strict `/v1` management resource API requires the same Access identity
-plus `Authorization: Bearer <ANGEL_MANAGEMENT_TOKEN>`.
+The CLI's strict `/v1` management resource API requires the same session,
+presented as `Authorization: Bearer <ANGEL_MANAGEMENT_TOKEN>`. That variable now
+holds a control-plane session token; no command mints one yet.
 
 ### Credential boundary
 
-The browser sends OAuth client material to the Access-protected Control route,
+The browser sends OAuth client material to the signed-in Control route,
 which passes it to Broker custody. Provider App secrets and Connection refresh
 tokens are envelope-encrypted per Account in the Broker's vault. The Broker alone
 holds `CREDENTIAL_KEK`, unwraps the Account data key, leases the secret
@@ -704,7 +705,7 @@ are listed under [Errors](#errors).
 
 ## Use the dashboard
 
-The Access-protected www dashboard has three top-level screens: **Home**,
+The signed-in www dashboard has three top-level screens: **Home**,
 **Angels**, and **Connections**.
 
 **Home** opens with the Account name, a one-line summary, and a health row that
@@ -813,7 +814,7 @@ Transport and platform errors:
 
 | Status | Cause |
 |---|---|
-| `401` | Missing Access identity on Control, or a missing/wrong Angel key on MCP — including an in-gate `unauthorized` key re-check (`-32001`). |
+| `401` | Missing or spent session on Control, or a missing/wrong Angel key on MCP — including an in-gate `unauthorized` key re-check (`-32001`). |
 | `404` | The route or owned resource is absent — cross-Account lookups also return `404`. |
 | `405` | Non-POST to the MCP endpoint — except GET and HEAD on the bare production coordinate, which serve the [public page](#the-public-page). |
 | `406` / `415` | Wrong `Accept` / `Content-Type`. |
@@ -883,7 +884,6 @@ the `/v1` management surface — there is no self-serve rename:
 
 ```sh
 curl -X PUT "https://<control>/v1/accounts/<acct_id-or-handle>/handle" \
-  -H "CF-Access-Client-Id: <id>" -H "CF-Access-Client-Secret: <secret>" \
   -H "Authorization: Bearer $ANGEL_MANAGEMENT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"handle":"smcllns"}'
@@ -920,15 +920,15 @@ compares its packed runtime with npm.
 
 The operator-only `bun run test:golden` journey mutates deployed comparison
 Angels and needs `GOLDEN_CONTROL_URL`, `GOLDEN_GATEWAY_URL`,
-`GOLDEN_MANAGEMENT_TOKEN`, `GOLDEN_ADMIN_TOKEN`, and `GOLDEN_ACCESS_TOKEN` (the
-same two-key JSON format as the CLI variable).
+`GOLDEN_SESSION_TOKEN`, and `GOLDEN_ADMIN_TOKEN`. The session token is a
+control-plane session; the admin token is reset-only.
 
 ### Real Google acceptance
 
 Once the test Connection is authorized, the separate
 `bun run test:google-read-proof` journey receives only `GOLDEN_GATEWAY_URL` (the
 exact full production MCP endpoint), `GOLDEN_ANGEL_KEY`, `GOLDEN_GMAIL_QUERY`, and
-`GOLDEN_DOC_ID` — no Access, management, Google, or OAuth credential. Follow the
+`GOLDEN_DOC_ID` — no session, management, Google, or OAuth credential. Follow the
 [Google read proof operator journey](google-read-proof-manual-journey.md) for the
 pass, revoke, fail, reauthorize, pass lifecycle. Why the standard run is
 credential-free by design:

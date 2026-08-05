@@ -271,7 +271,7 @@ summary reads without ever returning the client secret.
 
 ### Do I have to bring my own Google OAuth app?
 
-Yes, in Milestone 1. Add one client ID and secret to the Access-protected Google
+Yes, in Milestone 1. Add one client ID and secret to the signed-in Google
 custody UI, then authorize as many Google Connections as you need
 ([add Google custody](user-manual.md#add-google-custody)). A platform-owned,
 verified Google OAuth app is deferred. The current app is in External Testing,
