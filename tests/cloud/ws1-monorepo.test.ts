@@ -225,21 +225,29 @@ describe("WS1 behavior-neutral monorepo", () => {
     expect(read("docs/adrs/0007-monorepo-source-and-release-integrity.md")).toContain(
       "missing `--preview` flag",
     );
-    const ledger = read("docs/product-ledger.html");
-    expect(ledger).toContain('data-index-key="WS1" data-index-plan="COMPLETE"');
-    expect(ledger).toContain("exocognito/angels#1 merged as 2a635bf");
-    expect(ledger).toContain("fresh merged-main external attestation");
-    expect(ledger).not.toContain("must merge before this PR");
+    // The Ledger is generated from datarooms/angel-cloud.json, so WS1's product
+    // truth is asserted against the dataroom rather than against rendered HTML.
+    // The retired data-index-key / data-deliverable-* spine is gone — see the
+    // retirement list at the top of product-ledger.test.ts (R1, R2).
+    const dataroom = JSON.parse(read("datarooms/angel-cloud.json"));
+    const ws1 = dataroom.releases.find((r: { id: string }) => r.id === "WS1");
+    expect(ws1.status).toBe("shipped");
+    const g14 = ws1.commitments.find((c: { id: string }) => c.id === "G14");
+    const work = Object.fromEntries(g14.work.map((w: { id: string }) => [w.id, w]));
+    expect(work["ID-03"].status).toBe("done");
+    expect(work["ID-03"].note).toContain("exocognito/angels#1 merged as 2a635bf");
+    expect(work["ID-03"].description).toContain("fresh merged-main external attestation");
+    expect(work["ID-03"].note).not.toContain("must merge before this PR");
     const starterProof = json<{ starterCommit: string; companionDocsPRStatus: string; installCommand: string }>(
       "docs/evidence/ws1-starter-proof.json",
     );
     expect(starterProof.starterCommit).toBe("2a635bf863a572a6c02e66d2a9e8e93b6d94243b");
     expect(starterProof.companionDocsPRStatus).toBe("merged");
     expect(starterProof.installCommand).toContain("pnpm add --ignore-scripts file:");
-    expect(ledger).toContain("registry SRI verification and runtime-byte parity");
-    expect(ledger).toContain("No npm provenance attestation");
-    expect(ledger).not.toContain("npm SRI provenance");
-    expect(ledger).toContain("last-registry-tarball parity proof");
+    expect(work["ID-04"].note).toContain("registry SRI verification and runtime-byte parity");
+    expect(work["ID-04"].note).toContain("No npm provenance attestation");
+    expect(work["ID-04"].note).not.toContain("npm SRI provenance");
+    expect(work["ID-04"].note).toContain("last-registry-tarball parity proof");
 
     const ownershipAdr = read("docs/adrs/0005-spec-derived-execution-closure.md");
     expect(ownershipAdr).toContain("`packages/core/adapters/<provider>/`");
