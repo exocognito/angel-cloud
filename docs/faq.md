@@ -420,7 +420,8 @@ front of
 the provider — the CLI, artifact bytes and digests, the Account-scoped API, both
 gates, MCP auth, Connection selection, availability, and isolation — is the same
 path deployed to Cloudflare (Control at `https://dash.angelmcp.ai`, sign-in at
-`https://auth.angelmcp.ai`, Gateway and Broker still on `*.sam-633.workers.dev`).
+`https://auth.angelmcp.ai`, Gateway still on `*.sam-633.workers.dev`; the
+Broker is reachable only over service bindings).
 
 ### Does ordinary CI call real Google? Isn't that just mocking?
 

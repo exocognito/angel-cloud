@@ -241,7 +241,7 @@ then apply the `normalizedWorkerSha256` replacement in
   — unchanged
 - `gateway` `26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7`
   — unchanged
-- `control` `27c8f8acf6dab74ed2e15fba38a4b8193f41d266aaa9ad363fe1c119404693ef`
+- `control` `41191b0de9b198ed9c26205ba96cbce50829f774314e0f66b88d13efa98a3d1e`
   — moved with its source
 - `auth` `066ec8569ef8cdca0dd3dbf57c3c2f0dc7d2c97ac8e3e90f3d4f7e19b0e2718d`
   — first entry

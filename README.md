@@ -219,9 +219,10 @@ durable monitoring.
 ## Deploy
 
 Deployment requires an operator API token scoped to the target Cloudflare
-Account with Workers Scripts Edit, plus D1 Edit for the sign-in Worker's
-database and its migrations. This token configures infrastructure and is never
-available to Worker code.
+Account with Workers Scripts Edit, D1 Edit for the sign-in Worker's database
+and its migrations, and — because `dash.` and `auth.` are Workers custom
+domains, which write DNS — the zone-scoped Workers Routes Edit and Zone Read.
+This token configures infrastructure and is never available to Worker code.
 
 The dedicated Cloudflare account is the M1 target. Broker, Gateway, and Control
 are deployed there from the hosted repository.

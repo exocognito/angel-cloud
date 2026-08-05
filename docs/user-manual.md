@@ -106,8 +106,8 @@ serves that person's Account. Another Account's resource answers `404
 
 **Not built:** recovery if you lose the address, self-service Account deletion,
 a way for the CLI to obtain a session, Account switching, teams, a
-platform-owned Google OAuth app, provider operations outside the reviewed
-adapter registry, and production multi-tenancy. What an Angel can reach is
+platform-owned Google OAuth app, and provider operations outside the reviewed
+adapter registry. What an Angel can reach is
 bounded twice: the registry must be able to derive the operation, and the
 Connection must already hold the Google scope it needs. An operation that clears
 the first bar but not the second publishes, but deploying it is rejected until
