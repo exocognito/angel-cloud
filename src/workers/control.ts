@@ -702,7 +702,7 @@ async function requestJson(request: Request): Promise<unknown> {
 function parseAction(value: unknown): AccountRegistryCommand {
   const body = record(value);
   // Named-key CRUD reuses the demo POST surface so the control UI mutates keys
-  // with the same Access-identity (no management bearer) idiom as availability.
+  // with the same session-identity idiom as availability.
   // The heavy lifting (mint/rotate/revoke, idempotency, gate reconcile) lives in
   // management.ts and is dispatched unchanged; here we only adapt the request.
   const keyAction = parseKeyAction(body);

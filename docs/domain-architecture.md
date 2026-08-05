@@ -1,10 +1,13 @@
 # Domain architecture (target)
 
 Status: direction agreed 2026-07-23. The coordinate path grammar is live on
-the Gateway as of 2026-07-28 (issue #3); the host move is not — everything
-currently runs on `workers.dev` URLs in the dedicated Cloudflare account, and
-that carries us until the public-product milestone. This document exists so
-the URL scheme is settled before anything public depends on it.
+the Gateway as of 2026-07-28 (issue #3). The host move is **partly done** as of
+2026-08-04: the zone is in the dedicated Cloudflare account, and `dash.` and
+`auth.` are bound to Control and the sign-in Worker — a prerequisite for
+sign-in, not a polish, because `workers.dev` is on the Public Suffix List and
+no cookie can span two Workers there. Gateway, Broker and the docs site still
+answer on `workers.dev`. This document exists so the URL scheme is settled
+before anything public depends on it.
 
 This is reference — what the addresses are. Why they are shaped this way, and
 whether they are built yet, lives in the product decision records:
@@ -110,10 +113,12 @@ cannot be read by the other. So `SESSION_COOKIE_DOMAIN` is `.angelmcp.ai`
 the session cookie to **every host on the zone**, current and future — including
 the public `docs.angelmcp.ai`, which needs no auth and should never see it.
 
-Today that exposure is latent rather than live: `docs.` is still on
-`workers.dev` and its Worker is assets-only — no `main`, so no code runs and
-nothing can read a header. The risk arrives with the host binding in migration
-step 2, or with the first sibling Worker that executes code.
+Today that exposure is latent rather than live, but only because of what the
+siblings are, not because the cookie is narrow: `dash.` and `auth.` are already
+bound and already share it. `docs.` is still on `workers.dev`, and its Worker is
+assets-only — no `main`, so no code runs and nothing can read a header. The risk
+arrives when `docs.` binds to the zone, or with the first sibling Worker that
+executes code.
 
 Two consequences follow, and they bind anything added to this zone:
 
@@ -154,23 +159,28 @@ removes the collision by construction, and two further rules keep it safe:
   and `docs.angelmcp.ai/llms.txt` — the docs host is canonical, and the apex
   paths exist only so the reserved words resolve to one place.
 - The session cookie **is** scoped to `.angelmcp.ai` today, and this rule used
-  to say the opposite. See "The cookie's blast radius" below before adding a
+  to say the opposite. See "The cookie's blast radius" above before adding a
   host or serving user-shaped content on one.
 
-## Migration checklist (when this becomes real)
+## Migration checklist
 
-1. Move the `angelmcp.ai` zone into the dedicated Cloudflare account. This
-   moves **all** DNS for the domain — audit email routing and any other
-   records on the personal account first.
-2. Add Workers custom domains/routes for Control (`dash.`, `api.`, `auth.`),
-   Gateway (`mcp.`), and the Docs worker (`docs.`); add apex redirects for
-   `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
+Steps 1 and 4 are done, and 2, 3 and 5 are done for `dash.` and `auth.` only.
+
+1. ~~Move the `angelmcp.ai` zone into the dedicated Cloudflare account.~~ Done
+   2026-08-04. It moved **all** DNS for the domain.
+2. Add Workers custom domains/routes for Control (`dash.`, `api.`), the Auth
+   worker (`auth.`), Gateway (`mcp.`), and the Docs worker (`docs.`); add apex
+   redirects for `/docs` and `/llms.txt` to `docs.angelmcp.ai`. **`dash.` and
+   `auth.` are bound**; `api.`, `mcp.` and `docs.` are not.
 3. Update `CONTROL_BASE_URL` / `GATEWAY_BASE_URL` vars in
-   `wrangler.control.jsonc` and redeploy.
-4. Delete the Cloudflare Access application; the sign-in Worker holds the door.
+   `wrangler.control.jsonc` and redeploy. Done for Control.
+4. ~~Delete the Cloudflare Access application; the sign-in Worker holds the
+   door.~~ Done 2026-08-04.
 5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
-   (operator-in-a-browser step in Google Cloud Console).
-6. Keep `workers.dev` URLs alive through the cutover, then disable.
+   (operator-in-a-browser step in Google Cloud Console). Done.
+6. Keep `workers.dev` URLs alive through the cutover, then disable. Note that
+   binding a custom domain **disables that Worker's `workers.dev` URL** —
+   Control's and the sign-in Worker's old addresses now 404.
 
 ## Open questions
 

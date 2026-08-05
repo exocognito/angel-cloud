@@ -85,9 +85,17 @@ claim path, rather than as holding outright.
 reset sends the admin token in `Authorization` while the session rides as a
 cookie, exactly as a browser sends it. Control forwarded both, Better Auth's
 bearer plugin read the admin token as the session, failed to resolve it, and
-refused a caller who was properly signed in — `401` to a live session. The
-cookie now wins whenever both are present. A bearer alone still works, which is
-what the CLI will have.
+refused a caller who was properly signed in — `401` to a live session. A cookie
+that carries a session now wins over a bearer. A bearer alone still works, which
+is what the CLI will have.
+
+Review narrowed that rule afterwards, and the narrowing matters: "any cookie
+wins" would have been wrong once the cookie is scoped to the whole zone. The
+browser attaches every cookie any sibling host has set, so a caller holding an
+unrelated `.angelmcp.ai` cookie plus a real bearer would have had its bearer
+suppressed by a jar that never contained a session. Control now looks for
+`better-auth.session_token` by name — prefixed or not — and falls through to the
+bearer when it is absent.
 
 **A spent link stranded people on the wrong Worker.** `callbackURL` was
 relative, so it resolved against the sign-in Worker's own origin and the
@@ -213,7 +221,7 @@ then apply the `normalizedWorkerSha256` replacement in
   — unchanged
 - `gateway` `26e2f9235f67912ff4b090781d628d808757b8690cbc73ec98da4b44e8a902f7`
   — unchanged
-- `control` `e28fb579a7db51ccb061a6959bd6feeb35e66067dbfb13e505d24e5c575f6eb4`
+- `control` `0a1d4126f3a59d9d9b664aa75f5fcc2d4c809540930b4d751e5668c845658015`
   — moved with its source
 - `auth` `066ec8569ef8cdca0dd3dbf57c3c2f0dc7d2c97ac8e3e90f3d4f7e19b0e2718d`
   — first entry
