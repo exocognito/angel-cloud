@@ -181,6 +181,9 @@ Steps 1 and 4 are done, and 2, 3 and 5 are done for `dash.` and `auth.` only.
    worker (`auth.`), Gateway (`mcp.`), and the Docs worker (`docs.`); add apex
    redirects for `/docs` and `/llms.txt` to `docs.angelmcp.ai`. **`dash.` and
    `auth.` are bound**; `api.`, `mcp.` and `docs.` are not.
+   When `docs.` binds, flip `DOCS_BASE_URL` in `www/app.js` — the dashboard's
+   first-run guide links the docs from there and nothing rewrites it — and the
+   host it is pinned to in `tests/cloud/www-contract.test.ts`.
 3. Update `CONTROL_BASE_URL` / `GATEWAY_BASE_URL` vars in
    `wrangler.control.jsonc` and redeploy. Done for Control.
 4. ~~Delete the Cloudflare Access application; the sign-in Worker holds the

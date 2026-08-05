@@ -1133,7 +1133,7 @@ function newAngelGuideSteps() {
     {
       where: "shell",
       title: "Install the CLI and write the Angel",
-      detail: "You need pnpm (pnpm.io) and Bun (bun.sh) — the CLI runs under Bun. In your own project directory, add the published CLI and invoke it as pnpm exec angel. Write angels/google-read-proof/ANGEL.yaml naming exactly the two tools this journey uses, gmail.users.messages.list and docs.documents.get, and alongside it angel.json, which takes exactly four keys: target (this control site), account, angel (the slug), and bindings, holding preview and production, each mapping gmail and docs to your healthy Connection nickname. Keep the real angel.json untracked; ANGEL.yaml stays portable.",
+      detail: "You need pnpm (pnpm.io) and Bun (bun.sh) — the CLI runs under Bun. In your own project directory, add the published CLI and invoke it as pnpm exec angel. Write angels/google-read-proof/ANGEL.yaml under name: google-read-proof, matching the directory, naming exactly the two tools this journey uses, gmail.users.messages.list and docs.documents.get, and alongside it angel.json, which takes exactly four keys: target (this control site), account, angel (the slug), and bindings, holding preview and production, each mapping gmail and docs to your healthy Connection nickname. Keep the real angel.json untracked; ANGEL.yaml stays portable.",
       commands: ["pnpm add @angelmcp/cli"],
     },
     {
@@ -1213,9 +1213,9 @@ function renderNewAngelGuide(accountId) {
   head.append(element("b", "", "Publish your first Angel from the CLI"));
   head.append(element("small", "", "Get your first Angel live in production, following the real google-read-proof journey: sign in, add your BYO Google client, authorize a Connection, install the CLI and write your Angel, publish to preview, promote to production, and capture the shown-once key. Browser steps use the signed-in control site; shell steps run in your own project directory. Publish installs preview; deploy --prod promotes the exact previewed build to production without rebuilding."));
   const more = element("small", "wp4-guide-more", "From here, ");
-  more.append(docsLink("SKILL.md", "the full journey this panel summarizes"));
+  more.append(docsLink("#/skill", "the full journey this panel summarizes"));
   more.append(document.createTextNode(", and "));
-  more.append(docsLink("operator-journey.md", "a maintainer's worked run of the same lifecycle"));
+  more.append(docsLink("#/operator-journey", "a maintainer's worked run of the same lifecycle"));
   more.append(document.createTextNode(" — revoking a Connection to prove loud failure, then reauthorizing to prove recovery."));
   head.append(more);
   const account = element("small", "wp4-guide-account", "Your Account, for angel.json's account key: ");
