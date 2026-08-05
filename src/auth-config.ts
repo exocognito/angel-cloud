@@ -21,6 +21,10 @@ export interface AuthConfigEnv {
   BETTER_AUTH_SECRET: string;
   LOGIN_FROM_ADDRESS: string;
   AUTH_BASE_URL: string;
+  /** Where a spent link lands: the dashboard, on the same zone as this Worker. */
+  DASHBOARD_BASE_URL: string;
+  /** The zone both hosts sit on, so one cookie reaches both. */
+  SESSION_COOKIE_DOMAIN: string;
 }
 
 export interface AuthConfigDependencies {
@@ -48,13 +52,41 @@ export function createAuth(env: AuthConfigEnv, dependencies: AuthConfigDependenc
     baseURL: env.AUTH_BASE_URL,
     basePath: "/v1/auth",
     secret: env.BETTER_AUTH_SECRET,
-    // O4 clause 8. Nothing may redirect a spent link off this origin.
-    trustedOrigins: [env.AUTH_BASE_URL],
+    // O4 clause 8, widened by exactly one host. A spent link has to land on
+    // the dashboard, which is a different origin from this Worker, so that
+    // origin is named here and nothing else is.
+    trustedOrigins: [env.AUTH_BASE_URL, env.DASHBOARD_BASE_URL],
     session: { expiresIn: SESSION_TTL_SECONDS },
+    // The dashboard is a different host on the same zone, and it cannot read a
+    // cookie pinned to this one. Verified against the framework: this stamps
+    // `domain` on the session cookie. It is why both hosts had to leave
+    // workers.dev — that suffix is on the Public Suffix List, so no cookie can
+    // ever span two Workers there.
+    advanced: {
+      crossSubDomainCookies: { enabled: true, domain: env.SESSION_COOKIE_DOMAIN },
+      // Without this the framework reads `x-forwarded-for` only, finds nothing
+      // behind Cloudflare, and — by its own warning — falls back to "a single
+      // shared per-path bucket". Every caller would then share one allowance.
+      // `x-forwarded-for` is unreachable in production and kept only for local
+      // runs off Cloudflare: the edge always sets `cf-connecting-ip`, and on
+      // the two service-binding paths Control builds fresh headers that carry
+      // the credential and the address and nothing else.
+      ipAddress: { ipAddressHeaders: ["cf-connecting-ip", "x-forwarded-for"] },
+    },
     // In-memory limits are decorative on Workers: an isolate is per-request
     // and per-colo, so nothing accumulates. This is the framework's own
     // per-IP limit, kept for the endpoints the Worker does not guard itself.
-    rateLimit: { enabled: true, storage: "database" },
+    rateLimit: {
+      enabled: true,
+      storage: "database",
+      // Control asks this once for every authenticated request it serves, so
+      // the default 100-per-10s would cap the product rather than an attacker.
+      // It stays capped, just generously: now that `cf-connecting-ip` is named
+      // above, the bucket is per-IP, so a limit no real user can reach still
+      // bounds a stranger looping invalid bearers — one D1 read each — against
+      // a publicly routed Worker.
+      customRules: { "/get-session": { window: 10, max: 1000 } },
+    },
     user: {
       additionalFields: {
         // Named `angel` to keep it clear of Better Auth's own `account`

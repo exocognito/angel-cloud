@@ -22,9 +22,10 @@ const handleControlRequest = (request: Request, env: Record<string, unknown>) =>
     subject: "test-access-subject",
   }));
 const { AccountRegistry } = await import("../../src/workers/account-registry");
+const { SessionAuthenticationError } = await import("../../src/session-identity");
 
 describe("management resource routes", () => {
-  test("routes all Control surfaces through the Worker with Access JWT verification", () => {
+  test("routes all Control surfaces through the Worker so the session decides", () => {
     const wrangler = readFileSync(
       new URL("../../wrangler.control.jsonc", import.meta.url),
       "utf8",
@@ -34,12 +35,31 @@ describe("management resource routes", () => {
 
   test("authenticates mutations before parsing JSON", async () => {
     const env = managementEnv();
-    const response = await handleControlRequest(new Request(
+    const response = await handleControlRequestReal(new Request(
       "https://cloud.test/v1/accounts/acct_personal/angels/golden-assistant",
       { method: "PUT", headers: { "content-type": "application/json" }, body: "{" },
-    ), env as never);
+    ), env as never, async () => {
+      throw new SessionAuthenticationError("sign-in required");
+    });
 
     expect(response.status).toBe(401);
+    expect(env.calls).toEqual([]);
+  });
+
+  test("answers 404 for a mutation aimed at another Account, before parsing JSON", async () => {
+    // G07 again, on the mutation path: a body is never even read for an
+    // Account the session does not own, so a malformed one cannot be used to
+    // tell an existing Account from an absent one.
+    const env = managementEnv();
+    const response = await handleControlRequestReal(new Request(
+      "https://cloud.test/v1/accounts/acct_somebody_else/angels/golden-assistant",
+      { method: "PUT", headers: { "content-type": "application/json" }, body: "{" },
+    ), env as never, async () => ({
+      accountId: "acct_personal",
+      subject: "test-session-subject",
+    }));
+
+    expect(response.status).toBe(404);
     expect(env.calls).toEqual([]);
   });
 
@@ -504,6 +524,7 @@ describe("AccountRegistry management persistence", () => {
       },
     };
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -542,6 +563,7 @@ describe("AccountRegistry management persistence", () => {
       },
     };
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -562,24 +584,41 @@ describe("AccountRegistry management persistence", () => {
     expect(degraded.ok).toBe(true);
   });
 
-  test("a state read of an uninitialized demo Account stays a 409 and writes nothing", async () => {
+  test("a state read of an Account nobody has initialized creates it, rather than 409", async () => {
+    // This used to assert a 409 and an untouched store, which was right while
+    // the only way to have an Account was an operator running reset. Signup
+    // inverted it: every new tenant's very first dashboard load lands here, and
+    // a 409 is a dead end — www/app.js hides its own shell on any non-401
+    // failure, so there is no nav left to reach a page that would have written
+    // the state. The Account now exists from its owner's first read.
     const storage = new Map<string, unknown>();
     const registry = new AccountRegistry({
+      id: { name: "acct_stranger" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
       },
     } as never, { ...registryEnv(), GATEWAY_BASE_URL: "https://gateway.test" } as never);
 
-    const result = JSON.parse(await registry.dispatchJson({ operation: "state" })) as { ok: boolean; status?: number };
-    expect(result.ok).toBe(false);
-    expect(result.status).toBe(409);
-    expect(storage.size).toBe(0);
+    const result = JSON.parse(await registry.dispatchJson({ operation: "state" })) as {
+      ok: boolean;
+      value?: { account: { id: string; handle: string | null }; angels: unknown[] };
+    };
+    expect(result.ok).toBe(true);
+    // Empty, and its own — not a copy of anybody else's Account.
+    expect(result.value?.account.id).toBe("acct_stranger");
+    expect(result.value?.account.handle).toBeNull();
+    expect(result.value?.angels).toEqual([]);
+    // And it persisted, so the second read is not a second creation.
+    expect(storage.has("management")).toBe(true);
+    const again = JSON.parse(await registry.dispatchJson({ operation: "state" })) as { ok: boolean };
+    expect(again.ok).toBe(true);
   });
 
   test("persists encrypted ensure replay state and dispatches resource reads", async () => {
     const storage = new Map<string, unknown>();
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -631,6 +670,7 @@ describe("AccountRegistry management persistence", () => {
     const gateway = recordingGateService("gateway", runtimeIds);
     const broker = recordingGateService("broker", runtimeIds);
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -689,6 +729,7 @@ describe("AccountRegistry management persistence", () => {
     const storage = new Map<string, unknown>();
     const runtimeIds: string[] = [];
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => storage.get(key),
         put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),
@@ -846,7 +887,6 @@ function managementEnv() {
   const registryNames: string[] = [];
   return {
     ACCOUNT_ID: "acct_personal",
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",

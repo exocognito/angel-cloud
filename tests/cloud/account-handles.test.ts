@@ -23,6 +23,7 @@ mock.module("cloudflare:workers", () => ({
 const { AccountRegistry } = await import("../../src/workers/account-registry");
 const { handleControlRequest: handleControlRequestReal } = await import("../../src/workers/control");
 const { handleGatewayRequest, HandleDirectory } = await import("../../src/workers/gateway");
+const { SessionAuthenticationError } = await import("../../src/session-identity");
 
 const handleControlRequest = (request: Request, env: Record<string, unknown>) =>
   handleControlRequestReal(request, env as never, async () => ({
@@ -110,6 +111,7 @@ describe("account handle grammar", () => {
 function directoryRegistry() {
   const storage = new Map<string, unknown>();
   const registry = new AccountRegistry({
+    id: { name: "acct_demo" },
     storage: {
       get: async (key: string) => storage.get(key),
       put: async (key: string | Record<string, unknown>, value?: unknown) => {
@@ -213,6 +215,7 @@ describe("handle directory policy (PD 0004)", () => {
       if (key.length > 2048) throw new Error("over-long Durable Object storage key");
     };
     const registry = new AccountRegistry({
+      id: { name: "acct_demo" },
       storage: {
         get: async (key: string) => { guard(key); return storage.get(key); },
         put: async (key: string | Record<string, unknown>, value?: unknown) => {
@@ -262,7 +265,6 @@ function controlHarness() {
   const gatewayPushes: Array<{ path: string; authorization: string | null; body: unknown }> = [];
   const env = {
     ACCOUNT_ID: "acct_demo",
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",
@@ -364,16 +366,39 @@ describe("Control handle routes", () => {
     expect(harness.gatewayPushes).toEqual([]);
   });
 
-  test("requires the management bearer", async () => {
+  test("answers 404 for another Account's handle, as if it were not there", async () => {
+    // G07: cross-Account resources are indistinguishable from absent ones. The
+    // session names the Account; naming a different one in the path must not
+    // reveal that it exists. This is what scopes the management surface — the
+    // shared bearer it replaced named no Account and so could not.
     const harness = controlHarness();
-    const response = await handleControlRequest(new Request(
+    const response = await handleControlRequestReal(new Request(
+      "https://control.test/v1/accounts/acct_somebody_else/handle",
+      {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ handle: "smcllns" }),
+      },
+    ), harness.env as never, async () => ({
+      accountId: "acct_demo",
+      subject: "test-session-subject",
+    }));
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "not found" });
+  });
+
+  test("refuses a caller with no session before touching the directory", async () => {
+    const harness = controlHarness();
+    const response = await handleControlRequestReal(new Request(
       "https://control.test/v1/accounts/acct_demo/handle",
       {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ handle: "smcllns" }),
       },
-    ), harness.env);
+    ), harness.env as never, async () => {
+      throw new SessionAuthenticationError("sign-in required");
+    });
     expect(response.status).toBe(401);
   });
 
@@ -505,9 +530,11 @@ describe("Control handle routes", () => {
     expect(response.status).toBe(404);
   });
 
-  test("refuses to start with a handle-shaped ACCOUNT_ID", async () => {
+  test("refuses a session whose Account is handle-shaped", async () => {
+    // The Account arrives from the verifier below, not from configuration, so
+    // the old ACCOUNT_ID mutation here drove nothing once Control stopped
+    // reading it.
     const harness = controlHarness();
-    (harness.env as { ACCOUNT_ID: string }).ACCOUNT_ID = "m1";
     const response = await handleControlRequestReal(new Request(
       "https://control.test/v1/handles/smcllns",
       { headers: managementHeaders },

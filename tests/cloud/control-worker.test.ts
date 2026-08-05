@@ -9,7 +9,7 @@ import {
   requireInternalRequest,
   type GateInternalRequest,
 } from "../../src/workers/protocol";
-import { AccessAuthenticationError } from "../../src/access";
+import { SessionAuthenticationError } from "../../src/session-identity";
 import { fixtureConnectionSummaries, fakeCredentialVaults } from "./fake-vault";
 
 mock.module("cloudflare:workers", () => ({
@@ -441,26 +441,40 @@ describe("Worker role credentials", () => {
 });
 
 describe("control Worker routing", () => {
-  test("protects assets and private APIs with Access before routing", async () => {
+  test("serves the shell to a stranger and still refuses them any Account data", async () => {
+    // Access used to hold the door. Without it the sign-in page has to be
+    // reachable by somebody with no session, so the shell is public — but
+    // nothing that reads an Account may follow it through.
     const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
-    (env as Record<string, unknown>).ACCESS_REQUIRED = "true";
-    const response = await handleControlRequest(new Request("https://demo.test/"), env);
-    expect(response.status).toBe(401);
+    const refuse: Parameters<typeof handleControlRequestReal>[2] = async () => {
+      throw new SessionAuthenticationError("sign-in required");
+    };
+
+    const shell = await handleControlRequestReal(new Request("https://demo.test/"), env as never, refuse);
+    const state = await handleControlRequestReal(
+      new Request("https://demo.test/api/demo/state"),
+      env as never,
+      refuse,
+    );
+
+    expect(shell.status).toBe(200);
+    expect(state.status).toBe(401);
+    expect(await state.json()).toEqual({ error: "sign-in required" });
     expect(env.calls).toEqual([]);
   });
 
   test("returns 401 only for authentication rejection and 500 for verifier failure", async () => {
     const env = controlEnv({ ok: true, value: { schema: "angelmcp.demo.v4" } });
-    const rejected = await handleControlRequestReal(new Request("https://demo.test/"), env as never, async () => {
-      throw new AccessAuthenticationError("invalid assertion");
+    const rejected = await handleControlRequestReal(new Request("https://demo.test/api/demo/state"), env as never, async () => {
+      throw new SessionAuthenticationError("invalid assertion");
     });
-    const failed = await handleControlRequestReal(new Request("https://demo.test/"), env as never, async () => {
-      throw new Error("JWKS service unavailable");
+    const failed = await handleControlRequestReal(new Request("https://demo.test/api/demo/state"), env as never, async () => {
+      throw new Error("session Worker unavailable");
     });
 
     expect(rejected.status).toBe(401);
     expect(failed.status).toBe(500);
-    expect(await failed.json()).toEqual({ error: "Access authentication verifier failed" });
+    expect(await failed.json()).toEqual({ error: "session verifier failed" });
     expect(env.calls).toEqual([]);
   });
 
@@ -559,10 +573,10 @@ describe("control Worker routing", () => {
     expect(env.calls.map((call) => (call as { name: string }).name)).toEqual(accepted);
   });
 
-  test("rejects missing or invalid Access identity before private state and actions", async () => {
+  test("rejects a missing or invalid session before private state and actions", async () => {
     const env = controlEnv({ ok: true, value: {} });
     const rejectAccess: Parameters<typeof handleControlRequestReal>[2] = async () => {
-      throw new AccessAuthenticationError("invalid assertion");
+      throw new SessionAuthenticationError("invalid assertion");
     };
     for (const request of [
       new Request("https://demo.test/api/demo/state"),
@@ -610,7 +624,6 @@ describe("control Worker routing", () => {
   test("fails closed when any Control credential or response KEK is reused", async () => {
     const fields = [
       "DEMO_ADMIN_TOKEN",
-      "MANAGEMENT_API_TOKEN",
       "CONTROL_GATEWAY_TOKEN",
       "CONTROL_BROKER_TOKEN",
       "CONTROL_RESPONSE_KEK",
@@ -636,7 +649,6 @@ describe("control Worker routing", () => {
     for (const invalid of [undefined, ""]) {
       for (const field of [
         "DEMO_ADMIN_TOKEN",
-        "MANAGEMENT_API_TOKEN",
         "CONTROL_GATEWAY_TOKEN",
         "CONTROL_BROKER_TOKEN",
         "CONTROL_RESPONSE_KEK",
@@ -758,7 +770,6 @@ describe("control Worker routing", () => {
   test("serves non-API paths from the static asset binding", async () => {
     const env = controlEnv({ ok: true, value: {} });
     env.DEMO_ADMIN_TOKEN = "";
-    env.MANAGEMENT_API_TOKEN = "";
     env.CONTROL_GATEWAY_TOKEN = "";
     env.CONTROL_BROKER_TOKEN = "";
     env.CONTROL_RESPONSE_KEK = "";
@@ -1037,7 +1048,6 @@ function controlEnv(result: unknown) {
   const calls: unknown[] = [];
   return {
     ACCOUNT_ID: "acct_demo",
-    MANAGEMENT_API_TOKEN: "management-secret",
     CONTROL_RESPONSE_KEK: "response-replay-kek",
     DEMO_ADMIN_TOKEN: "admin-secret",
     CONTROL_GATEWAY_TOKEN: "control-gateway-secret",
@@ -1089,6 +1099,7 @@ function registryHarness(observe: (input: GateInternalRequest) => void = () => {
   const gateway = gateService("gateway", observe);
   const broker = gateService("broker", observe);
   const registry = new AccountRegistry({
+    id: { name: "acct_demo" },
     storage: {
       get: async (key: string) => storage.get(key),
       put: async (key: string, value: unknown) => storage.set(key, structuredClone(value)),

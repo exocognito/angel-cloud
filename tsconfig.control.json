@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "include": [
     "types/control.d.ts",
+    "types/control-secrets.d.ts",
     "src/control.ts",
     "src/demo-fixtures.ts",
     "src/domain.ts",

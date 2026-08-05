@@ -8,9 +8,10 @@ this file links to it rather than repeat it.
 [product-ledger-source]: https://github.com/exocognito/angelmcp/blob/main/docs/product-ledger.html
 
 Present-tense statements describe the live Milestone 1 slice: the deployed
-Workers, one pre-provisioned Account behind Cloudflare Access, and real Google
-calls for two pinned operations through bring-your-own OAuth custody. A separate
-demo Worker now offers signup, but the Account it creates reaches nothing here.
+Workers, an Account per person who signs up, and real Google calls for two
+pinned operations through bring-your-own OAuth custody. Cloudflare Access is
+gone: signing in is an emailed link, and the dashboard serves whichever Account
+the session names.
 Where a limit bites, it is called out.
 
 ## Choosing Angel Cloud
@@ -216,7 +217,7 @@ matters more than hosted operation.
 ### What is the public demo at `/demo/`, and what can it reach?
 
 It is the dashboard itself — the same `index.html`, `app.js` and `app.css` the
-Access-gated Control worker serves, copied verbatim at build time so the demo
+signed-in Control worker serves, copied verbatim at build time so the demo
 cannot drift from the product. What it is not is an account. The Angels,
 Connections and receipts on it come from a fixture generated at build time by
 running the real projection code over the checked-in Angel artifacts.
@@ -270,7 +271,7 @@ summary reads without ever returning the client secret.
 
 ### Do I have to bring my own Google OAuth app?
 
-Yes, in Milestone 1. Add one client ID and secret to the Access-protected Google
+Yes, in Milestone 1. Add one client ID and secret to the signed-in Google
 custody UI, then authorize as many Google Connections as you need
 ([add Google custody](user-manual.md#add-google-custody)). A platform-owned,
 verified Google OAuth app is deferred. The current app is in External Testing,
@@ -280,7 +281,7 @@ reliable scheduled acceptance needs a Production OAuth app.
 ### Which Google scopes are requested?
 
 Each Provider App carries its own scope set, chosen when you register it with
-`POST /api/provider-apps` on the Access-authenticated Control origin; the
+`POST /api/provider-apps` on the signed-in Control origin; the
 consent flow requests that set plus the identity scopes `openid` and `email`
 ([authorize a Connection](user-manual.md#authorize-a-connection)). A Provider
 App registered without scopes — including every one saved through the
@@ -382,9 +383,10 @@ default until you resume.
 
 ### How are Accounts isolated?
 
-Control maps a verified Cloudflare Access identity to one configured Account
-(`acct_m1` in this slice). The Account registry and credential custody key their
-state by that Account. A request for another Account's resource returns `404`,
+Control asks the sign-in Worker who is calling and takes the Account from the
+answer, so each person reaches their own and nothing names an Account from
+configuration. The Account registry and credential custody key their state by
+that Account. A request for another Account's resource returns `404`,
 not a denial that confirms the resource exists
 ([errors](user-manual.md#errors)). General multi-tenant provisioning and
 membership are not built yet.
@@ -417,8 +419,9 @@ deterministic CI path swaps in an injected adapter. Everything in
 front of
 the provider — the CLI, artifact bytes and digests, the Account-scoped API, both
 gates, MCP auth, Connection selection, availability, and isolation — is the same
-path deployed to `*.sam-633.workers.dev` (Control at
-`https://angelmcp-control-demo.sam-633.workers.dev`).
+path deployed to Cloudflare (Control at `https://dash.angelmcp.ai`, sign-in at
+`https://auth.angelmcp.ai`, Gateway still on `*.sam-633.workers.dev`; the
+Broker is reachable only over service bindings).
 
 ### Does ordinary CI call real Google? Isn't that just mocking?
 
@@ -443,15 +446,16 @@ refresh token at seven days, so this is not yet a durable monitor.
 
 A separate operator-only comparison journey exercises the mutating path —
 multiple Connection choices, pause/resume, a v2 Version, stable keys, matching
-receipts, and isolation — using dedicated Access, management, and reset
+receipts, and isolation — using dedicated session and reset
 credentials ([comparison journey](user-manual.md#full-deployed-comparison-journey)).
 
 ### Is Milestone 1 complete?
 
 Yes. It merged to main on 2026-07-23 (PR #1), and Broker, Gateway, and Control
 are deployed and live in the dedicated Cloudflare account: an unauthenticated
-Control root request redirects to Access (`302`), a valid service token reaches
-the app (`200`), and live reset and state reads pass. Public
+Control root request serves the public shell (`200`) and every Account route
+answers `401 {"error":"sign-in required"}` until a session says who is asking.
+Live reset and state reads pass. Public
 `@smcllns/angel-core@0.3.0` is published. Canonical source is workspace-linked
 at `packages/core` under one workspace lockfile, and the release check compares
 its packed runtime with npm
@@ -467,26 +471,23 @@ a stable pointer for old links.
 
 ### Can I sign up for Angel Cloud today?
 
-On the demo Worker, yes; on Control, no. `angelmcp-auth-demo` takes an email
-address, mails a sign-in link good once for ten minutes, and gives whoever
-clicks it one empty Account of their own. It is a dogfooding implementation and
-Better Auth is expected to replace it, so the Account it creates lives only in
-that Worker and grants nothing yet.
+Yes. `https://dash.angelmcp.ai` takes an email address, mails a sign-in link
+good once for ten minutes, and gives whoever clicks it one empty Account of
+their own — which the dashboard then serves. What is missing is recovery if you
+lose the address, and self-service deletion.
 
-Control itself still serves one pre-provisioned Account (`acct_m1`) behind
-Cloudflare Access, and its interactive login is Cloudflare account login, not a
-one-time PIN. There is still no waitlist, Account switcher, billing, public
-catalog, SLA, or team membership. To use a second Account on Control you sign
-out and authenticate to a separate deployment; the production multi-tenant
-model is future work.
+Control now serves whichever Account the caller's session names, and signing in
+is an emailed link rather than a Cloudflare account login. There is still no
+waitlist, Account switcher, billing, public catalog, SLA, or team membership —
+and no recovery and no self-service deletion. One person holds one Account; to
+work in another you sign out and sign in as somebody else.
 
 ## Roadmap
 
 ### What is not built yet?
 
-The deferred list, straight from the tracking notes: signup wired into Control
-(it exists on the demo Worker only), multiple Accounts in one deployment,
-membership, and team roles; a platform-owned
+The deferred list, straight from the tracking notes: self-service Account
+deletion and recovery, membership, and team roles; a platform-owned
 verified Google OAuth app; more Gmail operations and providers (Maps, X, Slack,
 WhatsApp, Telegram, iMessage); Provider App removal (the API returns `501`),
 rollback commands, and a global cross-environment Angel disable; activity

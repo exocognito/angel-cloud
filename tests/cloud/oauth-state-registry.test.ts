@@ -72,6 +72,7 @@ function makeRegistry(): Registry {
     },
   };
   const ctx = {
+    id: { name: "acct_m1" },
     storage,
     blockConcurrencyWhile<T>(callback: () => Promise<T>): Promise<T> {
       const result = tail.then(callback);

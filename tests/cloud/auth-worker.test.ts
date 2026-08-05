@@ -7,7 +7,7 @@ import {
   MAX_LINKS_PER_SOURCE,
   THROTTLE_WINDOW_MS,
 } from "../../src/login-throttle";
-import { MAGIC_LINK_TTL_SECONDS } from "../../src/auth-config";
+import { MAGIC_LINK_TTL_SECONDS, createAuth } from "../../src/auth-config";
 import { EmailSendError, type EmailSender, type OutboundEmail } from "../../src/email-sender";
 
 mock.module("cloudflare:workers", () => ({
@@ -182,6 +182,55 @@ describe("spending a sign-in link", () => {
     await world.requestToken("stranger@example.test");
 
     expect((await world.click(other)).status).toBe(200);
+  });
+});
+
+describe("verifying a session", () => {
+  test("survives far more traffic than the framework's default allows", async () => {
+    // The framework's default is 100 per 10 seconds, and with no resolvable
+    // client IP it puts every caller in one bucket — its own warning calls it
+    // "a single shared per-path bucket". Control asks this question on every
+    // authenticated request, so that cap is a cap on the product: past it,
+    // everyone signed in gets 500 "session verifier failed" at once. The rule
+    // is 1000 per 10 seconds per IP, so 150 in a row must all pass.
+    const world = makeWorld();
+    const owner = await world.signUp("owner@example.test");
+
+    const statuses = new Set<number>();
+    for (let attempt = 0; attempt < 150; attempt += 1) {
+      statuses.add((await world.session(owner.sessionToken)).status);
+    }
+
+    expect(statuses).toEqual(new Set([200]));
+  });
+
+  test("names the header Cloudflare actually sends, so callers get their own bucket", () => {
+    // Same defect, other half. The framework's default address header is
+    // `x-forwarded-for`, which is absent behind Cloudflare; it then resolves
+    // no IP and counts every stranger against one allowance. Asserted on the
+    // config rather than through a request because our own per-source throttle
+    // binds first on every path a test can reach, and would hide this.
+    const auth = createAuth(
+      {
+        AUTH_DB: {} as never,
+        RESEND_API_KEY: "unused-in-tests",
+        BETTER_AUTH_SECRET: "a-test-secret-long-enough-to-keep-it-quiet",
+        LOGIN_FROM_ADDRESS: "Angel <noreply@angel.test>",
+        AUTH_BASE_URL: BASE_URL,
+        DASHBOARD_BASE_URL: "https://dash.test",
+        SESSION_COOKIE_DOMAIN: ".test",
+      },
+      { waitUntil: () => {}, database: new Database(":memory:") },
+    );
+    const options = (auth as unknown as { options: {
+      advanced?: { ipAddress?: { ipAddressHeaders?: string[] } };
+      rateLimit?: { customRules?: Record<string, unknown> };
+    } }).options;
+
+    expect(options.advanced?.ipAddress?.ipAddressHeaders?.[0]).toBe("cf-connecting-ip");
+    // Generous, but a cap: `false` would remove it, which on a publicly routed
+    // Worker leaves an unauthenticated loop of invalid bearers unbounded.
+    expect(options.rateLimit?.customRules?.["/get-session"]).toEqual({ window: 10, max: 1000 });
   });
 });
 
@@ -371,6 +420,12 @@ function makeWorld() {
         user: { angelAccountId: string };
       };
       return { angelAccountId: body.user.angelAccountId, sessionToken: body.token };
+    },
+    /** What Control does on every authenticated request it serves. */
+    session(sessionToken: string, source = "198.51.100.7") {
+      return world.call(new Request(`${BASE_URL}/v1/auth/get-session`, {
+        headers: { authorization: `Bearer ${sessionToken}`, "cf-connecting-ip": source },
+      }));
     },
     users(): Array<{ email: string; angelAccountId: string }> {
       return database.query("select email, angelAccountId from user").all() as never;

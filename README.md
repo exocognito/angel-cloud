@@ -7,11 +7,11 @@ has no code-execution engine.
 
 The deployed shape is four Workers:
 
-- **Auth** is the public signup surface, deliberately outside the Cloudflare
-  Access application: it mails a one-time sign-in link and gives whoever clicks
-  it an empty Account. A dogfooding implementation; Better Auth is expected to
-  replace it.
-- **Control** owns one demo Account, the management API, immutable Versions,
+- **Auth** is the public signup surface and the only authority on what a
+  session is: it mails a one-time sign-in link and gives whoever clicks it an
+  empty Account. Built on Better Auth over D1.
+- **Control** serves whichever Account the caller's session names, plus the
+  management API, immutable Versions,
   environment deployments, stable key hashes, and the private www read model.
 - **Gateway** exposes each Angel MCP endpoint and independently enforces its
   deployed allowlist, argument guards, key, Connection selector, and
@@ -97,9 +97,11 @@ bun run angel deploy golden-assistant --prod
 it to production by default. Pass `--preview` to use the separate preview
 bindings instead. `deploy --prod` promotes the exact active previewed
 deployment; it does not build or publish. The pinned
-`@smcllns/angel-core` 0.3.0 owns that command behavior (PD 0003). M1 Control is
-Access-protected: CLI publish and deploy require both
-`ANGEL_MANAGEMENT_TOKEN` and `ANGEL_ACCESS_TOKEN`.
+`@smcllns/angel-core` 0.3.0 owns that command behavior (PD 0003). Control takes
+its Account from the caller's session, so CLI publish and deploy need
+`ANGEL_MANAGEMENT_TOKEN` set to a control-plane session token. Nothing mints
+one for a terminal yet — that is the CLI login hand-off, and until it lands
+these commands are reachable only with a session lifted from a browser.
 
 ## Canonical CI and deterministic golden proof
 
@@ -125,19 +127,26 @@ matches both gate receipts, and proves an outside Account receives only `404`.
 ## Full deployed comparison golden (operator-only)
 
 ```text
-GOLDEN_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 GOLDEN_CONTROL_URL=https://<control> \
 GOLDEN_GATEWAY_URL=https://<gateway> \
-GOLDEN_MANAGEMENT_TOKEN=<management-token> \
+GOLDEN_SESSION_TOKEN=<session-token> \
 GOLDEN_ADMIN_TOKEN=<reset-token> \
 bun run test:golden
 ```
 
 This is the full comparison journey against deployed Control and Gateway
 origins. It publishes, promotes, resets, and exercises the comparison Angels,
-so it receives dedicated management and reset credentials. It strictly parses
-`GOLDEN_ACCESS_TOKEN` and sends its two values as the standard
-`CF-Access-Client-ID` and `CF-Access-Client-Secret` headers on direct Control calls.
+so it receives dedicated session and reset credentials. `GOLDEN_SESSION_TOKEN`
+rides as a bearer on the management API and as the session cookie on the
+dashboard's own routes, where the reset admin token needs the `Authorization`
+header to itself.
+
+Give it the **signed** cookie value — copy `__Secure-better-auth.session_token`
+out of a signed-in browser, the `<token>.<signature>` pair, not a bare token.
+One value has to satisfy both paths and only the signed form does: Better Auth
+reads the cookie with `getSignedCookie` and rejects an unsigned value, while
+its bearer plugin accepts either (it signs a bare token itself). A bare token
+therefore passes `/v1` and fails reset with `401`.
 This runner is distinct from the narrower real Google read acceptance below.
 
 ## Local browser proof (mocked)
@@ -177,9 +186,8 @@ See [`docs/google-read-proof-manual-journey.md`](docs/google-read-proof-manual-j
 not an origin: the runner requires the checked-in Angel slug, calls the supplied
 URL unchanged, and verifies both gate receipts against the checked-in build
 digest.
-The acceptance runner never receives Google credentials, Cloudflare Access
-tokens, or management credentials; it only has the public MCP endpoint and
-Angel key.
+The acceptance runner never receives Google credentials, a session, or
+management credentials; it only has the public MCP endpoint and Angel key.
 
 The runner has passed locally against the live deployment, including Gmail and
 Docs before and after reauthorization, and failed loudly while the Connection
@@ -193,8 +201,10 @@ durable monitoring.
 ## HTTP surfaces
 
 - `/v1/...` is the strict management resource API used by the CLI.
-- `GET /api/demo/state` and `POST /api/demo/action` require a verified
-  Cloudflare Access identity. Static shell assets contain no Account state.
+- `GET /api/demo/state` and `POST /api/demo/action` require a signed-in
+  session, and answer for whichever Account that session names. Static shell
+  assets are public — with Access gone, the sign-in page has to be reachable
+  by somebody who is not signed in yet, and they carry no Account state.
 - `POST /api/demo/reset` requires the automation-only admin bearer.
 - The old embedded `POST /api/demo/publish` fixture route does not exist.
 - `POST /@{handle}/{angel}` is the canonical MCP coordinate (PD 0001): bare is
@@ -209,10 +219,10 @@ durable monitoring.
 ## Deploy
 
 Deployment requires an operator API token scoped to the target Cloudflare
-Account with Workers Scripts Edit, Access: Apps and Policies Edit, and Access:
-Service Tokens Edit. This token configures infrastructure and is never
-available to Worker code. The Access service token is a separate runtime/client
-credential.
+Account with Workers Scripts Edit, D1 Edit for the sign-in Worker's database
+and its migrations, and — because `dash.` and `auth.` are Workers custom
+domains, which write DNS — the zone-scoped Workers Routes Edit and Zone Read.
+This token configures infrastructure and is never available to Worker code.
 
 The dedicated Cloudflare account is the M1 target. Broker, Gateway, and Control
 are deployed there from the hosted repository.
@@ -222,14 +232,15 @@ Deploy in dependency order:
 ```text
 bun run wrangler deploy --config wrangler.broker.jsonc
 bun run wrangler deploy --config wrangler.gateway.jsonc
-bun run wrangler deploy --config wrangler.control.jsonc
 bun run wrangler deploy --config wrangler.auth.jsonc
+bun run wrangler deploy --config wrangler.control.jsonc
 ```
 
-`angelmcp-auth-demo` binds to nothing and nothing binds to it, so its position
-in that list does not matter. It is deliberately outside the Cloudflare Access
-application that fronts Control — signup is the one surface a stranger has to
-reach — and it needs two secrets of its own, `RESEND_API_KEY` and
+`angelmcp-auth` binds to nothing itself, but **Control binds to it** over the
+`AUTH` service binding, so it must exist first — on a first deploy in the old
+order Control bound a service that was not there yet. Control reaches it over
+that binding rather than its public host, so the session question never leaves
+Cloudflare's network. It needs two secrets of its own, `RESEND_API_KEY` and
 `LOGIN_NAME_KEY`, plus the `AUTH_BASE_URL` and `LOGIN_FROM_ADDRESS` vars set in
 `wrangler.auth.jsonc`. `LOGIN_NAME_KEY` is any long random string, and it is not
 rotatable in place: it keys the hash that names each identity's storage, so
@@ -245,31 +256,30 @@ belong to the three older Workers):
 - Broker: `CONTROL_BROKER_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`, `CREDENTIAL_KEK`
 - Gateway: `CONTROL_GATEWAY_TOKEN`, `GATEWAY_BROKER_INVOKE_TOKEN`
 - Control: `CONTROL_GATEWAY_TOKEN`, `CONTROL_BROKER_TOKEN`,
-  `MANAGEMENT_API_TOKEN`, `CONTROL_RESPONSE_KEK`, and `DEMO_ADMIN_TOKEN`
+  `CONTROL_RESPONSE_KEK`, and `DEMO_ADMIN_TOKEN`
+
+`MANAGEMENT_API_TOKEN` is gone. It named no Account, so beside a session that
+names exactly one it could only widen what the session already bounds.
 
 `DEMO_ADMIN_TOKEN` is reset-only for the comparison demo (`POST /api/demo/reset`).
-`GOLDEN_ACCESS_TOKEN` is a runner credential, not a Worker binding. It is the
-complete opaque Access service-token JSON:
-`{"cf-access-client-id":"...","cf-access-client-secret":"..."}`.
+`GOLDEN_SESSION_TOKEN` is a runner credential, not a Worker binding.
 
-Four separate authentication paths:
+Three separate authentication paths:
 
-- **Browser**: Cloudflare Access session/cookie after Cloudflare account login.
-  The configured interactive identity provider is not one-time PIN.
-- **CLI**: `ANGEL_ACCESS_TOKEN` as opaque two-key JSON, parsed into standard
-  `CF-Access-Client-ID` and `CF-Access-Client-Secret` headers for Control
-  management API calls (publish/deploy).
-- **Deployed acceptance runner**: `GOLDEN_ACCESS_TOKEN` (same format as `ANGEL_ACCESS_TOKEN`)
-  parsed into the same standard headers for Control state queries, plus Gateway
-  MCP endpoint and Angel key for read-only calls.
-- **Gateway-only acceptance runner** (`google-read-proof`): no Access credential;
+- **Browser**: a session cookie issued by `auth.angelmcp.ai` after an emailed
+  sign-in link. It is stamped for `.angelmcp.ai`, which is why both Workers had
+  to leave `workers.dev` — that suffix is on the Public Suffix List, so no
+  cookie there can span two Workers.
+- **CLI and the acceptance runner**: the same session token as a bearer.
+  `ANGEL_MANAGEMENT_TOKEN` and `GOLDEN_SESSION_TOKEN` both hold one. No command
+  mints one yet.
+- **Gateway-only acceptance runner** (`google-read-proof`): no session at all;
   only Gateway MCP endpoint and Angel key (public production surface).
 
-Required Control variables are `ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN`,
-`ACCESS_AUDIENCE`, `CONTROL_BASE_URL`, and `GATEWAY_BASE_URL`. Control
-authenticates browser requests through Access and service-token requests
-through `CF-Access-Client-ID` and `CF-Access-Client-Secret` headers before
-routing to private state or provider custody.
+Required Control variables are `CONTROL_BASE_URL` and `GATEWAY_BASE_URL`.
+`ACCOUNT_ID`, `ACCESS_TEAM_DOMAIN` and `ACCESS_AUDIENCE` are gone with Access.
+Control asks the sign-in Worker who is calling, forwarding whichever credential
+the caller presented, and takes the Account from the answer.
 
 Each internal token belongs to one caller/callee pair. Control also requires
 all of its credentials and its response-replay encryption key to be non-empty
@@ -284,14 +294,13 @@ availability, and independent two-gate enforcement. The deterministic golden
 harness keeps those checks credential-free by injecting fixture provider
 responses. A deployed Broker instead owns encrypted per-Account Google custody,
 refreshes the stored grant, and invokes only the pinned Gmail/Docs operations;
-unsupported operations and malformed provider results fail closed. Cloudflare
-Access protects Control and the browser custody flow.
+unsupported operations and malformed provider results fail closed. A session
+issued by `angelmcp-auth` protects Control and the browser custody flow.
 
-Public signup runs on a separate demo Worker, `angelmcp-auth-demo`: an email
-address gets a sign-in link good once for ten minutes, and the person who
-clicks it gets one empty Account. It is a dogfooding implementation that Better
-Auth is expected to replace, and the Account it creates is not yet the Control
-Account. Wiring the two together, multiple human Accounts, family membership,
-and production multi-tenant operation remain future work. The separate credentialed acceptance
+Public signup is live: an email address gets a sign-in link good once for ten
+minutes, and the person who clicks it lands in one empty Account that only they
+can reach. Recovery, self-service deletion, a way for the CLI to obtain a
+session, family membership, and production multi-tenant operation remain future
+work. The separate credentialed acceptance
 runner has exercised the real Google path locally without placing live provider
 credentials in deterministic CI.

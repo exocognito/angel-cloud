@@ -34,12 +34,9 @@ describe("Control Provider App and Connection custody routes", () => {
   test("rejects Provider mutations when Control role credentials are equal, before parsing body", async () => {
     const env = {
       ACCOUNT_ID: "acct_m1",
-      ACCESS_TEAM_DOMAIN: "https://team.cloudflareaccess.com",
-      ACCESS_AUDIENCE: "audience",
       CONTROL_BASE_URL: "https://control.test",
-      MANAGEMENT_API_TOKEN: "shared-secret",
       CONTROL_RESPONSE_KEK: "shared-secret",
-      CONTROL_GATEWAY_TOKEN: "gateway-token",
+      CONTROL_GATEWAY_TOKEN: "shared-secret",
       CONTROL_BROKER_TOKEN: "control-broker",
       DEMO_ADMIN_TOKEN: "admin",
       GATEWAY_BASE_URL: "https://gateway.test",
@@ -60,13 +57,10 @@ describe("Control Provider App and Connection custody routes", () => {
   });
 
   test("rejects Provider mutations when Control role credentials include empty, before parsing body", async () => {
-    for (const field of ["MANAGEMENT_API_TOKEN", "CONTROL_RESPONSE_KEK", "CONTROL_GATEWAY_TOKEN", "CONTROL_BROKER_TOKEN", "DEMO_ADMIN_TOKEN"] as const) {
+    for (const field of ["CONTROL_RESPONSE_KEK", "CONTROL_GATEWAY_TOKEN", "CONTROL_BROKER_TOKEN", "DEMO_ADMIN_TOKEN"] as const) {
       const baseEnv = {
         ACCOUNT_ID: "acct_m1",
-        ACCESS_TEAM_DOMAIN: "https://team.cloudflareaccess.com",
-        ACCESS_AUDIENCE: "audience",
         CONTROL_BASE_URL: "https://control.test",
-        MANAGEMENT_API_TOKEN: "management",
         CONTROL_RESPONSE_KEK: "response-kek",
         CONTROL_GATEWAY_TOKEN: "gateway-token",
         CONTROL_BROKER_TOKEN: "control-broker",
@@ -99,10 +93,7 @@ function accessVerifier() {
 function controlEnv(registryCommands: unknown[], broker: { fetch(input: string | URL | Request, init?: RequestInit): Promise<Response> }) {
   return {
     ACCOUNT_ID: "acct_m1",
-    ACCESS_TEAM_DOMAIN: "https://team.cloudflareaccess.com",
-    ACCESS_AUDIENCE: "audience",
     CONTROL_BASE_URL: "https://control.test",
-    MANAGEMENT_API_TOKEN: "management",
     CONTROL_RESPONSE_KEK: "response-kek",
     CONTROL_GATEWAY_TOKEN: "gateway-token",
     CONTROL_BROKER_TOKEN: "control-broker",

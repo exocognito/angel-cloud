@@ -7,10 +7,10 @@ import { LoginThrottle } from "./login-throttle";
 export { LoginThrottle };
 
 /**
- * The public front door. It is a worker of its own precisely because it must
- * be public: the Control worker sits behind a Cloudflare Access application
- * that turns away every unauthenticated request at the edge, which is right
- * for the pilot Account and impossible for signup.
+ * The public front door, and the one authority on what a session is. Control
+ * holds no session state and reads none of these tables: it asks this Worker
+ * who is calling and takes the Account from the answer, so a Better Auth
+ * upgrade stays a one-Worker problem.
  *
  * Better Auth owns the link itself — minting it, storing it hashed, and
  * spending it exactly once. What is left here is what Better Auth does not do:

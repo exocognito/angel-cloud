@@ -39,12 +39,8 @@ describe("canonical deterministic hosted golden journey", () => {
       repoRoot,
       controlBaseUrl: "https://control.example",
       gatewayBaseUrl: "https://gateway.golden.test",
-      managementToken: "management-secret",
+      sessionToken: "session-token",
       adminToken: "admin-secret",
-      accessToken: JSON.stringify({
-        "cf-access-client-id": "access-client-id",
-        "cf-access-client-secret": "access-client-secret",
-      }),
       fetch: harness.fetch,
       loadDeploymentConfig: (root, angelId) => parseAngelDeploymentConfig(readFileSync(
         join(root, `examples/angels/${angelId}/angel.example.json`),
@@ -129,16 +125,39 @@ describe("canonical deterministic hosted golden journey", () => {
         "POST /@golden-demo/golden-assistant",
         "POST /v1/a/acct_demo/golden-assistant/production/mcp",
       ]));
+    // Reset needs both: the admin token authorises the destructive action and
+    // the session says who is asking. One `Authorization` header cannot carry
+    // both, so the session goes in the cookie exactly as a browser sends it.
     const resetCall = harness.topLevelRequests.find(({ pathname }) => pathname === "/api/demo/reset");
     expect(resetCall).toBeDefined();
-    expect(resetCall?.accessClientId).toBe("access-client-id");
-    expect(resetCall?.accessClientSecret).toBe("access-client-secret");
-    const accessProtectedCalls = harness.topLevelRequests.filter(({ pathname }) =>
+    expect(resetCall?.authorization).toBe("Bearer admin-secret");
+    expect(resetCall?.cookie).toBe("__Secure-better-auth.session_token=session-token");
+    // GOLDEN_SESSION_TOKEN reaches both paths as the SAME bytes: bearer on the
+    // management API, cookie here. That is why the operator must supply the
+    // signed cookie value rather than a bare token — Better Auth reads the
+    // cookie with `getSignedCookie` and rejects an unsigned one, while its
+    // bearer plugin accepts either, signing a bare token itself. A bare token
+    // would pass /v1 and fail reset with 401, which is the confusing half.
+    // README.md and docs/user-manual.md say so; this pins the shared value.
+    const managementCall = harness.topLevelRequests.find(
+      ({ pathname }) => pathname === "/v1/accounts/acct_demo/connections",
+    );
+    expect(managementCall?.authorization).toBe("Bearer session-token");
+    expect(resetCall?.cookie).toBe(
+      `__Secure-better-auth.session_token=${managementCall?.authorization?.slice("Bearer ".length)}`,
+    );
+    const ownerCalls = harness.topLevelRequests.filter(({ pathname }) =>
       !pathname.startsWith("/v1/a/") && !pathname.startsWith("/@"));
-    expect(accessProtectedCalls.length).toBeGreaterThan(0);
-    expect(accessProtectedCalls.every(({ accessClientId }) => accessClientId === "access-client-id")).toBe(true);
-    expect(accessProtectedCalls.every(({ accessClientSecret }) => accessClientSecret === "access-client-secret")).toBe(true);
-    expect(accessProtectedCalls.every(({ legacyAccessHeader }) => legacyAccessHeader === null)).toBe(true);
+    expect(ownerCalls.length).toBeGreaterThan(0);
+    // Nothing on the owner's own surfaces still presents a Cloudflare Access
+    // service token; the application that read them was deleted.
+    expect(ownerCalls.every(({ accessClientId }) => accessClientId === null)).toBe(true);
+    expect(ownerCalls.every(({ accessClientSecret }) => accessClientSecret === null)).toBe(true);
+    expect(ownerCalls.every(({ legacyAccessHeader }) => legacyAccessHeader === null)).toBe(true);
+    // Every owner call carries the session, one way or the other.
+    expect(ownerCalls.every(({ authorization, cookie }) =>
+      authorization === "Bearer session-token"
+      || cookie === "__Secure-better-auth.session_token=session-token")).toBe(true);
     expect(harness.internalRequests).toEqual(expect.arrayContaining([
       "gateway:/internal/gate",
       "broker:/internal/gate",
@@ -156,6 +175,8 @@ function workerHarness() {
     accessClientId: string | null;
     accessClientSecret: string | null;
     legacyAccessHeader: string | null;
+    authorization: string | null;
+    cookie: string | null;
   }> = [];
   const internalRequests: string[] = [];
   const accountStorage = new Map<string, unknown>();
@@ -221,7 +242,6 @@ function workerHarness() {
   const registry = new AccountRegistry(storageContext(accountStorage) as never, registryEnv as never);
   const controlEnv = {
     ...registryEnv,
-    MANAGEMENT_API_TOKEN: "management-secret",
     DEMO_ADMIN_TOKEN: "admin-secret",
     GATEWAY_BASE_URL: "https://gateway.golden.test",
     ACCOUNTS: {
@@ -245,6 +265,8 @@ function workerHarness() {
         accessClientId: request.headers.get("cf-access-client-id"),
         accessClientSecret: request.headers.get("cf-access-client-secret"),
         legacyAccessHeader: request.headers.get("x-angel-access"),
+        authorization: request.headers.get("authorization"),
+        cookie: request.headers.get("cookie"),
       });
       if (url.pathname.startsWith("/v1/a/") || url.pathname.startsWith("/@")) {
         return handleGatewayRequest(request, gatewayEnv as never);
@@ -268,8 +290,9 @@ function runtimeNamespace() {
   };
 }
 
-function storageContext(storage: Map<string, unknown>) {
+function storageContext(storage: Map<string, unknown>, name = "acct_demo") {
   return {
+    id: { name },
     storage: {
       get: async (key: string) => structuredClone(storage.get(key)),
       put: async (key: string, value: unknown) => {

@@ -19,11 +19,9 @@ promotes the exact active preview deployment. Older `angel.json` files must
 rename `bindings.staging` to `bindings.preview`.
 
 The CLI treats `angel.json.target` as an opaque HTTPS origin. It does not know
-Angel Cloud, OAuth, or any hosted product. Its one Cloudflare-specific feature
-is the optional `ANGEL_ACCESS_TOKEN` service token for control planes behind
-Cloudflare Access (see Management credentials). A compatible hosted or
-self-hosted control plane implements the management contract exported by this
-package.
+Angel Cloud, OAuth, or any hosted product: it presents one bearer token and
+nothing else. A compatible hosted or self-hosted control plane implements the
+management contract exported by this package.
 
 ## Module boundaries
 
@@ -60,28 +58,17 @@ identities belong in untracked `angel.json` files; safe examples use
 
 ## Management credentials
 
-`angel publish` and `angel deploy --prod` read two environment variables:
+`angel publish` and `angel deploy --prod` read one environment variable:
 
-- `ANGEL_MANAGEMENT_TOKEN` (required) — bearer token for the management API.
-- `ANGEL_ACCESS_TOKEN` (optional) — service token for a control plane behind
-  Cloudflare Access, sent as the `CF-Access-Client-ID` and
-  `CF-Access-Client-Secret` headers.
+- `ANGEL_MANAGEMENT_TOKEN` (required) — presented as `Authorization: Bearer` on
+  every management call. What the control plane makes of it is the control
+  plane's business; Angel Cloud resolves it as a session.
 
-`ANGEL_ACCESS_TOKEN` must be exactly this JSON object, with no surrounding
-whitespace and no other keys:
-
-```json
-{"cf-access-client-id":"<id>","cf-access-client-secret":"<secret>"}
-```
-
-Both values must be non-empty strings, themselves free of surrounding
-whitespace. The CLI rejects anything else — including a trailing newline — instead of
-trimming, because the value is a credential and silent normalisation hides
-mistakes. Secret managers often end output with a newline; strip it when
-exporting:
+Keep it out of source, `angel.json`, logs, and any artifact. Secret managers
+often end output with a newline; strip it when exporting:
 
 ```sh
-export ANGEL_ACCESS_TOKEN=$(op read "op://<vault>/<item>/credential" | jq -c . | tr -d '\n\r')
+export ANGEL_MANAGEMENT_TOKEN=$(op read "op://<vault>/<item>/credential" | tr -d '\n\r')
 ```
 
 ## Distribution

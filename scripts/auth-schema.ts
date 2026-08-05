@@ -28,6 +28,8 @@ export const auth = createAuth(
     BETTER_AUTH_SECRET: "generate-only",
     LOGIN_FROM_ADDRESS: "generate-only",
     AUTH_BASE_URL: "https://generate-only.invalid",
+    DASHBOARD_BASE_URL: "https://generate-only.invalid",
+    SESSION_COOKIE_DOMAIN: ".generate-only.invalid",
   },
   { waitUntil: () => {}, database: emptyDatabase },
 );

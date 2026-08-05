@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#faf9f3" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#17150f" media="(prefers-color-scheme: dark)">
+    <title>Sign in — AngelMCP</title>
+    <link rel="stylesheet" href="/app.css">
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("angelmcp-theme");
+          if (stored === "light" || stored === "dark") {
+            document.documentElement.setAttribute("data-theme", stored);
+          }
+        } catch (error) {}
+      })();
+    </script>
+    <style>
+      .signin-page {
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 2rem 1.25rem;
+      }
+      .signin-card {
+        width: min(24rem, 100%);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-left: 3px solid var(--accent);
+        border-radius: 10px;
+        padding: 1.75rem;
+      }
+      .signin-card h1 { font-size: 1.25rem; margin: 0 0 0.4rem; }
+      .signin-card p { color: var(--ink-2); margin: 0 0 1.25rem; line-height: 1.5; }
+      .signin-card label { display: block; font-size: 0.8rem; color: var(--ink-2); margin-bottom: 0.35rem; }
+      .signin-card input {
+        width: 100%;
+        padding: 0.6rem 0.7rem;
+        font: inherit;
+        color: var(--ink);
+        background: var(--card-2);
+        border: 1px solid var(--line-2);
+        border-radius: 7px;
+      }
+      .signin-card button {
+        width: 100%;
+        margin-top: 0.9rem;
+        padding: 0.65rem;
+        font: inherit;
+        font-weight: 600;
+        color: var(--navy-ink);
+        background: var(--navy);
+        border: 0;
+        border-radius: 7px;
+        cursor: pointer;
+      }
+      .signin-card button[disabled] { opacity: 0.6; cursor: default; }
+      .signin-note { margin: 1rem 0 0; font-size: 0.85rem; }
+      .signin-note[data-tone="sent"] { color: var(--good); }
+      .signin-note[data-tone="error"] { color: var(--danger); }
+    </style>
+  </head>
+  <body>
+    <main class="signin-page">
+      <div class="signin-card">
+        <h1>Sign in to AngelMCP</h1>
+        <p>Enter your email and we will send you a link. It works once and lasts ten minutes.</p>
+        <form id="signin-form" novalidate>
+          <label for="signin-email">Email</label>
+          <input id="signin-email" name="email" type="email" autocomplete="email" required
+                 placeholder="you@example.com" autofocus>
+          <button type="submit" id="signin-submit">Send me a link</button>
+        </form>
+        <p class="signin-note" id="signin-note" role="status" aria-live="polite"></p>
+      </div>
+    </main>
+    <script>
+      (function () {
+        var form = document.getElementById("signin-form");
+        var field = document.getElementById("signin-email");
+        var button = document.getElementById("signin-submit");
+        var note = document.getElementById("signin-note");
+
+        function say(message, tone) {
+          note.textContent = message;
+          if (tone) note.setAttribute("data-tone", tone);
+          else note.removeAttribute("data-tone");
+        }
+
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var email = field.value.trim();
+          if (email === "") {
+            say("Enter the email you want the link sent to.", "error");
+            return;
+          }
+          button.disabled = true;
+          say("Sending…");
+          fetch("/api/sign-in", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ email: email }),
+          }).then(function (response) {
+            // The answer is the same whether or not the address has an
+            // Account: saying otherwise would tell a stranger who is signed up.
+            if (response.status === 429) {
+              say("Too many requests just now. Try again in a few minutes.", "error");
+              button.disabled = false;
+              return;
+            }
+            if (!response.ok) {
+              say("Something went wrong sending that. Try again.", "error");
+              button.disabled = false;
+              return;
+            }
+            say("Check " + email + " for your sign-in link.", "sent");
+          }).catch(function () {
+            say("Could not reach the server. Check your connection and try again.", "error");
+            button.disabled = false;
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
