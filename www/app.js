@@ -1133,13 +1133,13 @@ function newAngelGuideSteps() {
     {
       where: "shell",
       title: "Install the CLI and write the Angel",
-      detail: "In your own project directory, add the published CLI (it runs under Bun) and invoke it as pnpm exec angel. Then write angels/google-read-proof/ANGEL.yaml, the portable policy, and alongside it angel.json for local deployment concerns — control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. Keep the real angel.json untracked; ANGEL.yaml stays portable.",
+      detail: "Install Bun from bun.sh — the CLI runs under it — then add the published CLI in your own project directory and invoke it as pnpm exec angel. Write angels/google-read-proof/ANGEL.yaml, the portable policy, in the shape the reference panel below shows, and alongside it angel.json for local deployment concerns: control target, Account, Angel slug, and the healthy Connection nickname under docs and gmail for both preview and production. Keep the real angel.json untracked; ANGEL.yaml stays portable.",
       commands: ["pnpm add @angelmcp/cli"],
     },
     {
       where: "shell",
       title: "Publish to preview",
-      detail: "With a control-plane session token in ANGEL_MANAGEMENT_TOKEN, build your ANGEL.yaml, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
+      detail: "ANGEL_MANAGEMENT_TOKEN is the session token from your own signed-in browser — no command mints one yet. With it set, build your ANGEL.yaml, publish its immutable artifact, and install the exact bindings in preview. Verify the tool list contains only gmail.users.messages.list and docs.documents.get.",
       commands: ["ANGEL_MANAGEMENT_TOKEN=... pnpm exec angel publish google-read-proof --preview"],
     },
     {
