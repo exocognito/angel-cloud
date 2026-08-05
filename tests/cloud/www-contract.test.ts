@@ -1267,9 +1267,14 @@ describe("Angel Cloud deployable demo UI contract", () => {
       expect(command).not.toMatch(/cf-access-client-secret":"(?!\.\.\.)/);
       expect(command).not.toMatch(/ANGEL_MANAGEMENT_TOKEN=(?!\.\.\.)\S/);
       // Nothing that only works inside a clone of this repo: `bun run angel` is
-      // the repo package script, and examples/ is a directory only the clone has.
+      // the repo package script, examples/ is a directory only the clone has,
+      // and cloning is the headline thing SKILL.md tells readers not to do.
+      // `examples` is matched bare, not as `examples/`, because the package
+      // script itself is `cd examples && pnpm exec angel` — the likeliest way
+      // the clone-only path comes back wearing the right CLI invocation.
       expect(command).not.toMatch(/bun run angel\b/);
-      expect(command).not.toMatch(/examples\//);
+      expect(command).not.toMatch(/\bexamples\b/);
+      expect(command).not.toMatch(/git clone/);
       // The CLI is a local dependency, so every invocation is `pnpm exec angel`,
       // never a bare `angel build`.
       for (const match of command.matchAll(/angel (?:build|publish|deploy|delete)\b/g)) {
