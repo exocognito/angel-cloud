@@ -370,7 +370,7 @@
           "status": "live",
           "description": "Bare publish means production; preview is explicit, isolated, and exact-byte promotion never rebuilds. Current evidence: demonstrated, and WS1 aligned the last surfaced preview command with the shipped opt-in behavior. Verified 2026-08-01 by the WS1 surface sweep.",
           "eval": "Run a bare publish: it goes to production. Ask for preview: it is isolated with its own bindings and does not silently use production accounts. Promote a Version: the bytes are identical and nothing rebuilds.",
-          "limit": "Preview remains an advanced option requiring separate bindings or an explicit credential-share choice. Simple defaults are not a claim that the advanced path is simple.",
+          "limit": "Preview remains an advanced option requiring separate bindings or an explicit credential-share choice. Simple defaults are not a claim that the advanced path is simple. The production route answers on the current workers.dev host; the final mcp.angelmcp.ai host is unwired, tracked as issue #6.",
           "amendments": [
             {
               "in": "WS1",
@@ -403,8 +403,9 @@
               "title": "Public Account and Angel coordinate",
               "status": "done",
               "check": { "kind": "dogfood" },
-              "description": "Address production Angels at a stable bare @handle/angel coordinate. Current evidence: handle registry, production-default route, preview suffix and legacy cutover tests all pass, verified 2026-07-31.",
+              "description": "Address production Angels at a stable bare @handle/angel coordinate. Current evidence: handle registry, production-default route, preview suffix and legacy cutover tests all pass, verified 2026-07-31. The coordinate answers on the current workers.dev host; the final mcp.angelmcp.ai host is not wired, so the name is stable in shape but not yet at its final address.",
               "exhibit": "Handle registry and coordinate tests; PD 0001",
+              "note": "The zone move that wires mcp.angelmcp.ai is tracked as issue #6 and is still open. docs/domain-architecture.md names mcp.angelmcp.ai as the Gateway host.",
               "source": "PD 0001 — Angel coordinate scheme",
               "servesLaw": "G09",
               "voices": {
@@ -1169,13 +1170,13 @@
               "title": "Read-only www for Round 2",
               "status": "pending",
               "check": { "kind": "dogfood" },
-              "description": "Show Angel state, endpoint, policy, proof, activity, health and recovery without source authoring in Round 2. Current evidence: the private M1 dashboard has most views and write actions; the fresh owner and public Account path is absent. Truth state under the retired contract: PARTIAL; plan state BLOCKED behind PD-01 and PD-03.",
+              "description": "Show Angel state, endpoint, policy, proof, activity, health and recovery without source authoring in Round 2. Current evidence: a freshly signed-up owner does reach a dashboard of their own — proved 2026-08-04, when a first read began creating and persisting the Account's own empty state. What that owner cannot yet see is the Round-2 inspection surface: the built read views and write actions still run against the private M1 Account's state. Truth state under the retired contract: PARTIAL; plan state BLOCKED behind PD-03.",
               "exhibit": "Parity handoff; current UI screenshots",
               "servesLaw": "G12",
               "voices": {
                 "engineer": {
                   "title": "Views exist, on the private M1 path",
-                  "description": "Most read views and several write actions are built, but against the private single-Account dashboard. The path a freshly signed-up owner takes into them is what does not exist."
+                  "description": "The dashboard shell now serves whoever signed in, and a new Account gets its own persisted state on first read. The read views and write actions behind that shell still address the private M1 Account, so a fresh owner reaches the product without yet reaching its inspection surface."
                 },
                 "designer": {
                   "title": "Look, do not author",
@@ -1398,7 +1399,7 @@
           "voices": {
             "engineer": {
               "title": "The CLI is obtainable; the guide is not",
-              "description": "bun add --global @angelmcp/cli@0.1.0 works and is proved against the published tarball from outside the workspace. What the preflight lacks is an approved guide for the candidate to follow."
+              "description": "The packed tarball installs globally and exposes bare angel, proved in an isolated consumer outside the workspace. The registry install command is recorded but has not been run. What the preflight lacks is an approved guide for the candidate to follow."
             },
             "designer": {
               "title": "An agent reads what we published, and only that",
