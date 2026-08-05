@@ -18,6 +18,11 @@ app shell; an unauthenticated management or `/api` call answers
 that mention it describe how this journey was run in July, not how you run it
 now.
 
+The numbered steps below are the maintainer's own run, from inside a clone of
+this repository. If you are a user rather than a maintainer, sign up and then
+follow [SKILL.md](https://docs.angelmcp.ai/SKILL.md) with `@angelmcp/cli` — you
+never clone this repository.
+
 ## Verified outcome — 2026-07-22
 
 Broker, Gateway, and Control are deployed from the Milestone 1 branch, including
