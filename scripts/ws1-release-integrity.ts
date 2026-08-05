@@ -237,7 +237,12 @@ const credentialFiles = historyNames.split("\n").filter((path) =>
 );
 assert(credentialFiles.length === history.secretAudit.trackedCredentialFiles, "rewritten history gained a credential file");
 
-for (const worker of ["broker", "gateway", "control"]) {
+// `auth` joined this list on 2026-08-04. The objection to adding it was that a
+// Worker under active change turns its baseline entry into a changelog — true,
+// and equally true of `control`, which has always been pinned. Auth now decides
+// which Account every request is served, so a bundle that moves when no source
+// did is exactly what this guard exists to catch.
+for (const worker of ["broker", "gateway", "control", "auth"]) {
   const outDirectory = join(temp, `worker-${worker}`);
   mkdirSync(outDirectory);
   run(["pnpm", "exec", "wrangler", "deploy", "--dry-run", "--config", `wrangler.${worker}.jsonc`, "--outdir", outDirectory]);

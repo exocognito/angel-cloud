@@ -106,7 +106,7 @@ describe("WS1 behavior-neutral monorepo", () => {
     ].join("\n");
 
     expect(sourceFiles).not.toMatch(/@smcllns\/angel-core\/src\//);
-    for (const config of ["broker", "gateway", "control"]) {
+    for (const config of ["broker", "gateway", "control", "auth"]) {
       const wrangler = read(`wrangler.${config}.jsonc`);
       expect(wrangler).toContain(`src/workers/${config}.ts`);
     }
@@ -195,6 +195,17 @@ describe("WS1 behavior-neutral monorepo", () => {
     ]);
     expect(releaseBaseline.allowedPackedDifferences["src/cli/client.ts"])
       .toContain("Cloudflare Access service-token headers removed");
+    // Every deployed Worker is hash-pinned, and the guard script and the
+    // baseline have to agree on which. Pinned in both places for the same
+    // reason the exemption list is: a Worker cannot drop out of the guard by
+    // one value being edited. `auth` joined on 2026-08-04 — it now decides
+    // which Account a request is served, so it is isolation-critical.
+    const releaseWorkers = json<{ workerNormalizedJsSha256: Record<string, string> }>(
+      "docs/evidence/ws1-release-baseline.json",
+    ).workerNormalizedJsSha256;
+    expect(Object.keys(releaseWorkers).sort()).toEqual(["auth", "broker", "control", "gateway"]);
+    expect(proof).toContain('for (const worker of ["broker", "gateway", "control", "auth"])');
+
     // Both lists are owner-approved sets. A package appearing here without a
     // recorded decision is exactly what this proof exists to catch.
     expect(proof).toContain('const WORKSPACE_PACKAGES = ["@angelmcp/cli", "@exocognito/angelmcp", "@smcllns/angel-core"];');
