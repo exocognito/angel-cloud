@@ -52,7 +52,8 @@ invitation and no waiting list.
   the docs site and Gateway still answer on `*.sam-633.workers.dev`.
 - **Cloudflare Access is gone.** The Control root answers `200` to anyone and
   serves the app shell; an unauthenticated management or `/api` call answers
-  `401 sign-in required`, and the shell sends that caller to `/sign-in`.
+  `401 sign-in required`, and the shell sends that caller to `/sign-in.html`,
+  which redirects to the sign-in page.
 - Sign-in is an emailed one-time link that lasts ten minutes, issued by the
   Auth Worker over Better Auth on D1.
 - Public `@angelmcp/cli@0.1.0` is the published command-line tool — this is what
@@ -100,6 +101,11 @@ bun run angel build golden-assistant
 bun run angel publish golden-assistant --preview
 bun run angel deploy golden-assistant --prod
 ```
+
+Those are the in-repo forms, for work inside this repository. Anyone who
+installed `@angelmcp/cli` instead invokes it as `angel build …` — see
+[SKILL.md](docs-site/public/SKILL.md), which is the journey for people who
+never clone this repository.
 
 `publish` builds, ensures the Angel, publishes an immutable Version, and deploys
 it to production by default. Pass `--preview` to use the separate preview
