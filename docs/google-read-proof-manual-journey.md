@@ -9,15 +9,31 @@ management, Google, or OAuth credentials.
 Steps marked **Sam in a browser** require the operator to use the signed-in
 control site or Google Cloud/Google consent screens.
 
+## How you get in — current as of 2026-08-05
+
+Sign up at https://dash.angelmcp.ai: enter an email address and click the
+one-time link it sends. The Control root answers `200` to anyone and serves the
+app shell; an unauthenticated management (`/v1/...`) or Account
+(`/api/demo/...`) call answers `401 sign-in required`, while the sign-in route
+itself is public. **Cloudflare Access is gone** — the sentences below
+that mention it describe how this journey was run in July, not how you run it
+now.
+
+The numbered steps below are the maintainer's own run, from inside a clone of
+this repository. If you are a user rather than a maintainer, sign up and then
+follow [SKILL.md](https://docs.angelmcp.ai/SKILL.md) with `@angelmcp/cli` — you
+never clone this repository.
+
 ## Verified outcome — 2026-07-22
 
 Broker, Gateway, and Control are deployed from the Milestone 1 branch, including
-the live Control, OAuth, and provider-error corrections exercised below.
-Unauthenticated Control root requests redirect to Access (`302`), the Access
-service-token path reaches the app (`200`), and live reset/state reads pass.
+the live Control, OAuth, and provider-error corrections exercised below. At that
+time Control sat behind Cloudflare Access, so an unauthenticated root request
+redirected (`302`) and a service token reached the app (`200`); live reset and
+state reads passed. Sign-in is now the emailed link described above.
 
 Provider App `google-primary` is stored write-only and its safe summary reads.
-Cloudflare account login and Google consent created a healthy Connection.
+Signing in and completing Google consent created a healthy Connection.
 `google-read-proof` was published and deployed; seeded Gmail and Docs calls
 passed. Revocation made the runner fail loudly. Row-level **Reauthorize**
 preserved the same Connection identity, and both calls passed again.

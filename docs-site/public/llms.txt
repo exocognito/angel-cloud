@@ -12,11 +12,18 @@ clone the `exocognito/angelmcp` repository** — the CLI is an installable npm
 package and every deployment step is an HTTP call. The source tree is the
 operator's, not the user's.
 
+Anyone can sign up at `https://dash.angelmcp.ai` — an email address and a
+one-time link, no invitation and no waiting list. That sign-in is where the
+control-plane session token every `/v1/...` route wants comes from. No command
+mints one yet, so today you copy the session token out of your signed-in
+browser.
+
 If you only read one file, read [SKILL.md](https://docs.angelmcp.ai/SKILL.md):
 it is the whole journey as procedural instructions.
 
 ## Start here
 
+- Sign up: `https://dash.angelmcp.ai` — the front door. Enter an email address, click the emailed link, and you hold an Account of your own.
 - [SKILL.md](https://docs.angelmcp.ai/SKILL.md): The create → publish → promote → connect journey as loadable agent instructions, API/CLI-first, no repo clone. Marks which steps need credentials and which are offline.
 
 - [Live demo](https://docs.angelmcp.ai/demo/): The dashboard as a browsable page — Angels, their tools, and the Connections each tool is bound to — filled with generated sample data rather than anyone's account. Keyless and read-only: it serves three read responses from a bundled fixture and refuses every other request, so it is worth showing a person and useless as an API.

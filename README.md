@@ -41,23 +41,33 @@ This README is the quick start and deployment reference. The user manual owns
 product mechanics; the FAQ owns rationale and current limits; the Product Ledger
 owns sequence and status.
 
-## Verified live status — 2026-07-22
+## Verified live status — 2026-08-05
 
-- Broker, Gateway, and Control are deployed in the dedicated Cloudflare
-  account. The current live revisions include the empty-Account Control fix
-  (`9268fe7`), OAuth scope fix (`f8f9dc4`), and provider-error Gateway fix
-  (`cb08c25`).
-- The Control root redirects an unauthenticated request to Access (`302`) and
-  returns the app to a valid Access service token (`200`).
-- Live reset and state reads pass through the deployed Control surface.
-- Public `@smcllns/angel-core@0.3.0` is published. Canonical source now lives
-  at `packages/core`; the workspace lockfile links that exact version, and
-  `pnpm run check:ws1` compares its packed runtime bytes with the registry tarball.
+**Anyone can sign up at https://dash.angelmcp.ai.** Enter an email address,
+click the one-time link, and you get an Account of your own. There is no
+invitation and no waiting list.
+
+- Auth, Broker, Gateway, and Control are deployed in the dedicated Cloudflare
+  account, from `main`. `dash.angelmcp.ai` and `auth.angelmcp.ai` are bound;
+  the docs site and Gateway still answer on `*.sam-633.workers.dev`.
+- **Cloudflare Access is gone.** The Control root answers `200` to anyone and
+  serves the app shell; an unauthenticated management (`/v1/...`) or Account
+  (`/api/demo/...`) call answers `401 sign-in required`, and the shell sends
+  that caller to `/sign-in.html`, which redirects to the sign-in page. The
+  sign-in route itself is public, as it has to be.
+- Sign-in is an emailed one-time link that lasts ten minutes, issued by the
+  Auth Worker over Better Auth on D1.
+- Public `@angelmcp/cli@0.1.0` is the published command-line tool — this is what
+  you install. Public `@smcllns/angel-core@0.3.0` is
+  published as well: it is the library this repository builds and pins, not
+  something you install yourself. Canonical source lives at `packages/core`, the
+  workspace lockfile links that exact version, and `pnpm run check:ws1` compares
+  its packed runtime bytes with the registry tarball.
 - Provider App `google-primary` is stored in Broker custody. Reads return only
   its safe summary; the client secret is not returned.
 
-The real credentialed lifecycle now passes. An operator completed Cloudflare
-account login and Google consent, authorized a Connection, published and
+The real credentialed lifecycle now passes. An operator signed in, completed
+Google consent, authorized a Connection, published and
 deployed `google-read-proof`, and read seeded Gmail and Docs data through the
 two pinned tools. Revoking the Connection made the runner fail loudly. The
 row-level **Reauthorize** action preserved the same Connection identity, and
@@ -92,6 +102,11 @@ bun run angel build golden-assistant
 bun run angel publish golden-assistant --preview
 bun run angel deploy golden-assistant --prod
 ```
+
+Those are the in-repo forms, for work inside this repository. Anyone who
+installed `@angelmcp/cli` instead invokes it as `pnpm exec angel build …` — see
+[SKILL.md](docs-site/public/SKILL.md), which is the journey for people who
+never clone this repository.
 
 `publish` builds, ensures the Angel, publishes an immutable Version, and deploys
 it to production by default. Pass `--preview` to use the separate preview

@@ -77,11 +77,18 @@ done
 
 bun run "$root/scripts/build-demo-fixture.ts" "$dist/demo/fixture.json"
 
-# 6. Optional interim base-URL rewrite. The committed llms.txt and SKILL.md name
-#    the canonical https://docs.angelmcp.ai; a workers.dev deploy rewrites those
-#    to the live interim host so the handed-off URLs actually resolve.
+# 6. Optional interim base-URL rewrite. These files name the canonical
+#    https://docs.angelmcp.ai; a workers.dev deploy rewrites them to the live
+#    interim host so the handed-off URLs actually resolve.
+#
+#    The list is deliberate, not every file that mentions the host.
+#    domain-architecture.md is excluded on purpose: it *describes* the target
+#    host map, so rewriting `docs.angelmcp.ai` there would corrupt the document
+#    rather than fix a link. Only files whose mentions are links a reader is
+#    meant to follow belong here.
 if [[ -n "${DOCS_BASE_URL:-}" ]]; then
-  for f in "$dist/llms.txt" "$dist/SKILL.md"; do
+  for f in "$dist/llms.txt" "$dist/SKILL.md" \
+           "$dist/operator-journey.md" "$dist/google-read-proof-manual-journey.md"; do
     tmp="$(mktemp)"
     LC_ALL=C sed "s#https://docs.angelmcp.ai#${DOCS_BASE_URL}#g" "$f" > "$tmp"
     mv "$tmp" "$f"   # temp-file + mv is portable across BSD (macOS) and GNU sed
