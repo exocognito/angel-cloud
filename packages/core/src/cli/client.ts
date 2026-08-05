@@ -16,8 +16,12 @@ import { canonicalJson } from "../canonical-json";
 
 export interface ManagementClientOptions {
   target: string;
+  /**
+   * Presented as `Authorization: Bearer`. Control resolves it as a session,
+   * so this is a session token — the shared management secret it used to be
+   * was removed when Cloudflare Access came off the control plane.
+   */
   token: string;
-  accessToken?: string;
   fetch: FetchLike;
 }
 
@@ -25,51 +29,6 @@ export type FetchLike = (
   input: string | URL | Request,
   init?: RequestInit,
 ) => Promise<Response>;
-
-export interface CloudflareAccessHeaders extends Record<string, string> {
-  "CF-Access-Client-ID": string;
-  "CF-Access-Client-Secret": string;
-}
-
-export function cloudflareAccessHeaders(accessToken: string): CloudflareAccessHeaders {
-  if (accessToken === "" || accessToken.trim() !== accessToken) {
-    throw new Error("Access token must be exact non-empty JSON without surrounding whitespace");
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(accessToken);
-  } catch {
-    throw new Error("Access token must be valid JSON");
-  }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("Access token must be a two-key JSON object");
-  }
-  const record = parsed as Record<string, unknown>;
-  const keys = Object.keys(record).sort();
-  if (
-    keys.length !== 2
-    || keys[0] !== "cf-access-client-id"
-    || keys[1] !== "cf-access-client-secret"
-  ) {
-    throw new Error("Access token must contain exactly cf-access-client-id and cf-access-client-secret");
-  }
-  const clientId = record["cf-access-client-id"];
-  const clientSecret = record["cf-access-client-secret"];
-  if (
-    typeof clientId !== "string"
-    || clientId === ""
-    || clientId.trim() !== clientId
-    || typeof clientSecret !== "string"
-    || clientSecret === ""
-    || clientSecret.trim() !== clientSecret
-  ) {
-    throw new Error("Access token values must be non-empty strings without surrounding whitespace");
-  }
-  return {
-    "CF-Access-Client-ID": clientId,
-    "CF-Access-Client-Secret": clientSecret,
-  };
-}
 
 export class ManagementClient {
   constructor(private readonly options: ManagementClientOptions) {}
@@ -166,12 +125,6 @@ export class ManagementClient {
   ): Promise<T> {
     const canonicalPath = path.length > 1 ? path.replace(/\/+$/, "") : path;
     const headers = new Headers({ authorization: `Bearer ${this.options.token}` });
-    const accessToken = this.options.accessToken;
-    if (accessToken !== undefined) {
-      const accessHeaders = cloudflareAccessHeaders(accessToken);
-      headers.set("CF-Access-Client-ID", accessHeaders["CF-Access-Client-ID"]);
-      headers.set("CF-Access-Client-Secret", accessHeaders["CF-Access-Client-Secret"]);
-    }
     // Every mutation needs an Idempotency-Key, body or not. Callers that must
     // not replay across resource recreation (delete) pass an explicit key;
     // everything else derives one from the mutation identity.

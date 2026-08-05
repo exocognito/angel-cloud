@@ -80,7 +80,7 @@ site itself.
 # inside llms.txt and SKILL.md so handed-off links resolve)
 DOCS_BASE_URL=https://angelmcp-docs-demo.sam-633.workers.dev ./build.sh
 
-# Deploy the assets-only worker (public, no Cloudflare Access)
+# Deploy the assets-only worker (public, no sign-in)
 CLOUDFLARE_API_TOKEN=... pnpm exec wrangler deploy -c wrangler.docs.jsonc
 ```
 
@@ -89,8 +89,9 @@ Preview locally with any static server over `dist/`, e.g.
 
 ## Hosting status and the domain caveat
 
-Nothing is wired to `angelmcp.ai` yet — the whole stack runs on
-`*.sam-633.workers.dev` (see `../docs/domain-architecture.md`). This worker gets
+`dash.angelmcp.ai` and `auth.angelmcp.ai` are bound; Gateway and this docs
+worker still run on `*.sam-633.workers.dev` (see
+`../docs/domain-architecture.md`). This worker gets
 a stable interim URL, `https://angelmcp-docs-demo.sam-633.workers.dev`, with no
 zone move required.
 

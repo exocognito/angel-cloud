@@ -1,10 +1,15 @@
 # Domain architecture (target)
 
 Status: direction agreed 2026-07-23. The coordinate path grammar is live on
-the Gateway as of 2026-07-28 (issue #3); the host move is not — everything
-currently runs on `workers.dev` URLs in the dedicated Cloudflare account, and
-that carries us until the public-product milestone. This document exists so
-the URL scheme is settled before anything public depends on it.
+the Gateway as of 2026-07-28 (issue #3). The host move is **partly done** as of
+2026-08-04: the zone is in the dedicated Cloudflare account, and `dash.` and
+`auth.` are bound to Control and the sign-in Worker — a prerequisite for
+sign-in, not a polish, because `workers.dev` is on the Public Suffix List and
+no cookie can span two Workers there. Gateway and the docs site still
+answer on `workers.dev`; the Broker has `workers_dev` disabled and no route,
+so it is reachable only over service bindings. This document exists so the URL
+scheme is settled
+before anything public depends on it.
 
 This is reference — what the addresses are. Why they are shaped this way, and
 whether they are built yet, lives in the product decision records:
@@ -86,7 +91,7 @@ Consequences:
 | `dash.angelmcp.ai` | Control dashboard for the logged-in Account | Control worker |
 | `mcp.angelmcp.ai` | MCP endpoint per Angel: `/@account/angel[@suffix]` | Gateway worker |
 | `api.angelmcp.ai` | Control-plane API (exists today behind Control; the CLI consumes it) and, later, per-Angel REST invocation at `/@account/angel[@suffix]` | Control worker; invocation surface TBD |
-| `auth.angelmcp.ai` | Upstream-provider OAuth callbacks; later, first-party session issuance if we outgrow Cloudflare Access | Control worker (or a small dedicated worker) |
+| `auth.angelmcp.ai` | First-party sign-in: emailed links, sessions, and the one authority on what a session is | Auth worker |
 
 `docs.angelmcp.ai` is the canonical docs host — it is the URL handed to agents,
 so it stays stable and needs no auth. It is a subdomain rather than an apex path
@@ -102,12 +107,50 @@ Deliberate absences:
 - **No `cli.angelmcp.ai`.** The CLI is a client, not a server. At most the
   name becomes an install-script redirect one day; it is not infrastructure.
 
+## The cookie's blast radius
+
+Control and the sign-in Worker are different hosts, and a cookie pinned to one
+cannot be read by the other. So `SESSION_COOKIE_DOMAIN` is `.angelmcp.ai`
+(`wrangler.auth.jsonc`, applied at `src/auth-config.ts`), and the browser sends
+the session cookie to **every host on the zone**, current and future — including
+the public `docs.angelmcp.ai`, which needs no auth and should never see it.
+
+Today that exposure is latent rather than live, but only because of what the
+siblings are, not because the cookie is narrow: `dash.` and `auth.` are already
+bound and already share it. `docs.` is still on `workers.dev`, and its Worker is
+assets-only — no `main`, so no code runs and nothing can read a header. The risk
+arrives when `docs.` binds to the zone, or with the first sibling Worker that
+executes code.
+
+Two consequences follow, and they bind anything added to this zone:
+
+- **No sibling host may log, store, or forward the `Cookie` header.** A docs
+  worker that echoed request headers into an access log would be writing live
+  sessions to disk. This is a rule about every Worker on the zone, not only the
+  two that own sessions.
+- **The `__Host-` prefix is foreclosed.** It requires a host-only cookie, so the
+  browser cannot enforce host scoping for us. Any subdomain able to set cookies
+  on the zone can shadow a live session.
+
+The alternative is a host-only dashboard session minted by a one-time hand-off
+from `auth.` to `dash.` after verification, which costs a redirect and a
+single-use token exchange and buys back `__Host-`. That is a design change, not
+a documentation fix, and it is **not decided** — recorded here so the next
+person meets the constraint rather than discovering it.
+
 ## Why `auth.` is its own host
 
-Google OAuth clients pin exact redirect URIs, and changing them means touching
-the Google client config (and, for a verified production OAuth app,
-re-review). The callback lives on a small, stable host that never serves user
-content and never changes, regardless of what `dash.` becomes.
+`auth.` owns sign-in: the emailed link lands on its
+`/v1/auth/magic-link/verify`, and it is the one authority on what a session is.
+Keeping that on a small host that never serves user content means the session
+authority does not move when `dash.` changes.
+
+It does **not** own the Google OAuth callback. That is
+`dash.angelmcp.ai/oauth/google/callback`, built from `CONTROL_BASE_URL`,
+because Control holds the PKCE state the callback has to be matched against.
+Google clients pin exact redirect URIs and changing one means touching the
+Google client config — and, for a verified production app, re-review — so this
+is worth being precise about.
 
 ## Apex rules
 
@@ -124,23 +167,32 @@ removes the collision by construction, and two further rules keep it safe:
 - `angelmcp.ai/docs` and `angelmcp.ai/llms.txt` redirect to `docs.angelmcp.ai`
   and `docs.angelmcp.ai/llms.txt` — the docs host is canonical, and the apex
   paths exist only so the reserved words resolve to one place.
-- No auth cookie is ever scoped to `.angelmcp.ai`. Angel www pages are
-  user-shaped content; session cookies stay host-only on `dash.` / `auth.`.
+- The session cookie **is** scoped to `.angelmcp.ai` today, and this rule used
+  to say the opposite. See "The cookie's blast radius" above before adding a
+  host or serving user-shaped content on one.
 
-## Migration checklist (when this becomes real)
+## Migration checklist
 
-1. Move the `angelmcp.ai` zone into the dedicated Cloudflare account. This
-   moves **all** DNS for the domain — audit email routing and any other
-   records on the personal account first.
-2. Add Workers custom domains/routes for Control (`dash.`, `api.`, `auth.`),
-   Gateway (`mcp.`), and the Docs worker (`docs.`); add apex redirects for
-   `/docs` and `/llms.txt` to `docs.angelmcp.ai`.
+Steps 1 and 4 are done, and 2, 3 and 5 are done for `dash.` and `auth.` only.
+
+1. ~~Move the `angelmcp.ai` zone into the dedicated Cloudflare account.~~ Done
+   2026-08-04. It moved **all** DNS for the domain.
+2. Add Workers custom domains/routes for Control (`dash.`, `api.`), the Auth
+   worker (`auth.`), Gateway (`mcp.`), and the Docs worker (`docs.`); add apex
+   redirects for `/docs` and `/llms.txt` to `docs.angelmcp.ai`. **`dash.` and
+   `auth.` are bound**; `api.`, `mcp.` and `docs.` are not.
 3. Update `CONTROL_BASE_URL` / `GATEWAY_BASE_URL` vars in
-   `wrangler.control.jsonc` and redeploy.
-4. Update the Cloudflare Access application URL to `dash.angelmcp.ai`.
-5. Update the Google OAuth client redirect URIs to `auth.angelmcp.ai`
-   (operator-in-a-browser step in Google Cloud Console).
-6. Keep `workers.dev` URLs alive through the cutover, then disable.
+   `wrangler.control.jsonc` and redeploy. Done for Control.
+4. ~~Delete the Cloudflare Access application; the sign-in Worker holds the
+   door.~~ Done 2026-08-04.
+5. Add `https://dash.angelmcp.ai/oauth/google/callback` to the Google OAuth
+   client's authorized redirect URIs (operator-in-a-browser step in Google
+   Cloud Console). Done. **Not `auth.`** — Control builds this URI from
+   `CONTROL_BASE_URL` (`src/workers/control.ts`), so `dash.` is the only host
+   Google is ever sent back to.
+6. Keep `workers.dev` URLs alive through the cutover, then disable. Note that
+   binding a custom domain **disables that Worker's `workers.dev` URL** —
+   Control's and the sign-in Worker's old addresses now 404.
 
 ## Open questions
 

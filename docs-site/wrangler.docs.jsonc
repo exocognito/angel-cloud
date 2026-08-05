@@ -3,9 +3,12 @@
   "name": "angelmcp-docs-demo",
   "account_id": "6334e1f9af90be70f091a0116425606a",
   "compatibility_date": "2026-07-18",
-  // Assets-only worker: no `main`, no service bindings, no Cloudflare Access.
-  // The docs are public by design — the opposite of the Access-gated Control
-  // dashboard. Deploy from a built `./dist` (see build.sh); never point this at
+  // Assets-only worker: no `main`, no service bindings. The docs are public by
+  // design — the opposite of the signed-in Control dashboard. Having no `main`
+  // also means no code here can read the session cookie the zone-wide
+  // `.angelmcp.ai` scope will send once this binds to `docs.angelmcp.ai`; see
+  // "The cookie's blast radius" in docs/domain-architecture.md before adding
+  // one. Deploy from a built `./dist` (see build.sh); never point this at
   // the repo `docs/` directly, because the SPA and llms.txt/SKILL.md live
   // alongside the rendered markdown.
   // not_found_handling stays the default ("none"): a missing path answers 404.

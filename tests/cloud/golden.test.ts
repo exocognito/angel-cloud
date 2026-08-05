@@ -10,33 +10,25 @@ import {
 import { parseAngelDeploymentConfig } from "@smcllns/angel-core/cli";
 
 const repoRoot = join(import.meta.dir, "../..");
-const accessToken = JSON.stringify({
-  "cf-access-client-id": "access-client-id",
-  "cf-access-client-secret": "access-client-secret",
-});
-
 describe("golden checked-in inputs", () => {
   test("requires explicit deployed Worker URLs and credentials for the executable journey", () => {
     expect(() => goldenOptionsFromEnv(repoRoot, {})).toThrow("GOLDEN_CONTROL_URL is required");
     expect(() => goldenOptionsFromEnv(repoRoot, {
       GOLDEN_CONTROL_URL: "https://control.example",
       GOLDEN_GATEWAY_URL: "https://gateway.example",
-      GOLDEN_MANAGEMENT_TOKEN: "management",
       GOLDEN_ADMIN_TOKEN: "admin",
-    })).toThrow("GOLDEN_ACCESS_TOKEN is required");
+    })).toThrow("GOLDEN_SESSION_TOKEN is required");
     expect(goldenOptionsFromEnv(repoRoot, {
       GOLDEN_CONTROL_URL: "https://control.example",
       GOLDEN_GATEWAY_URL: "https://gateway.example",
-      GOLDEN_MANAGEMENT_TOKEN: "management",
+      GOLDEN_SESSION_TOKEN: "session",
       GOLDEN_ADMIN_TOKEN: "admin",
-      GOLDEN_ACCESS_TOKEN: accessToken,
     })).toEqual({
       repoRoot,
       controlBaseUrl: "https://control.example",
       gatewayBaseUrl: "https://gateway.example",
-      managementToken: "management",
+      sessionToken: "session",
       adminToken: "admin",
-      accessToken,
     });
   });
 

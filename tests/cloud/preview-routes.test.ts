@@ -237,14 +237,13 @@ async function harness() {
   };
   const controlEnv = {
     ...registryEnv,
-    MANAGEMENT_API_TOKEN: "management-secret",
     DEMO_ADMIN_TOKEN: "admin-secret",
     ACCOUNTS: {
       getByName(name: string) {
         let registry = registries.get(name);
         if (registry === undefined) {
           registry = new AccountRegistry(
-            storageContext(name === ACCOUNT_ID ? storage : new Map()) as never,
+            storageContext(name === ACCOUNT_ID ? storage : new Map(), name) as never,
             registryEnv as never,
           );
           registries.set(name, registry);
@@ -340,8 +339,9 @@ function gateFleetStub() {
   };
 }
 
-function storageContext(storage: Map<string, unknown>) {
+function storageContext(storage: Map<string, unknown>, name = "acct_demo") {
   return {
+    id: { name },
     storage: {
       get: async (key: string) => structuredClone(storage.get(key)),
       put: async (key: string | Record<string, unknown>, value?: unknown) => {

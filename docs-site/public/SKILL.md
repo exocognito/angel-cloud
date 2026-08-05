@@ -43,12 +43,12 @@ Full definitions: [user manual → Concepts](https://docs.angelmcp.ai/user-manua
 | Step | How | Credentials |
 | --- | --- | --- |
 | 1. Install the CLI | `pnpm` + `bun` | No credentials (needs the npm registry) |
-| 2. Get the two management credentials | From the Angel Cloud owner | Owner-provisioned |
-| 3. Add a Google Connection | Browser (Cloudflare Access + Google consent) | Interactive login — no headless path |
+| 2. Get the management credential | From the Angel Cloud owner | Owner-provisioned |
+| 3. Add a Google Connection | Browser (emailed sign-in link + Google consent) | Interactive login — no headless path |
 | 4. Author `ANGEL.yaml` + `angel.json` | Text editor | None — offline |
 | 5. Build the Version | `angel build` | None — offline, no network |
-| 6. Publish to preview (opt in) | `angel publish --preview` / API | Management bearer + Access token |
-| 7. Promote to production | `angel deploy --prod` / API | Management bearer + Access token |
+| 6. Publish to preview (opt in) | `angel publish --preview` / API | Management bearer |
+| 7. Promote to production | `angel deploy --prod` / API | Management bearer |
 | 8. Connect over MCP | HTTP to the Gateway | The minted Angel key only |
 
 Steps 2 and 3 cannot be done from a shell — a person provisions the credentials
@@ -76,25 +76,24 @@ The one step with **no** server endpoint is the build (step 5): the artifact is
 compiled locally by the package. That is the only reason tooling is in the loop
 at all — it still does **not** require cloning the product repo.
 
-## Step 2 — Get the two management credentials
+## Step 2 — Get the management credential
 
-Both come from the person who owns the Angel Cloud account; there is no
+It comes from the person who owns the Angel Cloud account; there is no
 self-service token endpoint.
 
-- `ANGEL_MANAGEMENT_TOKEN` — the Control management bearer, sent as
-  `Authorization: Bearer <token>`.
-- `ANGEL_ACCESS_TOKEN` — a Cloudflare Access service token as opaque JSON with
-  exactly two keys:
-  `{"cf-access-client-id":"...","cf-access-client-secret":"..."}`.
+- `ANGEL_MANAGEMENT_TOKEN` — a control-plane session token, sent as
+  `Authorization: Bearer <token>`. Angel Cloud resolves it as the session of
+  whoever signed in, and answers for that person's Account and no other. No
+  command mints one for a terminal yet; ask the owner.
 
-Never write either into source, `angel.json`, logs, a command transcript, or an
-Angel artifact. Pass them as environment variables only.
+Never write it into source, `angel.json`, logs, a command transcript, or an
+Angel artifact. Pass it as an environment variable only.
 
 ## Step 3 — Add a Google Connection (browser, one time)
 
 Provider custody requires an interactive browser flow — there is no headless
-API to mint a Google Connection. Ask the owner to, in the Cloudflare
-Access-protected dashboard:
+API to mint a Google Connection. Ask the owner to, in the signed-in
+dashboard:
 
 1. Save a Provider App (their own Google OAuth client; the secret is stored
    write-only).
@@ -135,7 +134,7 @@ requirement in each environment. Keep the real `angel.json` untracked.
 
 ```json
 {
-  "target": "https://angelmcp-control-demo.sam-633.workers.dev",
+  "target": "https://dash.angelmcp.ai",
   "account": "acct_...",
   "angel": "google-read-proof",
   "bindings": {
@@ -162,7 +161,6 @@ request.
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
-ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 pnpm exec angel publish google-read-proof --preview
 ```
 
@@ -179,7 +177,6 @@ only fingerprints. Then verify the preview tool list is exactly what you expect
 
 ```sh
 ANGEL_MANAGEMENT_TOKEN=... \
-ANGEL_ACCESS_TOKEN='{"cf-access-client-id":"...","cf-access-client-secret":"..."}' \
 pnpm exec angel deploy google-read-proof --prod
 ```
 
@@ -258,11 +255,10 @@ More: [user manual → Errors](https://docs.angelmcp.ai/user-manual.md#errors).
 ## Appendix: raw management API
 
 If you drive the API directly instead of the CLI, the base is
-`https://angelmcp-control-demo.sam-633.workers.dev`. Every `/v1/...` route
-requires **both** a Cloudflare Access identity (the `CF-Access-Client-ID` /
-`CF-Access-Client-Secret` header pair from `ANGEL_ACCESS_TOKEN`) **and**
-`Authorization: Bearer <ANGEL_MANAGEMENT_TOKEN>`. The account in the path must
-match the Access identity. Every mutating call takes an `Idempotency-Key`
+`https://dash.angelmcp.ai`. Every `/v1/...` route requires
+`Authorization: Bearer <ANGEL_MANAGEMENT_TOKEN>`, and the account in the path
+must be the one that session names — any other answers `404 not found`, the
+same answer an account that never existed gets. Every mutating call takes an `Idempotency-Key`
 header: generate one key per logical mutation, resend the **same** key to
 safely retry that exact call (a lost response is why you retry), and never
 reuse a key for different input. This matters most on the first ensure — if you
@@ -282,7 +278,7 @@ shown-once Angel keys; retry with the same key instead.
 
 The build step (`ANGEL.yaml` → artifact + digest) has **no** server endpoint;
 compile it locally with `angel build` and send the resulting artifact to
-`POST .../versions`. Provider-App and Connection setup use the Access-session
+`POST .../versions`. Provider-App and Connection setup use the signed-in
 `/api/...` and `/oauth/...` routes and end in an interactive browser redirect —
 they are not scriptable end to end.
 

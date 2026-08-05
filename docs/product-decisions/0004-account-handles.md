@@ -86,3 +86,13 @@ question. It is tracked in [#13](https://github.com/exocognito/angelmcp/issues/1
 - Confirmable lookalikes. `[a-z0-9-]` blocks unicode homoglyphs, but `rn`/`m`
   and `1`/`l` still permit near-duplicates. Not worth solving at one Account;
   worth deciding before public signup ([#8](https://github.com/exocognito/angelmcp/issues/8)).
+- **Is the namespace public?** Reads hide existence: `GET /v1/handles/{h}` and
+  the public gateway both answer a byte-identical `404` whether a name is free
+  or someone else's. The claim path cannot: `PUT .../handle` answers `409` when
+  another Account holds the name, so anyone who signs up can test any name.
+  A claim endpoint reveals availability by construction, and most products
+  treat that as normal — but G07 says cross-Account resources are
+  indistinguishable from absent ones, so the exception should be a decision
+  rather than an accident. Raised 2026-08-04 when removing the shared token
+  made the claim path reachable by every tenant; see
+  `docs/evidence/pd-01/03-multi-tenant-control.md`.

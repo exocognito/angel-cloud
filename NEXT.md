@@ -115,12 +115,12 @@ after seven days.
 - The selected Cloudflare account, Workers subdomain, scoped deploy token, and
   exact Google callback are configured. Keep operator credentials in 1Password
   and deployment-specific identifiers in Wrangler configuration.
-- Access is enabled for the dedicated account; the service token is stored in
-  1Password. The Control Access app has one narrow
-  browser allow policy and one service-token automation policy.
-  The client keeps one opaque JSON environment value and unpacks it into the
-  standard `CF-Access-Client-ID` and `CF-Access-Client-Secret` headers; portable
-  and hosted suites pass, and the implementation is deployed.
+- The Cloudflare Access application is deleted and the sign-in Worker on
+  `auth.angelmcp.ai` holds the door. It mails a one-time link and issues a
+  session cookie scoped to `.angelmcp.ai`, which is what lets Control and the
+  sign-in Worker read the same session. The Access service token in 1Password
+  now unlocks nothing and should be retired. Nothing outside a browser can
+  obtain a session yet, so the CLI hand-off (issue #16) is still to build.
 - The dedicated consumer Google identity is on the test-user list. Stable
   Gmail and Docs fixtures exist outside committed docs and passed the live
   runner. External Testing served the initial proof; move to Production before
