@@ -497,7 +497,7 @@ async function cliPublish(
     output: (line) => output.push(line),
     env: {
       ANGEL_MANAGEMENT_TOKEN: options.sessionToken,
-          },
+    },
   });
   if (artifact === undefined) throw new Error(`CLI did not build ${angelId}`);
   return {
@@ -522,7 +522,7 @@ async function cliDeployProduction(
     output: () => {},
     env: {
       ANGEL_MANAGEMENT_TOKEN: options.sessionToken,
-          },
+    },
   });
 }
 

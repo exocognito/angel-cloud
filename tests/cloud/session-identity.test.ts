@@ -60,11 +60,11 @@ describe("session identity", () => {
   });
 
   test("prefers the cookie when an unrelated bearer rides along", async () => {
-    // The dashboard's reset button sends the admin token in `Authorization`
-    // while the browser attaches the session cookie. Forwarding both makes
-    // Better Auth's bearer plugin read the admin token as the session, fail,
-    // and refuse somebody who is signed in — which is how the live run found
-    // this: reset answered 401 to a valid session.
+    // The golden runner's reset sends the admin token in `Authorization` while
+    // the session rides as a cookie, exactly as a browser sends it. Forwarding
+    // both makes Better Auth's bearer plugin read the admin token as the
+    // session, fail, and refuse a caller who is signed in — which is how the
+    // live run found this: reset answered 401 to a valid session.
     const auth = authService(Response.json(SESSION));
     await authenticateSessionRequest(
       new Request("https://dash.test/api/demo/reset", {

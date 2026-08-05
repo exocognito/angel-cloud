@@ -51,10 +51,11 @@ export async function authenticateSessionRequest(
   // whole request would hand the session Worker an unrelated method and body.
   //
   // The cookie wins when both are present, and that is not a preference. A
-  // browser request can carry an `Authorization` header meant for something
-  // else entirely — the admin token on the reset button does exactly this —
-  // and Better Auth's bearer plugin would read it as the session, fail to
-  // resolve it, and refuse a person who is properly signed in.
+  // request can carry an `Authorization` header meant for something else
+  // entirely — the golden runner's reset sends the admin token there while the
+  // session rides as a cookie — and Better Auth's bearer plugin would read that
+  // admin token as the session, fail to resolve it, and refuse a caller who is
+  // properly signed in.
   const cookie = request.headers.get("cookie");
   const authorization = request.headers.get("authorization");
   if (cookie !== null) headers.set("cookie", cookie);
